@@ -66,7 +66,9 @@ public partial class PathFindingAStarTilemap : TileMap
 		GD.Print($"End coord: {endCoord}");
 
 		// Get the nearest walkable path for the starting coordinate
-		Vector2I startCell = (Vector2I)LocalToMap(startCoord);
+		Vector2I startCell = LocalToMap(startCoord);
+		Vector2I endCell = LocalToMap(endCoord);
+
 		GD.Print($"Start cell: {startCell}");
 		if (!this.walkableCells.Contains(startCell))
 		{
@@ -75,8 +77,15 @@ public partial class PathFindingAStarTilemap : TileMap
 			GD.Print($" Nearest walkable cell: {startCell}");
 		}
 
+		if (!this.walkableCells.Contains(endCell))
+		{
+			GD.Print($"End cell is not walkable, finding nearest walkable cell");
+			endCell = GetNearestWalkableCell(endCoord);
+			GD.Print($" Nearest walkable cell: {endCell}");
+		}
+
 		ChangePathStartPosition(startCell);
-		ChangePathEndPosition(LocalToMap(endCoord));
+		ChangePathEndPosition(endCell);
 		RecalculatePath();
 
 		GD.Print($"Path length:  {this.cellPath.Count}");
@@ -95,6 +104,8 @@ public partial class PathFindingAStarTilemap : TileMap
 	{
 		Vector2I nearestCell = new Vector2I();
 		float nearestDistance = float.MaxValue;
+
+		// TODO: Instead of checking the entire map, only check the 9 nearest cells.
 
 		foreach (Vector2I cell in this.walkableCells)
 		{
