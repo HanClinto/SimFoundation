@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 
 public partial class Worker : CharacterBody2D
 {
@@ -36,6 +37,11 @@ public partial class Worker : CharacterBody2D
 	public const int NUM_ACTION_FRAMES = 3;
 	public const int ACTION_ANIM_SPEED = 500; // Msecs per animation frame
 
+	private const int NEXT_POSITION_INDEX = 0;
+	private const float ARRIVE_DISTANCE = 1.0f;
+
+	private List<Vector2I> path = new List<Vector2I>();
+
 	public void SetAction(int newAction)
 	{
 		this.actionType = newAction;
@@ -51,6 +57,12 @@ public partial class Worker : CharacterBody2D
 		sprite.Play();
 	}
 
+	public void SetPath(List<Vector2I> newPath)
+	{
+		this.path = newPath;
+
+	}
+
 	public void ToggleSelected()
 	{
 		// Get the sprite on this object
@@ -64,8 +76,6 @@ public partial class Worker : CharacterBody2D
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
 	{
-
-
 		const int NUM_WALK_FRAMES = 4;
 		const int ANIM_SPEED = 4; // Pixels per animation frame
 
@@ -74,22 +84,22 @@ public partial class Worker : CharacterBody2D
 
 		// If the player is moving, play the walk animation.
 
-		if (this.lastVelocity.Y > 0)
+		if (this.lastVelocity.Y > Speed*0.25)
 		{
 			direction = DOWN;
-			walkFrame = ((int)(Position.Y / ANIM_SPEED)) % NUM_WALK_FRAMES;
+			walkFrame = ((int)((Position.Y) / ANIM_SPEED)) % NUM_WALK_FRAMES;
 		}
-		else if (this.lastVelocity.X > 0)
+		else if (this.lastVelocity.X > Speed*0.25)
 		{
 			direction = RIGHT;
 			walkFrame = ((int)(Position.X / ANIM_SPEED)) % NUM_WALK_FRAMES;
 		}
-		else if (this.lastVelocity.X < 0)
+		else if (this.lastVelocity.X < -Speed*0.25)
 		{
 			direction = LEFT;
 			walkFrame = ((int)(Position.X / ANIM_SPEED)) % NUM_WALK_FRAMES;
 		}
-		else if (this.lastVelocity.Y < 0)
+		else if (this.lastVelocity.Y < -Speed*0.25)
 		{
 			direction = UP;
 			walkFrame = ((int)(Position.Y / ANIM_SPEED)) % NUM_WALK_FRAMES;
@@ -140,6 +150,33 @@ public partial class Worker : CharacterBody2D
 		// Get the input direction and handle the movement/deceleration.
 		// As good practice, you should replace UI actions with custom gameplay actions.
 		Vector2 direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+
+		// If we have a path that we're currently following
+		if (this.path.Count > 0)
+		{
+			// Get the next position in the path
+			Vector2 targetPointWorld = path[NEXT_POSITION_INDEX];
+
+			// If we're close enough to the next position, then remove it from the path
+			if (ArrivedTo(targetPointWorld))
+			{
+				this.path.RemoveAt(NEXT_POSITION_INDEX);
+
+				// Get the next position in the path
+				if (this.path.Count > 0)
+				{
+					targetPointWorld = path[NEXT_POSITION_INDEX];
+				}
+			}
+
+			if (this.path.Count == 0)
+			{
+				direction = Vector2.Zero;
+			} else {
+				// Get the direction to the next position
+				direction = (targetPointWorld - Position).Normalized();
+			}
+		}
 		
 		velocity = direction * Speed;
 
@@ -209,4 +246,10 @@ public partial class Worker : CharacterBody2D
 		}
 
 	}
+
+	private bool ArrivedTo(Vector2 destination)
+	{
+		return this.Position.DistanceTo(destination) < ARRIVE_DISTANCE;
+	}
+
 }

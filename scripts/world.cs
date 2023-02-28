@@ -20,7 +20,7 @@ public partial class world : Node2D
 	}
 
 
-	Node2D selectedWorker = null;
+	Worker selectedWorker = null;
 
 	public override void _Input(InputEvent @event)
 	{
@@ -37,7 +37,7 @@ public partial class world : Node2D
 			// Log the mouse global and local coordinates
 			GD.Print($"  Global Mouse Position: {globalMousePosition}");
 
-			var thisWorker = GetNodeAtPosition(globalMousePosition, "workers");
+			var thisWorker = GetNodeAtPosition(globalMousePosition, "workers") as Worker;
 
 			if (thisWorker != null)
 			{
@@ -45,7 +45,7 @@ public partial class world : Node2D
 				// Change the object's state to follow the mouse
 				thisWorker.Call("SetAction", 0);
 				
-				selectedWorker = thisWorker as Node2D;
+				selectedWorker = thisWorker;
 			} else {
 				var clickedCell = (Vector2I)((globalMousePosition - new Vector2I(8,8)) / 16);
 				if (selectedWorker == null)
@@ -67,6 +67,8 @@ public partial class world : Node2D
 					GD.Print($"  Path End: {pathEnd}");
 
 					var path = tilemap.GetPath(pathStart, pathEnd);
+
+					selectedWorker.SetPath(path);
 
 					GD.Print($"  Path: {path}");
 

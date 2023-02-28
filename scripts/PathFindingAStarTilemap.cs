@@ -5,8 +5,8 @@ using System.Collections.Generic;
 public partial class PathFindingAStarTilemap : TileMap
 {
 	private const int NAVIGATION_LAYER = 1;
-	private const float BASE_LINE_WIDTH = 1.0f;
-	private readonly Color DRAW_COLOR = new Color(0, 0, 0);
+	private const float BASE_LINE_WIDTH = 1;
+	private readonly Color DRAW_COLOR = new Color(1, 1, 0, 0.25f);
 
 	[Export]
 	private Rect2I mapSize;
@@ -65,20 +65,49 @@ public partial class PathFindingAStarTilemap : TileMap
 		GD.Print($"Start coord: {startCoord}");
 		GD.Print($"End coord: {endCoord}");
 
-		ChangePathStartPosition(LocalToMap(startCoord));
+		// Get the nearest walkable path for the starting coordinate
+		Vector2I startCell = (Vector2I)LocalToMap(startCoord);
+		GD.Print($"Start cell: {startCell}");
+		if (!this.walkableCells.Contains(startCell))
+		{
+			GD.Print($"Start cell is not walkable, finding nearest walkable cell");
+			startCell = GetNearestWalkableCell(startCoord);
+			GD.Print($" Nearest walkable cell: {startCell}");
+		}
+
+		ChangePathStartPosition(startCell);
 		ChangePathEndPosition(LocalToMap(endCoord));
 		RecalculatePath();
 
-		GD.Print($"Path length: {this.cellPath.Count}");
+		GD.Print($"Path length:  {this.cellPath.Count}");
 
 		List<Vector2I> pathWorld = new List<Vector2I>();
 		foreach (Vector2I cell in this.cellPath)
 		{
-			Vector2 cellWorld = MapToLocal(new Vector2I(cell.X, cell.Y)) + this.halfCellSize;
+			Vector2 cellWorld = MapToLocal(new Vector2I(cell.X, cell.Y));
 			pathWorld.Add((Vector2I)cellWorld);
 		}
 
 		return pathWorld;
+	}
+
+	private Vector2I GetNearestWalkableCell(Vector2 coord)
+	{
+		Vector2I nearestCell = new Vector2I();
+		float nearestDistance = float.MaxValue;
+
+		foreach (Vector2I cell in this.walkableCells)
+		{
+			Vector2 cellWorld = MapToLocal(new Vector2I(cell.X, cell.Y));
+			float distance = cellWorld.DistanceTo(coord);
+			if (distance < nearestDistance)
+			{
+				nearestDistance = distance;
+				nearestCell = cell;
+			}
+		}
+
+		return nearestCell;
 	}
 
 	private void GetWalkableCells()
@@ -128,18 +157,33 @@ public partial class PathFindingAStarTilemap : TileMap
 		{
 			int cellIndex = CalculateCellIndex(cell);
 
-			List<Vector2I> neighborCells = new List<Vector2I>();
-			neighborCells.Add(new Vector2I(cell.X + 1, cell.Y));
-			neighborCells.Add(new Vector2I(cell.X - 1, cell.Y));
-			neighborCells.Add(new Vector2I(cell.X, cell.Y + 1));
-			neighborCells.Add(new Vector2I(cell.X, cell.Y - 1));
-
-			foreach (Vector2I neighborCell in neighborCells)
+			for (var neighborX = cell.X - 1; neighborX <= cell.X + 1; neighborX++)
 			{
-				if (walkableCells.Contains(neighborCell))
+				for (var neighborY = cell.Y - 1; neighborY <= cell.Y + 1; neighborY++)
 				{
-					int neighborCellIndex = CalculateCellIndex(neighborCell);
-					this.aStarNode.ConnectPoints(cellIndex, neighborCellIndex, false);
+					if (neighborX == cell.X && neighborY == cell.Y)
+					{
+						continue;
+					}
+
+					// Check if the neighbor is a diagonal
+					if (neighborX != cell.X && neighborY != cell.Y)
+					{
+						// Check if the diagonal is blocked
+						Vector2I diagonalCell = new Vector2I(neighborX, cell.Y);
+						Vector2I diagonalCell2 = new Vector2I(cell.X, neighborY);
+						if (!walkableCells.Contains(diagonalCell) || !walkableCells.Contains(diagonalCell2))
+						{
+							continue;
+						}
+					}
+
+					Vector2I neighborCell = new Vector2I(neighborX, neighborY);
+					if (walkableCells.Contains(neighborCell))
+					{
+						int neighborCellIndex = CalculateCellIndex(neighborCell);
+						this.aStarNode.ConnectPoints(cellIndex, neighborCellIndex, false);
+					}
 				}
 			}
 		}
