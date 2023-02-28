@@ -31,10 +31,35 @@ public partial class Worker : CharacterBody2D
 
 	public int workerType = SCIENTIST;
 
-	public int actionType = 0;
+	public int actionType = 13;
 	public const int NUM_ACTIONS = 14;
 	public const int NUM_ACTION_FRAMES = 3;
 	public const int ACTION_ANIM_SPEED = 500; // Msecs per animation frame
+
+	public void SetAction(int newAction)
+	{
+		this.actionType = newAction;
+	}
+
+	public void SetSelected(bool isSelected)
+	{
+		// Get the sprite on this object
+		AnimatedSprite2D sprite = GetNode<AnimatedSprite2D>("SelectionSprite");
+
+		sprite.Visible = isSelected;
+		// Start the animation playing
+		sprite.Play();
+	}
+
+	public void ToggleSelected()
+	{
+		// Get the sprite on this object
+		AnimatedSprite2D sprite = GetNode<AnimatedSprite2D>("SelectionSprite");
+
+		sprite.Visible = !sprite.Visible;
+		// Start the animation playing
+		sprite.Play();
+	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
 	public override void _Process(double delta)
