@@ -41,7 +41,8 @@ public partial class world : Node2D
 
 			if (thisWorker != null)
 			{
-				thisWorker.Call("ToggleSelected");
+				thisWorker.IsSelected = !thisWorker.IsSelected;
+
 				// Change the object's state to follow the mouse
 				thisWorker.Call("SetAction", 0);
 				

@@ -25,10 +25,49 @@ public partial class Worker : CharacterBody2D
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
+		// Read from the "workerType" metadata variable and set this.workerType to it
+		this.workerType = (int)GetMeta("workerType");
+
+		// Print the value that we are setting the workerType to
+		GD.Print("Worker Type: " + this.workerType);
+	}
+
+	public override void _EnterTree()
+	{
+		base._EnterTree();
+		
+		// Read from the "workerType" metadata variable and set this.workerType to it
+		this.workerType = (int)GetMeta("workerType");
+
+		// Print the value that we are setting the workerType to
+		GD.Print("Worker Type: " + this.workerType);
 	}
 
 	private Vector2 lastVelocity = Vector2.Zero;
 	private int lastDirection = DOWN;
+
+	// "static" means that exactly one of these variables exists and is shared between all workers.
+	// So this means we can only have one selected worker in the game at a time.
+	static public Worker SelectedWorker = null;
+
+	public bool IsSelected
+	{
+		get {
+			// Return "true" if this worker is currently selected.
+			return (Worker.SelectedWorker == this);
+		}
+		set {
+			if (value) {
+				// If setting "IsSelected" to true, then will set the global selection to this sprite.
+				Worker.SelectedWorker = this;
+			} else {
+				// If setting "IsSelected" to false, and we are currently selected, then nothing will be selected.
+				if (this.IsSelected) {
+					Worker.SelectedWorker = null;
+				}
+			}
+		}
+	}
 
 	public int workerType = SCIENTIST;
 
@@ -45,16 +84,6 @@ public partial class Worker : CharacterBody2D
 	public void SetAction(int newAction)
 	{
 		this.actionType = newAction;
-	}
-
-	public void SetSelected(bool isSelected)
-	{
-		// Get the sprite on this object
-		AnimatedSprite2D sprite = GetNode<AnimatedSprite2D>("SelectionSprite");
-
-		sprite.Visible = isSelected;
-		// Start the animation playing
-		sprite.Play();
 	}
 
 	public void SetPath(List<Vector2I> newPath)
@@ -129,6 +158,18 @@ public partial class Worker : CharacterBody2D
 		this.lastDirection = direction;
 
 
+		// Update our selection animation
+		AnimatedSprite2D selectionSprite = GetNode<AnimatedSprite2D>("SelectionSprite");
+
+		if (selectionSprite.Visible != this.IsSelected) {
+			// If our selection changed since the last time we visited
+			selectionSprite.Visible = this.IsSelected;
+			if (this.IsSelected) {
+				// Start the animation playing
+				selectionSprite.Play();
+			}
+		}
+
 		// Update our action animation
 
 		// Get the current game ticks
@@ -149,7 +190,7 @@ public partial class Worker : CharacterBody2D
 
 		// Get the input direction and handle the movement/deceleration.
 		// As good practice, you should replace UI actions with custom gameplay actions.
-		Vector2 direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");
+		Vector2 direction = Vector2.Zero;
 
 		// If we have a path that we're currently following
 		if (this.path.Count > 0)
@@ -176,6 +217,11 @@ public partial class Worker : CharacterBody2D
 				// Get the direction to the next position
 				direction = (targetPointWorld - Position).Normalized();
 			}
+		} else {
+			// If we're currently selected, then let us be driven around with the arrow keys.
+			if (this.IsSelected) {
+				direction = Input.GetVector("ui_left", "ui_right", "ui_up", "ui_down");				
+			}
 		}
 		
 		velocity = direction * Speed;
@@ -185,66 +231,68 @@ public partial class Worker : CharacterBody2D
 
 		this.lastVelocity = Velocity;
 
-		// If the player is pressing "1", then change our worker type to 0 (Scientist)
-		if (Input.IsActionJustPressed("button_1"))
-		{
-			this.workerType = 0;
-		}
-
-		// If the player is pressing "2", then change our worker type to 1 (Engineer)
-		if (Input.IsActionJustPressed("button_2"))
-		{
-			this.workerType = 1;
-		}
-
-		// If the player is pressing "3", then change our worker type to 2 (D-Class)
-		if (Input.IsActionJustPressed("button_3"))
-		{
-			this.workerType = 2;
-		}
-
-		// If the player is pressing "4", then change our worker type to 3 (Janitor)
-		if (Input.IsActionJustPressed("button_4"))
-		{
-			this.workerType = 3;
-		}
-
-		// If the player is pressing "5", then change our worker type to 4 (MTF)
-		if (Input.IsActionJustPressed("button_5"))
-		{
-			this.workerType = 4;
-		}
-
-		// If the player is pressing "6", then change our worker type to 5 (SCP)
-		if (Input.IsActionJustPressed("button_6"))
-		{
-			this.workerType = 5;
-		}
-
-		// If the player is pressing "7", then change our worker type to 6
-		if (Input.IsActionJustPressed("button_7"))
-		{
-			this.workerType = 6;
-		}
-
-		if (Input.IsActionJustPressed("button_next_action"))
-		{
-			this.actionType++;
-			if (this.actionType >= NUM_ACTIONS)
+		// If we're currently selected, then let us change the worker type or current action.
+		if (this.IsSelected) {
+			// If the player is pressing "1", then change our worker type to 0 (Scientist)
+			if (Input.IsActionJustPressed("button_1"))
 			{
-				this.actionType = 0;
+				this.workerType = 0;
+			}
+
+			// If the player is pressing "2", then change our worker type to 1 (Engineer)
+			if (Input.IsActionJustPressed("button_2"))
+			{
+				this.workerType = 1;
+			}
+
+			// If the player is pressing "3", then change our worker type to 2 (D-Class)
+			if (Input.IsActionJustPressed("button_3"))
+			{
+				this.workerType = 2;
+			}
+
+			// If the player is pressing "4", then change our worker type to 3 (Janitor)
+			if (Input.IsActionJustPressed("button_4"))
+			{
+				this.workerType = 3;
+			}
+
+			// If the player is pressing "5", then change our worker type to 4 (MTF)
+			if (Input.IsActionJustPressed("button_5"))
+			{
+				this.workerType = 4;
+			}
+
+			// If the player is pressing "6", then change our worker type to 5 (SCP)
+			if (Input.IsActionJustPressed("button_6"))
+			{
+				this.workerType = 5;
+			}
+
+			// If the player is pressing "7", then change our worker type to 6
+			if (Input.IsActionJustPressed("button_7"))
+			{
+				this.workerType = 6;
+			}
+
+			if (Input.IsActionJustPressed("button_next_action"))
+			{
+				this.actionType++;
+				if (this.actionType >= NUM_ACTIONS)
+				{
+					this.actionType = 0;
+				}
+			}
+
+			if (Input.IsActionJustPressed("button_prev_action"))
+			{
+				this.actionType--;
+				if (this.actionType < 0)
+				{
+					this.actionType = NUM_ACTIONS-1;
+				}
 			}
 		}
-
-		if (Input.IsActionJustPressed("button_prev_action"))
-		{
-			this.actionType--;
-			if (this.actionType < 0)
-			{
-				this.actionType = NUM_ACTIONS-1;
-			}
-		}
-
 	}
 
 	private bool ArrivedTo(Vector2 destination)

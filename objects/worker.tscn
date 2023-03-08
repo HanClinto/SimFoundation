@@ -1,0 +1,71 @@
+[gd_scene load_steps=10 format=3 uid="uid://j3t06wuven2s"]
+
+[ext_resource type="Script" path="res://scripts/Worker.cs" id="1_dy3kl"]
+[ext_resource type="Texture2D" uid="uid://sbi8wtlgayv6" path="res://sprites/actions.png" id="2_xnwe0"]
+[ext_resource type="Texture2D" uid="uid://dmfk1jim52ses" path="res://sprites/allsprites.png" id="3_kro16"]
+[ext_resource type="Texture2D" uid="uid://dtg3v857dffqt" path="res://sprites/selection.png" id="4_nybxf"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rfoi2"]
+atlas = ExtResource("4_nybxf")
+region = Rect2(0, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2mnsx"]
+atlas = ExtResource("4_nybxf")
+region = Rect2(16, 16, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rjs36"]
+atlas = ExtResource("4_nybxf")
+region = Rect2(32, 16, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_7ida2"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rfoi2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2mnsx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rjs36")
+}],
+"loop": true,
+"name": &"selected",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_jqft4"]
+radius = 4.0
+
+[node name="Worker" type="CharacterBody2D" groups=["workers"]]
+y_sort_enabled = true
+position = Vector2(2.08165e-12, 2.08165e-12)
+collision_layer = 2
+script = ExtResource("1_dy3kl")
+metadata/workerType = 0
+
+[node name="ActionSprite" type="Sprite2D" parent="."]
+z_index = 2
+y_sort_enabled = true
+position = Vector2(2.08165e-12, -17)
+texture = ExtResource("2_xnwe0")
+hframes = 3
+vframes = 16
+frame = 39
+
+[node name="CharacterSprite" type="Sprite2D" parent="."]
+z_index = 1
+y_sort_enabled = true
+texture = ExtResource("3_kro16")
+hframes = 4
+vframes = 40
+
+[node name="SelectionSprite" type="AnimatedSprite2D" parent="."]
+z_index = 5
+sprite_frames = SubResource("SpriteFrames_7ida2")
+animation = &"selected"
+frame_progress = 0.875129
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 4)
+shape = SubResource("CircleShape2D_jqft4")
