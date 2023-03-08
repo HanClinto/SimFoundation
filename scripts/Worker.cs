@@ -30,17 +30,9 @@ public partial class Worker : CharacterBody2D
 
 		// Print the value that we are setting the workerType to
 		GD.Print("Worker Type: " + this.workerType);
-	}
 
-	public override void _EnterTree()
-	{
-		base._EnterTree();
-		
-		// Read from the "workerType" metadata variable and set this.workerType to it
-		this.workerType = (int)GetMeta("workerType");
-
-		// Print the value that we are setting the workerType to
-		GD.Print("Worker Type: " + this.workerType);
+		// Choose a random name for this worker.
+		this.WorkerName = NameGenerator.GenerateName();
 	}
 
 	private Vector2 lastVelocity = Vector2.Zero;
@@ -50,6 +42,7 @@ public partial class Worker : CharacterBody2D
 	// So this means we can only have one selected worker in the game at a time.
 	static public Worker SelectedWorker = null;
 
+	public string WorkerName = "John Doe";
 	public bool IsSelected
 	{
 		get {
@@ -83,23 +76,13 @@ public partial class Worker : CharacterBody2D
 
 	public void SetAction(int newAction)
 	{
-		this.actionType = newAction;
+		this.actionType = (newAction + NUM_ACTIONS) % NUM_ACTIONS;
 	}
 
 	public void SetPath(List<Vector2I> newPath)
 	{
 		this.path = newPath;
 
-	}
-
-	public void ToggleSelected()
-	{
-		// Get the sprite on this object
-		AnimatedSprite2D sprite = GetNode<AnimatedSprite2D>("SelectionSprite");
-
-		sprite.Visible = !sprite.Visible;
-		// Start the animation playing
-		sprite.Play();
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -162,12 +145,18 @@ public partial class Worker : CharacterBody2D
 		AnimatedSprite2D selectionSprite = GetNode<AnimatedSprite2D>("SelectionSprite");
 
 		if (selectionSprite.Visible != this.IsSelected) {
-			// If our selection changed since the last time we visited
-			selectionSprite.Visible = this.IsSelected;
+			Label nameLabel = GetNode<Label>("NameLabel");
+
 			if (this.IsSelected) {
 				// Start the animation playing
 				selectionSprite.Play();
+				nameLabel.Text = this.WorkerName;
 			}
+
+			// If our selection changed since the last time we visited
+			selectionSprite.Visible = this.IsSelected;
+			nameLabel.Visible = this.IsSelected;
+
 		}
 
 		// Update our action animation

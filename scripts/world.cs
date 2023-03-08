@@ -41,10 +41,13 @@ public partial class world : Node2D
 
 			if (thisWorker != null)
 			{
+				if (Worker.SelectedWorker != null) {
+					Worker.SelectedWorker.SetAction(-1);
+				}
 				thisWorker.IsSelected = !thisWorker.IsSelected;
 
 				// Change the object's state to follow the mouse
-				thisWorker.Call("SetAction", 0);
+				thisWorker.SetAction(0);
 				
 				selectedWorker = thisWorker;
 			} else {
