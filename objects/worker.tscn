@@ -66,6 +66,7 @@ hframes = 4
 vframes = 40
 
 [node name="SelectionSprite" type="AnimatedSprite2D" parent="."]
+visible = false
 z_index = 5
 sprite_frames = SubResource("SpriteFrames_7ida2")
 animation = &"selected"

@@ -1,6 +1,6 @@
 [gd_scene load_steps=11 format=3 uid="uid://cw622oexigk5i"]
 
-[ext_resource type="Script" path="res://scripts/world.cs" id="1_r3g4p"]
+[ext_resource type="Script" path="res://scripts/World.cs" id="1_bu5tj"]
 [ext_resource type="Script" path="res://scripts/Camera.cs" id="2_6nts3"]
 [ext_resource type="PackedScene" uid="uid://j3t06wuven2s" path="res://objects/worker.tscn" id="2_56xvu"]
 [ext_resource type="Texture2D" uid="uid://bbtqxnbp75lpg" path="res://tiles/basictiles.png" id="2_utdfv"]
@@ -355,7 +355,7 @@ sources/2 = SubResource("TileSetAtlasSource_8ymhr")
 
 [node name="World" type="Node2D"]
 y_sort_enabled = true
-script = ExtResource("1_r3g4p")
+script = ExtResource("1_bu5tj")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 offset = Vector2(64, 2.08165e-12)

@@ -1,7 +1,7 @@
 using Godot;
 using System;
 
-public partial class world : Node2D
+public partial class World : Node2D
 {
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
@@ -19,8 +19,6 @@ public partial class world : Node2D
 		base._PhysicsProcess(delta);
 	}
 
-
-	Worker selectedWorker = null;
 
 	public override void _Input(InputEvent @event)
 	{
@@ -48,11 +46,9 @@ public partial class world : Node2D
 
 				// Change the object's state to follow the mouse
 				thisWorker.SetAction(0);
-				
-				selectedWorker = thisWorker;
 			} else {
 				var clickedCell = (Vector2I)((globalMousePosition - new Vector2I(8,8)) / 16);
-				if (selectedWorker == null)
+				if (Worker.SelectedWorker == null)
 				{
 					// Get our TileMap node
 					var tilemap = GetNode<TileMap>("TileMap");
@@ -64,7 +60,7 @@ public partial class world : Node2D
 					// Get the PathFindingAStarTilemap instance on our TileMap node
 					var tilemap = GetNode<PathFindingAStarTilemap>("TileMap");
 
-					var pathStart = selectedWorker.Transform.Origin;
+					var pathStart = Worker.SelectedWorker.Transform.Origin;
 					var pathEnd = globalMousePosition;
 
 					GD.Print($"  Path Start: {pathStart}");
@@ -72,7 +68,7 @@ public partial class world : Node2D
 
 					var path = tilemap.GetPath(pathStart, pathEnd);
 
-					selectedWorker.SetPath(path);
+					Worker.SelectedWorker.SetPath(path);
 
 					GD.Print($"  Path: {path}");
 
