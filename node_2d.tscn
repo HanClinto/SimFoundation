@@ -1,11 +1,15 @@
-[gd_scene load_steps=11 format=3 uid="uid://cw622oexigk5i"]
+[gd_scene load_steps=13 format=3 uid="uid://cw622oexigk5i"]
 
 [ext_resource type="Script" path="res://scripts/World.cs" id="1_bu5tj"]
+[ext_resource type="Texture2D" uid="uid://sbi8wtlgayv6" path="res://sprites/actions.png" id="2_0xk4w"]
 [ext_resource type="Script" path="res://scripts/Camera.cs" id="2_6nts3"]
 [ext_resource type="PackedScene" uid="uid://j3t06wuven2s" path="res://objects/worker.tscn" id="2_56xvu"]
 [ext_resource type="Texture2D" uid="uid://bbtqxnbp75lpg" path="res://tiles/basictiles.png" id="2_utdfv"]
 [ext_resource type="Texture2D" uid="uid://dtg3v857dffqt" path="res://sprites/selection.png" id="6_rvqep"]
 [ext_resource type="Script" path="res://scripts/PathFindingAStarTilemap.cs" id="7_jqodv"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_1rupu"]
+font_size = 37
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_3f38j"]
 
@@ -356,6 +360,120 @@ sources/2 = SubResource("TileSetAtlasSource_8ymhr")
 [node name="World" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_bu5tj")
+
+[node name="GUI" type="CanvasLayer" parent="."]
+visible = false
+offset = Vector2(2.08165e-12, 2.08165e-12)
+scale = Vector2(0.5, 0.5)
+transform = Transform2D(0.5, 0, 0, 0.5, 2.08165e-12, 2.08165e-12)
+follow_viewport_scale = 0.5
+
+[node name="Label" type="Label" parent="GUI"]
+offset_left = 992.0
+offset_top = 5.0
+offset_right = 1244.0
+offset_bottom = 97.0
+rotation = -0.0133634
+text = "Testing, 1, 2, 3"
+label_settings = SubResource("LabelSettings_1rupu")
+
+[node name="Button" type="Button" parent="GUI"]
+offset_left = 1006.0
+offset_top = 632.0
+offset_right = 1063.0
+offset_bottom = 646.0
+scale = Vector2(4, 4)
+
+[node name="CheckButton" type="CheckButton" parent="GUI"]
+offset_left = 1074.0
+offset_top = 114.0
+offset_right = 1118.0
+offset_bottom = 138.0
+scale = Vector2(4, 4)
+action_mode = 0
+
+[node name="ActionSprite" type="Sprite2D" parent="GUI"]
+z_index = 2
+y_sort_enabled = true
+position = Vector2(1054, 154)
+scale = Vector2(6, 6)
+texture = ExtResource("2_0xk4w")
+hframes = 3
+vframes = 16
+frame = 9
+
+[node name="ActionSprite2" type="Sprite2D" parent="GUI"]
+z_index = 2
+y_sort_enabled = true
+position = Vector2(1054, 254)
+scale = Vector2(6, 6)
+texture = ExtResource("2_0xk4w")
+hframes = 3
+vframes = 16
+frame = 12
+
+[node name="CheckButton2" type="CheckButton" parent="GUI"]
+offset_left = 1074.0
+offset_top = 214.0
+offset_right = 1118.0
+offset_bottom = 238.0
+scale = Vector2(4, 4)
+action_mode = 0
+
+[node name="ActionSprite3" type="Sprite2D" parent="GUI"]
+z_index = 2
+y_sort_enabled = true
+position = Vector2(1054, 354)
+scale = Vector2(6, 6)
+texture = ExtResource("2_0xk4w")
+hframes = 3
+vframes = 16
+frame = 21
+
+[node name="CheckButton3" type="CheckButton" parent="GUI"]
+offset_left = 1073.0
+offset_top = 314.0
+offset_right = 1117.0
+offset_bottom = 338.0
+scale = Vector2(4, 4)
+button_pressed = true
+action_mode = 0
+
+[node name="ActionSprite4" type="Sprite2D" parent="GUI"]
+z_index = 2
+y_sort_enabled = true
+position = Vector2(1054, 454)
+scale = Vector2(6, 6)
+texture = ExtResource("2_0xk4w")
+hframes = 3
+vframes = 16
+frame = 27
+
+[node name="CheckButton4" type="CheckButton" parent="GUI"]
+offset_left = 1073.0
+offset_top = 414.0
+offset_right = 1117.0
+offset_bottom = 438.0
+scale = Vector2(4, 4)
+action_mode = 0
+
+[node name="ActionSprite5" type="Sprite2D" parent="GUI"]
+z_index = 2
+y_sort_enabled = true
+position = Vector2(1054, 554)
+scale = Vector2(6, 6)
+texture = ExtResource("2_0xk4w")
+hframes = 3
+vframes = 16
+frame = 30
+
+[node name="CheckButton5" type="CheckButton" parent="GUI"]
+offset_left = 1073.0
+offset_top = 514.0
+offset_right = 1117.0
+offset_bottom = 538.0
+scale = Vector2(4, 4)
+action_mode = 0
 
 [node name="Camera2D" type="Camera2D" parent="."]
 offset = Vector2(64, 2.08165e-12)

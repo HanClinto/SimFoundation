@@ -15,8 +15,8 @@ public partial class Camera : Camera2D
 		Vector2 direction = Input.GetVector("button_cam_left", "button_cam_right", "button_cam_up", "button_cam_down");
 
 		// Output our direction Vector
-		GD.Print($"Our input direction vector: {direction}");
-		GD.Print($"Our time since last frame: {delta}");
+		//GD.Print($"Our input direction vector: {direction}");
+		//GD.Print($"Our time since last frame: {delta}");
 		this.Position += direction * 128 * (float)delta;
 	}
 }
