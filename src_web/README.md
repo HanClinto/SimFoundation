@@ -6,6 +6,19 @@ The player is the newly promoted Site Director of Site 828 near Jarbridge, Nevad
 
 The first release is a browser game. Its simulation must remain deterministic, serializable, and independent of any browser or presentation technology so that other frontends and related SCP games can reuse appropriate parts later.
 
+## Run the Current Shell
+
+The initial executable shell requires Node 22 or newer.
+
+```sh
+cd src_web
+nvm use
+npm install
+npm run dev
+```
+
+Run the complete local validation pipeline with `npm run check`. This formats-checks, type-checks, tests, and creates the production build. GitHub Actions deploys successful builds from `main` to [hanclinto.github.io/SimFoundation](https://hanclinto.github.io/SimFoundation/).
+
 ## Design Pillars
 
 ### A living facility
@@ -82,12 +95,12 @@ The simulation advances through deterministic fixed ticks. The browser provides 
 
 The site has one current incident response level. Players can configure which event categories automatically reduce speed or pause.
 
-| Level | Meaning | Default time response | Examples |
-| --- | --- | --- | --- |
-| Green | Routine positive or informational event | No change | Skill increase, completed construction, routine milestone |
-| Yellow | Attention requested | Drop to 1x | Worn component, low stock, new anomaly discovery, minor illness |
-| Orange | Active operational threat | Pause | Power shortage, security fault, mental break, dangerous experiment result |
-| Red | Immediate site emergency | Pause | Containment breach, lethal threat, fire, SCP state transformation |
+| Level  | Meaning                                 | Default time response | Examples                                                                  |
+| ------ | --------------------------------------- | --------------------- | ------------------------------------------------------------------------- |
+| Green  | Routine positive or informational event | No change             | Skill increase, completed construction, routine milestone                 |
+| Yellow | Attention requested                     | Drop to 1x            | Worn component, low stock, new anomaly discovery, minor illness           |
+| Orange | Active operational threat               | Pause                 | Power shortage, security fault, mental break, dangerous experiment result |
+| Red    | Immediate site emergency                | Pause                 | Containment breach, lethal threat, fire, SCP state transformation         |
 
 Events should be promoted by consequences and context. A worn backup generator may be Yellow during normal operation and Orange when it is the only source powering containment.
 
@@ -204,4 +217,3 @@ GitHub issues are the operational roadmap. [docs/roadmap.md](docs/roadmap.md) re
 This project deliberately uses the SCP Foundation setting and must follow the SCP community's attribution and CC BY-SA requirements. New runtime artwork should be original and released under compatible terms. Before a public release, replace or supplement the repository's current MIT license with the appropriate licensing structure and add complete SCP attribution, source links, and third-party notices.
 
 SCP-9620 is intentionally used as an undefined designation for this game's original central anomaly. Its availability should still be rechecked before publication because the wiki can assign previously unused numbers.
-

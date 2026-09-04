@@ -15,7 +15,7 @@ SCPSiteManager is the active project. It combines autonomous colony management, 
 - [Tiered roadmap](src_web/docs/roadmap.md)
 - [GitHub issue backlog](https://github.com/HanClinto/SimFoundation/issues)
 
-The web implementation has not been scaffolded yet. GitHub Pages will deploy from Actions after the first runnable vertical slice establishes its build and test commands.
+The first executable shell is deployed through GitHub Pages at [hanclinto.github.io/SimFoundation](https://hanclinto.github.io/SimFoundation/). It proves the headless simulation boundary, 98.css interface, Canvas rendering, and browser-owned pause/speed scheduling before deeper gameplay systems are added.
 
 ### Legacy Godot Prototype
 
