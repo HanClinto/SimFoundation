@@ -21,7 +21,7 @@ if (!app) throw new Error("Application root was not found");
 app.innerHTML = `
   <div class="desktop-icons" aria-label="Site Manager desktop">
     <button class="desktop-icon" type="button" data-open-window="facility-window">
-      <span class="desktop-icon-image facility-icon" aria-hidden="true"></span>
+      <img class="desktop-icon-asset" src="${facilityIconUrl}" alt="" />
       <span>Site 828</span>
     </button>
     <button class="desktop-icon" type="button" data-open-window="knowledge-window">
@@ -501,7 +501,20 @@ function render(snapshot: ControllerSnapshot): void {
   runtimeStatus.textContent = snapshot.running
     ? `RUNNING / ${runtime.getSpeed()}x`
     : "PAUSED";
-  taskbarStatus.textContent = snapshot.running ? "▶" : "Ⅱ";
+  const speedGlyphs: Record<SimulationSpeed, string> = {
+    1: "▶",
+    2: "▶▶",
+    4: "▶▶▶",
+  };
+  taskbarStatus.textContent = snapshot.running
+    ? speedGlyphs[runtime.getSpeed()]
+    : "Ⅱ";
+  requireElement<HTMLButtonElement>("#taskbar-clock").setAttribute(
+    "aria-label",
+    snapshot.running
+      ? `Simulation running at ${runtime.getSpeed()}x; open Simulation Control`
+      : "Simulation paused; open Simulation Control",
+  );
 }
 
 pauseButton.addEventListener("click", () => {
