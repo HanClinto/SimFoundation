@@ -60,6 +60,8 @@ Tracking issue: [#3](https://github.com/HanClinto/SimFoundation/issues/3)
 
 First personnel slice: [#12](https://github.com/HanClinto/SimFoundation/issues/12)
 
+Object-model review packet: [personnel-model-proposals/](personnel-model-proposals/README.md)
+
 ### Minimum
 
 - Approximately six starting pawns with backgrounds, traits, skills, qualifications, and clearance
