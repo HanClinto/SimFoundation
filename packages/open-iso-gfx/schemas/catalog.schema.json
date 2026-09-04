@@ -38,7 +38,7 @@
     "rig": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "version", "viewBox", "origin", "anchors"],
+      "required": ["id", "version", "viewBox", "origin", "joints", "anchors"],
       "properties": {
         "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
         "version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
@@ -49,10 +49,34 @@
           "maxItems": 4
         },
         "origin": { "$ref": "#/$defs/point" },
+        "joints": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/joint" },
+          "minItems": 1
+        },
         "anchors": {
           "type": "object",
-          "additionalProperties": { "$ref": "#/$defs/point" }
+          "additionalProperties": { "$ref": "#/$defs/anchor" }
         }
+      }
+    },
+    "joint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "pivot"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "parentId": { "type": "string" },
+        "pivot": { "$ref": "#/$defs/point" }
+      }
+    },
+    "anchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jointId", "position"],
+      "properties": {
+        "jointId": { "type": "string" },
+        "position": { "$ref": "#/$defs/point" }
       }
     },
     "asset": {
@@ -67,6 +91,7 @@
         "directions",
         "poses",
         "drawLayer",
+        "groups",
         "tintChannels",
         "provenance"
       ],
@@ -92,6 +117,12 @@
           "uniqueItems": true
         },
         "drawLayer": { "type": "integer" },
+        "groups": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
         "tintChannels": {
           "type": "array",
           "items": { "type": "string" },

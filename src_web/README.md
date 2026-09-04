@@ -148,7 +148,7 @@ Character templates should separate:
 - Held items and carried equipment
 - Directional poses and action anchors
 
-The renderer can tint designated regions and compose equipment layers procedurally. Asset metadata should define anchors, draw order, supported directions, palette channels, and equipment compatibility. Appearance is presentation state derived from the pawn and equipment snapshot; SVG elements never own gameplay statistics.
+The renderer can tint designated regions and compose equipment layers procedurally. Asset metadata should define joint hierarchy, pivots, anchors, semantic group tags, draw order, supported directions and poses, palette channels, and equipment compatibility. Animation is renderer-controlled from authored pose groups and joint transforms rather than scripts or timelines embedded in SVG files. Appearance is presentation state derived from the pawn and equipment snapshot; SVG elements never own gameplay statistics.
 
 Environment and equipment templates should similarly group structural surfaces, tint regions, lights, damage overlays, and interaction anchors. The pipeline should permit SVG replacement or refinement without changing entity IDs or simulation rules.
 

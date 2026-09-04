@@ -173,7 +173,11 @@ Every composable SVG asset should provide:
 - Explicit layer order and compatible equipment slots
 - License and attribution metadata
 
-Keep source SVGs separate from any optimized runtime output. Optimization must preserve required IDs. The OpenIsoGfx catalog owns provenance, rig compatibility, and generic attachment metadata; game item definitions own gameplay effects and setting-specific meaning. Tests should verify required groups and anchors for each template class.
+SVG is the sole initial source and runtime art format. Although SVG can embed raster images, no rasterization or sprite-atlas pipeline belongs in the first implementation. The catalog defines joint hierarchies, pivots, attachment anchors, and required semantic group IDs; SVG provides the corresponding grouped vector geometry.
+
+Animation playback belongs to the browser renderer rather than SMIL, CSS, or scripts embedded in SVG files. The renderer selects authored direction/pose groups and may transform joint groups using visual action progress from snapshots. Simulation state remains limited to semantic direction, pose, and action progress and never references SVG internals.
+
+Keep source SVGs separate from any optimized runtime output. Optimization must preserve required IDs. The OpenIsoGfx catalog owns provenance, rig compatibility, and generic attachment metadata; game item definitions own gameplay effects and setting-specific meaning. Tests should verify required groups, joints, and anchors for each template class.
 
 ## Testing Strategy
 
