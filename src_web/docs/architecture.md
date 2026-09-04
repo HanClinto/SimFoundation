@@ -70,6 +70,10 @@ The browser adapter owns:
 - Audio and notification presentation
 - Versioned local persistence
 
+The initial browser target is desktop only, with a minimum virtual workspace rather than a mobile reflow. A browser-owned window manager controls modeless inspector geometry, z-order, open state, and focus. These preferences are stored separately from authoritative game state so the same save can be presented by another frontend or restored with a different desktop layout.
+
+Facility and map windows are inspectors over simulation-owned map entities. Global playback and lifecycle controls live in dedicated utility windows. Raw deterministic internals such as tick number and seed are exposed only through opt-in developer inspectors.
+
 Browser code reads immutable snapshots and domain events. It never mutates entities or invokes atomic simulation systems directly.
 
 ## State Model

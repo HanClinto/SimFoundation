@@ -148,7 +148,13 @@ Affixes must be data-defined, deterministic, inspectable, and composable with or
 
 ## Presentation and Art Pipeline
 
-The world uses an isometric Canvas view with 98.css DOM windows layered above it. Windows are modeless where practical and can remain open while the simulation runs. Selecting or double-clicking objects opens inspectors; alerts and object references can focus the relevant map location.
+The web game targets desktop browsers. Mobile and touch-first layouts are explicitly outside the initial support scope because dense modeless inspectors, precise map controls, and the 98.css desktop metaphor require persistent screen space. Narrow desktop windows should avoid corrupt overlap, but the application may preserve a minimum virtual desktop instead of reflowing into a mobile interface.
+
+The teal workspace represents the overall simulation desktop. Facilities, temporary expedition maps, and future sites appear as desktop icons and open as separate modeless inspector windows. The default Site 828 window is the facility inspector, not the application itself. It owns that facility's map and operational details and can be moved, resized, closed, and reopened independently.
+
+Global concerns such as pause, simulation speed, save/load, and later scenario management belong on the desktop or in specialized utility windows. Simulation Control uses a compact media-player-style window. Developer facts such as raw tick count and random seed belong in a separate System Monitor and must not leak into ordinary in-world inspectors.
+
+Windows can remain open while the simulation runs. Selecting or double-clicking objects opens inspectors; alerts and object references can focus the relevant map location. Window position, dimensions, open state, and stacking are browser presentation state and should be restored across reloads without entering the authoritative simulation save.
 
 Runtime artwork should be original SVG released with the project under compatible CC BY-SA terms. SVGs act as editable templates rather than code-generated final art. Assets should use stable IDs and clearly named groups so contributors can replace generated or provisional geometry with hand-drawn work without changing game data.
 

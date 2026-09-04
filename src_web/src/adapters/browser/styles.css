@@ -12,14 +12,14 @@
 html,
 body,
 #app {
-  min-width: 0;
+  min-width: 1024px;
   min-height: 100%;
   margin: 0;
 }
 
 body {
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow: auto;
   background-color: #006f6f;
   background-image:
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
@@ -28,10 +28,10 @@ body {
 }
 
 #app {
-  display: grid;
-  min-height: 100vh;
-  padding: clamp(10px, 2.5vw, 28px);
-  place-items: center;
+  position: relative;
+  width: max(100vw, 1280px);
+  height: max(100vh, 800px);
+  overflow: hidden;
 }
 
 button,
@@ -41,10 +41,143 @@ textarea {
   font-family: inherit;
 }
 
-.site-window {
-  width: min(1180px, 100%);
+.managed-window {
+  position: absolute;
+  display: flex;
   min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  resize: both;
   box-shadow: 8px 10px 0 rgba(0, 0, 0, 0.24);
+}
+
+.managed-window[hidden] {
+  display: none;
+}
+
+.managed-window > .title-bar {
+  flex: 0 0 auto;
+  cursor: move;
+  touch-action: none;
+  user-select: none;
+}
+
+.managed-window.inactive > .title-bar {
+  background: linear-gradient(90deg, grey, #b5b5b5);
+}
+
+.managed-window > .window-body {
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: auto;
+}
+
+.resize-grip {
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 13px;
+  height: 13px;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    135deg,
+    transparent 0 2px,
+    #808080 2px 3px,
+    #fff 3px 4px
+  );
+}
+
+.desktop-icons {
+  position: absolute;
+  z-index: 1;
+  top: 16px;
+  left: 12px;
+  display: grid;
+  width: 92px;
+  gap: 18px;
+}
+
+.desktop-icon {
+  display: flex;
+  width: 92px;
+  min-width: 0;
+  height: auto;
+  min-height: 70px;
+  align-items: center;
+  flex-direction: column;
+  gap: 4px;
+  padding: 3px;
+  border: 1px solid transparent;
+  color: #fff;
+  background: transparent;
+  box-shadow: none;
+  text-align: center;
+  text-shadow: 1px 1px #000;
+}
+
+.desktop-icon:focus,
+.desktop-icon:hover {
+  border: 1px dotted #fff;
+  outline: 1px solid #003f78;
+  background: rgba(0, 0, 128, 0.35);
+}
+
+.desktop-icon:not(:disabled):active {
+  box-shadow: none;
+  text-shadow: 1px 1px #000;
+}
+
+.desktop-icon-image {
+  position: relative;
+  display: block;
+  width: 36px;
+  height: 32px;
+  border: 2px solid #111;
+  background: #d4d0c8;
+  box-shadow:
+    inset -3px -3px #808080,
+    inset 3px 3px #fff;
+}
+
+.facility-icon::before,
+.control-icon::before,
+.debug-icon::before {
+  position: absolute;
+  content: "";
+}
+
+.facility-icon::before {
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  height: 14px;
+  border: 2px solid #222;
+  background: #6e858c;
+}
+
+.control-icon::before {
+  top: 8px;
+  right: 7px;
+  left: 7px;
+  height: 9px;
+  border: 1px inset #fff;
+  background: #102e25;
+}
+
+.debug-icon::before {
+  top: 6px;
+  right: 6px;
+  bottom: 8px;
+  left: 6px;
+  border: 2px inset #fff;
+  background: #111;
+}
+
+.site-window > .window-body {
+  display: flex;
+  flex-direction: column;
 }
 
 .title-bar-text {
@@ -58,7 +191,6 @@ textarea {
   display: flex;
   gap: 2px;
   padding: 3px 5px 1px;
-  overflow-x: auto;
 }
 
 .menu-bar button {
@@ -78,54 +210,10 @@ textarea {
   margin: 4px;
 }
 
-.command-bar {
-  display: flex;
-  min-height: 38px;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 6px;
-  padding: 5px;
-  border: 1px solid;
-  border-color: #808080 #fff #fff #808080;
-}
-
-.command-bar button {
-  min-width: 68px;
-  min-height: 25px;
-}
-
-.command-bar button[aria-pressed="true"] {
-  padding: 3px 9px 1px 11px;
-  border-color: #000 #fff #fff #000;
-  box-shadow: inset 1px 1px #808080;
-  background-image: repeating-conic-gradient(#fff 0 25%, #dfdfdf 0 50%);
-  background-size: 2px 2px;
-}
-
-.toolbar-divider {
-  align-self: stretch;
-  width: 2px;
-  margin: 0 3px;
-  border-left: 1px solid #808080;
-  border-right: 1px solid #fff;
-}
-
-.toolbar-label {
-  margin-left: 2px;
-}
-
-.speed-controls {
-  display: flex;
-  min-width: 0;
-  gap: 3px;
-}
-
-.speed-controls button {
-  min-width: 42px;
-}
-
 .workspace {
   display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
   grid-template-columns: minmax(0, 1fr) 252px;
   gap: 8px;
 }
@@ -145,6 +233,71 @@ textarea {
   height: auto;
   aspect-ratio: 16 / 9;
   image-rendering: auto;
+}
+
+.control-window {
+  box-shadow: 5px 6px 0 rgba(0, 0, 0, 0.24);
+}
+
+.control-body {
+  display: grid;
+  grid-template-columns: minmax(100px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.clock-display {
+  min-width: 0;
+  padding: 6px 8px;
+  overflow: hidden;
+  border: 2px inset #fff;
+  color: #70e0a5;
+  background: #10251c;
+  font-family: "Courier New", monospace;
+  text-shadow: 0 0 3px #1d7c4a;
+}
+
+.clock-display > span,
+.clock-display > small {
+  display: block;
+  white-space: nowrap;
+}
+
+.clock-display > span {
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.clock-display > small {
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.transport-controls {
+  display: grid;
+  grid-template-columns: repeat(4, 38px);
+  gap: 3px;
+}
+
+.transport-controls button {
+  min-width: 38px;
+  padding: 0 6px;
+  font-weight: bold;
+}
+
+.transport-controls button[aria-pressed="true"] {
+  border-color: #000 #fff #fff #000;
+  box-shadow: inset 1px 1px #808080;
+  background-image: repeating-conic-gradient(#fff 0 25%, #dfdfdf 0 50%);
+  background-size: 2px 2px;
+}
+
+.debug-window .window-body {
+  line-height: 1.35;
+}
+
+.debug-window p {
+  margin: 10px 2px 2px;
 }
 
 .operations-panel {
@@ -271,6 +424,7 @@ textarea {
 }
 
 .status-bar {
+  flex: 0 0 auto;
   margin-top: 6px;
 }
 
@@ -280,56 +434,4 @@ textarea {
 
 .status-bar-field:not(:first-child) {
   flex: 0 1 150px;
-}
-
-@media (max-width: 780px) {
-  #app {
-    padding: 6px;
-    place-items: start center;
-  }
-
-  .workspace {
-    grid-template-columns: 1fr;
-  }
-
-  .operations-panel {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .operations-panel fieldset:last-child {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 500px) {
-  .menu-bar button {
-    padding-right: 4px;
-    padding-left: 4px;
-  }
-
-  .command-bar {
-    flex-wrap: wrap;
-  }
-
-  .toolbar-divider {
-    display: none;
-  }
-
-  .operations-panel {
-    display: flex;
-  }
-
-  .status-list div {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
-  }
-
-  .status-list dd {
-    text-align: left;
-  }
-
-  .status-bar-field:not(:first-child) {
-    display: none;
-  }
 }

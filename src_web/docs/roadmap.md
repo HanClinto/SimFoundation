@@ -138,12 +138,13 @@ Tracking issue: [#7](https://github.com/HanClinto/SimFoundation/issues/7)
 - Pause and 1x, 2x, and 4x controls with alert-driven speed response
 - Map focus, selection, blueprints, priority overlays, alerts, and action feedback
 - Keyboard navigation, readable focus states, scalable text, and non-color alert indicators
+- Desktop-only modeless window manager with persisted position, size, open state, and z-order
 
 ### Stretch
 
 - Saved window layouts, advanced overlays, graphs, filters, and searchable event logs
 - Rich notification rules and user-defined alert routing
-- Touch adaptations and broad screen-size support
+- Additional desktop viewport and high-DPI adaptations
 
 ### Blue sky
 
