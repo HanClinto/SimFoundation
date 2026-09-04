@@ -1,0 +1,7 @@
+{
+  "$schema": "./schemas/catalog.schema.json",
+  "formatVersion": 1,
+  "package": "open-iso-gfx",
+  "rigs": [],
+  "assets": []
+}

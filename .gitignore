@@ -3,3 +3,12 @@
 
 # Ignore all ds_store files
 **/.DS_Store
+
+# Local legacy and third-party reference material. New runtime assets belong in
+# packages/open-iso-gfx or a documented src_web asset directory with provenance.
+src_web/resources/
+
+# JavaScript / TypeScript build output
+node_modules/
+dist/
+coverage/

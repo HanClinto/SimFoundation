@@ -1,0 +1,7 @@
+{
+  "name": "@sim-foundation/open-iso-gfx",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Incubating reusable layered isometric SVG assets and composition metadata",
+  "license": "UNLICENSED"
+}

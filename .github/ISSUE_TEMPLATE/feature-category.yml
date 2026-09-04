@@ -1,0 +1,53 @@
+name: SCPSiteManager feature
+description: Propose or implement a scoped SCPSiteManager feature
+labels: []
+body:
+  - type: dropdown
+    id: tier
+    attributes:
+      label: Scope tier
+      options:
+        - Minimum
+        - Stretch
+        - Blue sky
+    validations:
+      required: true
+  - type: dropdown
+    id: owner
+    attributes:
+      label: Primary ownership
+      options:
+        - Simulation
+        - Application boundary
+        - Browser adapter
+        - Content / assets
+        - Reusable package
+        - Cross-cutting
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Player-visible outcome
+      description: Describe what becomes possible or observable for the player.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Simulation contract
+      description: Identify authoritative state, commands, events, and deterministic rules involved.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: List concrete behavior and validation requirements.
+    validations:
+      required: true
+  - type: textarea
+    id: dependencies
+    attributes:
+      label: Dependencies and exclusions
+      description: Link prerequisites and state what this issue deliberately does not include.
