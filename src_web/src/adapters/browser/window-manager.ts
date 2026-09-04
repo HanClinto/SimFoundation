@@ -23,7 +23,7 @@ interface ManagedWindow {
   readonly options: ManagedWindowOptions;
 }
 
-const STORAGE_KEY = "scp-site-manager.window-layout.v1";
+const STORAGE_KEY = "scp-site-manager.window-layout.v2";
 
 function loadLayout(): Record<string, StoredWindowState> {
   try {

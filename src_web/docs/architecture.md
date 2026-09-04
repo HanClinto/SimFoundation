@@ -74,6 +74,8 @@ The initial browser target is desktop only, with a minimum virtual workspace rat
 
 Facility and map windows are inspectors over simulation-owned map entities. Global playback and lifecycle controls live in dedicated utility windows. Raw deterministic internals such as tick number and seed are exposed only through opt-in developer inspectors.
 
+Browser presentation should follow the interface contract in [lookbook.md](lookbook.md). The look-book may evolve through visual review without weakening the dependency or state-ownership rules in this document.
+
 Browser code reads immutable snapshots and domain events. It never mutates entities or invokes atomic simulation systems directly.
 
 ## State Model

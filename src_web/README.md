@@ -156,6 +156,8 @@ Global concerns such as pause, simulation speed, save/load, and later scenario m
 
 Windows can remain open while the simulation runs. Selecting or double-clicking objects opens inspectors; alerts and object references can focus the relevant map location. Window position, dimensions, open state, and stacking are browser presentation state and should be restored across reloads without entering the authoritative simulation save.
 
+The detailed visual language, historical touchstones, window hierarchy, and anti-goals are recorded in [docs/lookbook.md](docs/lookbook.md).
+
 Runtime artwork should be original SVG released with the project under compatible CC BY-SA terms. SVGs act as editable templates rather than code-generated final art. Assets should use stable IDs and clearly named groups so contributors can replace generated or provisional geometry with hand-drawn work without changing game data.
 
 Character templates should separate:
