@@ -61,6 +61,15 @@ function clampRect(
 }
 
 function readRect(element: HTMLElement): WindowRect {
+  if (!element.hidden && element.offsetWidth > 0 && element.offsetHeight > 0) {
+    return {
+      left: element.offsetLeft,
+      top: element.offsetTop,
+      width: element.offsetWidth,
+      height: element.offsetHeight,
+    };
+  }
+
   const styleRect = {
     left: Number.parseFloat(element.style.left),
     top: Number.parseFloat(element.style.top),
@@ -71,12 +80,8 @@ function readRect(element: HTMLElement): WindowRect {
   return {
     left: Number.isFinite(styleRect.left) ? styleRect.left : element.offsetLeft,
     top: Number.isFinite(styleRect.top) ? styleRect.top : element.offsetTop,
-    width: Number.isFinite(styleRect.width)
-      ? styleRect.width
-      : element.offsetWidth,
-    height: Number.isFinite(styleRect.height)
-      ? styleRect.height
-      : element.offsetHeight,
+    width: styleRect.width,
+    height: styleRect.height,
   };
 }
 
@@ -174,12 +179,10 @@ export function createWindowManager(desktop: HTMLElement) {
       };
 
       function drag(moveEvent: PointerEvent): void {
-        applyRect(managedWindow, {
-          left: start.left + moveEvent.clientX - start.x,
-          top: start.top + moveEvent.clientY - start.y,
-          width: start.width,
-          height: start.height,
-        });
+        const left = start.left + moveEvent.clientX - start.x;
+        const top = start.top + moveEvent.clientY - start.y;
+        element.style.left = `${Math.max(0, Math.min(left, desktop.clientWidth - 80))}px`;
+        element.style.top = `${Math.max(0, Math.min(top, desktop.clientHeight - 32))}px`;
       }
 
       function finish(): void {

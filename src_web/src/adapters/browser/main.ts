@@ -128,7 +128,7 @@ app.innerHTML = `
     <div class="title-bar">
       <div class="title-bar-text">Simulation Control</div>
       <div class="title-bar-controls">
-        <button id="control-expand" type="button" aria-label="Switch to standard view" data-control-view="standard"></button>
+        <button id="control-expand" class="restore-view-button" type="button" aria-label="Switch to standard view" data-control-view="standard"></button>
         <button type="button" aria-label="Close" data-window-close></button>
       </div>
     </div>
@@ -149,10 +149,10 @@ app.innerHTML = `
         <small id="runtime-status">RUNNING / 1x</small>
       </div>
       <div class="transport-controls" role="toolbar" aria-label="Simulation controls">
-        <button type="button" id="pause-button" aria-label="Pause simulation" aria-pressed="false">||</button>
-        <button type="button" data-speed="1" aria-label="Run simulation at normal speed" aria-pressed="true">1x</button>
-        <button type="button" data-speed="2" aria-label="Run simulation at double speed" aria-pressed="false">2x</button>
-        <button type="button" data-speed="4" aria-label="Run simulation at quadruple speed" aria-pressed="false">4x</button>
+        <button type="button" id="pause-button" class="media-button" aria-label="Pause simulation" aria-pressed="false"><span aria-hidden="true">Ⅱ</span></button>
+        <button type="button" class="media-button" data-speed="1" aria-label="Run simulation at normal speed" aria-pressed="true"><span aria-hidden="true">▶</span></button>
+        <button type="button" class="media-button" data-speed="2" aria-label="Run simulation at double speed" aria-pressed="false"><span aria-hidden="true">▶▶</span></button>
+        <button type="button" class="media-button" data-speed="4" aria-label="Run simulation at quadruple speed" aria-pressed="false"><span aria-hidden="true">▶▶▶</span></button>
       </div>
     </div>
     <div class="resize-grip" aria-hidden="true"></div>
@@ -281,7 +281,12 @@ app.innerHTML = `
   <div class="start-menu" id="start-menu" hidden>
     <div class="start-menu-rail">FOUNDATION</div>
     <div class="start-menu-items">
-      <button type="button" data-open-window="facility-window"><strong>Sites</strong><small>Open Site 828</small></button>
+      <details class="start-submenu">
+        <summary><strong>Facilities</strong><small>Manage Foundation sites</small></summary>
+        <div class="start-submenu-panel">
+          <button type="button" data-open-window="facility-window"><strong>Site 828</strong><small>Jarbridge, Nevada</small></button>
+        </div>
+      </details>
       <button type="button" data-open-window="knowledge-window"><strong>Foundation Library</strong><small>Browse available records</small></button>
       <hr />
       <button type="button" disabled><strong>Save Site...</strong><small>Not available in this build</small></button>
@@ -339,57 +344,57 @@ windowManager.register(requireElement<HTMLElement>("#facility-window"), {
   id: "facility-window",
   defaultRect: { left: 112, top: 28, width: 590, height: 410 },
   defaultOpen: true,
-  minimumWidth: 480,
-  minimumHeight: 340,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#camera-window"), {
   id: "camera-window",
   defaultRect: { left: 484, top: 92, width: 760, height: 540 },
   defaultOpen: true,
-  minimumWidth: 560,
-  minimumHeight: 400,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#control-window"), {
   id: "control-window",
   defaultRect: { left: 22, top: 612, width: 330, height: 142 },
   defaultOpen: true,
-  minimumWidth: 188,
-  minimumHeight: 72,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#alarm-window"), {
   id: "alarm-window",
   defaultRect: { left: 770, top: 202, width: 390, height: 440 },
   defaultOpen: false,
-  minimumWidth: 340,
-  minimumHeight: 340,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#personnel-window"), {
   id: "personnel-window",
   defaultRect: { left: 218, top: 164, width: 500, height: 330 },
   defaultOpen: false,
-  minimumWidth: 420,
-  minimumHeight: 260,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#budget-window"), {
   id: "budget-window",
   defaultRect: { left: 322, top: 238, width: 420, height: 330 },
   defaultOpen: false,
-  minimumWidth: 360,
-  minimumHeight: 280,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#knowledge-window"), {
   id: "knowledge-window",
   defaultRect: { left: 264, top: 82, width: 720, height: 520 },
   defaultOpen: false,
-  minimumWidth: 560,
-  minimumHeight: 400,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#debug-window"), {
   id: "debug-window",
   defaultRect: { left: 840, top: 420, width: 320, height: 230 },
   defaultOpen: false,
-  minimumWidth: 280,
-  minimumHeight: 190,
+  minimumWidth: 120,
+  minimumHeight: 32,
 });
 
 for (const desktopIcon of document.querySelectorAll<HTMLButtonElement>(
@@ -430,11 +435,11 @@ const CONTROL_VIEW_KEY = "scp-site-manager.control-view.v1";
 function setControlView(view: "standard" | "minimal"): void {
   controlWindow.classList.toggle("minimal", view === "minimal");
   if (view === "minimal") {
-    controlWindow.style.width = "188px";
-    controlWindow.style.height = "72px";
+    controlWindow.style.width = "150px";
+    controlWindow.style.height = "56px";
   } else {
-    controlWindow.style.width = "330px";
-    controlWindow.style.height = "142px";
+    controlWindow.style.width = "304px";
+    controlWindow.style.height = "130px";
   }
   localStorage.setItem(CONTROL_VIEW_KEY, view);
 }
@@ -474,7 +479,9 @@ function render(snapshot: ControllerSnapshot): void {
   incidentSummary.textContent = snapshot.game.incident.summary;
   incidentBadge.className = `incident-badge incident-${snapshot.game.incident.level}`;
   pauseButton.setAttribute("aria-pressed", String(!snapshot.running));
-  pauseButton.textContent = snapshot.running ? "||" : ">";
+  pauseButton.innerHTML = snapshot.running
+    ? '<span aria-hidden="true">Ⅱ</span>'
+    : '<span aria-hidden="true">▶</span>';
   pauseButton.setAttribute(
     "aria-label",
     snapshot.running ? "Pause simulation" : "Resume simulation",

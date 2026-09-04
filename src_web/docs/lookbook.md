@@ -24,6 +24,8 @@ Use the spatial grammar of a desktop: icons, folders, title bars, menus, task bu
 
 The bottom taskbar is global. Its **SCP** menu owns metagame entry points such as site selection, save/load, settings, and exit-equivalent actions. The bottom-right simulation clock occupies the conceptual place of the operating-system clock and opens global playback controls.
 
+Facilities is a folder inside the SCP menu. Individual sites such as Site 828 are entries within it so the hierarchy naturally extends to multiple managed facilities.
+
 ### Encarta 95 and early CD-ROM reference software
 
 The Foundation Library should feel exploratory and multimedia-rich:
@@ -91,15 +93,16 @@ Double-clicking or following a link opens the relevant object without closing un
 - Keep typography compact in controls and panels. Reports and encyclopedia articles may use period-appropriate serif display typography within their document pane.
 - Desktop and subsystem icons should be legible at small sizes, use hard edges, and describe object type before decorative detail.
 - Original SVG assets may be cleaner than historical bitmaps, but should respect the restrained geometry and limited visual density of the period.
+- Historical fidelity is subordinate to legibility and manipulation. Modern soft shadows, clearer stacking depth, generous hit targets, and other restrained quality-of-life improvements are welcome when they make a dense multi-window desktop easier to understand.
 
 ## Interaction Rules
 
 - Target desktop browsers and a minimum 1280x800 virtual workspace. Narrow viewports pan across the desktop rather than reflowing into a mobile application.
-- Windows are draggable and resizable when their content benefits from space.
+- Windows are draggable and resizable when their content benefits from space. Preserve the user's chosen dimensions during drag and reload, including deliberately tiny layouts; minimums should protect only recoverable title-bar access rather than enforce a designer-preferred content size.
 - Closing a window does not destroy its simulation object or reset its preferred geometry.
 - Desktop and folder icons use the conventional select/open rhythm; taskbar and menu commands act immediately.
 - Active and inactive title bars make focus and stacking obvious.
-- Utility windows may provide named density modes such as **Standard** and **Minimal** instead of one compromise layout.
+- Utility windows may provide named density modes such as **Standard** and **Minimal** instead of one compromise layout. Simulation Control uses compact square media-player controls: pause, play, and progressively faster forward glyphs.
 - Global simulation time continues while modeless windows are rearranged unless paused by the player or alarm policy.
 - Raw tick counts, seeds, internal IDs, and deterministic machinery belong in developer tools, not ordinary operational views.
 
