@@ -132,4 +132,4 @@ Humor may emerge from bureaucratic language confronting impossible events. Avoid
 - The taskbar clock opens Simulation Control and reflects run/pause state.
 - The SCP menu reserves save/load/settings locations without pretending those systems exist yet.
 - Foundation Library demonstrates the Encarta-like article/tree split.
-- Personnel and Budget windows are explicitly provisional previews until their simulations exist.
+- Personnel Roster and pawn inspectors now project authoritative personnel state. Several pawn inspectors can remain open for comparison, and derived mood/sanity views explain their contributing factors. Budget remains an explicitly provisional preview until its simulation exists.

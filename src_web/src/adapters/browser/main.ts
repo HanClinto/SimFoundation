@@ -11,6 +11,11 @@ import cameraIconUrl from "./assets/camera.svg";
 import facilityIconUrl from "./assets/facility.svg";
 import folderIconUrl from "./assets/folder.svg";
 import scpEmblemUrl from "./assets/scp-emblem.svg";
+import {
+  createPersonnelInspectorWindows,
+  updatePersonnelInspectors,
+  updatePersonnelRoster,
+} from "./personnel-view";
 import { renderSite } from "./renderer";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
@@ -87,7 +92,7 @@ app.innerHTML = `
           <p>Provisional anomalous research and containment facility.</p>
           <dl class="status-list">
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
-            <div><dt>Personnel</dt><dd>6 assigned</dd></div>
+            <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
             <div><dt>Systems</dt><dd>5 available</dd></div>
           </dl>
@@ -205,17 +210,10 @@ app.innerHTML = `
     </div>
     <div class="window-body">
       <table class="data-table">
-        <thead><tr><th>Name</th><th>Assignment</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr><td>Dr. Mara Voss</td><td>Research</td><td>On duty</td></tr>
-          <tr><td>Caleb Ward</td><td>Engineering</td><td>On duty</td></tr>
-          <tr><td>Priya Shah</td><td>Medical</td><td>On call</td></tr>
-          <tr><td>Lena Ortiz</td><td>Security</td><td>Patrol</td></tr>
-          <tr><td>Jon Bell</td><td>Facilities</td><td>On duty</td></tr>
-          <tr><td>Emil Novak</td><td>Logistics</td><td>Break</td></tr>
-        </tbody>
+        <thead><tr><th>Name</th><th>Assignment</th><th>Current activity</th><th>Mood</th><th>Sanity</th></tr></thead>
+        <tbody id="personnel-rows"></tbody>
       </table>
-      <p class="preview-note">Double-clicking a person will eventually open their individual inspector.</p>
+      <p class="preview-note">Double-click a person to open an independent inspector.</p>
     </div>
     <div class="resize-grip" aria-hidden="true"></div>
   </section>
@@ -337,12 +335,18 @@ const startMenu = requireElement<HTMLElement>("#start-menu");
 const scpMenuButton = requireElement<HTMLButtonElement>("#scp-menu-button");
 const stateVersion = requireElement<HTMLElement>("#state-version");
 const simulationSeed = requireElement<HTMLElement>("#simulation-seed");
+const personnelRows = requireElement<HTMLElement>("#personnel-rows");
+const personnelCount = requireElement<HTMLElement>("#personnel-count");
 const speedButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>("[data-speed]"),
 );
 
 const controller = createController(createInitialState());
 const runtime = createBrowserRuntime(controller);
+const personnelInspectors = createPersonnelInspectorWindows(
+  app,
+  controller.getSnapshot().game.personnel,
+);
 const windowManager = createWindowManager(app);
 
 windowManager.register(requireElement<HTMLElement>("#facility-window"), {
@@ -400,6 +404,40 @@ windowManager.register(requireElement<HTMLElement>("#debug-window"), {
   defaultOpen: false,
   minimumWidth: 120,
   minimumHeight: 32,
+});
+personnelInspectors.forEach((inspector, index) => {
+  windowManager.register(inspector, {
+    id: inspector.id,
+    defaultRect: {
+      left: 150 + index * 34,
+      top: 90 + index * 28,
+      width: 440,
+      height: 590,
+    },
+    defaultOpen: false,
+    minimumWidth: 120,
+    minimumHeight: 32,
+  });
+});
+
+function openPersonnelInspector(personId: string): void {
+  windowManager.open(`personnel-inspector-${personId}`);
+}
+
+personnelRows.addEventListener("dblclick", (event) => {
+  const row = (event.target as Element).closest<HTMLElement>(
+    "[data-person-id]",
+  );
+  if (row?.dataset.personId) openPersonnelInspector(row.dataset.personId);
+});
+personnelRows.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const row = (event.target as Element).closest<HTMLElement>(
+    "[data-person-id]",
+  );
+  if (!row?.dataset.personId) return;
+  event.preventDefault();
+  openPersonnelInspector(row.dataset.personId);
 });
 
 for (const desktopIcon of document.querySelectorAll<HTMLButtonElement>(
@@ -480,6 +518,9 @@ function formatGameTime(totalMinutes: number): string {
 
 function render(snapshot: ControllerSnapshot): void {
   renderSite(canvas, snapshot);
+  updatePersonnelRoster(personnelRows, snapshot.game.personnel);
+  updatePersonnelInspectors(personnelInspectors, snapshot.game.personnel);
+  personnelCount.textContent = `${snapshot.game.personnel.length} assigned`;
   siteName.textContent = snapshot.game.siteName;
   tickCount.textContent = snapshot.game.tick.toLocaleString();
   gameTime.textContent = formatGameTime(snapshot.game.gameMinute);

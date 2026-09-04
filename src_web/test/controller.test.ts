@@ -20,6 +20,7 @@ describe("game controller", () => {
 
   it("does not advance while paused", () => {
     const controller = createController(createInitialState());
+    const personnelBeforePause = controller.getSnapshot().game.personnel;
 
     controller.setRunning(false);
     controller.advance(10);
@@ -28,6 +29,9 @@ describe("game controller", () => {
       running: false,
       game: { tick: 0, gameMinute: 480 },
     });
+    expect(controller.getSnapshot().game.personnel).toEqual(
+      personnelBeforePause,
+    );
   });
 
   it("publishes detached snapshots after state changes", () => {
