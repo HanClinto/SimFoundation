@@ -65,7 +65,7 @@ First personnel slice: [#12](https://github.com/HanClinto/SimFoundation/issues/1
 - Approximately six starting pawns with backgrounds, traits, skills, qualifications, and clearance
 - Deterministic autonomous job discovery, scoring, reservation, execution, and interruption
 - Work priorities, pawn overrides, schedules, and permitted zones
-- Hunger, rest, recreation, comfort, social need, stress, fear, health, and injuries
+- Satiety, rest, restorative activities, stress, fear, health, and injuries
 - Derived mood and sanity with inspectable contributors
 - Temporary effects, memories, mental breaks, treatment, and emergency drafting
 

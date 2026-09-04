@@ -133,3 +133,4 @@ Humor may emerge from bureaucratic language confronting impossible events. Avoid
 - The SCP menu reserves save/load/settings locations without pretending those systems exist yet.
 - Foundation Library demonstrates the Encarta-like article/tree split.
 - Personnel Roster and pawn inspectors now project authoritative personnel state. Several pawn inspectors can remain open for comparison, and derived mood/sanity views explain their contributing factors. Budget remains an explicitly provisional preview until its simulation exists.
+- Personnel inspectors use a compact corporate ID/dossier header with manila-style Summary, Equipment, Skills, and Influences tabs. The default Summary emphasizes health, mood, sanity, assignment, and current activity; equipment uses fixed paper-doll slots and inventory; detailed skills and psychological contributors remain one click away.

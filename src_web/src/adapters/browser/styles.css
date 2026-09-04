@@ -50,6 +50,10 @@ textarea {
   overflow: hidden;
   resize: both;
   box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #dfdfdf,
+    inset -2px -2px #808080,
+    inset 2px 2px #fff,
     0 18px 38px rgba(0, 0, 0, 0.44),
     0 4px 10px rgba(0, 0, 0, 0.38);
   transition: box-shadow 90ms ease-out;
@@ -72,6 +76,10 @@ textarea {
 
 .managed-window.inactive {
   box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #dfdfdf,
+    inset -2px -2px #808080,
+    inset 2px 2px #fff,
     0 10px 24px rgba(0, 0, 0, 0.3),
     0 2px 5px rgba(0, 0, 0, 0.28);
 }
@@ -408,6 +416,10 @@ textarea {
 
 .control-window {
   box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #dfdfdf,
+    inset -2px -2px #808080,
+    inset 2px 2px #fff,
     0 12px 28px rgba(0, 0, 0, 0.42),
     0 3px 8px rgba(0, 0, 0, 0.36);
 }
@@ -759,9 +771,10 @@ textarea {
 }
 
 .pawn-inspector-body {
-  display: grid;
-  align-content: start;
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  background: #d9c38f;
 }
 
 .pawn-summary {
@@ -771,7 +784,7 @@ textarea {
   gap: 10px;
   padding: 7px;
   border: 2px inset #fff;
-  background: #fff;
+  background: #fffdf3;
 }
 
 .pawn-summary h2,
@@ -806,37 +819,218 @@ textarea {
   text-shadow: 1px 1px #111;
 }
 
-.personnel-metric {
+.dossier-tabs {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: end;
+  gap: 2px;
+  margin: 7px 0 -2px;
+  padding: 0 8px;
+  background: transparent;
+}
+
+.dossier-tabs button {
+  min-width: 74px;
+  padding: 4px 9px 3px;
+  border-radius: 4px 4px 0 0;
+  background: #c9ad6b;
+}
+
+.dossier-tabs button[aria-selected="true"] {
+  position: relative;
+  z-index: 2;
+  padding-top: 6px;
+  border-bottom-color: #fffdf3;
+  background: #fffdf3;
+  box-shadow:
+    inset -1px 0 #0a0a0a,
+    inset 1px 1px #fff,
+    inset -2px 0 #808080,
+    inset 2px 2px #dfdfdf;
+}
+
+.dossier-panel {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 10px;
+  overflow: auto;
+  border: 2px solid;
+  border-color: #fff #808080 #808080 #fff;
+  background: #fffdf3;
+}
+
+.dossier-panel[hidden] {
+  display: none;
+}
+
+.summary-scores {
   display: grid;
-  grid-template-columns: 76px minmax(60px, 1fr) 34px;
-  align-items: center;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  margin: 4px 0;
+  margin-bottom: 8px;
 }
 
-.personnel-metric strong {
-  text-align: right;
+.summary-scores > div {
+  display: grid;
+  min-height: 58px;
+  align-content: center;
+  padding: 5px;
+  border: 2px inset #fff;
+  background: #f3edd6;
+  text-align: center;
 }
 
-.meter-shell {
-  height: 14px;
-  padding: 2px;
+.summary-scores span,
+.summary-scores small {
+  display: block;
+}
+
+.summary-scores strong {
+  color: #000080;
+  font-size: 20px;
+}
+
+.summary-scores small {
+  text-transform: capitalize;
+}
+
+.compact-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  margin: 0;
+}
+
+.compact-metric {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 2px;
+  border-bottom: 1px dotted #aaa;
+}
+
+.compact-metric dd {
+  margin: 0;
+  font-weight: bold;
+}
+
+.equipment-panel {
+  display: block;
+}
+
+.paper-doll {
+  display: grid;
+  grid-template-columns: minmax(88px, 1fr) 94px minmax(88px, 1fr);
+  grid-template-rows: 58px 160px 58px;
+  align-items: center;
+  gap: 4px 8px;
+  min-height: 300px;
+  margin-bottom: 10px;
+  padding: 8px;
+  border: 2px inset #fff;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.72)),
+    repeating-linear-gradient(0deg, #d4c79f 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(90deg, #d4c79f 0 1px, transparent 1px 16px);
+}
+
+.paper-doll-figure {
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: center;
+  width: 68px;
+  height: 156px;
+}
+
+.paper-doll-figure::before {
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 28px;
+  height: 28px;
+  border: 2px solid #444;
+  border-radius: 50%;
+  background: #d1a077;
+  content: "";
+}
+
+.paper-doll-figure::after {
+  position: absolute;
+  top: 31px;
+  left: 12px;
+  width: 44px;
+  height: 94px;
+  border: 2px solid #444;
+  background: #6f8493;
+  box-shadow:
+    -15px 12px 0 -10px #596b77,
+    15px 12px 0 -10px #596b77;
+  content: "";
+}
+
+.paper-doll-figure span {
+  position: absolute;
+  z-index: 1;
+  top: 123px;
+  left: 19px;
+  width: 30px;
+  height: 48px;
+  border-right: 10px solid #44545f;
+  border-left: 10px solid #44545f;
+}
+
+.equipment-slot {
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  align-content: center;
+  padding: 4px;
+  border: 2px inset #fff;
+  background: #f8f6e9;
+  text-align: center;
+}
+
+.equipment-head {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.equipment-body {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+.equipment-primaryHand {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.equipment-offHand {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.equipment-accessory {
+  grid-column: 3;
+  grid-row: 3;
+}
+
+.inventory-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.inventory-slot {
+  display: grid;
+  min-height: 50px;
+  place-items: center;
+  padding: 4px;
   border: 2px inset #fff;
   background: #fff;
-}
-
-.meter-shell > span {
-  display: block;
-  height: 100%;
-  background: #287a49;
-}
-
-.meter-shell > span[data-band="warning"] {
-  background: #d1a529;
-}
-
-.meter-shell > span[data-band="critical"] {
-  background: #bd3c34;
+  text-align: center;
 }
 
 .psychology-grid {

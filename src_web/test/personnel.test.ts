@@ -23,8 +23,10 @@ describe("personnel simulation", () => {
     expect(first.personnel[0]).toMatchObject({
       stress: 18.008,
       fear: 5.99,
-      needs: { satiety: 81.965, rest: 75.98, recreation: 63.975 },
+      needs: { satiety: 81.965, rest: 75.98 },
     });
+    expect(first.personnel[5]?.stress).toBe(30.96);
+    expect(first.personnel[0]?.stress).toBeGreaterThan(18);
   });
 
   it("derives explainable mood and sanity without storing duplicates", () => {
@@ -34,7 +36,7 @@ describe("personnel simulation", () => {
     expect("mood" in person).toBe(false);
     expect("sanity" in person).toBe(false);
     expect(deriveMood(person)).toEqual({
-      score: 68,
+      score: 78,
       band: "stable",
       contributors: [
         "Recently fed",
@@ -51,5 +53,18 @@ describe("personnel simulation", () => {
         "No acute fear response",
       ],
     });
+  });
+
+  it("serializes fixed equipment slots and carried inventory", () => {
+    const [mara, caleb] = createInitialState().personnel;
+
+    expect(mara?.equipment.body?.name).toBe("Research Lab Coat");
+    expect(mara?.equipment.head).toBeNull();
+    expect(mara?.inventory.map(({ name }) => name)).toEqual([
+      "Bound Research Notes",
+      "Coffee Thermos",
+    ]);
+    expect(caleb?.equipment.head?.name).toBe("Utility Hard Hat");
+    expect(JSON.parse(JSON.stringify(mara))).toEqual(mara);
   });
 });

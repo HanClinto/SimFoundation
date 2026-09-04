@@ -73,7 +73,7 @@ Each pawn has:
 
 ### Needs and psychological state
 
-Needs change over time and include hunger, rest, recreation, comfort, and social connection. Health is modeled separately through injuries and conditions.
+Core personal needs change over time and initially include satiety and rest. Health is modeled separately through injuries and conditions. Recreation, comfort, and social contact are activities and environmental experiences that relieve or create stress rather than additional bars that decay in parallel.
 
 Stress is sustained psychological load caused by overwork, isolation, poor conditions, moral injury, and accumulated incidents. Fear is an immediate response to perceived danger. Sanity is a derived measure of how coherently a pawn currently interprets reality and regulates their behavior.
 
@@ -82,7 +82,7 @@ Sanity should not be a simple average of stress and fear. A useful initial model
 - A pawn has a relatively stable mental resilience capacity.
 - Stress reduces the capacity available to absorb shocks.
 - Fear, anomalous exposure, sleep loss, and certain memories apply acute pressure.
-- Traits, relationships, treatment, recreation, and positive anomalous effects provide modifiers.
+- Traits, relationships, treatment, restorative activities, and positive anomalous effects provide modifiers.
 - Derived sanity bands influence perception, job reliability, and the likelihood or type of a mental break.
 
 This keeps the important concepts legible: a veteran can be terrified but sane, while an apparently calm researcher can gradually become obsessed or detached from reality. The UI should show the major contributors rather than only a mysterious number.
@@ -197,7 +197,7 @@ The first vertical slice is complete when a player can:
 - Build and furnish an expanded laboratory and its required utility connections
 - Configure autonomous hauling, construction, cleaning, maintenance, research, medical, and security work
 - Inspect every pawn, anomaly, room, item, machine, and active job through 98.css windows
-- Manage hunger, rest, recreation, stress, fear, injury, mood, and derived sanity
+- Manage satiety, rest, restorative activities, stress, fear, injury, mood, and derived sanity
 - Pause and select simulation speeds, with configurable color-coded alert responses
 - Complete a multi-stage SCP-9620 experiment that can trigger one recoverable containment incident
 - House SCP-999 as an autonomous friendly anomaly with visible social and mood effects

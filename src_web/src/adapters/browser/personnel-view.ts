@@ -14,15 +14,22 @@ function initials(name: string): string {
     .toUpperCase();
 }
 
-function metricMarkup(label: string, field: string): string {
+function compactMetricMarkup(label: string, field: string): string {
   return `
-    <div class="personnel-metric">
-      <span>${label}</span>
-      <div class="meter-shell"><span data-meter="${field}"></span></div>
-      <strong data-value="${field}">0</strong>
+    <div class="compact-metric">
+      <dt>${label}</dt>
+      <dd data-value="${field}">0</dd>
     </div>
   `;
 }
+
+const EQUIPMENT_SLOTS = [
+  ["head", "Head"],
+  ["body", "Body"],
+  ["primaryHand", "Primary"],
+  ["offHand", "Off hand"],
+  ["accessory", "Accessory"],
+] as const;
 
 export function createPersonnelInspectorWindows(
   host: HTMLElement,
@@ -52,41 +59,92 @@ export function createPersonnelInspectorWindows(
             <p data-field="activity"></p>
           </div>
         </header>
-        <fieldset>
-          <legend>Condition</legend>
-          ${metricMarkup("Health", "health")}
-          ${metricMarkup("Satiety", "satiety")}
-          ${metricMarkup("Rest", "rest")}
-          ${metricMarkup("Recreation", "recreation")}
-          ${metricMarkup("Stress", "stress")}
-          ${metricMarkup("Fear", "fear")}
-        </fieldset>
-        <div class="psychology-grid">
+        <menu class="dossier-tabs" role="tablist" aria-label="Personnel dossier sections">
+          <button type="button" role="tab" aria-selected="true" data-dossier-tab="summary">Summary</button>
+          <button type="button" role="tab" aria-selected="false" data-dossier-tab="equipment">Equipment</button>
+          <button type="button" role="tab" aria-selected="false" data-dossier-tab="skills">Skills</button>
+          <button type="button" role="tab" aria-selected="false" data-dossier-tab="influences">Influences</button>
+        </menu>
+        <section class="dossier-panel" role="tabpanel" data-dossier-panel="summary">
+          <div class="summary-scores">
+            <div><span>Health</span><strong data-value="health"></strong></div>
+            <div><span>Mood</span><strong data-field="mood-score"></strong><small data-field="mood-band"></small></div>
+            <div><span>Sanity</span><strong data-field="sanity-score"></strong><small data-field="sanity-band"></small></div>
+          </div>
           <fieldset>
-            <legend>Mood</legend>
-            <strong class="derived-score" data-field="mood-score"></strong>
-            <span class="derived-band" data-field="mood-band"></span>
-            <ul data-field="mood-contributors"></ul>
+            <legend>Current condition</legend>
+            <dl class="compact-metrics">
+              ${compactMetricMarkup("Satiety", "satiety")}
+              ${compactMetricMarkup("Rest", "rest")}
+              ${compactMetricMarkup("Stress", "stress")}
+              ${compactMetricMarkup("Fear", "fear")}
+            </dl>
           </fieldset>
           <fieldset>
-            <legend>Sanity</legend>
-            <strong class="derived-score" data-field="sanity-score"></strong>
-            <span class="derived-band" data-field="sanity-band"></span>
-            <ul data-field="sanity-contributors"></ul>
+            <legend>At a glance</legend>
+            <p><strong>Traits:</strong> <span data-field="traits-summary"></span></p>
+            <p><strong>Best skill:</strong> <span data-field="best-skill"></span></p>
           </fieldset>
-        </div>
-        <fieldset>
-          <legend>Traits and skills</legend>
-          <p><strong>Traits:</strong> <span data-field="traits"></span></p>
-          <table class="data-table compact-table">
-            <thead><tr><th>Skill</th><th>Level</th></tr></thead>
-            <tbody data-field="skills"></tbody>
-          </table>
-        </fieldset>
+        </section>
+        <section class="dossier-panel equipment-panel" role="tabpanel" data-dossier-panel="equipment" hidden>
+          <div class="paper-doll">
+            <div class="paper-doll-figure" aria-hidden="true"><span></span></div>
+            ${EQUIPMENT_SLOTS.map(
+              ([slot, label]) =>
+                `<div class="equipment-slot equipment-${slot}"><span>${label}</span><strong data-equipment-slot="${slot}">Empty</strong></div>`,
+            ).join("")}
+          </div>
+          <fieldset>
+            <legend>Carried inventory</legend>
+            <div class="inventory-slots" data-field="inventory"></div>
+          </fieldset>
+        </section>
+        <section class="dossier-panel" role="tabpanel" data-dossier-panel="skills" hidden>
+          <fieldset>
+            <legend>Training record</legend>
+            <p class="system-note">Skill levels range from 1 (novice) to 10 (expert).</p>
+            <table class="data-table compact-table">
+              <thead><tr><th>Skill</th><th>Level</th></tr></thead>
+              <tbody data-field="skills"></tbody>
+            </table>
+          </fieldset>
+        </section>
+        <section class="dossier-panel" role="tabpanel" data-dossier-panel="influences" hidden>
+          <fieldset>
+            <legend>Traits</legend>
+            <p data-field="traits"></p>
+          </fieldset>
+          <div class="psychology-grid">
+            <fieldset>
+              <legend>Mood influences</legend>
+              <ul data-field="mood-contributors"></ul>
+            </fieldset>
+            <fieldset>
+              <legend>Sanity influences</legend>
+              <ul data-field="sanity-contributors"></ul>
+            </fieldset>
+          </div>
+        </section>
       </div>
       <div class="resize-grip" aria-hidden="true"></div>
     `;
     host.append(windowElement);
+    windowElement.addEventListener("click", (event) => {
+      const tab = (event.target as Element).closest<HTMLButtonElement>(
+        "[data-dossier-tab]",
+      );
+      if (!tab?.dataset.dossierTab) return;
+      for (const candidate of windowElement.querySelectorAll<HTMLButtonElement>(
+        "[data-dossier-tab]",
+      )) {
+        candidate.setAttribute("aria-selected", String(candidate === tab));
+      }
+      for (const panel of windowElement.querySelectorAll<HTMLElement>(
+        "[data-dossier-panel]",
+      )) {
+        panel.hidden = panel.dataset.dossierPanel !== tab.dataset.dossierTab;
+      }
+    });
     return windowElement;
   });
 
@@ -100,27 +158,8 @@ function setText(scope: HTMLElement, field: string, value: string): void {
   element.textContent = value;
 }
 
-function setMetric(
-  scope: HTMLElement,
-  field: string,
-  value: number,
-  lowerIsBetter = false,
-): void {
+function setMetric(scope: HTMLElement, field: string, value: number): void {
   const rounded = Math.round(value);
-  const meter = scope.querySelector<HTMLElement>(`[data-meter="${field}"]`);
-  if (!meter) throw new Error(`Personnel meter missing: ${field}`);
-  meter.style.width = `${rounded}%`;
-  meter.dataset.band = lowerIsBetter
-    ? rounded > 70
-      ? "critical"
-      : rounded > 45
-        ? "warning"
-        : "normal"
-    : rounded < 30
-      ? "critical"
-      : rounded < 55
-        ? "warning"
-        : "normal";
   const valueElement = scope.querySelector<HTMLElement>(
     `[data-value="${field}"]`,
   );
@@ -210,6 +249,17 @@ export function updatePersonnelInspectors(
     setText(inspector, "clearance", person.clearance.toString());
     setText(inspector, "activity", person.activity);
     setText(inspector, "traits", person.traits.join(", "));
+    setText(inspector, "traits-summary", person.traits.join(", "));
+    const bestSkill = [...person.skills].sort(
+      (first, second) => second.level - first.level,
+    )[0];
+    setText(
+      inspector,
+      "best-skill",
+      bestSkill
+        ? `${bestSkill.id[0]?.toUpperCase()}${bestSkill.id.slice(1)} ${bestSkill.level}`
+        : "None",
+    );
     setText(inspector, "mood-score", `${mood.score}%`);
     setText(inspector, "mood-band", mood.band);
     setText(inspector, "sanity-score", `${sanity.score}%`);
@@ -217,11 +267,44 @@ export function updatePersonnelInspectors(
     setMetric(inspector, "health", person.health);
     setMetric(inspector, "satiety", person.needs.satiety);
     setMetric(inspector, "rest", person.needs.rest);
-    setMetric(inspector, "recreation", person.needs.recreation);
-    setMetric(inspector, "stress", person.stress, true);
-    setMetric(inspector, "fear", person.fear, true);
+    setMetric(inspector, "stress", person.stress);
+    setMetric(inspector, "fear", person.fear);
     setContributors(inspector, "mood-contributors", mood.contributors);
     setContributors(inspector, "sanity-contributors", sanity.contributors);
+
+    for (const [slot] of EQUIPMENT_SLOTS) {
+      const slotElement = inspector.querySelector<HTMLElement>(
+        `[data-equipment-slot="${slot}"]`,
+      );
+      if (!slotElement)
+        throw new Error(`Personnel equipment slot missing: ${slot}`);
+      const item = person.equipment[slot];
+      slotElement.textContent = item?.name ?? "Empty";
+      slotElement.title = item?.description ?? "No item equipped";
+      slotElement.classList.toggle("empty", item === null);
+    }
+
+    const inventory = inspector.querySelector<HTMLElement>(
+      '[data-field="inventory"]',
+    );
+    if (!inventory) throw new Error("Personnel inventory missing");
+    const inventoryEntries = [
+      ...person.inventory,
+      ...Array.from(
+        { length: Math.max(0, 6 - person.inventory.length) },
+        () => null,
+      ),
+    ];
+    inventory.replaceChildren(
+      ...inventoryEntries.map((item) => {
+        const slot = document.createElement("div");
+        slot.className = "inventory-slot";
+        slot.textContent = item?.name ?? "Empty";
+        slot.title = item?.description ?? "Empty inventory slot";
+        slot.classList.toggle("empty", item === null);
+        return slot;
+      }),
+    );
 
     const skills = inspector.querySelector<HTMLElement>(
       '[data-field="skills"]',

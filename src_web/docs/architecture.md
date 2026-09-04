@@ -155,7 +155,7 @@ Scoring inputs and rejection reasons must be inspectable. A pawn inspector shoul
 
 ## Psychology
 
-Store needs, stress, fear, memories, effects, and mental resilience as facts. Derive mood and sanity from those facts through pure selectors.
+Store physical needs, stress, fear, memories, effects, activities, and mental resilience as facts. Derive mood and sanity from those facts through pure selectors. Recreation is modeled through restorative activities and memories that change stress, not as an independently decaying meter.
 
 A sanity selector should return both a band and named contributors. Mental breaks are simulation outcomes based on sanity pressure, traits, context, and deterministic randomness. Do not persist a second mutable sanity value that can drift out of agreement with its inputs unless later design proves hysteresis requires explicit state.
 
