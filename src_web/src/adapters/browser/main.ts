@@ -6,6 +6,10 @@ import {
   type ControllerSnapshot,
 } from "../../application/controller";
 import { createInitialState } from "../../simulation/state";
+import cameraIconUrl from "./assets/camera.svg";
+import facilityIconUrl from "./assets/facility.svg";
+import folderIconUrl from "./assets/folder.svg";
+import scpEmblemUrl from "./assets/scp-emblem.svg";
 import { renderSite } from "./renderer";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
@@ -128,7 +132,7 @@ app.innerHTML = `
     <div class="title-bar">
       <div class="title-bar-text">Simulation Control</div>
       <div class="title-bar-controls">
-        <button id="control-expand" class="restore-view-button" type="button" aria-label="Switch to standard view" data-control-view="standard"></button>
+        <button id="control-expand" type="button" aria-label="Maximize" title="Switch to standard view" data-control-view="standard"></button>
         <button type="button" aria-label="Close" data-window-close></button>
       </div>
     </div>
@@ -282,12 +286,12 @@ app.innerHTML = `
     <div class="start-menu-rail">FOUNDATION</div>
     <div class="start-menu-items">
       <details class="start-submenu">
-        <summary><strong>Facilities</strong><small>Manage Foundation sites</small></summary>
+        <summary><img class="menu-item-icon" src="${folderIconUrl}" alt="" /><span><strong>Facilities</strong><small>Manage Foundation sites</small></span></summary>
         <div class="start-submenu-panel">
-          <button type="button" data-open-window="facility-window"><strong>Site 828</strong><small>Jarbridge, Nevada</small></button>
+          <button type="button" data-open-window="facility-window"><img class="menu-item-icon" src="${facilityIconUrl}" alt="" /><span><strong>Site 828</strong><small>Jarbridge, Nevada</small></span></button>
         </div>
       </details>
-      <button type="button" data-open-window="knowledge-window"><strong>Foundation Library</strong><small>Browse available records</small></button>
+      <button type="button" data-open-window="knowledge-window"><img class="menu-item-icon" src="${folderIconUrl}" alt="" /><span><strong>Foundation Library</strong><small>Browse available records</small></span></button>
       <hr />
       <button type="button" disabled><strong>Save Site...</strong><small>Not available in this build</small></button>
       <button type="button" disabled><strong>Load Site...</strong><small>Not available in this build</small></button>
@@ -296,10 +300,10 @@ app.innerHTML = `
   </div>
 
   <footer class="taskbar" aria-label="Simulation desktop taskbar">
-    <button type="button" id="scp-menu-button" class="scp-menu-button" aria-expanded="false"><span class="scp-mark" aria-hidden="true">S</span><strong>SCP</strong></button>
+    <button type="button" id="scp-menu-button" class="scp-menu-button" aria-expanded="false"><img class="scp-mark" src="${scpEmblemUrl}" alt="" /><strong>SCP</strong></button>
     <div class="taskbar-divider" aria-hidden="true"></div>
-    <button type="button" class="task-button" data-open-window="facility-window">Site 828</button>
-    <button type="button" class="task-button" data-open-window="camera-window">Camera Feed</button>
+    <button type="button" class="task-button" data-open-window="facility-window"><img src="${facilityIconUrl}" alt="" />Site 828</button>
+    <button type="button" class="task-button" data-open-window="camera-window"><img src="${cameraIconUrl}" alt="" />Camera Feed</button>
     <span class="taskbar-spacer"></span>
     <button type="button" id="taskbar-clock" class="taskbar-clock" data-open-window="control-window" aria-label="Open Simulation Control">
       <span id="taskbar-status">▶</span><time id="taskbar-game-time">08:00</time>
@@ -436,7 +440,7 @@ function setControlView(view: "standard" | "minimal"): void {
   controlWindow.classList.toggle("minimal", view === "minimal");
   if (view === "minimal") {
     controlWindow.style.width = "150px";
-    controlWindow.style.height = "56px";
+    controlWindow.style.height = "64px";
   } else {
     controlWindow.style.width = "304px";
     controlWindow.style.height = "130px";

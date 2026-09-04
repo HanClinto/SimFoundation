@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" shape-rendering="geometricPrecision">
+  <circle cx="10" cy="10" r="8.25" fill="#f4f4f4" stroke="#111" stroke-width="1.5"/>
+  <circle cx="10" cy="10" r="3" fill="none" stroke="#111" stroke-width="1.5"/>
+  <path d="M10 1.75v4.1M7.9 3.65 10 5.9l2.1-2.25M2.8 14.2l3.55-2.05m-3.7-.4 3.05.55-.95 2.95m12.45-1.05-3.55-2.05m3.7-.4-3.05.55.95 2.95" fill="none" stroke="#111" stroke-linecap="square" stroke-linejoin="miter" stroke-width="1.5"/>
+</svg>
