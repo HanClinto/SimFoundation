@@ -1,8 +1,8 @@
 # Browser Chrome Icons
 
-These small SVGs are original project artwork created for SCPSiteManager's desktop chrome.
+These small SVGs support SCPSiteManager's desktop chrome.
 
-- `folder.svg`, `facility.svg`, and `camera.svg` are original generic interface icons.
-- `scp-emblem.svg` is an original small-format rendering of the SCP Foundation emblem and is derivative SCP-related artwork.
+- `book.svg`, `folder.svg`, `facility.svg`, and `camera.svg` are original project artwork.
+- `scp-emblem.svg` is the canonical SCP Foundation emblem downloaded from [Wikimedia Commons](<https://commons.wikimedia.org/wiki/File:SCP_Foundation_(emblem).svg>). The original logo was designed by far2; Aelanna created the first high-resolution version. The vendored SVG is the Commons revision based on the SCP Wiki Sigma header logo. It is licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
 
-The files are intended to follow SCPSiteManager's eventual SCP/CC BY-SA licensing structure. They are not part of the generic CC0 OpenIsoGfx package because the emblem and their interface use are specific to this game.
+These files follow SCPSiteManager's SCP/CC BY-SA licensing direction. They are not part of the generic CC0 OpenIsoGfx package because the emblem and their interface use are specific to this game.

@@ -461,14 +461,32 @@ textarea {
 }
 
 .popup-menu button {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: center;
   min-width: 0;
-  padding: 4px 20px;
+  padding: 4px 8px;
   border: 0;
   background: transparent;
   box-shadow: none;
   color: #111;
   text-align: left;
   text-shadow: none;
+}
+
+.menu-check {
+  display: block;
+  width: 12px;
+  height: 12px;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  font-weight: bold;
+  line-height: 12px;
+  text-align: center;
+}
+
+.view-choice.selected .menu-check::before {
+  content: "✓";
 }
 
 .popup-menu button:hover {
@@ -892,8 +910,8 @@ textarea {
 
 .scp-mark {
   display: block;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   image-rendering: auto;
 }
 

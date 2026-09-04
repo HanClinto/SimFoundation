@@ -6,6 +6,7 @@ import {
   type ControllerSnapshot,
 } from "../../application/controller";
 import { createInitialState } from "../../simulation/state";
+import bookIconUrl from "./assets/book.svg";
 import cameraIconUrl from "./assets/camera.svg";
 import facilityIconUrl from "./assets/facility.svg";
 import folderIconUrl from "./assets/folder.svg";
@@ -140,9 +141,9 @@ app.innerHTML = `
       <button type="button"><u>F</u>ile</button>
       <details class="window-menu">
         <summary><u>V</u>iew</summary>
-        <div class="popup-menu">
-          <button type="button" data-control-view="standard">Standard</button>
-          <button type="button" data-control-view="minimal">Minimal</button>
+        <div class="popup-menu" role="menu">
+          <button class="view-choice" type="button" role="menuitemradio" aria-checked="true" data-control-view="standard"><span class="menu-check" aria-hidden="true"></span>Standard</button>
+          <button class="view-choice" type="button" role="menuitemradio" aria-checked="false" data-control-view="minimal"><span class="menu-check" aria-hidden="true"></span>Minimal</button>
         </div>
       </details>
       <button type="button"><u>H</u>elp</button>
@@ -291,7 +292,7 @@ app.innerHTML = `
           <button type="button" data-open-window="facility-window"><img class="menu-item-icon" src="${facilityIconUrl}" alt="" /><span><strong>Site 828</strong><small>Jarbridge, Nevada</small></span></button>
         </div>
       </details>
-      <button type="button" data-open-window="knowledge-window"><img class="menu-item-icon" src="${folderIconUrl}" alt="" /><span><strong>Foundation Library</strong><small>Browse available records</small></span></button>
+      <button type="button" data-open-window="knowledge-window"><img class="menu-item-icon" src="${bookIconUrl}" alt="" /><span><strong>Foundation Library</strong><small>Browse available records</small></span></button>
       <hr />
       <button type="button" disabled><strong>Save Site...</strong><small>Not available in this build</small></button>
       <button type="button" disabled><strong>Load Site...</strong><small>Not available in this build</small></button>
@@ -438,6 +439,13 @@ const CONTROL_VIEW_KEY = "scp-site-manager.control-view.v1";
 
 function setControlView(view: "standard" | "minimal"): void {
   controlWindow.classList.toggle("minimal", view === "minimal");
+  for (const choice of document.querySelectorAll<HTMLButtonElement>(
+    ".view-choice",
+  )) {
+    const selected = choice.dataset.controlView === view;
+    choice.setAttribute("aria-checked", String(selected));
+    choice.classList.toggle("selected", selected);
+  }
   if (view === "minimal") {
     controlWindow.style.width = "150px";
     controlWindow.style.height = "64px";
