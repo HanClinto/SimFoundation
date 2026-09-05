@@ -849,6 +849,163 @@ function routineReferencesValid(state: GameState): boolean {
   });
 }
 
+function isObservationState(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isArrayOf(
+      value.knownTiles,
+      (tile) =>
+        tile === null || isLiteral(tile, ["grass", "floor", "wall", "door"]),
+      16384,
+    ) &&
+    isArrayOf(
+      value.tileLastSeen,
+      (tick) => isIntegerInRange(tick, -1),
+      16384,
+    ) &&
+    isArrayOf(
+      value.visibleTiles,
+      (index) => isIntegerInRange(index, 0, 16383),
+      16384,
+    ) &&
+    isArrayOf(value.visibleEntityIds, isNonEmptyString, 100) &&
+    isRecord(value.entities) &&
+    Object.entries(value.entities).every(
+      ([id, entry]) =>
+        isRecord(entry) &&
+        entry.id === id &&
+        isRecord(entry.position) &&
+        isIntegerInRange(entry.position.x, 0, 127) &&
+        isIntegerInRange(entry.position.y, 0, 127) &&
+        isIntegerInRange(entry.observedTick, 0) &&
+        isArrayOf(entry.sources, isNonEmptyString, 200) &&
+        entry.sources.length > 0 &&
+        isString(entry.activity) &&
+        isNullableString(entry.moodAppearance) &&
+        isNullableString(entry.sanityAppearance) &&
+        isNullableString(entry.blockedReason),
+    ) &&
+    isArrayOf(
+      value.knownRooms,
+      (room) =>
+        isRecord(room) &&
+        isNonEmptyString(room.id) &&
+        isNonEmptyString(room.name) &&
+        isLiteral(room.kind, [
+          "laboratory",
+          "containment",
+          "storage",
+          "dormitory",
+          "mess",
+          "medical",
+          "utilities",
+          "security",
+        ]) &&
+        isIntegerInRange(room.x, 0, 127) &&
+        isIntegerInRange(room.y, 0, 127) &&
+        isIntegerInRange(room.width, 1, 128 - room.x) &&
+        isIntegerInRange(room.height, 1, 128 - room.y),
+      128,
+    ) &&
+    (value.scp999 === null ||
+      (isRecord(value.scp999) &&
+        isScp999State(value.scp999.state) &&
+        isIntegerInRange(value.scp999.observedTick, 0))) &&
+    isIntegerInRange(value.cameraKits, 0, 3) &&
+    isArrayOf(
+      value.cameras,
+      (camera) =>
+        isRecord(camera) &&
+        isNonEmptyString(camera.id) &&
+        isNonEmptyString(camera.name) &&
+        isRecord(camera.position) &&
+        isIntegerInRange(camera.position.x, 0, 127) &&
+        isIntegerInRange(camera.position.y, 0, 127) &&
+        typeof camera.enabled === "boolean" &&
+        isIntegerInRange(camera.range, 1, 12) &&
+        isNullableString(camera.installJobId),
+      6,
+    )
+  );
+}
+
+function observationReferencesValid(state: GameState): boolean {
+  const knowledge = state.observations;
+  const size = state.world.map.width * state.world.map.height;
+  if (
+    knowledge.knownTiles.length !== size ||
+    knowledge.tileLastSeen.length !== size ||
+    knowledge.tileLastSeen.some(
+      (tick, index) =>
+        tick > state.tick ||
+        (knowledge.knownTiles[index] === null) !== (tick === -1),
+    )
+  )
+    return false;
+  const visible = new Set(knowledge.visibleTiles);
+  if (
+    visible.size !== knowledge.visibleTiles.length ||
+    knowledge.visibleTiles.some(
+      (index) =>
+        index >= size ||
+        knowledge.knownTiles[index] === null ||
+        knowledge.tileLastSeen[index] !== state.tick,
+    )
+  )
+    return false;
+  const entityIds = [...state.personnel.map(({ id }) => id), "SCP-999"];
+  const sourceIds = new Set([
+    ...entityIds,
+    ...knowledge.cameras.map(({ id }) => id),
+  ]);
+  if (
+    Object.entries(knowledge.entities).some(
+      ([id, observation]) =>
+        !entityIds.includes(id) ||
+        observation.observedTick > state.tick ||
+        observation.sources.some((source) => !sourceIds.has(source)),
+    )
+  )
+    return false;
+  if (
+    new Set(knowledge.visibleEntityIds).size !==
+      knowledge.visibleEntityIds.length ||
+    knowledge.visibleEntityIds.some((id) => {
+      const entry = knowledge.entities[id];
+      return (
+        !entry ||
+        entry.observedTick !== state.tick ||
+        !visible.has(
+          entry.position.y * state.world.map.width + entry.position.x,
+        )
+      );
+    })
+  )
+    return false;
+  if (knowledge.scp999 && knowledge.scp999.observedTick > state.tick)
+    return false;
+  if (
+    new Set(knowledge.cameras.map(({ id }) => id)).size !==
+      knowledge.cameras.length ||
+    knowledge.cameraKits +
+      knowledge.cameras.filter(({ installJobId }) => installJobId !== null)
+        .length !==
+      3
+  )
+    return false;
+  return knowledge.cameras.every(
+    (camera) =>
+      tileAt(state.world.map, camera.position) !== null &&
+      (camera.installJobId === null ||
+        state.jobs.some(
+          (job) =>
+            job.id === camera.installJobId &&
+            job.skillId === "engineering" &&
+            sameTile(job.workSite, camera.position),
+        )),
+  );
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -888,7 +1045,8 @@ function isGameState(value: unknown): value is GameState {
     !isScp9620State(value.scp9620) ||
     !isSiteWorld(value.world) ||
     !isConstructionState(value.construction) ||
-    !isRoutineState(value.routines)
+    !isRoutineState(value.routines) ||
+    !isObservationState(value.observations)
   )
     return false;
   const state = value as unknown as GameState;
@@ -902,6 +1060,7 @@ function isGameState(value: unknown): value is GameState {
     ) &&
     constructionReferencesValid(state) &&
     routineReferencesValid(state) &&
+    observationReferencesValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||
       personIds.includes(state.scp999.targetPersonId)) &&

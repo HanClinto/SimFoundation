@@ -81,6 +81,12 @@ The Day Planner edits each pawn's 24 hourly work, free-time, and sleep blocks, w
 
 The pantry starts with 36 meals and the store with 72 more. Logistics automatically collects and carries batches to replenish a low pantry; no food is created by restocking. Shortages and unreachable or occupied service stations are visible in Day Planner. External procurement, cooking, treatment, and richer refusal behavior remain future systems. These stations are a first functional-room slice, not a full furnishing editor.
 
+### Surveillance Prototype
+
+Surveillance lists installed cameras, their enabled state, and remaining installation kits. **Place camera** opens a single-tile preview in Camera Feed; engineering must install the camera before it observes anything. Awake personnel and active cameras provide local sight through open doors but not walls. Sleeping personnel do not observe.
+
+The map shows bright live coverage, dim remembered terrain, unknown areas beyond the initial survey, and labeled last-sighting markers. Unseen anomalies continue simulating, but their registry and map information remain at the last recorded observation. Camera placement and range are provisional abstractions; power, communications failures, and directional lenses remain future work.
+
 ### Occupational Health Prototype
 
 Open Occupational Health from the Site 828 facility folder to assign any staff member to medical duty and choose separate recurring intervals for physical examinations, rapid mood screeners, psychiatric evaluations, and extended anomalous behavior surveys. Routine reviews are off by default. Anomalous surveys require Anomalous Psychometrics research; a configured interval waits for that research rather than exposing hidden traits.

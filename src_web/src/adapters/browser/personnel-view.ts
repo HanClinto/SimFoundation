@@ -10,6 +10,21 @@ import { recordedInfluences, recordAge } from "./personnel-records";
 import { equipmentIllustration } from "./equipment-art";
 import figureUrl from "./assets/personnel-figure.svg";
 import { pawnPortrait } from "./pawn-art";
+import type { SiteObservations } from "../../simulation/observations";
+
+function observedPsychology(
+  person: PersonnelRecord,
+  observations?: SiteObservations,
+) {
+  const psychology = projectPsychology(person);
+  if (!observations) return psychology;
+  const known = observations.entities[person.id];
+  return {
+    ...psychology,
+    moodAppearance: known?.moodAppearance ?? "No recorded observation",
+    sanityAppearance: known?.sanityAppearance ?? "No recorded observation",
+  };
+}
 
 function initials(name: string): string {
   return name
@@ -291,6 +306,7 @@ function setContributors(
 export function updatePersonnelRoster(
   tableBody: HTMLElement,
   personnel: readonly PersonnelRecord[],
+  observations?: SiteObservations,
 ): void {
   const existingIds = new Set(
     Array.from(
@@ -317,7 +333,7 @@ export function updatePersonnelRoster(
       `[data-person-id="${person.id}"]`,
     );
     if (!row) throw new Error(`Personnel row missing: ${person.id}`);
-    const psychology = projectPsychology(person);
+    const psychology = observedPsychology(person, observations);
     for (const [cell, value] of [
       ["name", person.name],
       ["assignment", person.assignment],
@@ -336,6 +352,7 @@ export function updatePersonnelInspectors(
   windows: readonly HTMLElement[],
   personnel: readonly PersonnelRecord[],
   currentTick = 0,
+  observations?: SiteObservations,
 ): void {
   for (const person of personnel) {
     const inspector = windows.find(
@@ -343,7 +360,7 @@ export function updatePersonnelInspectors(
     );
     if (!inspector)
       throw new Error(`Personnel inspector missing: ${person.id}`);
-    const psychology = projectPsychology(person);
+    const psychology = observedPsychology(person, observations);
     const psychologicalAssessment = psychology.assessment;
     const moodScreening = person.clinicalSurveys
       .filter(({ kind }) => kind === "mood")

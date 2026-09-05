@@ -4,6 +4,7 @@ import type {
 } from "../../application/controller";
 import { scheduleAt, type ScheduleBlock } from "../../simulation/routines";
 import { pawnPortrait } from "./pawn-art";
+import { observedSnapshot } from "./observed-view";
 
 export function createDayPlanner(
   container: HTMLElement,
@@ -66,6 +67,7 @@ export function createDayPlanner(
       render(controller.setPersonnelSchedule(people.value, schedule));
     });
   function render(snapshot: ControllerSnapshot) {
+    snapshot = observedSnapshot(snapshot);
     current = snapshot;
     const person = snapshot.game.personnel.find(
       ({ id }) => id === people.value,

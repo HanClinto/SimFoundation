@@ -1,10 +1,13 @@
 import type { ControllerSnapshot } from "../../application/controller";
-import { tileAt, type TilePosition } from "../../simulation/world";
+import { type TilePosition } from "../../simulation/world";
+import { observedSnapshot } from "./observed-view";
 import workerUrl from "./assets/site-worker.svg";
 import scp999Url from "./assets/site-999.svg";
 import bedUrl from "./assets/station-bed.svg";
 import mealUrl from "./assets/station-meal.svg";
 import breakUrl from "./assets/station-break.svg";
+import cameraUrl from "./assets/camera.svg";
+import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
 
 const TILE_WIDTH = 40;
@@ -17,6 +20,7 @@ export interface MapCamera {
   readonly draft?: {
     readonly origin: TilePosition;
     readonly valid: boolean;
+    readonly kind?: "laboratory" | "camera";
   } | null;
 }
 
@@ -85,6 +89,7 @@ export function renderSite(
     selectedId: null,
   },
 ): void {
+  snapshot = observedSnapshot(snapshot);
   if (!worker || !scp999) {
     worker = new Image();
     scp999 = new Image();
@@ -96,6 +101,7 @@ export function renderSite(
       ["sleep", bedUrl],
       ["meal", mealUrl],
       ["break", breakUrl],
+      ["camera", cameraUrl],
     ]) {
       const image = new Image();
       image.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
@@ -120,6 +126,9 @@ export function renderSite(
   context.fillStyle = "#26382f";
   context.fillRect(0, 0, width, height);
   const { map, positions } = snapshot.game.world;
+  const knowledge = snapshot.game.observations;
+  const visibleTiles = new Set(knowledge.visibleTiles);
+  const visibleEntities = new Set(knowledge.visibleEntityIds);
   const corners = [
     { x: -60, y: -60 },
     { x: width + 60, y: -60 },
@@ -167,7 +176,8 @@ export function renderSite(
         point.y > height + 40
       )
         continue;
-      const tile = tileAt(map, { x: column, y: row });
+      const tile = knowledge.knownTiles[row * map.width + column];
+      if (tile == null) continue;
       const room = map.rooms.find(
         (room) =>
           column >= room.x &&
@@ -188,6 +198,9 @@ export function renderSite(
                 ? roomColors[room.kind]
                 : "#e0ddd0";
       context.save();
+      context.globalAlpha = visibleTiles.has(row * map.width + column)
+        ? 1
+        : 0.48;
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
       if (tile === "wall") {
@@ -222,6 +235,18 @@ export function renderSite(
     context.fillText(label, point.x, point.y + 3);
   }
   for (const station of snapshot.game.routines.stations) {
+    if (
+      knowledge.knownTiles[
+        station.position.y * map.width + station.position.x
+      ] == null
+    )
+      continue;
+    context.save();
+    context.globalAlpha = visibleTiles.has(
+      station.position.y * map.width + station.position.x,
+    )
+      ? 1
+      : 0.45;
     const point = projectPosition(station.position, camera, width, height);
     const image = stationImages.get(station.kind);
     if (image?.complete && image.naturalWidth > 0)
@@ -232,6 +257,7 @@ export function renderSite(
         44 * camera.zoom,
         32 * camera.zoom,
       );
+    context.restore();
   }
   const footprints = [
     ...snapshot.game.construction.blueprints
@@ -241,7 +267,7 @@ export function renderSite(
         fill: "rgba(125, 208, 223, .38)",
         stroke: "#c0f5ff",
       })),
-    ...(camera.draft
+    ...(camera.draft && camera.draft.kind !== "camera"
       ? [
           {
             origin: camera.draft.origin,
@@ -268,6 +294,36 @@ export function renderSite(
       context.restore();
     }
   }
+  if (camera.draft?.kind === "camera") {
+    const point = projectPosition(camera.draft.origin, camera, width, height);
+    context.save();
+    context.translate(point.x, point.y);
+    context.scale(camera.zoom, camera.zoom);
+    drawTile(
+      context,
+      { x: 0, y: -10 },
+      camera.draft.valid ? "#a1d4bd" : "#cc8a77",
+      "#f5edcf",
+    );
+    context.restore();
+  }
+  const cameraImage = stationImages.get("camera");
+  if (cameraImage?.complete && cameraImage.naturalWidth > 0) {
+    for (const device of knowledge.cameras) {
+      const point = projectPosition(device.position, camera, width, height);
+      context.save();
+      context.globalAlpha =
+        cameraInstalled(snapshot.game, device) && device.enabled ? 1 : 0.4;
+      context.drawImage(
+        cameraImage,
+        point.x - 10 * camera.zoom,
+        point.y - 24 * camera.zoom,
+        20 * camera.zoom,
+        20 * camera.zoom,
+      );
+      context.restore();
+    }
+  }
   for (const [id, position] of Object.entries(positions).sort(
     ([firstId, first], [secondId, second]) =>
       first.x + first.y - second.x - second.y ||
@@ -282,6 +338,7 @@ export function renderSite(
     )
       continue;
     const selected = id === camera.selectedId;
+    const live = visibleEntities.has(id);
     if (selected) {
       context.strokeStyle = "#ffe477";
       context.lineWidth = 2;
@@ -300,7 +357,7 @@ export function renderSite(
     const image = id === "SCP-999" ? scp999 : worker;
     const spriteWidth = (id === "SCP-999" ? 52 : 24) * camera.zoom;
     const spriteHeight = (id === "SCP-999" ? 30 : 36) * camera.zoom;
-    if (image.complete && image.naturalWidth > 0)
+    if (live && image.complete && image.naturalWidth > 0)
       context.drawImage(
         image,
         point.x - spriteWidth / 2,
@@ -308,9 +365,28 @@ export function renderSite(
         spriteWidth,
         spriteHeight,
       );
+    if (!live) {
+      context.save();
+      context.setLineDash([3, 3]);
+      context.strokeStyle = "#c2c6ac";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.ellipse(
+        point.x,
+        point.y,
+        12 * camera.zoom,
+        6 * camera.zoom,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      context.stroke();
+      context.restore();
+    }
     if (selected) {
       const label =
-        snapshot.game.personnel.find((person) => person.id === id)?.name ?? id;
+        (snapshot.game.personnel.find((person) => person.id === id)?.name ??
+          id) + (live ? "" : " / last seen");
       context.font = "bold 12px 'Courier New', monospace";
       const labelWidth = context.measureText(label).width + 10;
       context.fillStyle = "#fff9d9";
@@ -319,7 +395,7 @@ export function renderSite(
       context.fillText(label, point.x, point.y + 23);
     }
     const routine = snapshot.game.routines.activities[id];
-    if (routine && routine.progress > 0 && camera.zoom >= 0.7) {
+    if (live && routine && routine.progress > 0 && camera.zoom >= 0.7) {
       const label =
         routine.kind === "meal"
           ? "Meal"

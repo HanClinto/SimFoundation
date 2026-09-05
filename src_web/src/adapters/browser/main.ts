@@ -35,6 +35,8 @@ import { createSiteCamera } from "./camera-view";
 import "./personnel-reference.css";
 import { createClinicalCareView } from "./clinical-care-view";
 import { createDayPlanner } from "./day-planner-view";
+import { observedSnapshot } from "./observed-view";
+import { createSurveillanceView } from "./surveillance-view";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
@@ -121,6 +123,7 @@ app.innerHTML = `
             <span>Occupational Health</span>
           </button>
           <button class="subsystem-icon" type="button" data-open-window="day-planner-window"><img class="subsystem-icon-asset" data-window-icon src="${controlIconUrl}" alt="" /><span>Day Planner</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -129,12 +132,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>9 available</dd></div>
+            <div><dt>Systems</dt><dd>10 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">9 objects</p>
+        <p class="status-bar-field">10 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -157,7 +160,7 @@ app.innerHTML = `
       <button type="button" data-camera-action="home" title="Center on Site 828" aria-label="Center on Site 828">&#8962;</button>
       <select data-camera-entity aria-label="Focus personnel"></select>
       <button type="button" data-camera-action="inspect" disabled>Open Record</button>
-      <select data-camera-mode aria-label="Map mode"><option value="inspect">Inspect</option><option value="laboratory">Plan laboratory</option></select>
+      <select data-camera-mode aria-label="Map mode"><option value="inspect">Inspect</option><option value="laboratory">Plan laboratory</option><option value="camera">Place camera</option></select>
       <button type="button" data-camera-action="place" disabled>Authorize Annex</button>
     </div>
     <div class="window-body camera-body">
@@ -167,7 +170,7 @@ app.innerHTML = `
       <div class="construction-feedback"><span data-construction-materials></span><span data-construction-feedback role="status"></span></div>
       <details class="construction-register"><summary>Construction register</summary><label class="research-laboratory-choice">Research laboratory <select data-research-laboratory aria-label="Research laboratory"></select></label><div class="construction-table-scroll"><table aria-label="Laboratory annexes"><thead><tr><th>Annex</th><th>Status</th><th>Orders</th></tr></thead><tbody data-construction-register></tbody></table></div></details>
       <div class="status-bar">
-        <p class="status-bar-field">LIVE</p>
+        <p class="status-bar-field">OBSERVATIONS</p>
         <p class="status-bar-field" id="camera-game-time">08:00</p>
         <p class="status-bar-field camera-selection" data-camera-status>Site 828 / Live surveillance</p>
       </div>
@@ -300,6 +303,7 @@ app.innerHTML = `
   </section>
 
   <section id="day-planner-window" class="window managed-window" aria-label="Site 828 day planner" hidden><div class="title-bar"><div class="title-bar-text">Site 828 - Day Planner</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body day-planner-body" id="day-planner-body"></div><div class="resize-grip" aria-hidden="true"></div></section>
+  <section id="surveillance-window" class="window managed-window" aria-label="Site 828 surveillance" hidden><div class="title-bar"><div class="title-bar-text">Site 828 - Surveillance</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body day-planner-body" id="surveillance-body"></div><div class="resize-grip" aria-hidden="true"></div></section>
 
   <section id="anomaly-window" class="window managed-window anomaly-window" aria-label="Site 828 anomaly registry" hidden>
     <div class="title-bar">
@@ -583,6 +587,15 @@ windowManager.register(requireElement<HTMLElement>("#day-planner-window"), {
   minimumWidth: 320,
   minimumHeight: 220,
 });
+windowManager.register(requireElement<HTMLElement>("#surveillance-window"), {
+  id: "surveillance-window",
+  title: "Surveillance",
+  iconUrl: cameraIconUrl,
+  defaultRect: { left: 350, top: 150, width: 590, height: 380 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
 windowManager.register(requireElement<HTMLElement>("#work-orders-window"), {
   id: "work-orders-window",
   title: "Work Orders",
@@ -696,6 +709,18 @@ const clinicalCareView = createClinicalCareView(
 const dayPlanner = createDayPlanner(
   requireElement<HTMLElement>("#day-planner-body"),
   controller,
+);
+const surveillanceView = createSurveillanceView(
+  requireElement<HTMLElement>("#surveillance-body"),
+  controller,
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  () => {
+    windowManager.open("camera-window");
+    siteCamera.planCamera();
+  },
 );
 
 personnelRows.addEventListener("dblclick", (event) => {
@@ -944,14 +969,21 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
+  snapshot = observedSnapshot(snapshot);
   dayPlanner.render(snapshot);
+  surveillanceView.render(snapshot);
   clinicalCareView.render(snapshot);
   siteCamera.render(snapshot);
-  updatePersonnelRoster(personnelRows, snapshot.game.personnel);
+  updatePersonnelRoster(
+    personnelRows,
+    snapshot.game.personnel,
+    snapshot.game.observations,
+  );
   updatePersonnelInspectors(
     personnelInspectors,
     snapshot.game.personnel,
     snapshot.game.tick,
+    snapshot.game.observations,
   );
   updatePersonnelMedicalWindows(
     personnelMedicalWindows,
@@ -1023,6 +1055,17 @@ function render(snapshot: ControllerSnapshot): void {
   scp999LastInteraction.textContent = snapshot.game.scp999.lastInteraction
     ? `${scp999LastPerson?.name ?? "Unknown personnel"} / recorded ${formatGameTime(snapshot.game.gameMinute - snapshot.game.tick + snapshot.game.scp999.lastInteraction.completedTick)}`
     : "No interaction recorded.";
+  if (!snapshot.game.observations.visibleEntityIds.includes("SCP-999")) {
+    const lastObserved = snapshot.game.observations.scp999?.observedTick;
+    scp999Status.textContent =
+      lastObserved === undefined
+        ? "NO RECORDED OBSERVATION"
+        : `LAST OBSERVED: ${scp999Labels[snapshot.game.scp999.status]}`;
+    scp999Timing.textContent =
+      lastObserved === undefined
+        ? "Current state unknown"
+        : `${snapshot.game.tick - lastObserved} minutes since observation; current state unknown`;
+  }
   psychometricsStatus.textContent = snapshot.game.capabilities
     .anomalousPsychometrics
     ? "AVAILABLE"

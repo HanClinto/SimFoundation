@@ -1,3 +1,4 @@
+import { observeSite } from "./observations";
 import {
   advanceJobs,
   createActivationTrialJob,
@@ -124,17 +125,19 @@ export function advanceSimulation(state: GameState): GameState {
       ],
     };
   }
-  return advanceConstruction(
-    advancePantrySupply({
-      ...state,
-      tick,
-      gameMinute: state.gameMinute,
-      incident,
-      jobs,
-      personnel: scp999Result.personnel,
-      scp999: scp999Result.anomaly,
-      scp9620,
-      world: scp999Result.world,
-    }),
+  return observeSite(
+    advanceConstruction(
+      advancePantrySupply({
+        ...state,
+        tick,
+        gameMinute: state.gameMinute,
+        incident,
+        jobs,
+        personnel: scp999Result.personnel,
+        scp999: scp999Result.anomaly,
+        scp9620,
+        world: scp999Result.world,
+      }),
+    ),
   );
 }

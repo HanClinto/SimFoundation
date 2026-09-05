@@ -20,6 +20,7 @@ Nonblocking questions and provisional choices from the unattended development ru
 
 - Published `6d00402`: consistent original subsystem icons and pawn portrait/caption identities.
 - Completed daily-routine checkpoint: physical meals, sleep and breaks; hourly schedules; finite pantry/store logistics; Day Planner. A two-day headless scenario sustains routine needs and passes deterministic save continuation. Browser checks verified schedule edits, physical meal arrival, food consumption, and seat-contention reporting. Full validation passes 89 tests.
-- Still pending: facility observation memory/camera placement, outward expression versus hidden health, and the authored material-containment scenario. These are not implied complete by the needs-loop work.
+- Completed observation-memory checkpoint: local awake-personnel/camera sight, wall occlusion, remembered terrain and sightings, physical camera installation, Surveillance inspector, and frozen unseen SCP-999 records. Browser fixture verified that an unseen anomaly's changed location and state remain hidden. Current sensing assumes functioning personnel communications and omnidirectional cameras; power, radio failures, and directional lenses are not modeled.
+- Still pending: outward expression versus hidden health, local social motivations for SCP-999, and the authored material-containment scenario. These are not implied complete by the needs-loop or surveillance work.
 
 A question here is not a claim that the corresponding feature has already been implemented.

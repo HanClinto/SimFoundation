@@ -15,6 +15,7 @@ import {
 import { recordAge } from "./personnel-records";
 import { createAssignmentView } from "./assignment-view";
 import { routineUnavailableIds } from "../../simulation/routines";
+import { observedSnapshot } from "./observed-view";
 
 export function createClinicalCareView(
   container: HTMLElement,
@@ -112,6 +113,7 @@ export function createClinicalCareView(
     table.append(row);
   }
   function render(snapshot: ControllerSnapshot) {
+    snapshot = observedSnapshot(snapshot);
     current = snapshot;
     const selectedStaff = snapshot.game.personnel.filter((person) =>
       snapshot.game.clinicalCare.clinicianIds.includes(person.id),

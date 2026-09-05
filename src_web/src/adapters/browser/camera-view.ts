@@ -4,6 +4,8 @@ import type {
 } from "../../application/controller";
 import type { TilePosition } from "../../simulation/world";
 import { availableResearchLaboratories } from "../../simulation/construction";
+import { observedSnapshot } from "./observed-view";
+import { cameraMessages } from "./surveillance-view";
 import {
   constructionMessages,
   updateConstructionRegister,
@@ -59,7 +61,7 @@ export function createSiteCamera(
     '[data-camera-action="place"]',
   )!;
   let registerSignature = "";
-  let snapshot = controller.getSnapshot();
+  let snapshot = observedSnapshot(controller.getSnapshot());
   entitySelect.replaceChildren(
     new Option("Select personnel", ""),
     ...snapshot.game.personnel.map(
@@ -69,17 +71,26 @@ export function createSiteCamera(
   );
 
   function render(nextSnapshot: ControllerSnapshot) {
-    snapshot = nextSnapshot;
+    snapshot = observedSnapshot(nextSnapshot);
     if (camera.draft)
       camera = {
         ...camera,
         draft: {
           ...camera.draft,
-          valid: controller.previewLaboratory(camera.draft.origin) === null,
+          kind: mode.value === "camera" ? "camera" : "laboratory",
+          valid:
+            (mode.value === "camera"
+              ? controller.previewCamera(camera.draft.origin)
+              : controller.previewLaboratory(camera.draft.origin)) === null,
         },
       };
     renderSite(canvas, snapshot, camera);
-    materials.textContent = `${snapshot.game.construction.availableMaterials} materials available`;
+    materials.textContent =
+      mode.value === "camera"
+        ? `${snapshot.game.observations.cameraKits} camera kits available`
+        : `${snapshot.game.construction.availableMaterials} materials available`;
+    placeButton.textContent =
+      mode.value === "camera" ? "Install Camera" : "Authorize Annex";
     const laboratories = availableResearchLaboratories(snapshot.game);
     const nextLaboratorySignature = laboratories.map(({ id }) => id).join(",");
     if (nextLaboratorySignature !== laboratorySignature) {
@@ -91,10 +102,17 @@ export function createSiteCamera(
     researchLaboratory.value = snapshot.game.construction.researchLaboratoryId;
     placeButton.disabled = !camera.draft?.valid;
     if (camera.draft) {
-      const code = controller.previewLaboratory(camera.draft.origin);
-      feedback.textContent = code
-        ? constructionMessages[code]
-        : "Laboratory annex: 9 x 7 / 40 material units / entrance marked.";
+      if (mode.value === "camera") {
+        const code = controller.previewCamera(camera.draft.origin);
+        feedback.textContent = code
+          ? cameraMessages[code]
+          : "Observed floor location / 1 installation kit";
+      } else {
+        const code = controller.previewLaboratory(camera.draft.origin);
+        feedback.textContent = code
+          ? constructionMessages[code]
+          : "Laboratory annex: 9 x 7 / 40 material units / entrance marked.";
+      }
     }
     const signature = JSON.stringify([
       snapshot.game.construction,
@@ -114,8 +132,10 @@ export function createSiteCamera(
     status.textContent = selected
       ? `${selected.name}: ${selected.activity}`
       : camera.selectedId === "SCP-999"
-        ? `SCP-999: ${snapshot.game.scp999.status}`
-        : "Site 828 / Live surveillance";
+        ? snapshot.game.observations.scp999
+          ? `SCP-999: ${snapshot.game.scp999.status}${snapshot.game.observations.visibleEntityIds.includes("SCP-999") ? " / Observed now" : ` / Last observed ${snapshot.game.tick - snapshot.game.observations.scp999.observedTick} minutes ago`}`
+          : "SCP-999: No recorded observation"
+        : "Live coverage and remembered site records";
     zoomLabel.value = `${Math.round(camera.zoom * 100)}%`;
     inspectButton.disabled = camera.selectedId === null;
   }
@@ -128,6 +148,16 @@ export function createSiteCamera(
 
   function placeDraft() {
     if (!camera.draft) return;
+    if (mode.value === "camera") {
+      const result = controller.installCamera(camera.draft.origin);
+      if (result.code === "installed-order") {
+        camera = { ...camera, draft: null };
+        mode.value = "inspect";
+      }
+      feedback.textContent = cameraMessages[result.code];
+      render(result.snapshot);
+      return;
+    }
     const result = controller.placeLaboratory(camera.draft.origin);
     if (result.code === "placed") {
       camera = { ...camera, draft: null };
@@ -143,9 +173,19 @@ export function createSiteCamera(
       draft:
         mode.value === "laboratory"
           ? { origin: { x: 59, y: 80 }, valid: false }
-          : null,
+          : mode.value === "camera"
+            ? {
+                origin: {
+                  x: Math.round(camera.center.x),
+                  y: Math.round(camera.center.y),
+                },
+                valid: false,
+                kind: "camera",
+              }
+            : null,
     };
-    if (camera.draft) focus({ x: 63, y: 83 });
+    if (camera.draft)
+      focus(mode.value === "camera" ? camera.center : { x: 63, y: 83 });
     else {
       feedback.textContent = "";
       render(snapshot);
@@ -280,7 +320,7 @@ export function createSiteCamera(
   canvas.addEventListener("pointermove", (event) => {
     const point = localPoint(event);
     if (!drag) {
-      if (mode.value === "laboratory") {
+      if (mode.value === "laboratory" || mode.value === "camera") {
         const origin = unprojectPosition(
           point,
           camera,
@@ -315,7 +355,7 @@ export function createSiteCamera(
   });
   canvas.addEventListener("pointerup", (event) => {
     if (drag && !drag.moved) {
-      if (mode.value === "laboratory") {
+      if (mode.value === "laboratory" || mode.value === "camera") {
         const origin = unprojectPosition(
           localPoint(event),
           camera,
@@ -340,7 +380,7 @@ export function createSiteCamera(
     drag = null;
   });
   canvas.addEventListener("dblclick", (event) => {
-    if (mode.value === "laboratory") return;
+    if (mode.value === "laboratory" || mode.value === "camera") return;
     const id = entityAt(localPoint(event));
     if (id) {
       select(id);
@@ -416,5 +456,12 @@ export function createSiteCamera(
   canvas.addEventListener("assets-ready", () => render(snapshot));
   const observer = new ResizeObserver(() => render(snapshot));
   observer.observe(canvas);
-  return { render, focus };
+  return {
+    render,
+    focus,
+    planCamera: () => {
+      mode.value = "camera";
+      mode.dispatchEvent(new Event("change"));
+    },
+  };
 }

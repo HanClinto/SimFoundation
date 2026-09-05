@@ -1,3 +1,9 @@
+import {
+  cameraPlacementIssue,
+  installCamera,
+  setCameraEnabled,
+  type CameraPlacementCode,
+} from "../simulation/observations";
 import { advanceSimulation } from "../simulation/tick";
 import { analyzeAnomalousTraitEvidence } from "../simulation/personnel";
 import type { GameState } from "../simulation/state";
@@ -54,6 +60,12 @@ export interface GameController {
   ): ControllerSnapshot;
   setRunning(running: boolean): ControllerSnapshot;
   subscribe(listener: ControllerListener): () => void;
+  previewCamera(position: TilePosition): CameraPlacementCode | null;
+  installCamera(position: TilePosition): {
+    readonly code: CameraPlacementCode;
+    readonly snapshot: ControllerSnapshot;
+  };
+  setCameraEnabled(cameraId: string, enabled: boolean): ControllerSnapshot;
 }
 
 export function createController(initialState: GameState): GameController {
@@ -73,6 +85,19 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+
+    previewCamera(position) {
+      return cameraPlacementIssue(state, position);
+    },
+    installCamera(position) {
+      const result = installCamera(state, position);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    setCameraEnabled(cameraId, enabled) {
+      state = setCameraEnabled(state, cameraId, enabled);
+      return publish();
+    },
 
     setPersonnelSchedule(personId, schedule) {
       state = setPersonnelSchedule(state, personId, schedule);

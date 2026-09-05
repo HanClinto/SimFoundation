@@ -9,8 +9,13 @@ import {
 } from "./construction";
 import type { ClinicalCarePolicy } from "./clinical";
 import { createRoutineState, type RoutineState } from "./routines";
+import {
+  createSiteObservations,
+  observeSite,
+  type SiteObservations,
+} from "./observations";
 
-export const GAME_STATE_VERSION = 20;
+export const GAME_STATE_VERSION = 21;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -37,11 +42,13 @@ export interface GameState {
   readonly construction: ConstructionState;
   readonly clinicalCare: ClinicalCarePolicy;
   readonly routines: RoutineState;
+  readonly observations: SiteObservations;
 }
 
 export function createInitialState(seed = 9620): GameState {
   const personnel = createStartingPersonnel();
-  return {
+  const world = createStartingWorld(personnel.map(({ id }) => id));
+  return observeSite({
     version: GAME_STATE_VERSION,
     seed,
     tick: 0,
@@ -58,7 +65,7 @@ export function createInitialState(seed = 9620): GameState {
     personnel,
     scp999: createScp999State(),
     scp9620: createScp9620State(),
-    world: createStartingWorld(personnel.map(({ id }) => id)),
+    world,
     construction: createConstructionState(),
     clinicalCare: {
       reviewInterval: 0,
@@ -68,5 +75,6 @@ export function createInitialState(seed = 9620): GameState {
       clinicianIds: ["person-priya-shah"],
     },
     routines: createRoutineState(personnel),
-  };
+    observations: createSiteObservations(world),
+  });
 }
