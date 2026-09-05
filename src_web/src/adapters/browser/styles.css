@@ -1345,6 +1345,15 @@ textarea {
   margin-bottom: 5px;
 }
 
+.record-heading > div {
+  display: grid;
+  gap: 2px;
+}
+
+.record-heading button {
+  min-width: 168px;
+}
+
 .assessment-history {
   flex: 1 1 auto;
   padding: 7px;
@@ -1499,6 +1508,19 @@ textarea {
 
 .article-media small {
   margin-top: 6px;
+}
+
+.research-capability {
+  margin-top: 16px;
+  font-family: "MS Sans Serif", Tahoma, sans-serif;
+}
+
+.research-capability .status-list {
+  margin-bottom: 8px;
+}
+
+.research-capability button {
+  min-width: 132px;
 }
 
 .encyclopedia-article a {

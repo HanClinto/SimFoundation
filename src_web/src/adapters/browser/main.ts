@@ -270,6 +270,14 @@ app.innerHTML = `
         <div class="article-media"><span>INTERACTIVE FACILITY INDEX</span><small>5 linked systems available</small></div>
         <p>Site 828 is a provisional research and containment installation established near Jarbridge, Nevada.</p>
         <p>Its founding mandate concerns the study and classification of <a href="#">SCP-9620</a>. Access to detailed records remains restricted.</p>
+        <fieldset class="research-capability">
+          <legend>Personnel screening research</legend>
+          <dl class="status-list">
+            <div><dt>Anomalous Psychometrics</dt><dd id="psychometrics-status">NOT AVAILABLE</dd></div>
+          </dl>
+          <button id="unlock-psychometrics" type="button">Complete Research</button>
+          <p class="system-note">Enables automatic analysis of anomalous personnel evidence and targeted follow-up screening.</p>
+        </fieldset>
       </article>
     </div>
     <div class="resize-grip" aria-hidden="true"></div>
@@ -343,6 +351,12 @@ const siteName = requireElement<HTMLElement>("#site-name");
 const incidentBadge = requireElement<HTMLElement>("#incident-badge");
 const incidentSummary = requireElement<HTMLElement>("#incident-summary");
 const runtimeStatus = requireElement<HTMLElement>("#runtime-status");
+const psychometricsStatus = requireElement<HTMLElement>(
+  "#psychometrics-status",
+);
+const unlockPsychometricsButton = requireElement<HTMLButtonElement>(
+  "#unlock-psychometrics",
+);
 const controlWindow = requireElement<HTMLElement>("#control-window");
 const controlViewMenu = requireElement<HTMLElement>("#control-view-menu");
 const controlViewMenuButton = requireElement<HTMLButtonElement>(
@@ -561,6 +575,16 @@ app.addEventListener("click", (event) => {
   );
   const personId = assessmentButton?.dataset.assessPersonId;
   if (personId) controller.orderPhysicalAssessment(personId);
+
+  const traitAssessmentButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-assess-traits-person-id]");
+  const traitPersonId = traitAssessmentButton?.dataset.assessTraitsPersonId;
+  if (traitPersonId) controller.orderAnomalousAssessment(traitPersonId);
+});
+
+unlockPsychometricsButton.addEventListener("click", () => {
+  controller.unlockAnomalousPsychometrics();
 });
 
 windowManager.subscribe((windows) => {
@@ -681,7 +705,22 @@ function render(snapshot: ControllerSnapshot): void {
     personnelMedicalWindows,
     snapshot.game.personnel,
     snapshot.game.tick,
+    snapshot.game.capabilities.anomalousPsychometrics,
   );
+  psychometricsStatus.textContent = snapshot.game.capabilities
+    .anomalousPsychometrics
+    ? "AVAILABLE"
+    : "NOT AVAILABLE";
+  psychometricsStatus.className = snapshot.game.capabilities
+    .anomalousPsychometrics
+    ? "online-status"
+    : "";
+  unlockPsychometricsButton.disabled =
+    snapshot.game.capabilities.anomalousPsychometrics;
+  unlockPsychometricsButton.textContent = snapshot.game.capabilities
+    .anomalousPsychometrics
+    ? "Research Complete"
+    : "Complete Research";
   personnelCount.textContent = `${snapshot.game.personnel.length} assigned`;
   siteName.textContent = snapshot.game.siteName;
   tickCount.textContent = snapshot.game.tick.toLocaleString();

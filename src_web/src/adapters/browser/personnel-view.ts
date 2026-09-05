@@ -2,6 +2,7 @@ import {
   deriveMood,
   deriveSanity,
   latestPhysicalAssessment,
+  projectTraits,
   type PersonnelRecord,
 } from "../../simulation/personnel";
 
@@ -251,6 +252,15 @@ export function updatePersonnelInspectors(
     const mood = deriveMood(person);
     const sanity = deriveSanity(person);
     const physicalAssessment = latestPhysicalAssessment(person);
+    const projectedTraits = projectTraits(person);
+    const traitSummary =
+      projectedTraits.length > 0
+        ? projectedTraits
+            .map(({ label, status }) =>
+              status === "disclosed" ? label : `${label} (${status})`,
+            )
+            .join(", ")
+        : "No documented Traits";
 
     setText(inspector, "title", `${person.name} - Personnel Inspector`);
     setText(inspector, "initials", initials(person.name));
@@ -274,8 +284,8 @@ export function updatePersonnelInspectors(
           ? "Visible signs reported; severity unknown"
           : "No current report",
     );
-    setText(inspector, "traits", person.traits.join(", "));
-    setText(inspector, "traits-summary", person.traits.join(", "));
+    setText(inspector, "traits", traitSummary);
+    setText(inspector, "traits-summary", traitSummary);
     const bestSkill = [...person.skills].sort(
       (first, second) => second.level - first.level,
     )[0];

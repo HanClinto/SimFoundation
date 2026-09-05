@@ -1,6 +1,6 @@
 import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 
-export const GAME_STATE_VERSION = 6;
+export const GAME_STATE_VERSION = 7;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -16,6 +16,9 @@ export interface GameState {
   readonly gameMinute: number;
   readonly siteName: string;
   readonly incident: IncidentState;
+  readonly capabilities: {
+    readonly anomalousPsychometrics: boolean;
+  };
   readonly personnel: readonly PersonnelRecord[];
 }
 
@@ -29,6 +32,9 @@ export function createInitialState(seed = 9620): GameState {
     incident: {
       level: "green",
       summary: "Routine operations",
+    },
+    capabilities: {
+      anomalousPsychometrics: false,
     },
     personnel: createStartingPersonnel(),
   };

@@ -66,6 +66,7 @@ export interface AssessmentConclusion {
 export interface PhysicalObservation {
   readonly id: string;
   readonly observedTick: number;
+  readonly recordedOrder: number;
   readonly source: string;
   readonly label: string;
   readonly bodyRegions: readonly BodyRegion[];
@@ -74,6 +75,7 @@ export interface PhysicalObservation {
 export interface PhysicalAssessment {
   readonly id: string;
   readonly assessedTick: number;
+  readonly recordedOrder: number;
   readonly assessor: string;
   readonly method: string;
   readonly confidence: number;
@@ -82,6 +84,54 @@ export interface PhysicalAssessment {
     readonly maximum: number;
   };
   readonly conclusions: readonly AssessmentConclusion[];
+}
+
+export type TraitTag =
+  | "work"
+  | "threat-response"
+  | "social"
+  | "anomalous"
+  | "medical"
+  | "conduct";
+
+export interface PersonnelTrait {
+  readonly label: string;
+  readonly tags: readonly TraitTag[];
+  readonly parameters?: Readonly<Record<string, number>>;
+  readonly disclosed: boolean;
+}
+
+export interface TraitEvidence {
+  readonly id: string;
+  readonly observedTick: number;
+  readonly recordedOrder: number;
+  readonly source: string;
+  readonly label: string;
+  readonly supportsTraitId: string;
+}
+
+export interface TraitConclusion {
+  readonly traitId: string;
+  readonly label: string;
+  readonly status: "suspected" | "confirmed" | "ruled-out";
+  readonly confidence: number;
+  readonly evidenceIds: readonly string[];
+}
+
+export interface TraitAssessment {
+  readonly id: string;
+  readonly assessedTick: number;
+  readonly recordedOrder: number;
+  readonly method: string;
+  readonly protocolVersion: number;
+  readonly conclusions: readonly TraitConclusion[];
+}
+
+export interface TraitProjection {
+  readonly traitId: string;
+  readonly label: string;
+  readonly status: "disclosed" | "suspected" | "confirmed";
+  readonly confidence: number;
 }
 
 export interface PersonnelRecord {
@@ -94,7 +144,9 @@ export interface PersonnelRecord {
   readonly stress: number;
   readonly fear: number;
   readonly needs: PersonnelNeeds;
-  readonly traits: readonly string[];
+  readonly traits: Readonly<Record<string, PersonnelTrait>>;
+  readonly traitEvidence: readonly TraitEvidence[];
+  readonly traitAssessments: readonly TraitAssessment[];
   readonly skills: readonly PersonnelSkill[];
   readonly equipment: PersonnelEquipment;
   readonly inventory: readonly PersonnelItem[];
@@ -110,6 +162,7 @@ export interface DerivedMeasure {
 }
 
 const MAX_PHYSICAL_ASSESSMENTS = 50;
+const MAX_TRAIT_ASSESSMENTS = 50;
 
 const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
   {
@@ -122,7 +175,21 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     stress: 18,
     fear: 6,
     needs: { satiety: 82, rest: 76 },
-    traits: ["Methodical", "Psychically Dense"],
+    traits: {
+      methodical: {
+        label: "Methodical",
+        tags: ["work"],
+        disclosed: true,
+      },
+      "psychic-sensitivity": {
+        label: "Psychically Insulated",
+        tags: ["anomalous"],
+        parameters: { sensitivity: -2 },
+        disclosed: false,
+      },
+    },
+    traitEvidence: [],
+    traitAssessments: [],
     skills: [
       { id: "research", level: 8 },
       { id: "medical", level: 3 },
@@ -173,7 +240,20 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     stress: 24,
     fear: 4,
     needs: { satiety: 69, rest: 71 },
-    traits: ["Practical", "Light Sleeper"],
+    traits: {
+      practical: {
+        label: "Practical",
+        tags: ["work"],
+        disclosed: true,
+      },
+      "light-sleeper": {
+        label: "Light Sleeper",
+        tags: ["medical"],
+        disclosed: true,
+      },
+    },
+    traitEvidence: [],
+    traitAssessments: [],
     skills: [
       { id: "engineering", level: 7 },
       { id: "logistics", level: 4 },
@@ -223,7 +303,20 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     stress: 15,
     fear: 3,
     needs: { satiety: 74, rest: 83 },
-    traits: ["Compassionate", "Steady Hands"],
+    traits: {
+      compassionate: {
+        label: "Compassionate",
+        tags: ["social"],
+        disclosed: true,
+      },
+      "steady-hands": {
+        label: "Steady Hands",
+        tags: ["medical"],
+        disclosed: true,
+      },
+    },
+    traitEvidence: [],
+    traitAssessments: [],
     skills: [
       { id: "medical", level: 8 },
       { id: "research", level: 4 },
@@ -265,7 +358,21 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     stress: 21,
     fear: 2,
     needs: { satiety: 77, rest: 68 },
-    traits: ["Iron-Willed", "Alert"],
+    traits: {
+      "threat-sensitivity": {
+        label: "Iron-Willed",
+        tags: ["threat-response"],
+        parameters: { sensitivity: -2 },
+        disclosed: true,
+      },
+      alert: {
+        label: "Alert",
+        tags: ["threat-response"],
+        disclosed: true,
+      },
+    },
+    traitEvidence: [],
+    traitAssessments: [],
     skills: [
       { id: "security", level: 8 },
       { id: "medical", level: 2 },
@@ -315,6 +422,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
       {
         id: "observation-profuse-bleeding-lena",
         observedTick: 0,
+        recordedOrder: 1,
         source: "Supervisor report",
         label: "Profuse bleeding observed",
         bodyRegions: ["rightArm"],
@@ -332,7 +440,21 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     stress: 27,
     fear: 9,
     needs: { satiety: 63, rest: 59 },
-    traits: ["Sociable", "Superstitious"],
+    traits: {
+      sociability: {
+        label: "Sociable",
+        tags: ["social"],
+        parameters: { socialDrive: 2 },
+        disclosed: true,
+      },
+      superstitious: {
+        label: "Superstitious",
+        tags: ["anomalous"],
+        disclosed: true,
+      },
+    },
+    traitEvidence: [],
+    traitAssessments: [],
     skills: [
       { id: "logistics", level: 6 },
       { id: "engineering", level: 4 },
@@ -387,7 +509,30 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     stress: 31,
     fear: 12,
     needs: { satiety: 58, rest: 64 },
-    traits: ["Resourceful", "Psychically Attuned"],
+    traits: {
+      resourceful: {
+        label: "Resourceful",
+        tags: ["work"],
+        disclosed: true,
+      },
+      "psychic-sensitivity": {
+        label: "Psychically Attuned",
+        tags: ["anomalous"],
+        parameters: { sensitivity: 2 },
+        disclosed: false,
+      },
+    },
+    traitEvidence: [
+      {
+        id: "evidence-scanner-response-emil",
+        observedTick: 0,
+        recordedOrder: 1,
+        source: "Inventory scanner log",
+        label: "Repeated anomalous readings while equipment was handled",
+        supportsTraitId: "psychic-sensitivity",
+      },
+    ],
+    traitAssessments: [],
     skills: [
       { id: "logistics", level: 7 },
       { id: "engineering", level: 3 },
@@ -462,14 +607,157 @@ export function latestPhysicalAssessment(
   return person.physicalAssessments.at(-1) ?? null;
 }
 
+function traitStatusRank(status: TraitProjection["status"]): number {
+  return { suspected: 1, disclosed: 2, confirmed: 3 }[status];
+}
+
+function nextRecordOrder(person: PersonnelRecord): number {
+  return (
+    Math.max(
+      0,
+      ...person.physicalObservations.map(({ recordedOrder }) => recordedOrder),
+      ...person.physicalAssessments.map(({ recordedOrder }) => recordedOrder),
+      ...person.traitEvidence.map(({ recordedOrder }) => recordedOrder),
+      ...person.traitAssessments.map(({ recordedOrder }) => recordedOrder),
+    ) + 1
+  );
+}
+
+export function projectTraits(
+  person: PersonnelRecord,
+): readonly TraitProjection[] {
+  const projections = new Map<string, TraitProjection>();
+  for (const [traitId, trait] of Object.entries(person.traits)) {
+    if (!trait.disclosed) continue;
+    projections.set(traitId, {
+      traitId,
+      label: trait.label,
+      status: "disclosed",
+      confidence: 1,
+    });
+  }
+
+  for (const assessment of person.traitAssessments) {
+    for (const conclusion of assessment.conclusions) {
+      if (conclusion.status === "ruled-out") {
+        if (projections.get(conclusion.traitId)?.status === "suspected") {
+          projections.delete(conclusion.traitId);
+        }
+        continue;
+      }
+      const projected: TraitProjection = {
+        traitId: conclusion.traitId,
+        label: conclusion.label,
+        status: conclusion.status,
+        confidence: conclusion.confidence,
+      };
+      const existing = projections.get(conclusion.traitId);
+      if (
+        !existing ||
+        traitStatusRank(projected.status) > traitStatusRank(existing.status) ||
+        (traitStatusRank(projected.status) ===
+          traitStatusRank(existing.status) &&
+          projected.confidence > existing.confidence)
+      ) {
+        projections.set(conclusion.traitId, projected);
+      }
+    }
+  }
+  return [...projections.values()];
+}
+
+function assessSupportedAnomalousTraits(
+  person: PersonnelRecord,
+  assessedTick: number,
+  method: string,
+  status: "suspected" | "confirmed",
+  confidence: number,
+): PersonnelRecord {
+  const conclusions = Object.entries(person.traits).flatMap(
+    ([traitId, trait]): TraitConclusion[] => {
+      if (trait.disclosed || !trait.tags.includes("anomalous")) return [];
+      const existing = projectTraits(person).find(
+        (projection) => projection.traitId === traitId,
+      );
+      if (
+        existing &&
+        traitStatusRank(existing.status) >= traitStatusRank(status)
+      ) {
+        return [];
+      }
+      const evidenceIds = person.traitEvidence
+        .filter(({ supportsTraitId }) => supportsTraitId === traitId)
+        .map(({ id }) => id);
+      if (evidenceIds.length === 0) return [];
+      return [{ traitId, label: trait.label, status, confidence, evidenceIds }];
+    },
+  );
+  if (conclusions.length === 0) return person;
+
+  const assessment: TraitAssessment = {
+    id: `traits-${person.id}-${method}-${assessedTick}`,
+    assessedTick,
+    recordedOrder: nextRecordOrder(person),
+    method,
+    protocolVersion: 1,
+    conclusions,
+  };
+  return {
+    ...person,
+    traitAssessments: [
+      ...person.traitAssessments
+        .filter(
+          ({ assessedTick: previousTick, method: previousMethod }) =>
+            previousTick !== assessedTick || previousMethod !== method,
+        )
+        .slice(-(MAX_TRAIT_ASSESSMENTS - 1)),
+      assessment,
+    ],
+  };
+}
+
+export function analyzeAnomalousTraitEvidence(
+  person: PersonnelRecord,
+  assessedTick: number,
+): PersonnelRecord {
+  return assessSupportedAnomalousTraits(
+    person,
+    assessedTick,
+    "Automated anomalous evidence analysis",
+    "suspected",
+    0.62,
+  );
+}
+
+export function assessAnomalousTraits(
+  person: PersonnelRecord,
+  assessedTick: number,
+): PersonnelRecord {
+  return assessSupportedAnomalousTraits(
+    person,
+    assessedTick,
+    "Targeted anomalous psychometrics",
+    "confirmed",
+    0.9,
+  );
+}
+
 export function assessPhysicalHealth(
   person: PersonnelRecord,
   assessedTick: number,
 ): PersonnelRecord {
+  const previousAssessment = latestPhysicalAssessment(person);
+  if (
+    previousAssessment &&
+    assessedTick - previousAssessment.assessedTick < 30
+  ) {
+    return person;
+  }
   const physicalHealth = derivePhysicalHealth(person);
   const assessment: PhysicalAssessment = {
     id: `physical-${person.id}-${assessedTick}`,
     assessedTick,
+    recordedOrder: nextRecordOrder(person),
     assessor: "Site 828 Medical",
     method: "Basic physical examination",
     confidence: 0.9,

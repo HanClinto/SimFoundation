@@ -1,5 +1,6 @@
 import {
   latestPhysicalAssessment,
+  projectTraits,
   type BodyRegion,
   type PersonnelRecord,
 } from "../../simulation/personnel";
@@ -86,11 +87,11 @@ function medicalChartMarkup(person: PersonnelRecord): string {
   `;
 }
 
-function assessmentRecordMarkup(): string {
+function assessmentRecordMarkup(person: PersonnelRecord): string {
   return `
     <header class="record-heading">
-      <strong>Assessment history</strong>
-      <span>Newest first</span>
+      <div><strong>Assessment history</strong><span>Newest first</span></div>
+      <button type="button" data-assess-traits-person-id="${person.id}" disabled>Run Anomalous Screening</button>
     </header>
     <div class="assessment-history" data-assessment-field="history"></div>
   `;
@@ -114,7 +115,7 @@ export function createPersonnelMedicalWindows(
       `assessment-record-${person.id}`,
       person,
       "assessments",
-      assessmentRecordMarkup(),
+      assessmentRecordMarkup(person),
     );
     host.append(medicalChart, assessmentRecord);
     medicalCharts.push(medicalChart);
@@ -146,7 +147,7 @@ export function createPersonnelMedicalWindows(
   }
 
   const windows = { medicalCharts, assessmentRecords };
-  updatePersonnelMedicalWindows(windows, personnel, 0);
+  updatePersonnelMedicalWindows(windows, personnel, 0, false);
   return windows;
 }
 
@@ -316,45 +317,115 @@ function updateAssessmentRecord(
     );
     details.append(source);
     entry.append(header, details, textElement("p", observation.label));
-    return { tick: observation.observedTick, entry };
+    return {
+      tick: observation.observedTick,
+      sequence: observation.recordedOrder,
+      entry,
+    };
   });
-  const assessmentEntries = [...person.physicalAssessments]
-    .reverse()
-    .map((assessment) => {
-      const entry = document.createElement("article");
-      entry.className = "assessment-entry";
-      const findingText =
-        assessment.conclusions.length > 0
-          ? assessment.conclusions
-              .map((conclusion) => `${conclusion.label} (${conclusion.status})`)
-              .join("; ")
-          : "No physical findings reported";
-      const header = document.createElement("header");
-      header.append(
-        textElement("strong", assessment.method),
-        textElement(
-          "time",
-          `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
-        ),
-      );
-      const details = document.createElement("dl");
-      for (const [term, value] of [
-        ["Assessor", assessment.assessor],
-        ["Confidence", `${Math.round(assessment.confidence * 100)}%`],
-        [
-          "Estimate",
-          `Physical ${assessment.estimate.minimum}-${assessment.estimate.maximum}`,
-        ],
-      ] as const) {
-        const row = document.createElement("div");
-        row.append(textElement("dt", term), textElement("dd", value));
-        details.append(row);
-      }
-      entry.append(header, details, textElement("p", findingText));
-      return { tick: assessment.assessedTick, entry };
-    });
-  const recordEntries = [...assessmentEntries, ...observationEntries]
-    .sort((first, second) => second.tick - first.tick)
+  const assessmentEntries = person.physicalAssessments.map((assessment) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry";
+    const findingText =
+      assessment.conclusions.length > 0
+        ? assessment.conclusions
+            .map((conclusion) => `${conclusion.label} (${conclusion.status})`)
+            .join("; ")
+        : "No physical findings reported";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", assessment.method),
+      textElement(
+        "time",
+        `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
+      ),
+    );
+    const details = document.createElement("dl");
+    for (const [term, value] of [
+      ["Assessor", assessment.assessor],
+      ["Confidence", `${Math.round(assessment.confidence * 100)}%`],
+      [
+        "Estimate",
+        `Physical ${assessment.estimate.minimum}-${assessment.estimate.maximum}`,
+      ],
+    ] as const) {
+      const row = document.createElement("div");
+      row.append(textElement("dt", term), textElement("dd", value));
+      details.append(row);
+    }
+    entry.append(header, details, textElement("p", findingText));
+    return {
+      tick: assessment.assessedTick,
+      sequence: assessment.recordedOrder,
+      entry,
+    };
+  });
+  const traitEvidenceEntries = person.traitEvidence.map((evidence) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry observation-entry";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", "Behavioral evidence"),
+      textElement(
+        "time",
+        `Tick ${evidence.observedTick} / ${assessmentAge(currentTick, evidence.observedTick)}`,
+      ),
+    );
+    const details = document.createElement("dl");
+    const source = document.createElement("div");
+    source.append(
+      textElement("dt", "Source"),
+      textElement("dd", evidence.source),
+    );
+    details.append(source);
+    entry.append(header, details, textElement("p", evidence.label));
+    return {
+      tick: evidence.observedTick,
+      sequence: evidence.recordedOrder,
+      entry,
+    };
+  });
+  const traitAssessmentEntries = person.traitAssessments.map((assessment) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry trait-assessment-entry";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", assessment.method),
+      textElement(
+        "time",
+        `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
+      ),
+    );
+    const details = document.createElement("dl");
+    const protocol = document.createElement("div");
+    protocol.append(
+      textElement("dt", "Protocol"),
+      textElement("dd", `Version ${assessment.protocolVersion}`),
+    );
+    details.append(protocol);
+    const conclusions = assessment.conclusions
+      .map(
+        (conclusion) =>
+          `${conclusion.label} (${conclusion.status}, ${Math.round(conclusion.confidence * 100)}%)`,
+      )
+      .join("; ");
+    entry.append(header, details, textElement("p", conclusions));
+    return {
+      tick: assessment.assessedTick,
+      sequence: assessment.recordedOrder,
+      entry,
+    };
+  });
+  const recordEntries = [
+    ...assessmentEntries,
+    ...observationEntries,
+    ...traitEvidenceEntries,
+    ...traitAssessmentEntries,
+  ]
+    .sort(
+      (first, second) =>
+        second.tick - first.tick || second.sequence - first.sequence,
+    )
     .map(({ entry }) => entry);
   history.replaceChildren(
     ...(recordEntries.length > 0
@@ -373,6 +444,7 @@ export function updatePersonnelMedicalWindows(
   windows: PersonnelMedicalWindows,
   personnel: readonly PersonnelRecord[],
   currentTick: number,
+  anomalousPsychometricsUnlocked: boolean,
 ): void {
   for (const person of personnel) {
     const chart = windows.medicalCharts.find(
@@ -385,5 +457,42 @@ export function updatePersonnelMedicalWindows(
       throw new Error(`Medical windows missing: ${person.id}`);
     updateMedicalChart(chart, person, currentTick);
     updateAssessmentRecord(record, person, currentTick);
+    const screeningButton = record.querySelector<HTMLButtonElement>(
+      "[data-assess-traits-person-id]",
+    );
+    if (screeningButton) {
+      const projectedTraits = projectTraits(person);
+      const supportedHiddenTraits = Object.entries(person.traits).filter(
+        ([traitId, trait]) =>
+          !trait.disclosed &&
+          trait.tags.includes("anomalous") &&
+          person.traitEvidence.some(
+            ({ supportsTraitId }) => supportsTraitId === traitId,
+          ),
+      );
+      const screeningComplete =
+        supportedHiddenTraits.length > 0 &&
+        supportedHiddenTraits.every(([traitId]) =>
+          projectedTraits.some(
+            (projection) =>
+              projection.traitId === traitId &&
+              projection.status === "confirmed",
+          ),
+        );
+      screeningButton.disabled =
+        !anomalousPsychometricsUnlocked ||
+        supportedHiddenTraits.length === 0 ||
+        screeningComplete;
+      screeningButton.textContent = screeningComplete
+        ? "Screening Complete"
+        : "Run Anomalous Screening";
+      screeningButton.title = !anomalousPsychometricsUnlocked
+        ? "Requires Anomalous Psychometrics research"
+        : supportedHiddenTraits.length === 0
+          ? "No qualifying anomalous evidence"
+          : screeningComplete
+            ? "Supported anomalous Traits are confirmed"
+            : "Run targeted anomalous psychometrics";
+    }
   }
 }

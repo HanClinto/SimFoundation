@@ -68,8 +68,55 @@ describe("game controller", () => {
     expect(before?.physicalAssessments).toHaveLength(0);
     expect(after?.effects).toEqual(before?.effects);
     expect(after?.physicalAssessments).toHaveLength(1);
+    expect(
+      controller
+        .orderPhysicalAssessment("person-jon-bell")
+        .game.personnel.find(({ id }) => id === "person-jon-bell")
+        ?.physicalAssessments,
+    ).toHaveLength(1);
     expect(() => controller.orderPhysicalAssessment("missing-person")).toThrow(
       "Unknown person: missing-person",
     );
+  });
+
+  it("unlocks anomalous evidence analysis before targeted screening", () => {
+    const controller = createController(createInitialState());
+
+    expect(() =>
+      controller.orderAnomalousAssessment("person-emil-novak"),
+    ).toThrow("Anomalous Psychometrics has not been unlocked");
+
+    const unlocked = controller.unlockAnomalousPsychometrics();
+    const analyzedEmil = unlocked.game.personnel.find(
+      ({ id }) => id === "person-emil-novak",
+    );
+    const analyzedMara = unlocked.game.personnel.find(
+      ({ id }) => id === "person-mara-voss",
+    );
+    expect(unlocked.game.capabilities.anomalousPsychometrics).toBe(true);
+    expect(analyzedEmil?.traitAssessments.at(-1)?.conclusions[0]?.status).toBe(
+      "suspected",
+    );
+    expect(analyzedMara?.traitAssessments).toHaveLength(0);
+
+    const unlockedAgain = controller.unlockAnomalousPsychometrics();
+    expect(
+      unlockedAgain.game.personnel.find(({ id }) => id === "person-emil-novak")
+        ?.traitAssessments,
+    ).toHaveLength(1);
+
+    const screened = controller.orderAnomalousAssessment("person-emil-novak");
+    const screenedEmil = screened.game.personnel.find(
+      ({ id }) => id === "person-emil-novak",
+    );
+    expect(screenedEmil?.traitAssessments.at(-1)?.conclusions[0]?.status).toBe(
+      "confirmed",
+    );
+    expect(
+      controller
+        .orderAnomalousAssessment("person-emil-novak")
+        .game.personnel.find(({ id }) => id === "person-emil-novak")
+        ?.traitAssessments,
+    ).toHaveLength(2);
   });
 });

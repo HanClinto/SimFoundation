@@ -1,5 +1,9 @@
 import { advanceSimulation } from "../simulation/tick";
-import { assessPhysicalHealth } from "../simulation/personnel";
+import {
+  analyzeAnomalousTraitEvidence,
+  assessAnomalousTraits,
+  assessPhysicalHealth,
+} from "../simulation/personnel";
 import type { GameState } from "../simulation/state";
 
 export interface ControllerSnapshot {
@@ -12,6 +16,8 @@ export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 export interface GameController {
   getSnapshot(): ControllerSnapshot;
   advance(tickCount?: number): ControllerSnapshot;
+  unlockAnomalousPsychometrics(): ControllerSnapshot;
+  orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
   setRunning(running: boolean): ControllerSnapshot;
   subscribe(listener: ControllerListener): () => void;
@@ -56,6 +62,39 @@ export function createController(initialState: GameState): GameController {
         personnel: state.personnel.map((person) =>
           person.id === personId
             ? assessPhysicalHealth(person, state.tick)
+            : person,
+        ),
+      };
+      return publish();
+    },
+
+    unlockAnomalousPsychometrics() {
+      if (state.capabilities.anomalousPsychometrics) return getSnapshot();
+      state = {
+        ...state,
+        capabilities: {
+          ...state.capabilities,
+          anomalousPsychometrics: true,
+        },
+        personnel: state.personnel.map((person) =>
+          analyzeAnomalousTraitEvidence(person, state.tick),
+        ),
+      };
+      return publish();
+    },
+
+    orderAnomalousAssessment(personId) {
+      if (!state.capabilities.anomalousPsychometrics) {
+        throw new Error("Anomalous Psychometrics has not been unlocked");
+      }
+      if (!state.personnel.some(({ id }) => id === personId)) {
+        throw new Error(`Unknown person: ${personId}`);
+      }
+      state = {
+        ...state,
+        personnel: state.personnel.map((person) =>
+          person.id === personId
+            ? assessAnomalousTraits(person, state.tick)
             : person,
         ),
       };
