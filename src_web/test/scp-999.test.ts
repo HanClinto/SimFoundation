@@ -28,7 +28,14 @@ function contactState() {
 
 describe("SCP-999", () => {
   it("travels before contact and cannot deliver Calm remotely", () => {
-    const initial = createInitialState();
+    const base = contactState();
+    const initial = {
+      ...base,
+      world: {
+        ...base.world,
+        positions: { ...base.world.positions, "SCP-999": { x: 54, y: 59 } },
+      },
+    };
     const approaching = advanceSimulation(initial);
     expect(approaching.scp999).toMatchObject({
       status: "approaching",
@@ -39,7 +46,7 @@ describe("SCP-999", () => {
       initial.world.positions["SCP-999"],
     );
     expect(
-      advance(initial, 5)
+      advance(initial, 1)
         .personnel.flatMap(({ effects }) => effects)
         .some(({ id }) => id === "effect-comforted-by-999"),
     ).toBe(false);
@@ -79,7 +86,7 @@ describe("SCP-999", () => {
     expect(advance(interrupted, 3).scp999.lastInteraction).toBeNull();
   });
 
-  it("comforts the most stressed eligible person deterministically", () => {
+  it("responds to nearby observable distress deterministically", () => {
     const first = advanceSimulation(contactState());
     const second = advanceSimulation(contactState());
 
@@ -106,7 +113,7 @@ describe("SCP-999", () => {
         completedTick: 5,
       },
     });
-    expect(emil?.stress).toBeCloseTo(27.04);
+    expect(emil?.stress).toBeCloseTo(24.74);
     expect(emil?.effects).toContainEqual(
       expect.objectContaining({
         id: "effect-comforted-by-999",

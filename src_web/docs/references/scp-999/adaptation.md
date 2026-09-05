@@ -13,6 +13,7 @@ Source: [SCP-999 by ProfSnider](https://scp-wiki.wikidot.com/scp-999), revision 
 ## Game Abstractions and Open Questions
 
 - The article does not establish a global stress-ranking ability, a detection radius, or exact emotional telemetry. Local perception and memory are explicit game abstractions.
-- The prior four-tick contact reward, six-tick cooldown, and global targeting remain provisional. They are not canonical timing or physiology.
+- The prototype now considers visible idle personnel within six tiles, favors observable distress, then distance and stable ID. It can greet content personnel, loses targets outside perception, and does not approach sleeping/eating staff. This is an explicit local-perception adaptation; no site-wide stress ranking remains.
+- Touch applies mild relief immediately with a lingering memory; sustained nearby contact strengthens the benefit. Four-tick contact, twelve-tick memory, six-tick cooldown, and numeric effect strengths remain provisional game balancing, not canonical timing or physiology.
 - The revised marker removes a permanent face, widens the resting body, and uses translucent fills. Map size is a stylized approximation; the tile grid has no formally established meter scale.
-- Detailed feeding, nighttime enclosure, boredom, and graded contact effects require later simulation work. Do not label them implemented merely because they appear in this document.
+- Detailed feeding, nighttime enclosure, and boredom drives require later simulation work. Do not label them implemented merely because they appear in this document.

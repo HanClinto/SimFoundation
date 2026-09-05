@@ -331,7 +331,7 @@ app.innerHTML = `
         <legend>Last recorded interaction</legend>
         <p id="scp-999-last-interaction">No interaction recorded.</p>
       </fieldset>
-      <p class="system-note">Approved roaming protocol. SCP-999 may initiate supervised contact with personnel exhibiting elevated stress.</p>
+      <p class="system-note">Local social contact observed. SCP-999 greets nearby personnel and shows particular interest in observable distress. Sleeping and eating personnel are left undisturbed.</p>
     </div>
     <div class="resize-grip" aria-hidden="true"></div>
   </section>

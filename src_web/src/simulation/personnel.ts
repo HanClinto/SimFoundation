@@ -339,6 +339,12 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
           tags: ["work"],
           disclosed: true,
         },
+        "emotional-expression": {
+          label: "Reserved presentation",
+          tags: ["social"],
+          parameters: { reserve: 2 },
+          disclosed: false,
+        },
         "light-sleeper": {
           label: "Light Sleeper",
           tags: ["medical"],
@@ -556,6 +562,12 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
           tags: ["social"],
           parameters: { socialDrive: 2 },
           disclosed: true,
+        },
+        "emotional-expression": {
+          label: "Masks distress",
+          tags: ["social"],
+          parameters: { masking: 2 },
+          disclosed: false,
         },
         superstitious: {
           label: "Superstitious",
@@ -1099,20 +1111,28 @@ export function projectPsychology(
 ): PsychologicalProjection {
   const mood = deriveMood(person);
   const sanity = deriveSanity(person);
-  const moodAppearance = {
+  let moodAppearance = {
     critical: "Appears deeply distressed",
     poor: "Appears unhappy",
     strained: "Appears tense",
     stable: "Appears content",
     strong: "Appears upbeat",
   }[mood.band];
-  const sanityAppearance = {
+  let sanityAppearance = {
     critical: "Appears disconnected",
     poor: "Appears disoriented",
     strained: "Appears unsettled",
     stable: "Appears coherent",
     strong: "Appears lucid",
   }[sanity.band];
+  const expression = person.traits["emotional-expression"]?.parameters;
+  if ((expression?.masking ?? 0) > 0) {
+    moodAppearance = "Smiles during conversation";
+    sanityAppearance = "Presentation appears composed";
+  } else if ((expression?.reserve ?? 0) > 0) {
+    moodAppearance = "Expression difficult to read";
+    sanityAppearance = "Little outward indication";
+  }
   return {
     moodAppearance,
     sanityAppearance,

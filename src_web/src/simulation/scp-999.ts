@@ -1,10 +1,15 @@
-import type { PersonnelEffect, PersonnelRecord } from "./personnel";
+import {
+  projectPsychology,
+  type PersonnelEffect,
+  type PersonnelRecord,
+} from "./personnel";
 import { findRoute, type SiteWorld } from "./world";
+import { canObserve } from "./observations";
 
 const INTERACTION_DURATION = 4;
 const CALM_DURATION = 12;
 const COOLDOWN_DURATION = 6;
-const MINIMUM_TARGET_STRESS = 25;
+const SOCIAL_PERCEPTION_RANGE = 6;
 const IMMEDIATE_STRESS_RELIEF = 4;
 const CALM_EFFECT_ID = "effect-comforted-by-999";
 
@@ -45,19 +50,40 @@ function selectTarget(
   personnel: readonly PersonnelRecord[],
   world: SiteWorld,
   unavailableIds: readonly string[],
+  currentTick: number,
 ): PersonnelRecord | null {
+  const origin = world.positions["SCP-999"];
+  if (!origin) return null;
+  const observableDistress = (person: PersonnelRecord) =>
+    /distressed|unhappy|tense/.test(projectPsychology(person).moodAppearance) ||
+    person.physicalObservations.some(
+      (observation) => currentTick - observation.observedTick < 30,
+    );
+  const distance = (person: PersonnelRecord) => {
+    const position = world.positions[person.id]!;
+    return Math.abs(position.x - origin.x) + Math.abs(position.y - origin.y);
+  };
   return (
     [...personnel]
       .filter(
         (person) =>
-          person.stress >= MINIMUM_TARGET_STRESS &&
           !unavailableIds.includes(person.id) &&
           !hasCalmEffect(person) &&
-          person.currentJobId === null,
+          person.currentJobId === null &&
+          world.positions[person.id] !== undefined &&
+          canObserve(
+            world.map,
+            origin,
+            world.positions[person.id]!,
+            SOCIAL_PERCEPTION_RANGE,
+          ),
       )
       .sort(
         (left, right) =>
-          right.stress - left.stress || left.id.localeCompare(right.id),
+          Number(observableDistress(right)) -
+            Number(observableDistress(left)) ||
+          distance(left) - distance(right) ||
+          left.id.localeCompare(right.id),
       )
       .find((person) => {
         const position = world.positions[person.id];
@@ -168,9 +194,12 @@ export function advanceScp999(
     anomaly.status === "approaching" &&
     previousTarget?.currentJobId === null &&
     !hasCalmEffect(previousTarget) &&
-    !unavailableIds.includes(previousTarget.id)
+    !unavailableIds.includes(previousTarget.id) &&
+    origin &&
+    previousPosition &&
+    canObserve(world.map, origin, previousPosition, SOCIAL_PERCEPTION_RANGE)
       ? previousTarget
-      : selectTarget(personnel, world, unavailableIds);
+      : selectTarget(personnel, world, unavailableIds, currentTick);
   const targetPosition = target ? world.positions[target.id] : undefined;
   const route =
     origin && targetPosition
@@ -226,7 +255,18 @@ export function advanceScp999(
       targetPersonId: target.id,
       interactionEndsAtTick: currentTick + INTERACTION_DURATION,
     },
-    personnel,
+    personnel: personnel.map((person) =>
+      person.id === target.id
+        ? {
+            ...person,
+            stress: Math.max(0, person.stress - 0.5),
+            effects: [
+              ...person.effects.filter(({ id }) => id !== CALM_EFFECT_ID),
+              calmEffect(currentTick),
+            ],
+          }
+        : person,
+    ),
     world,
   };
 }

@@ -180,7 +180,7 @@ SCP-999 is a friendly resident anomaly that wanders through permitted areas, see
 
 SCP-999 remains an entity with needs, preferences, access rules, and inspectable behavior rather than a passive room modifier.
 
-The prototype currently chooses the highest-stress reachable idle person using site-wide authoritative values. Treat that as a temporary test behavior, not an approved characterization or evidence of canonical sensing abilities. Before replacing it, review the [source article by ProfSnider](https://scp-wiki.wikidot.com/scp-999), distinguish sourced behavior from game adaptations, and define what the entity can perceive. Favor locally motivated social encounters and its own routines over globally optimizing personnel wellbeing. Any special sensitivity to distress needs an explicit source-grounded rule; it must not implicitly grant the player knowledge of hidden personnel state.
+The prototype now uses local visible encounters rather than site-wide stress ranking. SCP-999 can greet content personnel and gives priority to outward signs of distress among visible candidates; it loses a target when sight is lost. Contact starts a mild calming effect immediately and strengthens the benefit through sustained contact. Sleeping and eating personnel are excluded. The six-tile perception limit, exact effect strengths, and cooldown are gameplay abstractions, not claimed canonical sensing abilities or physiology. See the [source archive and adaptation notes](docs/references/scp-999/adaptation.md) for supported behavior and remaining gaps such as feeding and nighttime enclosure routines.
 
 ## Items, Inventory, and Equipment
 

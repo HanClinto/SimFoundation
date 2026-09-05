@@ -378,7 +378,9 @@ This is one data shape with optional fields, not a hierarchy of Effect subclasse
 - Near SCP-999: spatial aura; Fear recovery while in range
 - Scholarly: equipment affix; Research XP bonus regardless of item base type
 
-The first playable implements a narrow version of Comforted by SCP-999: four ticks of supervised contact apply immediate Stress relief and a twelve-tick memory with additional Stress recovery. SCP-999 then observes a six-tick cooldown and excludes personnel who still carry the memory when selecting the highest-Stress eligible target. Stable personnel ID resolves ties.
+The current prototype implements a narrow version of Comforted by SCP-999: touch begins mild Stress relief and a temporary memory; four ticks of continued nearby contact add stronger relief and refresh the twelve-tick memory. SCP-999 then observes a six-tick cooldown. It considers visible nearby idle personnel, prioritizes observable distress rather than exact hidden Stress, and uses distance and stable ID for ties. Sleeping and eating personnel are excluded. These numerical timings and local visual perception are game abstractions, not canonical physiology.
+
+Outward emotional presentation can differ from derived condition. The prototype's hidden `emotional-expression` Trait supports reserved and masking parameters: an unreadable expression or composed conversation is not evidence of health. Observations record the outward impression; deeper psychological assessment can reveal a substantially different condition without automatically disclosing the Trait itself.
 
 For example, the Homicidal Trait's ordinary Effect can include:
 
