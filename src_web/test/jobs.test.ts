@@ -136,15 +136,38 @@ describe("site jobs", () => {
     });
   });
 
-  it("raises and resolves the SCP-9620 telemetry incident through work", () => {
+  it("runs the staged SCP-9620 protocol and resolves its incident", () => {
     const controller = createController(createInitialState(42));
     controller.authorizeJob("job-calibrate-9620-sensors");
 
-    const incident = controller.advance(8);
+    const calibrated = controller.advance(8);
+    expect(calibrated.game.incident.level).toBe("green");
+    expect(calibrated.game.scp9620).toMatchObject({
+      phase: "baseline",
+      observations: [
+        expect.objectContaining({ id: "observation-9620-calibration" }),
+      ],
+    });
+    expect(
+      calibrated.game.jobs.find(({ id }) => id === "job-record-9620-baseline"),
+    ).toMatchObject({ status: "proposed", skillId: "research" });
+
+    controller.authorizeJob("job-record-9620-baseline");
+    const baseline = controller.advance(6);
+    expect(baseline.game.scp9620.phase).toBe("activation");
+    expect(
+      baseline.game.jobs.find(
+        ({ id }) => id === "job-run-9620-activation-trial",
+      ),
+    ).toMatchObject({ status: "proposed", skillId: "research" });
+
+    controller.authorizeJob("job-run-9620-activation-trial");
+    const incident = controller.advance(5);
     expect(incident.game.incident).toEqual({
       level: "yellow",
       summary: "SCP-9620 telemetry feedback outside validated limits",
     });
+    expect(incident.game.scp9620.phase).toBe("feedback-incident");
     expect(
       incident.game.jobs.find(({ id }) => id === "job-stabilize-9620-feedback"),
     ).toMatchObject({ status: "proposed", skillId: "engineering" });
@@ -162,6 +185,15 @@ describe("site jobs", () => {
     expect(resolved.game.incident).toEqual({
       level: "green",
       summary: "Telemetry feedback stabilized",
+    });
+    expect(resolved.game.scp9620).toMatchObject({
+      phase: "stabilized",
+      observations: [
+        expect.objectContaining({ id: "observation-9620-calibration" }),
+        expect.objectContaining({ id: "observation-9620-passive" }),
+        expect.objectContaining({ id: "observation-9620-feedback" }),
+        expect.objectContaining({ id: "observation-9620-unresolved" }),
+      ],
     });
     expect(
       resolved.game.personnel

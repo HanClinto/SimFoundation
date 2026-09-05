@@ -73,6 +73,46 @@ export function createTelemetryRecoveryJob(): SiteJob {
   };
 }
 
+export function createBaselineObservationJob(): SiteJob {
+  return {
+    id: "job-record-9620-baseline",
+    title: "Record SCP-9620 baseline",
+    description:
+      "Observe the inactive apparatus under calibrated instrumentation.",
+    skillId: "research",
+    priority: 55,
+    xpPerTick: 1,
+    preferredBiases: { mindMight: -1, receptiveResolute: -1 },
+    status: "proposed",
+    progress: 0,
+    requiredProgress: 48,
+    assignedPersonId: null,
+    assignmentReason: null,
+    authorizedTick: null,
+    completedTick: null,
+  };
+}
+
+export function createActivationTrialJob(): SiteJob {
+  return {
+    id: "job-run-9620-activation-trial",
+    title: "Run SCP-9620 activation trial",
+    description:
+      "Apply the approved low-energy input and record the apparatus response.",
+    skillId: "research",
+    priority: 60,
+    xpPerTick: 1,
+    preferredBiases: { mindMight: -1, receptiveResolute: 1 },
+    status: "proposed",
+    progress: 0,
+    requiredProgress: 40,
+    assignedPersonId: null,
+    assignmentReason: null,
+    authorizedTick: null,
+    completedTick: null,
+  };
+}
+
 export function authorizeJob(job: SiteJob, authorizedTick: number): SiteJob {
   if (job.status !== "proposed") return job;
   return { ...job, status: "available", authorizedTick };

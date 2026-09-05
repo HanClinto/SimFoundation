@@ -281,12 +281,19 @@ app.innerHTML = `
 
   <section id="anomaly-window" class="window managed-window anomaly-window" aria-label="Site 828 anomaly registry" hidden>
     <div class="title-bar">
-      <div class="title-bar-text">Anomaly Registry - SCP-999</div>
+      <div class="title-bar-text">Site 828 - Anomaly Registry</div>
       <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
     </div>
     <div class="window-body alarm-body">
       <fieldset>
-        <legend>Resident anomaly status</legend>
+        <legend>SCP-9620 experimental protocol</legend>
+        <dl class="status-list">
+          <div><dt>Current phase</dt><dd id="scp-9620-phase">CALIBRATION</dd></div>
+        </dl>
+        <ol id="scp-9620-observations" class="response-key" aria-label="SCP-9620 observations"></ol>
+      </fieldset>
+      <fieldset>
+        <legend>SCP-999 resident protocol</legend>
         <dl class="status-list">
           <div><dt>Designation</dt><dd>SCP-999</dd></div>
           <div><dt>Protocol state</dt><dd id="scp-999-status">ROAMING</dd></div>
@@ -427,6 +434,10 @@ const simulationSeed = requireElement<HTMLElement>("#simulation-seed");
 const personnelRows = requireElement<HTMLElement>("#personnel-rows");
 const personnelCount = requireElement<HTMLElement>("#personnel-count");
 const workOrdersList = requireElement<HTMLElement>("#work-orders-list");
+const scp9620Phase = requireElement<HTMLElement>("#scp-9620-phase");
+const scp9620Observations = requireElement<HTMLOListElement>(
+  "#scp-9620-observations",
+);
 const scp999Status = requireElement<HTMLElement>("#scp-999-status");
 const scp999Target = requireElement<HTMLElement>("#scp-999-target");
 const scp999Timing = requireElement<HTMLElement>("#scp-999-timing");
@@ -545,7 +556,7 @@ windowManager.register(requireElement<HTMLElement>("#anomaly-window"), {
   id: "anomaly-window",
   title: "Anomaly Registry",
   iconUrl: recordsIconUrl,
-  defaultRect: { left: 736, top: 116, width: 400, height: 330 },
+  defaultRect: { left: 736, top: 76, width: 440, height: 520 },
   defaultOpen: false,
   minimumWidth: 320,
   minimumHeight: 220,
@@ -862,6 +873,27 @@ function render(snapshot: ControllerSnapshot): void {
     snapshot.game.capabilities.anomalousPsychometrics,
   );
   updateWorkOrders(workOrdersList, snapshot.game.jobs, snapshot.game.personnel);
+  const scp9620Labels = {
+    calibration: "CALIBRATION",
+    baseline: "BASELINE OBSERVATION",
+    activation: "ACTIVATION REVIEW",
+    "feedback-incident": "FEEDBACK INCIDENT",
+    stabilized: "STABILIZED / REVIEW PENDING",
+  } as const;
+  scp9620Phase.textContent = scp9620Labels[snapshot.game.scp9620.phase];
+  scp9620Observations.replaceChildren(
+    ...(snapshot.game.scp9620.observations.length > 0
+      ? snapshot.game.scp9620.observations.map((observation) => {
+          const item = document.createElement("li");
+          item.textContent = `${observation.certainty === "confirmed" ? "Confirmed" : "Unresolved"} / ${observation.label}`;
+          return item;
+        })
+      : [
+          Object.assign(document.createElement("li"), {
+            textContent: "No approved observations recorded.",
+          }),
+        ]),
+  );
   const scp999TargetPerson = snapshot.game.personnel.find(
     ({ id }) => id === snapshot.game.scp999.targetPersonId,
   );

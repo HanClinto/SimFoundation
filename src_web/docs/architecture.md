@@ -76,6 +76,8 @@ The browser stores authoritative game state under `scp-site-manager.game-state.v
 
 Resident anomaly records are authoritative simulation state. The first implementation stores SCP-999's protocol state, target, interaction boundary, cooldown, and last completed contact. The browser Anomaly Registry only projects those records; target choice and personnel Effects remain deterministic headless behavior.
 
+SCP-9620's experiment is also authoritative state. Calibration, passive baseline observation, activation, and incident recovery are separate serializable jobs; completion records observations and proposes the next stage without authorizing it. Only activation raises the Yellow feedback incident, and recovery leaves the apparatus stabilized while its function remains unresolved.
+
 Facility and map windows are inspectors over simulation-owned map entities. Global playback and lifecycle controls live in dedicated utility windows. Raw deterministic internals such as tick number and seed are exposed only through opt-in developer inspectors.
 
 Browser presentation should follow the interface contract in [lookbook.md](lookbook.md). The look-book may evolve through visual review without weakening the dependency or state-ownership rules in this document.

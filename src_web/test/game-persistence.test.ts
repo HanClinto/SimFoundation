@@ -119,24 +119,43 @@ describe("game persistence", () => {
     expect(
       loadGameState(memoryStorage(JSON.stringify(brokenAnomaly))).status,
     ).toBe("invalid");
+
+    const brokenProtocol = {
+      ...state,
+      scp9620: {
+        ...state.scp9620,
+        observations: [{ certainty: "probably" }],
+      },
+    };
+    expect(
+      loadGameState(memoryStorage(JSON.stringify(brokenProtocol))).status,
+    ).toBe("invalid");
   });
 
   it("continues deterministically after load and another save cycle", () => {
     const storage = memoryStorage();
-    const first = createController(createInitialState(42));
-    first.authorizeJob("job-calibrate-9620-sensors");
-    saveGameState(storage, first.advance(8).game);
+    let controller = createController(createInitialState(42));
 
-    const loaded = loadGameState(storage);
-    if (loaded.status !== "loaded") throw new Error("save did not load");
-    const continued = createController(loaded.state);
-    continued.authorizeJob("job-stabilize-9620-feedback");
-    const resolved = continued.advance(8).game;
+    for (const [jobId, ticks] of [
+      ["job-calibrate-9620-sensors", 8],
+      ["job-record-9620-baseline", 6],
+      ["job-run-9620-activation-trial", 5],
+      ["job-stabilize-9620-feedback", 8],
+    ] as const) {
+      controller.authorizeJob(jobId);
+      saveGameState(storage, controller.advance(ticks).game);
+      const loaded = loadGameState(storage);
+      if (loaded.status !== "loaded") throw new Error("save did not load");
+      controller = createController(loaded.state);
+    }
+
+    const resolved = controller.getSnapshot().game;
     saveGameState(storage, resolved);
 
     const reloaded = loadGameState(storage);
     expect(reloaded).toEqual({ status: "loaded", state: resolved });
     expect(resolved.incident.level).toBe("green");
+    expect(resolved.scp9620.phase).toBe("stabilized");
   });
 
   it("replaces controller state with a detached loaded snapshot", () => {

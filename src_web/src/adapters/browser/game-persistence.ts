@@ -348,6 +348,32 @@ function isScp999State(value: unknown): boolean {
   );
 }
 
+function isScp9620State(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    value.id === "SCP-9620" &&
+    isLiteral(value.phase, [
+      "calibration",
+      "baseline",
+      "activation",
+      "feedback-incident",
+      "stabilized",
+    ] as const) &&
+    isArrayOf(
+      value.observations,
+      (observation) =>
+        isRecord(observation) &&
+        isNonEmptyString(observation.id) &&
+        isIntegerInRange(observation.recordedTick, 0) &&
+        isLiteral(observation.certainty, [
+          "confirmed",
+          "unresolved",
+        ] as const) &&
+        isNonEmptyString(observation.label),
+    )
+  );
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -366,7 +392,8 @@ function isGameState(value: unknown): value is GameState {
   return (
     isArrayOf(value.jobs, isSiteJob) &&
     isArrayOf(value.personnel, isPersonnelRecord) &&
-    isScp999State(value.scp999)
+    isScp999State(value.scp999) &&
+    isScp9620State(value.scp9620)
   );
 }
 
