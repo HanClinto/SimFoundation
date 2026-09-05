@@ -345,6 +345,16 @@ function isSiteJob(value: unknown): boolean {
     isRecord(value) &&
     isNonEmptyString(value.id) &&
     isNonEmptyString(value.title) &&
+    (value.assessment === undefined ||
+      (isRecord(value.assessment) &&
+        isNonEmptyString(value.assessment.patientId) &&
+        isLiteral(value.assessment.kind, [
+          "physical",
+          "psychological",
+          "preferences",
+          "anomalous",
+        ]) &&
+        value.skillId === "medical")) &&
     isNonEmptyString(value.description) &&
     isLiteral(value.skillId, SKILL_IDS) &&
     isIntegerInRange(value.priority, 0) &&
@@ -569,7 +579,29 @@ function constructionReferencesValid(state: GameState): boolean {
 
 function workerReferencesValid(state: GameState): boolean {
   const reserved = new Set<string>();
+  const pendingReferrals = new Set<string>();
   for (const job of state.jobs) {
+    if (job.assessment) {
+      if (
+        !state.personnel.some(({ id }) => id === job.assessment?.patientId) ||
+        job.assignedPersonId === job.assessment.patientId
+      )
+        return false;
+      if (job.status !== "completed") {
+        const key = `${job.assessment.patientId}:${job.assessment.kind}`;
+        if (pendingReferrals.has(key)) return false;
+        pendingReferrals.add(key);
+      }
+      if (job.status === "in-progress") {
+        if (reserved.has(job.assessment.patientId)) return false;
+        reserved.add(job.assessment.patientId);
+        if (
+          state.personnel.find(({ id }) => id === job.assessment?.patientId)
+            ?.currentJobId !== job.id
+        )
+          return false;
+      }
+    }
     if (
       job.requiredWorkerId !== null &&
       job.assignedPersonId !== null &&
@@ -599,7 +631,8 @@ function workerReferencesValid(state: GameState): boolean {
         (job) =>
           job.id === person.currentJobId &&
           job.status === "in-progress" &&
-          job.assignedPersonId === person.id,
+          (job.assignedPersonId === person.id ||
+            job.assessment?.patientId === person.id),
       ),
   );
 }
@@ -675,6 +708,14 @@ function isGameState(value: unknown): value is GameState {
     return false;
   }
   if (!isRecord(value.capabilities)) return false;
+  if (
+    !isRecord(value.clinicalCare) ||
+    ![0, 240, 480, 1440].includes(
+      value.clinicalCare.reviewInterval as number,
+    ) ||
+    !isArrayOf(value.clinicalCare.clinicianIds, isNonEmptyString, 100)
+  )
+    return false;
   if (typeof value.capabilities.anomalousPsychometrics !== "boolean")
     return false;
   if (
@@ -690,6 +731,17 @@ function isGameState(value: unknown): value is GameState {
   const personIds = state.personnel.map(({ id }) => id);
   const entityIds = [...personIds, "SCP-999"];
   return (
+    new Set(state.clinicalCare.clinicianIds).size ===
+      state.clinicalCare.clinicianIds.length &&
+    state.clinicalCare.clinicianIds.every((id) =>
+      state.personnel.some(
+        (person) =>
+          person.id === id &&
+          person.skills.some(
+            (skill) => skill.id === "medical" && skill.level >= 3,
+          ),
+      ),
+    ) &&
     constructionReferencesValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||

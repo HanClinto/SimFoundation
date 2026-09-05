@@ -9,6 +9,8 @@ import {
   createPersonnelMedicalWindows,
   updatePersonnelMedicalWindows,
 } from "../src/adapters/browser/medical-view";
+import { createClinicalCareView } from "../src/adapters/browser/clinical-care-view";
+import { createController } from "../src/application/controller";
 
 beforeEach(() => {
   const window = new JSDOM("<!doctype html><html><body></body></html>").window;
@@ -25,6 +27,21 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("personnel reference windows", () => {
+  it("shows clinician coverage and queued referrals without exposing an examination", () => {
+    const controller = createController(createInitialState());
+    const host = document.createElement("div");
+    document.body.append(host);
+    const view = createClinicalCareView(host, controller);
+    view.render(controller.orderPhysicalAssessment("person-lena-ortiz"));
+    const row = host.querySelector(
+      '[data-clinical-person="person-lena-ortiz"]',
+    )!;
+    expect(row.textContent).toContain("No examination on record");
+    expect(row.textContent).toContain("Queued");
+    expect(
+      host.querySelector("[data-clinical-coverage]")?.textContent,
+    ).toContain("second clinician");
+  });
   it("preserves item controls and descriptions across updates", () => {
     const state = createInitialState();
     const windows = createPersonnelInspectorWindows(

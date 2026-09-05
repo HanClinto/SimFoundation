@@ -8,6 +8,7 @@ import {
 } from "../../simulation/personnel";
 import anatomyUrl from "./assets/anatomy-figure.svg";
 import { recordAge } from "./personnel-records";
+import type { SiteJob } from "../../simulation/jobs";
 
 const BODY_REGIONS: readonly [BodyRegion, string][] = [
   ["head", "Head"],
@@ -61,8 +62,9 @@ function medicalChartMarkup(person: PersonnelRecord): string {
         <strong data-medical-field="physical-summary">No current assessment</strong>
         <small data-medical-field="assessment-meta">Physical condition unassessed</small>
       </div>
-      <button type="button" data-assess-person-id="${person.id}">Schedule Examination</button>
+      <button type="button" data-assess-person-id="${person.id}">Request Examination</button>
     </header>
+    <p class="clinical-referral-status" data-clinical-status role="status">No pending referrals.</p>
     <div class="medical-workspace">
       <section class="body-chart-pane" aria-label="Assessed body regions">
         <div class="body-map-toolbar">
@@ -526,6 +528,7 @@ export function updatePersonnelMedicalWindows(
   personnel: readonly PersonnelRecord[],
   currentTick: number,
   anomalousPsychometricsUnlocked: boolean,
+  jobs: readonly SiteJob[] = [],
 ): void {
   for (const person of personnel) {
     const chart = windows.medicalCharts.find(
@@ -604,6 +607,46 @@ export function updatePersonnelMedicalWindows(
       psychologicalAssessmentButton.textContent = assessmentCurrent
         ? "Psychological Evaluation Current"
         : "Evaluate Mood & Sanity";
+    }
+    const pending = jobs.filter(
+      (job) =>
+        job.assessment?.patientId === person.id && job.status !== "completed",
+    );
+    const status = chart.querySelector<HTMLElement>("[data-clinical-status]")!;
+    status.textContent =
+      pending.length === 0
+        ? "No pending referrals."
+        : pending
+            .map((job) => {
+              const clinician = personnel.find(
+                ({ id }) => id === job.assignedPersonId,
+              );
+              return clinician
+                ? `${job.title} / ${clinician.name} / ${job.progress > 0 ? "In consultation" : "Awaiting attendance"}`
+                : `${job.title} / ${job.assignmentReason ?? "Awaiting a clinician"}`;
+            })
+            .join("; ");
+    const physicalButton = chart.querySelector<HTMLButtonElement>(
+      "[data-assess-person-id]",
+    )!;
+    const latestPhysical = latestPhysicalAssessment(person);
+    physicalButton.disabled =
+      latestPhysical !== null && currentTick - latestPhysical.assessedTick < 30;
+    physicalButton.textContent = physicalButton.disabled
+      ? "Examination Current"
+      : "Request Examination";
+    for (const [kind, button] of [
+      ["physical", physicalButton],
+      ["psychological", psychologicalAssessmentButton],
+      ["preferences", biasAssessmentButton],
+      ["anomalous", screeningButton],
+    ] as const) {
+      if (button && pending.some((job) => job.assessment?.kind === kind)) {
+        button.disabled = true;
+        button.textContent = "Referral Queued";
+        button.title =
+          "Findings will be available after a clinician completes the appointment.";
+      }
     }
   }
 }

@@ -9,6 +9,7 @@ import {
   type SiteWorld,
   type TilePosition,
 } from "./world";
+import { completeAssessment, type ClinicalOrder } from "./clinical";
 
 export type JobStatus = "proposed" | "available" | "in-progress" | "completed";
 
@@ -32,6 +33,7 @@ export interface SiteJob {
   readonly completedTick: number | null;
   readonly workSite: TilePosition;
   readonly requiredWorkerId: string | null;
+  readonly assessment?: ClinicalOrder;
 }
 
 export interface JobAdvanceResult {
@@ -157,12 +159,17 @@ function selectWorker(
   personnel: readonly PersonnelRecord[],
   busyPersonIds: ReadonlySet<string>,
   world: SiteWorld,
+  clinicianIds: readonly string[],
 ): PersonnelRecord | null {
   return (
     personnel
       .filter(
         (person) =>
           !busyPersonIds.has(person.id) &&
+          (!job.assessment ||
+            (clinicianIds.includes(person.id) &&
+              person.id !== job.assessment.patientId &&
+              (skillFor(person, "medical")?.level ?? 0) >= 3)) &&
           (job.requiredWorkerId === null ||
             person.id === job.requiredWorkerId) &&
           (skillFor(person, job.skillId)?.level ?? 0) > 0,
@@ -204,13 +211,17 @@ export function advanceJobs(
   personnel: readonly PersonnelRecord[],
   tick: number,
   world: SiteWorld,
+  clinicianIds: readonly string[] = [],
 ): JobAdvanceResult {
   const people = new Map(personnel.map((person) => [person.id, person]));
   const positions = { ...world.positions };
   const busyPersonIds = new Set(
     jobs.flatMap((job) =>
       job.status === "in-progress" && job.assignedPersonId
-        ? [job.assignedPersonId]
+        ? [
+            job.assignedPersonId,
+            ...(job.assessment ? [job.assessment.patientId] : []),
+          ]
         : [],
     ),
   );
@@ -229,17 +240,36 @@ export function advanceJobs(
 
     let assignedPersonId = job.assignedPersonId;
     let assignmentReason = job.assignmentReason;
+    const patient = job.assessment
+      ? people.get(job.assessment.patientId)
+      : null;
+    if (
+      job.assessment &&
+      !assignedPersonId &&
+      (!patient || busyPersonIds.has(patient.id))
+    ) {
+      advancedJobsById.set(job.id, {
+        ...job,
+        assignmentReason: "Awaiting patient availability.",
+      });
+      continue;
+    }
     if (!assignedPersonId) {
       const selected = selectWorker(
         job,
         [...people.values()],
         busyPersonIds,
         world,
+        clinicianIds,
       );
       if (!selected) {
         const hasWorker = personnel.some(
           (person) =>
             !busyPersonIds.has(person.id) &&
+            (!job.assessment ||
+              (clinicianIds.includes(person.id) &&
+                person.id !== job.assessment.patientId &&
+                (skillFor(person, "medical")?.level ?? 0) >= 3)) &&
             (job.requiredWorkerId === null ||
               person.id === job.requiredWorkerId) &&
             (skillFor(person, job.skillId)?.level ?? 0) > 0,
@@ -257,11 +287,29 @@ export function advanceJobs(
       assignedPersonId = selected.id;
       assignmentReason = `Highest eligible official ${job.skillId} level (${skill.level}); additional suitability factors and stable ordering resolve ties.`;
       busyPersonIds.add(selected.id);
+      if (patient) busyPersonIds.add(patient.id);
     }
 
     const worker = people.get(assignedPersonId);
     const skill = worker ? skillFor(worker, job.skillId) : null;
-    if (!worker || !skill || skill.level === 0) {
+    if (
+      !worker ||
+      !skill ||
+      skill.level === 0 ||
+      (job.assessment &&
+        (skill.level < 3 ||
+          !clinicianIds.includes(worker.id) ||
+          !patient ||
+          patient.id === worker.id))
+    ) {
+      if (patient) {
+        people.set(patient.id, {
+          ...patient,
+          currentJobId: null,
+          activity: patient.defaultActivity,
+        });
+        busyPersonIds.delete(patient.id);
+      }
       if (worker)
         people.set(worker.id, {
           ...worker,
@@ -282,7 +330,19 @@ export function advanceJobs(
     const route = position
       ? findRoute(world.map, position, job.workSite)
       : null;
-    if (route === null) {
+    const patientPosition = patient ? positions[patient.id] : null;
+    const patientRoute = patientPosition
+      ? findRoute(world.map, patientPosition, job.workSite)
+      : null;
+    if (route === null || (patient && patientRoute === null)) {
+      if (patient) {
+        people.set(patient.id, {
+          ...patient,
+          currentJobId: null,
+          activity: patient.defaultActivity,
+        });
+        busyPersonIds.delete(patient.id);
+      }
       people.set(worker.id, {
         ...worker,
         currentJobId: null,
@@ -297,12 +357,28 @@ export function advanceJobs(
       });
       continue;
     }
-    if (position && !sameTile(position, job.workSite)) {
-      positions[worker.id] = route[0]!;
+    const workerTravelling = position && !sameTile(position, job.workSite);
+    const patientTravelling =
+      patientPosition && !sameTile(patientPosition, job.workSite);
+    if (patient) {
+      if (patientTravelling && patientRoute?.[0])
+        positions[patient.id] = patientRoute[0];
+      people.set(patient.id, {
+        ...patient,
+        currentJobId: job.id,
+        activity: patientTravelling
+          ? "Travelling to clinical appointment"
+          : "Attending clinical appointment",
+      });
+    }
+    if (workerTravelling || patientTravelling) {
+      if (workerTravelling) positions[worker.id] = route[0]!;
       people.set(worker.id, {
         ...worker,
         currentJobId: job.id,
-        activity: `Travelling: ${job.title}`,
+        activity: workerTravelling
+          ? `Travelling: ${job.title}`
+          : "Awaiting patient arrival",
       });
       advancedJobsById.set(job.id, {
         ...job,
@@ -321,6 +397,13 @@ export function advanceJobs(
       currentJobId: completed ? null : job.id,
       activity: completed ? `Completed: ${job.title}` : `Working: ${job.title}`,
     });
+    if (completed && patient && job.assessment) {
+      people.set(patient.id, {
+        ...completeAssessment(patient, job.assessment.kind, tick, worker),
+        currentJobId: null,
+        activity: "Completed: Clinical appointment",
+      });
+    }
 
     advancedJobsById.set(job.id, {
       ...job,

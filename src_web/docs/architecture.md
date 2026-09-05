@@ -179,6 +179,14 @@ Scoring inputs and rejection reasons must be inspectable. A pawn inspector shoul
 
 ## Psychology
 
+### Clinical Work and Occupational Health
+
+Assessment commands create serializable clinical referrals instead of immediately generating reports. A clinical order identifies its patient and examination type. The job scheduler reserves both a qualified clinician assigned to medical duty and a distinct patient; both must reach the medical bay before progress begins. Patient or clinician unavailability and blocked routes delay work. Completed physical and psychological reports identify the attending clinician. Examinations change recorded knowledge, not authoritative injuries.
+
+`clinicalCare` stores the assigned clinician IDs and an optional physical-review interval (disabled, four hours, eight hours, or daily). A due review creates the same referral as a manual request and deduplicates pending visits. It does not reveal hidden medical values to decide who is due. The clinician must have a recorded Medical Skill of at least 3 in this prototype; formal qualifications and specializations remain future work. One clinician cannot examine themselves; coverage requires a second eligible staff member. Policy changes and referrals can be made while paused; appointment progress requires simulation ticks.
+
+Occupational Health is a modeless facility window for duty coverage, review policy, queue status, and medical-chart links. Manual requests remain as referrals while routine care migrates toward policy-driven discovery. Assessment history is bounded and completed clinical job history is pruned to 50 entries when new referrals are created. Persistence validates patient references, distinct clinician/patient reservations, and pending-referral uniqueness. Clinical equipment, exclusive room capacity, consumables, consent/refusal behavior, treatments, and automatically recurring psychological screening are not implemented by this slice.
+
 The current pawn object model is defined in [personnel-model.md](personnel-model.md). This section records the architectural constraints that apply across its simulation and presentation layers.
 
 Store physical needs, stress, fear, memories, effects, activities, and mental resilience as facts. Derive mood and sanity from those facts through pure selectors. Recreation is modeled through restorative activities and memories that change stress, not as an independently decaying meter.

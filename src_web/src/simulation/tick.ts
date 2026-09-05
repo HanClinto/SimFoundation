@@ -8,14 +8,17 @@ import { advancePersonnel } from "./personnel";
 import { advanceScp999 } from "./scp-999";
 import { advanceConstruction } from "./construction";
 import type { GameState } from "./state";
+import { discoverClinicalWork } from "./clinical";
 
 export function advanceSimulation(state: GameState): GameState {
+  state = discoverClinicalWork(state);
   const tick = state.tick + 1;
   const jobResult = advanceJobs(
     state.jobs,
     state.personnel.map((person) => advancePersonnel(person, tick)),
     tick,
     state.world,
+    state.clinicalCare.clinicianIds,
   );
   const scp999Result = advanceScp999(
     state.scp999,

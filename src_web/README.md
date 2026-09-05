@@ -75,6 +75,10 @@ Temporary maps must use the same headless simulation rules as the base. They are
 
 ## Personnel
 
+### Occupational Health Prototype
+
+Open Occupational Health from the Site 828 facility folder to assign eligible staff to medical duty and choose a recurring physical-review interval. Routine reviews are off by default. Manual examination and evaluation buttons now create referrals, not instant assessments. A clinician and patient travel to the medical bay; reports appear only after the appointment is completed. At least two eligible clinicians are needed to examine the medical staff themselves. Examinations reveal findings but do not treat injuries.
+
 Personnel are general-purpose pawns with backgrounds, qualifications, preferences, and trainable skills. Scientist, engineer, custodian, medic, security officer, and similar labels describe current duties and certifications rather than immutable character classes.
 
 The current pawn rules architecture is defined in the [Personnel Model](docs/personnel-model.md). It specifies identity, Traits, preference Biases, usage-based Skills, Effects, derived Health, equipment, and assessment-limited player knowledge. The executable personnel model remains an incremental prototype of that design.

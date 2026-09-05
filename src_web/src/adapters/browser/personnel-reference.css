@@ -258,6 +258,52 @@
   margin-top: 6px;
   max-width: 310px;
 }
+
+.clinical-referral-status {
+  margin: 0;
+  padding: 6px 10px;
+  background: #edf1e7;
+  font-size: 11px;
+  border-bottom: 1px solid #b7c4af;
+}
+
+.clinical-care-body {
+  overflow: auto;
+  padding: 12px;
+  background: #f5f7ee;
+}
+.clinical-policy-heading {
+  border-bottom: 3px double #859b84;
+  padding-bottom: 10px;
+}
+.clinical-policy-heading h2 {
+  margin: 0 0 5px;
+  color: #35563f;
+  font:
+    bold 22px Georgia,
+    serif;
+}
+.clinical-policy-heading p {
+  margin: 0;
+  color: #63745e;
+}
+.clinical-care-body fieldset {
+  margin: 12px 0;
+}
+.clinical-coverage-status {
+  border-left: 3px solid #7e956d;
+  padding: 7px;
+  background: #e5ecda;
+}
+.clinical-register-scroll {
+  overflow: auto;
+}
+.clinical-register-scroll table {
+  min-width: 480px;
+}
+.clinical-register-scroll button {
+  min-width: 85px;
+}
 .medical-workspace {
   grid-template-columns: 280px minmax(190px, 1fr);
   gap: 0;

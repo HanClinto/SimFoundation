@@ -1,11 +1,5 @@
 import { advanceSimulation } from "../simulation/tick";
-import {
-  analyzeAnomalousTraitEvidence,
-  assessAnomalousTraits,
-  assessPhysicalHealth,
-  assessPsychologicalState,
-  assessWorkPreferences,
-} from "../simulation/personnel";
+import { analyzeAnomalousTraitEvidence } from "../simulation/personnel";
 import type { GameState } from "../simulation/state";
 import {
   authorizeSiteWork,
@@ -16,6 +10,11 @@ import {
   type ConstructionCode,
 } from "../simulation/construction";
 import type { TilePosition } from "../simulation/world";
+import {
+  requestAssessment,
+  setClinicalCarePolicy,
+  type ClinicalCarePolicy,
+} from "../simulation/clinical";
 
 export interface ConstructionCommandResult {
   readonly code: ConstructionCode;
@@ -43,6 +42,7 @@ export interface GameController {
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
   orderPsychologicalAssessment(personId: string): ControllerSnapshot;
+  setClinicalCarePolicy(policy: ClinicalCarePolicy): ControllerSnapshot;
   setRunning(running: boolean): ControllerSnapshot;
   subscribe(listener: ControllerListener): () => void;
 }
@@ -64,6 +64,11 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+
+    setClinicalCarePolicy(policy) {
+      state = setClinicalCarePolicy(state, policy);
+      return publish();
+    },
 
     previewLaboratory(origin) {
       return validateLaboratoryPlacement(state, origin);
@@ -116,32 +121,12 @@ export function createController(initialState: GameState): GameController {
     },
 
     orderPhysicalAssessment(personId) {
-      if (!state.personnel.some(({ id }) => id === personId)) {
-        throw new Error(`Unknown person: ${personId}`);
-      }
-      state = {
-        ...state,
-        personnel: state.personnel.map((person) =>
-          person.id === personId
-            ? assessPhysicalHealth(person, state.tick)
-            : person,
-        ),
-      };
+      state = requestAssessment(state, personId, "physical");
       return publish();
     },
 
     orderPsychologicalAssessment(personId) {
-      if (!state.personnel.some(({ id }) => id === personId)) {
-        throw new Error(`Unknown person: ${personId}`);
-      }
-      state = {
-        ...state,
-        personnel: state.personnel.map((person) =>
-          person.id === personId
-            ? assessPsychologicalState(person, state.tick)
-            : person,
-        ),
-      };
+      state = requestAssessment(state, personId, "psychological");
       return publish();
     },
 
@@ -161,35 +146,12 @@ export function createController(initialState: GameState): GameController {
     },
 
     orderAnomalousAssessment(personId) {
-      if (!state.capabilities.anomalousPsychometrics) {
-        throw new Error("Anomalous Psychometrics has not been unlocked");
-      }
-      if (!state.personnel.some(({ id }) => id === personId)) {
-        throw new Error(`Unknown person: ${personId}`);
-      }
-      state = {
-        ...state,
-        personnel: state.personnel.map((person) =>
-          person.id === personId
-            ? assessAnomalousTraits(person, state.tick)
-            : person,
-        ),
-      };
+      state = requestAssessment(state, personId, "anomalous");
       return publish();
     },
 
     orderWorkPreferenceAssessment(personId) {
-      if (!state.personnel.some(({ id }) => id === personId)) {
-        throw new Error(`Unknown person: ${personId}`);
-      }
-      state = {
-        ...state,
-        personnel: state.personnel.map((person) =>
-          person.id === personId
-            ? assessWorkPreferences(person, state.tick)
-            : person,
-        ),
-      };
+      state = requestAssessment(state, personId, "preferences");
       return publish();
     },
 

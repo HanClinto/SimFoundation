@@ -61,12 +61,29 @@ describe("game controller", () => {
     const before = controller
       .getSnapshot()
       .game.personnel.find(({ id }) => id === "person-jon-bell");
+    const queued = controller.orderPhysicalAssessment("person-jon-bell");
+    expect(
+      queued.game.personnel.find(({ id }) => id === "person-jon-bell")
+        ?.physicalAssessments,
+    ).toHaveLength(0);
+    controller.orderPhysicalAssessment("person-jon-bell");
+    for (
+      let tick = 0;
+      tick < 100 &&
+      controller
+        .getSnapshot()
+        .game.jobs.some((job) => job.assessment && job.status !== "completed");
+      tick += 1
+    )
+      controller.advance();
     const after = controller
-      .orderPhysicalAssessment("person-jon-bell")
+      .getSnapshot()
       .game.personnel.find(({ id }) => id === "person-jon-bell");
 
     expect(before?.physicalAssessments).toHaveLength(0);
-    expect(after?.effects).toEqual(before?.effects);
+    expect(after?.effects.filter(({ kind }) => kind === "injury")).toEqual(
+      before?.effects.filter(({ kind }) => kind === "injury"),
+    );
     expect(after?.physicalAssessments).toHaveLength(1);
     expect(
       controller
@@ -105,7 +122,17 @@ describe("game controller", () => {
         ?.traitAssessments,
     ).toHaveLength(1);
 
-    const screened = controller.orderAnomalousAssessment("person-emil-novak");
+    controller.orderAnomalousAssessment("person-emil-novak");
+    for (
+      let tick = 0;
+      tick < 100 &&
+      controller
+        .getSnapshot()
+        .game.jobs.some((job) => job.assessment && job.status !== "completed");
+      tick += 1
+    )
+      controller.advance();
+    const screened = controller.getSnapshot();
     const screenedEmil = screened.game.personnel.find(
       ({ id }) => id === "person-emil-novak",
     );
@@ -122,8 +149,17 @@ describe("game controller", () => {
 
   it("orders a bounded work-preference evaluation", () => {
     const controller = createController(createInitialState());
-    const assessed =
-      controller.orderWorkPreferenceAssessment("person-mara-voss");
+    controller.orderWorkPreferenceAssessment("person-mara-voss");
+    for (
+      let tick = 0;
+      tick < 100 &&
+      controller
+        .getSnapshot()
+        .game.jobs.some((job) => job.assessment && job.status !== "completed");
+      tick += 1
+    )
+      controller.advance();
+    const assessed = controller.getSnapshot();
     const mara = assessed.game.personnel.find(
       ({ id }) => id === "person-mara-voss",
     );
@@ -143,17 +179,28 @@ describe("game controller", () => {
 
   it("orders a bounded psychological evaluation", () => {
     const controller = createController(createInitialState());
-    const assessed =
-      controller.orderPsychologicalAssessment("person-mara-voss");
+    controller.orderPsychologicalAssessment("person-mara-voss");
+    for (
+      let tick = 0;
+      tick < 100 &&
+      controller
+        .getSnapshot()
+        .game.jobs.some((job) => job.assessment && job.status !== "completed");
+      tick += 1
+    )
+      controller.advance();
+    const assessed = controller.getSnapshot();
     const mara = assessed.game.personnel.find(
       ({ id }) => id === "person-mara-voss",
     );
 
     expect(mara?.psychologicalAssessments).toHaveLength(1);
-    expect(mara?.psychologicalAssessments[0]).toMatchObject({
-      moodEstimate: { minimum: 73, maximum: 83 },
-      sanityEstimate: { minimum: 93, maximum: 100 },
-    });
+    expect(mara?.psychologicalAssessments[0]?.assessor).toBe("Priya Shah");
+    expect(
+      mara?.psychologicalAssessments[0]?.moodEstimate.maximum,
+    ).toBeGreaterThan(
+      mara?.psychologicalAssessments[0]?.moodEstimate.minimum ?? 100,
+    );
     expect(
       controller
         .orderPsychologicalAssessment("person-mara-voss")

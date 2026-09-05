@@ -16,3 +16,5 @@ On 2026-09-05, the SCP-999 marker was revised against source revision 40: a broa
 ## Personnel Reference Illustrations
 
 `equipment-atlas.svg`, `personnel-figure.svg`, and `anatomy-figure.svg` are original SVG artwork created by GitHub Copilot for SimFoundation on 2026-09-05, licensed CC BY-SA 3.0. Source: these editable files. Modification history: initial reference-book equipment plates, uniform reference, and anterior body illustration. No third-party images or proprietary reference-book artwork were copied. The uniform is a generic reference, not yet a composited equipment portrait. Medical kit artwork uses a green cross, not the protected red-cross emblem.
+
+The shared `medical.svg` chrome icon was recolored green on 2026-09-05 to match the clinical art and avoid use of the protected red-cross emblem. All medical-window launchers and taskbar entries use this same asset.

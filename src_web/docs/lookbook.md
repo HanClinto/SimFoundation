@@ -202,6 +202,8 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 ## Current Prototype Decisions
 
+- Occupational Health is a facility subwindow for clinical duty assignment, routine review cadence, appointment status, and chart access. Assessment buttons create referrals; they no longer immediately reveal findings. Clinical appointments require a distinct attending clinician and patient, so coverage and staff availability matter.
+
 - Personnel reference views now use original SVG equipment plates, a labeled uniform reference, and an anterior medical illustration with an accessible body-region index. Art is not copied from historical reference software. The uniform reference is not yet a composited loadout portrait.
 - Exact needs/stress/fear percentages and unassessed active-effect names are not ordinary dossier content. Recorded findings retain their assessment/observation status; absence of a report is not a healthy result.
 - The current Work Orders ledger is an inspection experiment, not approval of a universal special-task workflow. Routine autonomy and optional investigations remain distinct design layers.
