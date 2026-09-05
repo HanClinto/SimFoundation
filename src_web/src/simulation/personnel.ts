@@ -63,6 +63,14 @@ export interface AssessmentConclusion {
   readonly bodyRegions: readonly BodyRegion[];
 }
 
+export interface PhysicalObservation {
+  readonly id: string;
+  readonly observedTick: number;
+  readonly source: string;
+  readonly label: string;
+  readonly bodyRegions: readonly BodyRegion[];
+}
+
 export interface PhysicalAssessment {
   readonly id: string;
   readonly assessedTick: number;
@@ -91,6 +99,7 @@ export interface PersonnelRecord {
   readonly equipment: PersonnelEquipment;
   readonly inventory: readonly PersonnelItem[];
   readonly effects: readonly PersonnelEffect[];
+  readonly physicalObservations: readonly PhysicalObservation[];
   readonly physicalAssessments: readonly PhysicalAssessment[];
 }
 
@@ -151,6 +160,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
       },
     ],
     effects: [],
+    physicalObservations: [],
     physicalAssessments: [],
   },
   {
@@ -200,6 +210,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
       },
     ],
     effects: [],
+    physicalObservations: [],
     physicalAssessments: [],
   },
   {
@@ -241,6 +252,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
       },
     ],
     effects: [],
+    physicalObservations: [],
     physicalAssessments: [],
   },
   {
@@ -289,7 +301,25 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         description: "Two reusable restraint sets.",
       },
     ],
-    effects: [],
+    effects: [
+      {
+        id: "effect-right-forearm-laceration-lena",
+        name: "Deep right forearm laceration",
+        kind: "injury",
+        severity: "serious",
+        bodyRegions: ["rightArm"],
+        physicalHealthPenalty: 14,
+      },
+    ],
+    physicalObservations: [
+      {
+        id: "observation-profuse-bleeding-lena",
+        observedTick: 0,
+        source: "Supervisor report",
+        label: "Profuse bleeding observed",
+        bodyRegions: ["rightArm"],
+      },
+    ],
     physicalAssessments: [],
   },
   {
@@ -344,6 +374,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         physicalHealthPenalty: 9,
       },
     ],
+    physicalObservations: [],
     physicalAssessments: [],
   },
   {
@@ -390,6 +421,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
       },
     ],
     effects: [],
+    physicalObservations: [],
     physicalAssessments: [],
   },
 ];

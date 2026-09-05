@@ -513,6 +513,8 @@ Ordinary browser snapshots should eventually contain a **player projection**, no
 - Advanced neural monitor: continuous Mental telemetry; rare, invasive, and anomaly-sensitive
 - No camera/sensor: last known location and stale records only
 
+An observation is not a diagnosis. Immediately visible signs such as profuse bleeding, loss of consciousness, impaired gait, or a visibly missing limb may be reported with source, body region, and timestamp before an examination. They do not reveal an exact Injury Effect, severity, prognosis, or Physical Health range. Assessment may later explain, refine, or contradict the observed sign.
+
 ### Candidate intake and Trait discovery
 
 New candidates do not expose their authoritative Trait set to the player. Their dossier starts with self-disclosures, records, witnessed evidence, and whatever the site's current intake protocol can detect. This makes improved personnel assessment a facility capability rather than a free character-sheet reveal.
@@ -1168,7 +1170,7 @@ The dossier is a compact summary and launcher rather than the only home for all 
 
 - Show a selectable body-region map beside a condition list; selecting either filters or highlights the other.
 - Body regions visualize assessed Injury Effects. They do not own separate hit-point pools.
-- Confirmed, suspected, assessed-clear, and unassessed regions use distinct words and patterns rather than color alone.
+- Observed-sign, confirmed, suspected, assessed-clear, and unassessed regions use distinct words and patterns rather than color alone.
 - A blank or unassessed region never implies healthy.
 - Systemic conditions may appear in the findings list without a body region.
 

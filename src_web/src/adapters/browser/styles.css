@@ -1235,6 +1235,10 @@ textarea {
   background: #c7dfc7;
 }
 
+.body-region[data-assessment-state="observed"] {
+  background: repeating-linear-gradient(135deg, #efb0b0 0 4px, #c96e6e 4px 8px);
+}
+
 .body-region[data-assessment-state="suspected"] {
   background: repeating-linear-gradient(135deg, #f5dfa0 0 4px, #d5bc73 4px 8px);
 }
@@ -1272,6 +1276,10 @@ textarea {
   background: #c7dfc7;
 }
 
+.legend-observed {
+  background: #c96e6e;
+}
+
 .legend-suspected {
   background: #d5bc73;
 }
@@ -1305,6 +1313,11 @@ textarea {
 
 .medical-finding.finding-confirmed {
   border-left-color: #9d3030;
+}
+
+.medical-finding.finding-observed,
+.assessment-entry.observation-entry {
+  border-left-color: #c96e6e;
 }
 
 .medical-finding.finding-suspected {

@@ -72,6 +72,7 @@ function medicalChartMarkup(person: PersonnelRecord): string {
         </div>
         <div class="medical-legend" aria-label="Body map legend">
           <span><i class="legend-unassessed"></i>Unassessed</span>
+          <span><i class="legend-observed"></i>Observed sign</span>
           <span><i class="legend-clear"></i>No finding</span>
           <span><i class="legend-suspected"></i>Suspected</span>
           <span><i class="legend-confirmed"></i>Confirmed</span>
@@ -194,47 +195,72 @@ function updateMedicalChart(
     : "No current assessment";
   meta.textContent = assessment
     ? `${assessment.method} / ${confidenceLabel(assessment.confidence)} / ${assessmentAge(currentTick, assessment.assessedTick)}`
-    : "Unknown is not equivalent to healthy";
+    : person.physicalObservations.length > 0
+      ? "Observable signs present; severity not assessed"
+      : "Unknown is not equivalent to healthy";
 
   const conclusions = assessment?.conclusions ?? [];
+  const observationItems = person.physicalObservations.map((observation) => {
+    const item = document.createElement("article");
+    item.className = "medical-finding finding-observed";
+    item.dataset.findingRegions = observation.bodyRegions.join(" ");
+    item.append(
+      textElement("strong", observation.label),
+      textElement(
+        "span",
+        `observed / ${observation.source} / ${assessmentAge(currentTick, observation.observedTick)}`,
+      ),
+      textElement(
+        "small",
+        observation.bodyRegions
+          .map(
+            (region) =>
+              BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region,
+          )
+          .join(", "),
+      ),
+    );
+    return item;
+  });
+  const conclusionItems = conclusions.map((conclusion) => {
+    const item = document.createElement("article");
+    item.className = `medical-finding finding-${conclusion.status}`;
+    item.dataset.findingRegions = conclusion.bodyRegions.join(" ");
+    item.append(
+      textElement("strong", conclusion.label),
+      textElement(
+        "span",
+        `${conclusion.status} / ${confidenceLabel(conclusion.confidence)}`,
+      ),
+      textElement(
+        "small",
+        conclusion.bodyRegions
+          .map(
+            (region) =>
+              BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region,
+          )
+          .join(", "),
+      ),
+    );
+    return item;
+  });
   findings.replaceChildren(
-    ...(assessment
-      ? conclusions.length > 0
-        ? conclusions.map((conclusion) => {
-            const item = document.createElement("article");
-            item.className = `medical-finding finding-${conclusion.status}`;
-            item.dataset.findingRegions = conclusion.bodyRegions.join(" ");
-            item.append(
-              textElement("strong", conclusion.label),
-              textElement(
-                "span",
-                `${conclusion.status} / ${confidenceLabel(conclusion.confidence)}`,
-              ),
-              textElement(
-                "small",
-                conclusion.bodyRegions
-                  .map(
-                    (region) =>
-                      BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region,
-                  )
-                  .join(", "),
-              ),
-            );
-            return item;
-          })
-        : [
+    ...(conclusionItems.length > 0 || observationItems.length > 0
+      ? [...conclusionItems, ...observationItems]
+      : assessment
+        ? [
             Object.assign(document.createElement("p"), {
               className: "empty-record",
               textContent: "No physical findings reported by this examination.",
             }),
           ]
-      : [
-          Object.assign(document.createElement("p"), {
-            className: "empty-record",
-            textContent:
-              "No suitable physical examination is on record. Body regions remain unassessed.",
-          }),
-        ]),
+        : [
+            Object.assign(document.createElement("p"), {
+              className: "empty-record",
+              textContent:
+                "No suitable physical examination is on record. Body regions remain unassessed.",
+            }),
+          ]),
   );
 
   for (const regionElement of chart.querySelectorAll<HTMLElement>(
@@ -244,9 +270,16 @@ function updateMedicalChart(
     const regionConclusion = conclusions.find((conclusion) =>
       conclusion.bodyRegions.includes(region),
     );
-    const state = !assessment
-      ? "unassessed"
-      : (regionConclusion?.status ?? "clear");
+    const regionObservation = person.physicalObservations.find((observation) =>
+      observation.bodyRegions.includes(region),
+    );
+    const state = regionConclusion
+      ? regionConclusion.status
+      : assessment
+        ? "clear"
+        : regionObservation
+          ? "observed"
+          : "unassessed";
     const label = BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region;
     regionElement.dataset.assessmentState = state;
     regionElement.title = `${label}: ${state}`;
@@ -264,44 +297,68 @@ function updateAssessmentRecord(
   );
   if (!history) throw new Error("Assessment record incomplete");
 
+  const observationEntries = person.physicalObservations.map((observation) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry observation-entry";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", "Direct observation"),
+      textElement(
+        "time",
+        `Tick ${observation.observedTick} / ${assessmentAge(currentTick, observation.observedTick)}`,
+      ),
+    );
+    const details = document.createElement("dl");
+    const source = document.createElement("div");
+    source.append(
+      textElement("dt", "Source"),
+      textElement("dd", observation.source),
+    );
+    details.append(source);
+    entry.append(header, details, textElement("p", observation.label));
+    return { tick: observation.observedTick, entry };
+  });
+  const assessmentEntries = [...person.physicalAssessments]
+    .reverse()
+    .map((assessment) => {
+      const entry = document.createElement("article");
+      entry.className = "assessment-entry";
+      const findingText =
+        assessment.conclusions.length > 0
+          ? assessment.conclusions
+              .map((conclusion) => `${conclusion.label} (${conclusion.status})`)
+              .join("; ")
+          : "No physical findings reported";
+      const header = document.createElement("header");
+      header.append(
+        textElement("strong", assessment.method),
+        textElement(
+          "time",
+          `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
+        ),
+      );
+      const details = document.createElement("dl");
+      for (const [term, value] of [
+        ["Assessor", assessment.assessor],
+        ["Confidence", `${Math.round(assessment.confidence * 100)}%`],
+        [
+          "Estimate",
+          `Physical ${assessment.estimate.minimum}-${assessment.estimate.maximum}`,
+        ],
+      ] as const) {
+        const row = document.createElement("div");
+        row.append(textElement("dt", term), textElement("dd", value));
+        details.append(row);
+      }
+      entry.append(header, details, textElement("p", findingText));
+      return { tick: assessment.assessedTick, entry };
+    });
+  const recordEntries = [...assessmentEntries, ...observationEntries]
+    .sort((first, second) => second.tick - first.tick)
+    .map(({ entry }) => entry);
   history.replaceChildren(
-    ...(person.physicalAssessments.length > 0
-      ? [...person.physicalAssessments].reverse().map((assessment) => {
-          const entry = document.createElement("article");
-          entry.className = "assessment-entry";
-          const findingText =
-            assessment.conclusions.length > 0
-              ? assessment.conclusions
-                  .map(
-                    (conclusion) =>
-                      `${conclusion.label} (${conclusion.status})`,
-                  )
-                  .join("; ")
-              : "No physical findings reported";
-          const header = document.createElement("header");
-          header.append(
-            textElement("strong", assessment.method),
-            textElement(
-              "time",
-              `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
-            ),
-          );
-          const details = document.createElement("dl");
-          for (const [term, value] of [
-            ["Assessor", assessment.assessor],
-            ["Confidence", `${Math.round(assessment.confidence * 100)}%`],
-            [
-              "Estimate",
-              `Physical ${assessment.estimate.minimum}-${assessment.estimate.maximum}`,
-            ],
-          ] as const) {
-            const row = document.createElement("div");
-            row.append(textElement("dt", term), textElement("dd", value));
-            details.append(row);
-          }
-          entry.append(header, details, textElement("p", findingText));
-          return entry;
-        })
+    ...(recordEntries.length > 0
+      ? recordEntries
       : [
           Object.assign(document.createElement("p"), {
             className: "empty-record",

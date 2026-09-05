@@ -1,6 +1,6 @@
 import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 
-export const GAME_STATE_VERSION = 5;
+export const GAME_STATE_VERSION = 6;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

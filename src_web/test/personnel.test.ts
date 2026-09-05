@@ -98,6 +98,32 @@ describe("personnel simulation", () => {
     });
   });
 
+  it("records an obvious sign without disclosing diagnosis or severity", () => {
+    const lena = createInitialState().personnel.find(
+      ({ id }) => id === "person-lena-ortiz",
+    );
+    if (!lena) throw new Error("Lena Ortiz missing");
+
+    expect(lena.physicalObservations).toEqual([
+      {
+        id: "observation-profuse-bleeding-lena",
+        observedTick: 0,
+        source: "Supervisor report",
+        label: "Profuse bleeding observed",
+        bodyRegions: ["rightArm"],
+      },
+    ]);
+    expect(latestPhysicalAssessment(lena)).toBeNull();
+
+    const assessedLena = assessPhysicalHealth(lena, 12);
+    expect(latestPhysicalAssessment(assessedLena)?.conclusions).toMatchObject([
+      {
+        label: "Deep right forearm laceration",
+        status: "confirmed",
+      },
+    ]);
+  });
+
   it("deduplicates same-tick examinations and retains bounded history", () => {
     const initialJon = createInitialState().personnel.find(
       ({ id }) => id === "person-jon-bell",

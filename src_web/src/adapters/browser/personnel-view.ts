@@ -270,7 +270,9 @@ export function updatePersonnelInspectors(
       "physical-recency",
       physicalAssessment
         ? `Exam tick ${physicalAssessment.assessedTick}`
-        : "No current report",
+        : person.physicalObservations.length > 0
+          ? "Visible signs reported; severity unknown"
+          : "No current report",
     );
     setText(inspector, "traits", person.traits.join(", "));
     setText(inspector, "traits-summary", person.traits.join(", "));
