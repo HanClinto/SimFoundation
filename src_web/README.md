@@ -25,7 +25,9 @@ The Camera Feed now displays an authoritative 128x128 map, a compact starting fa
 
 SCP-999 physically approaches available personnel before providing Calm, interrupts contact if a person moves away or begins work, and returns to common-room roaming when no suitable contact is available.
 
-Rooms are currently spatial designations, not fully furnished operational systems. Construction, utilities, and needs-driven movement remain future work. The current physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
+The Camera Feed's **Plan laboratory** mode previews a 9x7 annex with its entrance marked. **Authorize Annex** reserves 40 material units from an initial stock of 160. Logistics collects and delivers the kit, engineering assembles the building, and research commissions it inside the new room. The construction register locates orders, explains blocked work, and permits cancellation before materials leave storage. Placement and cancellation are available while paused. Arrow keys move a focused preview, Enter authorizes it, and Escape cancels the preview.
+
+Construction currently provides one fixed annex template and abstract counted material kits, not arbitrary wall painting, furniture placement, supply replenishment, or a power network. Starting room categories are spatial designations, not fully operational systems. The physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
 
 ## Design Pillars
 

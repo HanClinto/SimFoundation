@@ -1,5 +1,17 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
-import { isWalkable, tileAt, type SiteWorld } from "../../simulation/world";
+import {
+  isWalkable,
+  sameTile,
+  tileAt,
+  type SiteWorld,
+} from "../../simulation/world";
+import {
+  LABORATORY_HEIGHT,
+  LABORATORY_WIDTH,
+  laboratoryTiles,
+  laboratoryWorkSite,
+  type ConstructionState,
+} from "../../simulation/construction";
 
 export const GAME_STATE_STORAGE_KEY = "scp-site-manager.game-state.v1";
 
@@ -349,6 +361,7 @@ function isSiteJob(value: unknown): boolean {
     isIntegerInRange(value.requiredProgress, 1) &&
     value.progress <= value.requiredProgress &&
     isNullableString(value.assignedPersonId) &&
+    isNullableString(value.requiredWorkerId) &&
     isNullableString(value.assignmentReason) &&
     isNullableTick(value.authorizedTick) &&
     isNullableTick(value.completedTick) &&
@@ -408,6 +421,178 @@ function isSiteWorld(value: unknown): value is SiteWorld {
       isIntegerInRange(position.x, 0, width - 1) &&
       isIntegerInRange(position.y, 0, height - 1) &&
       (map.tiles as unknown[])[position.y * width + position.x] !== "wall",
+  );
+}
+
+function isConstructionState(value: unknown): value is ConstructionState {
+  return (
+    isRecord(value) &&
+    isIntegerInRange(value.availableMaterials, 0, 160) &&
+    value.availableMaterials % 40 === 0 &&
+    isRecord(value.stockpile) &&
+    isIntegerInRange(value.stockpile.x, 0, 127) &&
+    isIntegerInRange(value.stockpile.y, 0, 127) &&
+    isIntegerInRange(value.nextBlueprintNumber, 1, 33) &&
+    isArrayOf(
+      value.blueprints,
+      (blueprint) =>
+        isRecord(blueprint) &&
+        isNonEmptyString(blueprint.id) &&
+        isRecord(blueprint.origin) &&
+        isIntegerInRange(blueprint.origin.x, 0, 128 - LABORATORY_WIDTH) &&
+        isIntegerInRange(blueprint.origin.y, 1, 128 - LABORATORY_HEIGHT) &&
+        isLiteral(blueprint.status, [
+          "reserved",
+          "hauling",
+          "building",
+          "completed",
+          "cancelled",
+        ]) &&
+        isNonEmptyString(blueprint.haulJobId) &&
+        isNonEmptyString(blueprint.buildJobId) &&
+        isNonEmptyString(blueprint.commissionJobId) &&
+        isNullableString(blueprint.blockedReason),
+      32,
+    )
+  );
+}
+
+function constructionReferencesValid(state: GameState): boolean {
+  const construction = state.construction;
+  if (
+    !isWalkable(state.world.map, construction.stockpile) ||
+    construction.nextBlueprintNumber !== construction.blueprints.length + 1
+  )
+    return false;
+  if (
+    construction.availableMaterials +
+      construction.blueprints.filter(({ status }) => status !== "cancelled")
+        .length *
+        40 !==
+    160
+  )
+    return false;
+  const footprint = new Set<string>();
+  const jobIds = new Set<string>();
+  return construction.blueprints.every((blueprint, index) => {
+    const number = index + 1;
+    if (
+      blueprint.id !== `blueprint-lab-${number}` ||
+      blueprint.haulJobId !== `job-haul-lab-${number}` ||
+      blueprint.buildJobId !== `job-build-lab-${number}` ||
+      blueprint.commissionJobId !== `job-commission-lab-${number}`
+    )
+      return false;
+    for (const id of [
+      blueprint.haulJobId,
+      blueprint.buildJobId,
+      blueprint.commissionJobId,
+    ]) {
+      if (jobIds.has(id)) return false;
+      jobIds.add(id);
+    }
+    const haul = state.jobs.find(({ id }) => id === blueprint.haulJobId);
+    const build = state.jobs.find(({ id }) => id === blueprint.buildJobId);
+    const commission = state.jobs.find(
+      ({ id }) => id === blueprint.commissionJobId,
+    );
+    if (blueprint.status === "cancelled") return !haul && !build && !commission;
+    for (const { position, tile } of laboratoryTiles(blueprint.origin)) {
+      const key = `${position.x},${position.y}`;
+      if (footprint.has(key)) return false;
+      footprint.add(key);
+      if (
+        tileAt(state.world.map, position) !==
+        (blueprint.status === "completed" ? tile : "grass")
+      )
+        return false;
+    }
+    if (
+      !haul ||
+      haul.skillId !== "logistics" ||
+      haul.requiredProgress !== 1 ||
+      !sameTile(
+        haul.workSite,
+        blueprint.status === "reserved"
+          ? construction.stockpile
+          : laboratoryWorkSite(blueprint.origin),
+      )
+    )
+      return false;
+    if (blueprint.status === "reserved")
+      return (
+        haul.status !== "completed" &&
+        haul.requiredWorkerId === null &&
+        !build &&
+        !commission
+      );
+    if (haul.requiredWorkerId === null) return false;
+    if (blueprint.status === "hauling")
+      return haul.status !== "completed" && !build && !commission;
+    if (
+      haul.status !== "completed" ||
+      !build ||
+      build.skillId !== "engineering" ||
+      build.requiredProgress !== 112 ||
+      !sameTile(build.workSite, laboratoryWorkSite(blueprint.origin))
+    )
+      return false;
+    if (blueprint.status === "building") return !commission;
+    return (
+      build.status === "completed" &&
+      commission?.skillId === "research" &&
+      commission.requiredProgress === 48 &&
+      sameTile(commission.workSite, {
+        x: blueprint.origin.x + 4,
+        y: blueprint.origin.y + 3,
+      }) &&
+      state.world.map.rooms.some(
+        (room) =>
+          room.id === `room-${blueprint.id}` &&
+          room.kind === "laboratory" &&
+          room.x === blueprint.origin.x &&
+          room.y === blueprint.origin.y &&
+          room.width === LABORATORY_WIDTH &&
+          room.height === LABORATORY_HEIGHT,
+      )
+    );
+  });
+}
+
+function workerReferencesValid(state: GameState): boolean {
+  const reserved = new Set<string>();
+  for (const job of state.jobs) {
+    if (
+      job.requiredWorkerId !== null &&
+      job.assignedPersonId !== null &&
+      job.requiredWorkerId !== job.assignedPersonId
+    )
+      return false;
+    if (job.status === "in-progress") {
+      if (job.assignedPersonId === null || reserved.has(job.assignedPersonId))
+        return false;
+      reserved.add(job.assignedPersonId);
+      if (
+        state.personnel.find(({ id }) => id === job.assignedPersonId)
+          ?.currentJobId !== job.id
+      )
+        return false;
+    }
+    if (
+      (job.status === "available" || job.status === "proposed") &&
+      job.assignedPersonId !== null
+    )
+      return false;
+  }
+  return state.personnel.every(
+    (person) =>
+      person.currentJobId === null ||
+      state.jobs.some(
+        (job) =>
+          job.id === person.currentJobId &&
+          job.status === "in-progress" &&
+          job.assignedPersonId === person.id,
+      ),
   );
 }
 
@@ -489,13 +674,20 @@ function isGameState(value: unknown): value is GameState {
     !isArrayOf(value.personnel, isPersonnelRecord) ||
     !isScp999State(value.scp999) ||
     !isScp9620State(value.scp9620) ||
-    !isSiteWorld(value.world)
+    !isSiteWorld(value.world) ||
+    !isConstructionState(value.construction)
   )
     return false;
   const state = value as unknown as GameState;
   const personIds = state.personnel.map(({ id }) => id);
   const entityIds = [...personIds, "SCP-999"];
   return (
+    constructionReferencesValid(state) &&
+    workerReferencesValid(state) &&
+    (state.scp999.targetPersonId === null ||
+      personIds.includes(state.scp999.targetPersonId)) &&
+    (state.scp999.lastInteraction === null ||
+      personIds.includes(state.scp999.lastInteraction.personId)) &&
     new Set(entityIds).size === entityIds.length &&
     Object.keys(state.world.positions).length === entityIds.length &&
     entityIds.every((id) => {
@@ -509,7 +701,9 @@ function isGameState(value: unknown): value is GameState {
       (job) =>
         tileAt(state.world.map, job.workSite) !== null &&
         (job.assignedPersonId === null ||
-          personIds.includes(job.assignedPersonId)),
+          personIds.includes(job.assignedPersonId)) &&
+        (job.requiredWorkerId === null ||
+          personIds.includes(job.requiredWorkerId)),
     )
   );
 }

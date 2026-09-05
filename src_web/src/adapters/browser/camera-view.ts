@@ -1,5 +1,12 @@
-import type { ControllerSnapshot } from "../../application/controller";
+import type {
+  ControllerSnapshot,
+  GameController,
+} from "../../application/controller";
 import type { TilePosition } from "../../simulation/world";
+import {
+  constructionMessages,
+  updateConstructionRegister,
+} from "./construction-view";
 import {
   renderSite,
   projectPosition,
@@ -10,7 +17,7 @@ import {
 export function createSiteCamera(
   canvas: HTMLCanvasElement,
   windowElement: HTMLElement,
-  getSnapshot: () => ControllerSnapshot,
+  controller: GameController,
   openEntity: (id: string) => void,
 ) {
   let camera: MapCamera = {
@@ -32,7 +39,22 @@ export function createSiteCamera(
   const inspectButton = windowElement.querySelector<HTMLButtonElement>(
     '[data-camera-action="inspect"]',
   )!;
-  let snapshot = getSnapshot();
+  const mode =
+    windowElement.querySelector<HTMLSelectElement>("[data-camera-mode]")!;
+  const feedback = windowElement.querySelector<HTMLElement>(
+    "[data-construction-feedback]",
+  )!;
+  const materials = windowElement.querySelector<HTMLElement>(
+    "[data-construction-materials]",
+  )!;
+  const register = windowElement.querySelector<HTMLElement>(
+    "[data-construction-register]",
+  )!;
+  const placeButton = windowElement.querySelector<HTMLButtonElement>(
+    '[data-camera-action="place"]',
+  )!;
+  let registerSignature = "";
+  let snapshot = controller.getSnapshot();
   entitySelect.replaceChildren(
     new Option("Select personnel", ""),
     ...snapshot.game.personnel.map(
@@ -43,7 +65,35 @@ export function createSiteCamera(
 
   function render(nextSnapshot: ControllerSnapshot) {
     snapshot = nextSnapshot;
+    if (camera.draft)
+      camera = {
+        ...camera,
+        draft: {
+          ...camera.draft,
+          valid: controller.previewLaboratory(camera.draft.origin) === null,
+        },
+      };
     renderSite(canvas, snapshot, camera);
+    materials.textContent = `${snapshot.game.construction.availableMaterials} materials available`;
+    placeButton.disabled = !camera.draft?.valid;
+    if (camera.draft) {
+      const code = controller.previewLaboratory(camera.draft.origin);
+      feedback.textContent = code
+        ? constructionMessages[code]
+        : "Laboratory annex: 9 x 7 / 40 material units / entrance marked.";
+    }
+    const signature = JSON.stringify([
+      snapshot.game.construction,
+      snapshot.game.jobs.map(({ id, status, assignmentReason }) => [
+        id,
+        status,
+        assignmentReason,
+      ]),
+    ]);
+    if (signature !== registerSignature) {
+      updateConstructionRegister(register, snapshot.game);
+      registerSignature = signature;
+    }
     const selected = snapshot.game.personnel.find(
       ({ id }) => id === camera.selectedId,
     );
@@ -61,6 +111,32 @@ export function createSiteCamera(
     entitySelect.value = id ?? "";
     render(snapshot);
   }
+
+  function placeDraft() {
+    if (!camera.draft) return;
+    const result = controller.placeLaboratory(camera.draft.origin);
+    if (result.code === "placed") {
+      camera = { ...camera, draft: null };
+      mode.value = "inspect";
+    }
+    feedback.textContent = constructionMessages[result.code];
+    render(result.snapshot);
+  }
+
+  mode.addEventListener("change", () => {
+    camera = {
+      ...camera,
+      draft:
+        mode.value === "laboratory"
+          ? { origin: { x: 59, y: 80 }, valid: false }
+          : null,
+    };
+    if (camera.draft) focus({ x: 63, y: 83 });
+    else {
+      feedback.textContent = "";
+      render(snapshot);
+    }
+  });
 
   function focus(position: TilePosition) {
     camera = {
@@ -122,6 +198,22 @@ export function createSiteCamera(
     }
     if (action === "inspect" && camera.selectedId)
       openEntity(camera.selectedId);
+    if (action === "place") placeDraft();
+    const target = (event.target as Element).closest<HTMLElement>(
+      "[data-focus-blueprint], [data-cancel-blueprint]",
+    );
+    const blueprint = snapshot.game.construction.blueprints.find(
+      ({ id }) => id === target?.dataset.focusBlueprint,
+    );
+    if (blueprint)
+      focus({ x: blueprint.origin.x + 4, y: blueprint.origin.y + 3 });
+    if (target?.dataset.cancelBlueprint) {
+      const result = controller.cancelLaboratory(
+        target.dataset.cancelBlueprint,
+      );
+      feedback.textContent = constructionMessages[result.code];
+      render(result.snapshot);
+    }
   });
 
   const localPoint = (event: MouseEvent): TilePosition => {
@@ -166,8 +258,26 @@ export function createSiteCamera(
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
-    if (!drag) return;
     const point = localPoint(event);
+    if (!drag) {
+      if (mode.value === "laboratory") {
+        const origin = unprojectPosition(
+          point,
+          camera,
+          canvas.clientWidth,
+          canvas.clientHeight,
+        );
+        camera = {
+          ...camera,
+          draft: {
+            origin: { x: Math.round(origin.x), y: Math.round(origin.y) },
+            valid: false,
+          },
+        };
+        render(snapshot);
+      }
+      return;
+    }
     const deltaX = point.x - drag.start.x;
     const deltaY = point.y - drag.start.y;
     if (Math.hypot(deltaX, deltaY) > 4) drag.moved = true;
@@ -184,7 +294,24 @@ export function createSiteCamera(
       });
   });
   canvas.addEventListener("pointerup", (event) => {
-    if (drag && !drag.moved) select(entityAt(localPoint(event)));
+    if (drag && !drag.moved) {
+      if (mode.value === "laboratory") {
+        const origin = unprojectPosition(
+          localPoint(event),
+          camera,
+          canvas.clientWidth,
+          canvas.clientHeight,
+        );
+        camera = {
+          ...camera,
+          draft: {
+            origin: { x: Math.round(origin.x), y: Math.round(origin.y) },
+            valid: false,
+          },
+        };
+        render(snapshot);
+      } else select(entityAt(localPoint(event)));
+    }
     drag = null;
     if (canvas.hasPointerCapture(event.pointerId))
       canvas.releasePointerCapture(event.pointerId);
@@ -193,6 +320,7 @@ export function createSiteCamera(
     drag = null;
   });
   canvas.addEventListener("dblclick", (event) => {
+    if (mode.value === "laboratory") return;
     const id = entityAt(localPoint(event));
     if (id) {
       select(id);
@@ -217,7 +345,20 @@ export function createSiteCamera(
     const delta = deltas[event.key];
     if (delta) {
       event.preventDefault();
-      focus({ x: camera.center.x + delta.x, y: camera.center.y + delta.y });
+      if (camera.draft) {
+        camera = {
+          ...camera,
+          draft: {
+            origin: {
+              x: camera.draft.origin.x + delta.x / 2,
+              y: camera.draft.origin.y + delta.y / 2,
+            },
+            valid: false,
+          },
+        };
+        render(snapshot);
+      } else
+        focus({ x: camera.center.x + delta.x, y: camera.center.y + delta.y });
     }
     if (event.key === "+" || event.key === "=") {
       event.preventDefault();
@@ -238,7 +379,16 @@ export function createSiteCamera(
       };
       focus({ x: 62.5, y: 62.5 });
     }
-    if (event.key === "Enter" && camera.selectedId) {
+    if (event.key === "Escape" && camera.draft) {
+      camera = { ...camera, draft: null };
+      mode.value = "inspect";
+      feedback.textContent = "";
+      render(snapshot);
+    }
+    if (event.key === "Enter" && camera.draft) {
+      event.preventDefault();
+      placeDraft();
+    } else if (event.key === "Enter" && camera.selectedId) {
       event.preventDefault();
       openEntity(camera.selectedId);
     }

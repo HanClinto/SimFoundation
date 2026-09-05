@@ -2,6 +2,7 @@ import type { ControllerSnapshot } from "../../application/controller";
 import { tileAt, type TilePosition } from "../../simulation/world";
 import workerUrl from "./assets/site-worker.svg";
 import scp999Url from "./assets/site-999.svg";
+import { laboratoryTiles } from "../../simulation/construction";
 
 const TILE_WIDTH = 40;
 const TILE_HEIGHT = 20;
@@ -10,6 +11,10 @@ export interface MapCamera {
   readonly center: TilePosition;
   readonly zoom: number;
   readonly selectedId: string | null;
+  readonly draft?: {
+    readonly origin: TilePosition;
+    readonly valid: boolean;
+  } | null;
 }
 
 export function projectPosition(
@@ -201,6 +206,41 @@ export function renderSite(
     context.fillRect(point.x - labelWidth / 2, point.y - 7, labelWidth, 14);
     context.fillStyle = "#38473f";
     context.fillText(label, point.x, point.y + 3);
+  }
+  const footprints = [
+    ...snapshot.game.construction.blueprints
+      .filter(({ status }) => status !== "completed" && status !== "cancelled")
+      .map((blueprint) => ({
+        origin: blueprint.origin,
+        fill: "rgba(125, 208, 223, .38)",
+        stroke: "#c0f5ff",
+      })),
+    ...(camera.draft
+      ? [
+          {
+            origin: camera.draft.origin,
+            fill: camera.draft.valid
+              ? "rgba(161, 237, 140, .45)"
+              : "rgba(250, 140, 130, .45)",
+            stroke: camera.draft.valid ? "#d6ffb8" : "#ffe2d8",
+          },
+        ]
+      : []),
+  ];
+  for (const footprint of footprints) {
+    for (const { position, tile } of laboratoryTiles(footprint.origin)) {
+      const point = projectPosition(position, camera, width, height);
+      context.save();
+      context.translate(point.x, point.y);
+      context.scale(camera.zoom, camera.zoom);
+      drawTile(
+        context,
+        { x: 0, y: -10 },
+        footprint.fill,
+        tile === "door" ? "#fff4a4" : footprint.stroke,
+      );
+      context.restore();
+    }
   }
   for (const [id, position] of Object.entries(positions).sort(
     ([firstId, first], [secondId, second]) =>

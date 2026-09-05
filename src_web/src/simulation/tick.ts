@@ -6,6 +6,7 @@ import {
 } from "./jobs";
 import { advancePersonnel } from "./personnel";
 import { advanceScp999 } from "./scp-999";
+import { advanceConstruction } from "./construction";
 import type { GameState } from "./state";
 
 export function advanceSimulation(state: GameState): GameState {
@@ -102,7 +103,7 @@ export function advanceSimulation(state: GameState): GameState {
       ],
     };
   }
-  return {
+  return advanceConstruction({
     ...state,
     tick,
     gameMinute: state.gameMinute + 1,
@@ -112,5 +113,5 @@ export function advanceSimulation(state: GameState): GameState {
     scp999: scp999Result.anomaly,
     scp9620,
     world: scp999Result.world,
-  };
+  });
 }

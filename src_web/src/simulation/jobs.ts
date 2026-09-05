@@ -31,6 +31,7 @@ export interface SiteJob {
   readonly authorizedTick: number | null;
   readonly completedTick: number | null;
   readonly workSite: TilePosition;
+  readonly requiredWorkerId: string | null;
 }
 
 export interface JobAdvanceResult {
@@ -44,6 +45,7 @@ export function createStartingJobs(): readonly SiteJob[] {
     {
       id: "job-calibrate-9620-sensors",
       workSite: { x: 57, y: 55 },
+      requiredWorkerId: null,
       title: "Calibrate SCP-9620 sensor array",
       description:
         "Validate baseline telemetry before the next approved experiment.",
@@ -66,6 +68,7 @@ export function createTelemetryRecoveryJob(): SiteJob {
   return {
     id: "job-stabilize-9620-feedback",
     workSite: { x: 74, y: 68 },
+    requiredWorkerId: null,
     title: "Stabilize SCP-9620 sensor feedback",
     description:
       "Isolate the oscillating relay bank and restore validated telemetry limits.",
@@ -87,6 +90,7 @@ export function createBaselineObservationJob(): SiteJob {
   return {
     id: "job-record-9620-baseline",
     workSite: { x: 57, y: 55 },
+    requiredWorkerId: null,
     title: "Record SCP-9620 baseline",
     description:
       "Observe the inactive apparatus under calibrated instrumentation.",
@@ -108,6 +112,7 @@ export function createActivationTrialJob(): SiteJob {
   return {
     id: "job-run-9620-activation-trial",
     workSite: { x: 69, y: 55 },
+    requiredWorkerId: null,
     title: "Run SCP-9620 activation trial",
     description:
       "Apply the approved low-energy input and record the apparatus response.",
@@ -158,6 +163,8 @@ function selectWorker(
       .filter(
         (person) =>
           !busyPersonIds.has(person.id) &&
+          (job.requiredWorkerId === null ||
+            person.id === job.requiredWorkerId) &&
           (skillFor(person, job.skillId)?.level ?? 0) > 0,
       )
       .sort((first, second) => {
@@ -233,6 +240,8 @@ export function advanceJobs(
         const hasWorker = personnel.some(
           (person) =>
             !busyPersonIds.has(person.id) &&
+            (job.requiredWorkerId === null ||
+              person.id === job.requiredWorkerId) &&
             (skillFor(person, job.skillId)?.level ?? 0) > 0,
         );
         advancedJobsById.set(job.id, {

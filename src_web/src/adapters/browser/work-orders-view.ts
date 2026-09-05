@@ -41,6 +41,12 @@ export function updateWorkOrders(
       for (const [term, value] of [
         ["Skill", titleCase(job.skillId)],
         ["Assigned", assignedPerson?.name ?? unassignedLabel],
+        [
+          "Activity",
+          job.status === "in-progress"
+            ? (assignedPerson?.activity ?? "Awaiting report")
+            : titleCase(job.status),
+        ],
       ] as const) {
         const row = document.createElement("div");
         const key = document.createElement("dt");

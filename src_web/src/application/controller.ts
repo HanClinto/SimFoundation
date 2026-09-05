@@ -8,6 +8,18 @@ import {
   assessWorkPreferences,
 } from "../simulation/personnel";
 import type { GameState } from "../simulation/state";
+import {
+  cancelLaboratory,
+  placeLaboratory,
+  validateLaboratoryPlacement,
+  type ConstructionCode,
+} from "../simulation/construction";
+import type { TilePosition } from "../simulation/world";
+
+export interface ConstructionCommandResult {
+  readonly code: ConstructionCode;
+  readonly snapshot: ControllerSnapshot;
+}
 
 export interface ControllerSnapshot {
   readonly game: GameState;
@@ -21,6 +33,9 @@ export interface GameController {
   advance(tickCount?: number): ControllerSnapshot;
   replaceState(nextState: GameState): ControllerSnapshot;
   authorizeJob(jobId: string): ControllerSnapshot;
+  previewLaboratory(origin: TilePosition): ConstructionCode | null;
+  placeLaboratory(origin: TilePosition): ConstructionCommandResult;
+  cancelLaboratory(blueprintId: string): ConstructionCommandResult;
   unlockAnomalousPsychometrics(): ControllerSnapshot;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
@@ -47,6 +62,26 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+
+    previewLaboratory(origin) {
+      return validateLaboratoryPlacement(state, origin);
+    },
+
+    placeLaboratory(origin) {
+      const result = placeLaboratory(state, origin);
+      if (result.state === state)
+        return { code: result.code, snapshot: getSnapshot() };
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+
+    cancelLaboratory(blueprintId) {
+      const result = cancelLaboratory(state, blueprintId);
+      if (result.state === state)
+        return { code: result.code, snapshot: getSnapshot() };
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
 
     advance(tickCount = 1) {
       if (!Number.isSafeInteger(tickCount) || tickCount < 1) {

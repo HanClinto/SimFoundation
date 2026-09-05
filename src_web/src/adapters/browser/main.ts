@@ -149,11 +149,15 @@ app.innerHTML = `
       <button type="button" data-camera-action="home" title="Center on Site 828" aria-label="Center on Site 828">&#8962;</button>
       <select data-camera-entity aria-label="Focus personnel"></select>
       <button type="button" data-camera-action="inspect" disabled>Open Record</button>
+      <select data-camera-mode aria-label="Map mode"><option value="inspect">Inspect</option><option value="laboratory">Plan laboratory</option></select>
+      <button type="button" data-camera-action="place" disabled>Authorize Annex</button>
     </div>
     <div class="window-body camera-body">
       <div class="viewport-shell">
         <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
       </div>
+      <div class="construction-feedback"><span data-construction-materials></span><span data-construction-feedback role="status"></span></div>
+      <details class="construction-register"><summary>Construction register</summary><div class="construction-table-scroll"><table aria-label="Laboratory annexes"><thead><tr><th>Annex</th><th>Status</th><th>Orders</th></tr></thead><tbody data-construction-register></tbody></table></div></details>
       <div class="status-bar">
         <p class="status-bar-field">LIVE</p>
         <p class="status-bar-field" id="camera-game-time">08:00</p>
@@ -645,7 +649,7 @@ function openPersonnelInspector(personId: string): void {
 const siteCamera = createSiteCamera(
   canvas,
   requireElement<HTMLElement>("#camera-window"),
-  () => controller.getSnapshot(),
+  controller,
   (id) => {
     if (id === "SCP-999") windowManager.open("anomaly-window");
     else openPersonnelInspector(id);

@@ -3,8 +3,12 @@ import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 import { createScp999State, type Scp999State } from "./scp-999";
 import { createScp9620State, type Scp9620State } from "./scp-9620";
 import { createStartingWorld, type SiteWorld } from "./world";
+import {
+  createConstructionState,
+  type ConstructionState,
+} from "./construction";
 
-export const GAME_STATE_VERSION = 15;
+export const GAME_STATE_VERSION = 16;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -28,6 +32,7 @@ export interface GameState {
   readonly scp999: Scp999State;
   readonly scp9620: Scp9620State;
   readonly world: SiteWorld;
+  readonly construction: ConstructionState;
 }
 
 export function createInitialState(seed = 9620): GameState {
@@ -50,5 +55,6 @@ export function createInitialState(seed = 9620): GameState {
     scp999: createScp999State(),
     scp9620: createScp9620State(),
     world: createStartingWorld(personnel.map(({ id }) => id)),
+    construction: createConstructionState(),
   };
 }
