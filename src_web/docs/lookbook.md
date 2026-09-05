@@ -38,6 +38,8 @@ The Foundation Library should feel exploratory and multimedia-rich:
 
 The knowledgebase is both help system and in-world encyclopedia. Facts unlock through observation and research; unavailable or disputed information should be represented honestly inside the fiction.
 
+Research uses this reference-book language as an evolving investigation archive: illustrated anomaly entries link to dated observations, hypotheses, experiment protocols, and related cases. SCP-9620 is the central unresolved investigation; optional anomaly studies may inform it without becoming compulsory quest steps. Separate established source material, in-world findings, and uncertainty. Do not present the archive as a checklist of foreknown answers.
+
 ### Lotus Notes and institutional groupware
 
 Operational windows should feel like tools issued by a large bureaucracy:
@@ -72,6 +74,8 @@ A facility inspector behaves like a folder. Its icons represent installed and fu
 - Future logistics, utilities, medical, security, and containment systems
 
 Subsystem availability is simulation-backed. A physical system can be uninstalled, underpowered, damaged, jammed, sabotaged, or upgraded. Losing the alarm controller can remove automatic speed reduction or pause behavior even though manual pause remains globally available.
+
+Staffing and routine inspectors should emphasize shift coverage, responsibilities, outstanding needs, and exceptions rather than requiring approval of each pawn action. Support progressive detail: a facility summary identifies a missed or uncovered duty, its inspector shows the schedule and available evidence, and personnel records provide assessed context. Report the observed deviation without automatically revealing its hidden cause. Keep optional opportunities and research authorization distinct from the routine job monitor; its final interaction design remains open.
 
 ### Object inspectors
 
@@ -145,6 +149,8 @@ The institution and its personnel have different voices. Forms, alerts, protocol
 
 **Global fog-of-war rule:** ordinary interfaces show only facts justified by observation, records, sensors, or assessments. Never render an authoritative simulation value merely because it exists in the snapshot. Exact values and causal contributors belong in debug tools unless a named player-facing source supports them.
 
+Facility observability follows the same rule. Personnel presence and functioning, placed cameras provide coverage subject to their sensing limits. Without current observation, show timestamped remembered terrain, facility condition, and anomaly sightings rather than live state. An unexplored area is unknown; a previously observed area is remembered, not guaranteed unchanged. Map rendering, selection, tracking, inspector links, and anomaly records must all respect that boundary. Authoritative simulation activity continues outside observation. The current live-map prototype does not yet implement this requirement.
+
 Use epistemic labels consistently. These words are gameplay states, not decorative flavor:
 
 - **Confirmed:** supported strongly enough for operational use
@@ -195,6 +201,11 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - Simulating administrative work that has no meaningful decision, consequence, or narrative value
 
 ## Current Prototype Decisions
+
+- Personnel reference views now use original SVG equipment plates, a labeled uniform reference, and an anterior medical illustration with an accessible body-region index. Art is not copied from historical reference software. The uniform reference is not yet a composited loadout portrait.
+- Exact needs/stress/fear percentages and unassessed active-effect names are not ordinary dossier content. Recorded findings retain their assessment/observation status; absence of a report is not a healthy result.
+- The current Work Orders ledger is an inspection experiment, not approval of a universal special-task workflow. Routine autonomy and optional investigations remain distinct design layers.
+- The experimental-engineering direction and authored-before-generated anomaly policy are recorded in [containment-design.md](containment-design.md). Source snapshots and adaptation notes are indexed separately in [references/README.md](references/README.md).
 
 - Site 828 opens as a facility folder.
 - Camera Feed owns the isometric map window.

@@ -272,8 +272,8 @@ export function renderSite(
       context.stroke();
     }
     const image = id === "SCP-999" ? scp999 : worker;
-    const spriteWidth = (id === "SCP-999" ? 32 : 24) * camera.zoom;
-    const spriteHeight = (id === "SCP-999" ? 26 : 36) * camera.zoom;
+    const spriteWidth = (id === "SCP-999" ? 52 : 24) * camera.zoom;
+    const spriteHeight = (id === "SCP-999" ? 30 : 36) * camera.zoom;
     if (image.complete && image.naturalWidth > 0)
       context.drawImage(
         image,

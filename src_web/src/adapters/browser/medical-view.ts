@@ -6,6 +6,8 @@ import {
   type BodyRegion,
   type PersonnelRecord,
 } from "../../simulation/personnel";
+import anatomyUrl from "./assets/anatomy-figure.svg";
+import { recordAge } from "./personnel-records";
 
 const BODY_REGIONS: readonly [BodyRegion, string][] = [
   ["head", "Head"],
@@ -68,10 +70,13 @@ function medicalChartMarkup(person: PersonnelRecord): string {
           <button type="button" class="body-filter selected" data-body-filter="all" aria-pressed="true">All</button>
         </div>
         <div class="body-map" data-medical-field="body-map">
+          <img class="anatomy-illustration" src="${anatomyUrl}" alt="Anterior anatomical reference. Patient right appears on the left." />
+          <div class="body-region-index">
           ${BODY_REGIONS.map(
             ([region, label]) =>
               `<button type="button" class="body-region body-region-${region}" data-body-region="${region}" title="${label}: unassessed"><span>${label}</span></button>`,
           ).join("")}
+          </div>
         </div>
         <div class="medical-legend" aria-label="Body map legend">
           <span><i class="legend-unassessed"></i>Unassessed</span>
@@ -292,6 +297,16 @@ function updateMedicalChart(
     regionElement.title = `${label}: ${state}`;
     regionElement.setAttribute("aria-label", `${label}: ${state}`);
   }
+  const selected = chart.querySelector<HTMLElement>(
+    '[data-body-region][aria-pressed="true"]',
+  )?.dataset.bodyRegion;
+  for (const finding of findings.querySelectorAll<HTMLElement>(
+    "[data-finding-regions]",
+  )) {
+    finding.hidden =
+      selected !== undefined &&
+      !finding.dataset.findingRegions?.split(" ").includes(selected);
+  }
 }
 
 function updateAssessmentRecord(
@@ -310,10 +325,7 @@ function updateAssessmentRecord(
     const header = document.createElement("header");
     header.append(
       textElement("strong", "Direct observation"),
-      textElement(
-        "time",
-        `Tick ${observation.observedTick} / ${assessmentAge(currentTick, observation.observedTick)}`,
-      ),
+      textElement("time", recordAge(currentTick, observation.observedTick)),
     );
     const details = document.createElement("dl");
     const source = document.createElement("div");
@@ -341,10 +353,7 @@ function updateAssessmentRecord(
     const header = document.createElement("header");
     header.append(
       textElement("strong", assessment.method),
-      textElement(
-        "time",
-        `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
-      ),
+      textElement("time", recordAge(currentTick, assessment.assessedTick)),
     );
     const details = document.createElement("dl");
     for (const [term, value] of [
@@ -372,10 +381,7 @@ function updateAssessmentRecord(
     const header = document.createElement("header");
     header.append(
       textElement("strong", "Behavioral evidence"),
-      textElement(
-        "time",
-        `Tick ${evidence.observedTick} / ${assessmentAge(currentTick, evidence.observedTick)}`,
-      ),
+      textElement("time", recordAge(currentTick, evidence.observedTick)),
     );
     const details = document.createElement("dl");
     const source = document.createElement("div");
@@ -397,10 +403,7 @@ function updateAssessmentRecord(
     const header = document.createElement("header");
     header.append(
       textElement("strong", assessment.method),
-      textElement(
-        "time",
-        `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
-      ),
+      textElement("time", recordAge(currentTick, assessment.assessedTick)),
     );
     const details = document.createElement("dl");
     const protocol = document.createElement("div");
@@ -428,10 +431,7 @@ function updateAssessmentRecord(
     const header = document.createElement("header");
     header.append(
       textElement("strong", assessment.method),
-      textElement(
-        "time",
-        `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
-      ),
+      textElement("time", recordAge(currentTick, assessment.assessedTick)),
     );
     const details = document.createElement("dl");
     for (const [term, estimate] of [
@@ -466,10 +466,7 @@ function updateAssessmentRecord(
       const header = document.createElement("header");
       header.append(
         textElement("strong", assessment.method),
-        textElement(
-          "time",
-          `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
-        ),
+        textElement("time", recordAge(currentTick, assessment.assessedTick)),
       );
       const details = document.createElement("dl");
       for (const [term, estimate] of [

@@ -6,6 +6,9 @@ import {
   type PersonnelItem,
   type PersonnelRecord,
 } from "../../simulation/personnel";
+import { recordedInfluences, recordAge } from "./personnel-records";
+import { equipmentIllustration } from "./equipment-art";
+import figureUrl from "./assets/personnel-figure.svg";
 
 function initials(name: string): string {
   return name
@@ -26,41 +29,33 @@ function compactMetricMarkup(label: string, field: string): string {
   `;
 }
 
-function itemKind(item: PersonnelItem | null): string {
-  if (!item) return "empty";
-  const id = item.id;
-  if (/helmet|hardhat/.test(id)) return "headgear";
-  if (/coat|coveralls|scrubs|vest|jacket/.test(id)) return "clothing";
-  if (/tablet|scanner|multimeter|radio|dosimeter/.test(id)) return "device";
-  if (/medkit|sedative/.test(id)) return "medical";
-  if (/notebook|manifest/.test(id)) return "document";
-  if (/coffee|snack/.test(id)) return "food";
-  if (/mop|baton/.test(id)) return "tool";
-  if (/toolbelt|keys|restraints/.test(id)) return "utility";
-  return "supply";
-}
-
 function itemTileMarkup(slot: string, label: string): string {
-  return `<div class="item-tile equipment-slot equipment-${slot} empty" data-equipment-tile="${slot}">
+  return `<button type="button" class="item-tile equipment-slot equipment-${slot} empty" data-equipment-tile="${slot}">
     <span class="item-slot-label">${label}</span>
-    <span class="item-icon" data-item-kind="empty" aria-hidden="true"><span class="item-glyph"></span></span>
+    <span class="item-art"><img data-item-art alt="" hidden /></span>
     <strong data-equipment-slot="${slot}">Empty</strong>
-  </div>`;
+  </button>`;
 }
 
 function createItemTile(item: PersonnelItem | null): HTMLElement {
-  const tile = document.createElement("div");
+  const tile = document.createElement("button");
+  tile.type = "button";
   tile.className = "item-tile inventory-slot";
   tile.classList.toggle("empty", item === null);
   tile.title = item?.description ?? "Empty inventory slot";
 
+  tile.dataset.itemName = item?.name ?? "Empty slot";
+  tile.dataset.itemDescription =
+    item?.description ?? "No item recorded in this slot.";
   const icon = document.createElement("span");
-  icon.className = "item-icon";
-  icon.dataset.itemKind = itemKind(item);
-  icon.setAttribute("aria-hidden", "true");
-  const glyph = document.createElement("span");
-  glyph.className = "item-glyph";
-  icon.append(glyph);
+  icon.className = "item-art";
+  const imageUrl = equipmentIllustration(item);
+  if (imageUrl) {
+    const image = document.createElement("img");
+    image.src = imageUrl;
+    image.alt = "";
+    icon.append(image);
+  }
 
   const caption = document.createElement("strong");
   caption.textContent = item?.name ?? "Empty";
@@ -97,7 +92,7 @@ export function createPersonnelInspectorWindows(
       </div>
       <div class="window-body pawn-inspector-body">
         <header class="pawn-summary">
-          <div class="pawn-portrait" data-field="initials" aria-hidden="true"></div>
+          <div class="pawn-portrait" aria-hidden="true"><img src="${figureUrl}" alt="" /><span data-field="initials"></span></div>
           <div>
             <h2 data-field="name"></h2>
             <p><span data-field="assignment"></span> / Clearance <span data-field="clearance"></span></p>
@@ -124,12 +119,12 @@ export function createPersonnelInspectorWindows(
             </div>
           </fieldset>
           <fieldset>
-            <legend>Current condition</legend>
+            <legend>Behavioral impressions</legend>
             <dl class="compact-metrics">
               ${compactMetricMarkup("Satiety", "satiety")}
               ${compactMetricMarkup("Rest", "rest")}
-              ${compactMetricMarkup("Stress", "stress")}
-              ${compactMetricMarkup("Fear", "fear")}
+              ${compactMetricMarkup("Demeanor", "stress")}
+              ${compactMetricMarkup("Presentation", "fear")}
             </dl>
           </fieldset>
           <fieldset>
@@ -140,7 +135,7 @@ export function createPersonnelInspectorWindows(
         </section>
         <section id="dossier-${person.id}-panel-equipment" class="dossier-panel equipment-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-equipment" aria-hidden="true" data-dossier-panel="equipment" hidden>
           <div class="paper-doll">
-            <div class="paper-doll-figure" aria-hidden="true"><span></span></div>
+            <figure class="paper-doll-figure"><img src="${figureUrl}" alt="Standard issue uniform reference figure" /><figcaption>UNIFORM REFERENCE</figcaption></figure>
             ${EQUIPMENT_SLOTS.map(([slot, label]) =>
               itemTileMarkup(slot, label),
             ).join("")}
@@ -149,6 +144,7 @@ export function createPersonnelInspectorWindows(
             <legend>Carried inventory</legend>
             <div class="inventory-slots" data-field="inventory"></div>
           </fieldset>
+          <section class="equipment-caption" aria-live="polite"><h3 data-item-caption-title>Equipment register</h3><p data-item-caption-description>Issued equipment and carried supplies.</p></section>
         </section>
         <section id="dossier-${person.id}-panel-skills" class="dossier-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-skills" aria-hidden="true" data-dossier-panel="skills" hidden>
           <fieldset>
@@ -166,7 +162,7 @@ export function createPersonnelInspectorWindows(
             <p data-field="traits"></p>
           </fieldset>
           <fieldset>
-            <legend>Active Effects</legend>
+            <legend>Recorded findings</legend>
             <ul data-field="effects"></ul>
           </fieldset>
           <fieldset>
@@ -193,6 +189,19 @@ export function createPersonnelInspectorWindows(
     `;
     host.append(windowElement);
     windowElement.addEventListener("click", (event) => {
+      const item = (event.target as Element).closest<HTMLElement>(
+        "[data-item-name]",
+      );
+      if (item) {
+        for (const tile of windowElement.querySelectorAll(".item-tile"))
+          tile.setAttribute("aria-pressed", String(tile === item));
+        windowElement.querySelector<HTMLElement>(
+          "[data-item-caption-title]",
+        )!.textContent = item.dataset.itemName!;
+        windowElement.querySelector<HTMLElement>(
+          "[data-item-caption-description]",
+        )!.textContent = item.dataset.itemDescription!;
+      }
       const tab = (event.target as Element).closest<HTMLButtonElement>(
         "[data-dossier-tab]",
       );
@@ -201,12 +210,43 @@ export function createPersonnelInspectorWindows(
         "[data-dossier-tab]",
       )) {
         candidate.setAttribute("aria-selected", String(candidate === tab));
+        candidate.tabIndex = candidate === tab ? 0 : -1;
       }
       for (const panel of windowElement.querySelectorAll<HTMLElement>(
         "[data-dossier-panel]",
       )) {
         panel.hidden = panel.dataset.dossierPanel !== tab.dataset.dossierTab;
         panel.setAttribute("aria-hidden", String(panel.hidden));
+      }
+    });
+    for (const tab of windowElement.querySelectorAll<HTMLButtonElement>(
+      "[data-dossier-tab]",
+    ))
+      tab.tabIndex = tab.getAttribute("aria-selected") === "true" ? 0 : -1;
+    windowElement.addEventListener("keydown", (event) => {
+      if (
+        !(event.target instanceof HTMLElement) ||
+        !event.target.matches("[data-dossier-tab]")
+      )
+        return;
+      const tabs = Array.from(
+        windowElement.querySelectorAll<HTMLButtonElement>("[data-dossier-tab]"),
+      );
+      const index = tabs.indexOf(event.target as HTMLButtonElement);
+      const next =
+        event.key === "ArrowRight"
+          ? tabs[(index + 1) % tabs.length]
+          : event.key === "ArrowLeft"
+            ? tabs[(index + tabs.length - 1) % tabs.length]
+            : event.key === "Home"
+              ? tabs[0]
+              : event.key === "End"
+                ? tabs.at(-1)
+                : null;
+      if (next) {
+        event.preventDefault();
+        next.click();
+        next.focus();
       }
     });
     return windowElement;
@@ -222,14 +262,13 @@ function setText(scope: HTMLElement, field: string, value: string): void {
   element.textContent = value;
 }
 
-function setMetric(scope: HTMLElement, field: string, value: number): void {
-  const rounded = Math.round(value);
+function setMetric(scope: HTMLElement, field: string, value: string): void {
   const valueElement = scope.querySelector<HTMLElement>(
     `[data-value="${field}"]`,
   );
   if (!valueElement)
     throw new Error(`Personnel metric value missing: ${field}`);
-  valueElement.textContent = `${rounded}%`;
+  valueElement.textContent = value;
 }
 
 function setContributors(
@@ -334,7 +373,7 @@ export function updatePersonnelInspectors(
       inspector,
       "physical-recency",
       physicalAssessment
-        ? `Exam tick ${physicalAssessment.assessedTick}`
+        ? recordAge(currentTick, physicalAssessment.assessedTick)
         : person.physicalObservations.length > 0
           ? "Visible signs reported; severity unknown"
           : "No current report",
@@ -359,7 +398,7 @@ export function updatePersonnelInspectors(
       inspector,
       "bias-assessment-meta",
       projectedBiases
-        ? `${Math.round(projectedBiases.confidence * 100)}% confidence / assessment tick ${projectedBiases.assessedTick}`
+        ? `${Math.round(projectedBiases.confidence * 100)}% confidence / ${recordAge(currentTick, projectedBiases.assessedTick)}`
         : "No work-preference evaluation on record.",
     );
     const bestSkill = [...person.skills].sort(
@@ -376,7 +415,7 @@ export function updatePersonnelInspectors(
       ? currentTick - psychologicalAssessment.assessedTick
       : null;
     const assessmentLabel = psychologicalAssessment
-      ? `${assessmentAge !== null && assessmentAge >= 30 ? "Stale" : "Assessed"} / tick ${psychologicalAssessment.assessedTick}`
+      ? `${assessmentAge !== null && assessmentAge >= 30 ? "Stale" : "Assessed"} / ${recordAge(currentTick, psychologicalAssessment.assessedTick)}`
       : "Observed only / unassessed";
     setText(
       inspector,
@@ -394,10 +433,10 @@ export function updatePersonnelInspectors(
         : psychology.sanityAppearance,
     );
     setText(inspector, "sanity-band", assessmentLabel);
-    setMetric(inspector, "satiety", person.needs.satiety);
-    setMetric(inspector, "rest", person.needs.rest);
-    setMetric(inspector, "stress", person.stress);
-    setMetric(inspector, "fear", person.fear);
+    setMetric(inspector, "satiety", "No recent self-report");
+    setMetric(inspector, "rest", "No recent self-report");
+    setMetric(inspector, "stress", psychology.moodAppearance);
+    setMetric(inspector, "fear", psychology.sanityAppearance);
     setContributors(
       inspector,
       "mood-contributors",
@@ -415,13 +454,9 @@ export function updatePersonnelInspectors(
     setContributors(
       inspector,
       "effects",
-      person.effects.length > 0
-        ? person.effects.map((effect) =>
-            effect.expiresAtTick === null
-              ? effect.name
-              : `${effect.name} / expires tick ${effect.expiresAtTick}`,
-          )
-        : ["No active Effects"],
+      recordedInfluences(person).length > 0
+        ? recordedInfluences(person)
+        : ["No findings on record. Unassessed conditions remain unknown."],
     );
 
     for (const [slot] of EQUIPMENT_SLOTS) {
@@ -436,11 +471,17 @@ export function updatePersonnelInspectors(
       const tile = inspector.querySelector<HTMLElement>(
         `[data-equipment-tile="${slot}"]`,
       );
-      const icon = tile?.querySelector<HTMLElement>("[data-item-kind]");
+      const icon = tile?.querySelector<HTMLImageElement>("[data-item-art]");
       if (!tile || !icon)
         throw new Error(`Personnel equipment tile missing: ${slot}`);
       tile.classList.toggle("empty", item === null);
-      icon.dataset.itemKind = itemKind(item);
+      const imageUrl = equipmentIllustration(item);
+      icon.hidden = imageUrl === null;
+      if (imageUrl && icon.getAttribute("src") !== imageUrl)
+        icon.src = imageUrl;
+      tile.dataset.itemName = item?.name ?? "Empty slot";
+      tile.dataset.itemDescription = item?.description ?? "No item equipped.";
+      tile.title = `${item?.name ?? "Empty"}: ${item?.description ?? "No item equipped."}`;
     }
 
     const inventory = inspector.querySelector<HTMLElement>(
@@ -454,7 +495,11 @@ export function updatePersonnelInspectors(
         () => null,
       ),
     ];
-    inventory.replaceChildren(...inventoryEntries.map(createItemTile));
+    const signature = JSON.stringify(inventoryEntries);
+    if (inventory.dataset.signature !== signature) {
+      inventory.replaceChildren(...inventoryEntries.map(createItemTile));
+      inventory.dataset.signature = signature;
+    }
 
     const skills = inspector.querySelector<HTMLElement>(
       '[data-field="skills"]',

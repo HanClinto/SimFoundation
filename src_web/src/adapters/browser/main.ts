@@ -32,6 +32,7 @@ import {
 } from "./personnel-view";
 import { refreshForNewDeployment } from "./deployment-version";
 import { createSiteCamera } from "./camera-view";
+import "./personnel-reference.css";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";

@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "scp-999-revision-40",
+      "title": "SCP-999",
+      "author": "ProfSnider",
+      "url": "https://scp-wiki.wikidot.com/scp-999",
+      "license": "CC-BY-SA-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "revision": 40,
+      "sourceModified": "2025-08-02T06:37:00Z",
+      "retrieved": "2026-09-05",
+      "text": "scp-999/2026-09-05-revision-40.txt",
+      "notes": "scp-999/adaptation.md",
+      "capture": "Browser-rendered article body, including addenda A and B and final memo; navigation, rating controls, and licensing toggle omitted.",
+      "transformations": "Whitespace and typographic punctuation normalized to ASCII; solid-block redacted names transcribed as [REDACTED]. No substantive article text omitted."
+    }
+  ]
+}

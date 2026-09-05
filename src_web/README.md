@@ -37,6 +37,8 @@ Construction currently provides one fixed annex template and abstract counted ma
 
 Personnel autonomously select work from the player's priorities, schedules, zones, qualifications, and policies. The player designs spaces and systems rather than manually directing every routine action. Individual staff can be drafted for emergencies and tactical encounters.
 
+The intended rhythm is routine, attachment, opportunity, strain, incident, and recovery, with substantial peaceful stretches earned through good management. Schedules express expectations rather than guaranteed compliance. Preferences, competing needs, deliberate refusals, and incapacity are distinct causes of deviation; emotional, psychotic, and physical breakdowns are not interchangeable personality flaws. The simulation should retain a causal explanation even when the player has only an incomplete report. These are design requirements, not claims about the current prototype's autonomy.
+
 ### Anomalous automation
 
 Research begins as hands-on experimentation and develops into visible production and containment chains. Sensors, power, sample transport, decontamination, storage, and security can be automated. Better throughput introduces new failure modes, especially when anomalous equipment becomes part of ordinary infrastructure.
@@ -44,6 +46,8 @@ Research begins as hands-on experimentation and develops into visible production
 ### Recoverable panic
 
 Serious incidents can kill personnel, damage the site, create debt, change anomaly behavior, and leave lasting physical or psychological scars. Most failures should produce a difficult recovery story rather than immediately ending the run.
+
+Routine human variability should normally be tolerated by staffing coverage, maintenance margins, and redundant systems. A single missed check should not usually trigger an unavoidable catastrophe. Failures should develop through consequential, potentially observable stages with opportunities to intervene; exceptional anomalous behavior may still surprise the player. Facility design and staff care should reduce risk without requiring perfect obedience or constant manual correction.
 
 ### Inspectable systems
 
@@ -122,13 +126,15 @@ Events should be promoted by consequences and context. A worn backup generator m
 
 Routine play is priority management. The player places blueprints and work orders, configures job priorities, sets schedules and zones, and approves protocols. A deterministic job market inside the simulation assigns eligible work to autonomous pawns based on priority, reachability, qualifications, needs, risk, and current commitments.
 
+Keep three layers distinct: investigations and optional opportunities express goals; schedules, facilities, and policies express operational expectations; autonomous jobs execute the supporting work. Routine hauling, cleaning, maintenance, and preparation should arise from those expectations rather than each requiring approval. Explicit authorization belongs to meaningful commitments such as unusual requests, expensive projects, and consequential experiment protocols. The current special-task Work Orders system and its inspection UI are provisional, not the settled design for all facility work.
+
 Direct control is reserved for drafting. Drafted pawns can receive explicit move, interact, use ability, attack, arrest, rescue, and retreat orders. Drafting suspends ordinary job selection but does not bypass movement, equipment, skill, or action costs.
 
 ## Expeditions and Tactical Encounters
 
 Expeditions are planned from the base using a team, loadout, transport capacity, supplies, and mission objective. Initial expeditions may focus on salvage and anomaly recovery without combat. Tactical combat is a stretch objective, not a prerequisite for the first playable release.
 
-When combat is introduced, it should be pause-based real-time or use discrete tactical turns over the same deterministic action system. The design should favor readable positioning, cover, equipment choices, anomaly interactions, and withdrawal over twitch execution. The player can pause freely to issue orders.
+When combat is introduced, it should be pause-based real-time over the same deterministic action system, with RimWorld-like drafting and freely available pause. The design should favor readable positioning, cover, equipment choices, anomaly interactions, and withdrawal over twitch execution. Recontainment should often depend on restoring infrastructure, isolating spaces, escorting specialists, or following anomaly-specific procedures rather than damage output alone. MTF responders provide emergency capabilities without replacing the role of facility design.
 
 Possible expedition rewards include:
 
@@ -146,11 +152,15 @@ SCP-9620 is the dangerous, deliberately undefined center of the campaign. Its be
 
 The design should preserve ambiguity. Internal content uses authored possibilities and deterministic conditions, but the UI should not expose a single canonical answer at the beginning.
 
+SCP-9620 supplies the central exploratory investigation. Other anomalies and unusual requests introduce optional investigations whose discoveries may provide useful techniques, equipment, or new interpretations, but need not be mandatory steps or keys to the main mystery. Research should accumulate observations, competing hypotheses, and unresolved contradictions, not merely complete a linear quest checklist.
+
 ### SCP-999
 
 SCP-999 is a friendly resident anomaly that wanders through permitted areas, seeks interaction, and improves nearby morale. Contact can reduce stress and apply Calm. Caring for SCP-999 creates low-stakes logistics and offers a visible contrast with SCP-9620.
 
 SCP-999 remains an entity with needs, preferences, access rules, and inspectable behavior rather than a passive room modifier.
+
+The prototype currently chooses the highest-stress reachable idle person using site-wide authoritative values. Treat that as a temporary test behavior, not an approved characterization or evidence of canonical sensing abilities. Before replacing it, review the [source article by ProfSnider](https://scp-wiki.wikidot.com/scp-999), distinguish sourced behavior from game adaptations, and define what the entity can perceive. Favor locally motivated social encounters and its own routines over globally optimizing personnel wellbeing. Any special sensitivity to distress needs an explicit source-grounded rule; it must not implicitly grant the player knowledge of hidden personnel state.
 
 ## Items, Inventory, and Equipment
 

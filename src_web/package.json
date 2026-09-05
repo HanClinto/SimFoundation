@@ -21,9 +21,11 @@
     "pathfinding": "^0.4.18"
   },
   "devDependencies": {
+    "@types/jsdom": "^30.0.0",
     "@types/node": "^22.20.1",
     "@types/pathfinding": "^0.1.0",
     "esbuild": "^0.28.2",
+    "jsdom": "^30.0.1",
     "prettier": "3.6.2",
     "typescript": "7.0.2",
     "vite": "8.2.2",

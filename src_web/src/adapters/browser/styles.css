@@ -1654,17 +1654,124 @@ textarea {
 .work-orders-list {
   min-height: 0;
   flex: 1 1 auto;
-  padding: 6px;
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border: 2px inset #fff;
+  background: #c0c0c0;
+  container-type: inline-size;
+}
+
+.order-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+}
+
+.order-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.order-toolbar input {
+  flex: 1;
+  min-width: 100px;
+}
+
+.order-desk {
+  display: grid;
+  grid-template-columns: minmax(210px, 1fr) minmax(240px, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+
+.order-ledger-scroll,
+.order-report {
+  overflow: auto;
+  min-width: 0;
   background: #fff;
+}
+
+.order-ledger-scroll {
+  border-right: 3px ridge #dedede;
+}
+
+.order-ledger {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.order-ledger th {
+  position: sticky;
+  top: 0;
+  text-align: left;
+  background: #dedede;
+  border: 1px outset #fff;
+  padding: 5px;
+}
+
+.order-ledger td {
+  padding: 7px 5px;
+  border-bottom: 1px solid #e2e2e2;
+  vertical-align: top;
+}
+
+.order-ledger tr[aria-selected="true"] {
+  background: #000080;
+  color: #fff;
+}
+
+.order-ledger tr:focus-visible {
+  outline: 1px dotted currentColor;
+  outline-offset: -3px;
+}
+
+.order-register-status {
+  padding: 4px 6px;
+  border-top: 1px solid #808080;
+  font-size: 11px;
+}
+
+@container (max-width: 550px) {
+  .order-desk {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(100px, 40%) minmax(0, 1fr);
+  }
+  .order-ledger-scroll {
+    border-right: 0;
+    border-bottom: 3px ridge #dedede;
+  }
 }
 
 .work-order {
   display: grid;
-  gap: 6px;
-  padding: 8px;
-  border-bottom: 1px dotted #777;
+  gap: 14px;
+  padding: 18px;
+}
+
+.work-order[hidden] {
+  display: none;
+}
+
+.work-order header {
+  align-items: flex-start;
+  flex-direction: column;
+  border-bottom: 2px solid #626c66;
+  padding-bottom: 10px;
+}
+
+.work-order header strong {
+  font:
+    18px Georgia,
+    serif;
+}
+
+.work-order footer {
+  flex-wrap: wrap;
 }
 
 .work-order header,
