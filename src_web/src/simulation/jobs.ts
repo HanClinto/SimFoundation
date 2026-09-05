@@ -9,7 +9,18 @@ import {
   type SiteWorld,
   type TilePosition,
 } from "./world";
-import { completeAssessment, type ClinicalOrder } from "./clinical";
+import {
+  ASSESSMENT_REQUIREMENTS,
+  clinicalQualificationReasons,
+  completeAssessment,
+  type ClinicalOrder,
+} from "./clinical";
+
+function meetsJobSkill(person: PersonnelRecord, job: SiteJob): boolean {
+  return job.assessment
+    ? clinicalQualificationReasons(person, job.assessment.kind).length === 0
+    : (person.skills.find(({ id }) => id === job.skillId)?.level ?? 0) >= 1;
+}
 
 export type JobStatus = "proposed" | "available" | "in-progress" | "completed";
 
@@ -169,10 +180,10 @@ function selectWorker(
           (!job.assessment ||
             (clinicianIds.includes(person.id) &&
               person.id !== job.assessment.patientId &&
-              (skillFor(person, "medical")?.level ?? 0) >= 3)) &&
+              meetsJobSkill(person, job))) &&
           (job.requiredWorkerId === null ||
             person.id === job.requiredWorkerId) &&
-          (skillFor(person, job.skillId)?.level ?? 0) > 0,
+          meetsJobSkill(person, job),
       )
       .sort((first, second) => {
         const firstSkill = skillFor(first, job.skillId)?.level ?? 0;
@@ -200,9 +211,11 @@ function addSkillXp(
 ): PersonnelRecord {
   return {
     ...person,
-    skills: person.skills.map((skill) =>
-      skill.id === skillId ? { ...skill, xp: skill.xp + amount } : skill,
-    ),
+    skills: !person.skills.some(({ id }) => id === skillId)
+      ? [...person.skills, { id: skillId, level: 0, xp: amount }]
+      : person.skills.map((skill) =>
+          skill.id === skillId ? { ...skill, xp: skill.xp + amount } : skill,
+        ),
   };
 }
 
@@ -269,21 +282,26 @@ export function advanceJobs(
             (!job.assessment ||
               (clinicianIds.includes(person.id) &&
                 person.id !== job.assessment.patientId &&
-                (skillFor(person, "medical")?.level ?? 0) >= 3)) &&
+                meetsJobSkill(person, job))) &&
             (job.requiredWorkerId === null ||
               person.id === job.requiredWorkerId) &&
-            (skillFor(person, job.skillId)?.level ?? 0) > 0,
+            meetsJobSkill(person, job),
         );
         advancedJobsById.set(job.id, {
           ...job,
           assignmentReason: hasWorker
             ? "No eligible worker can reach the work site."
-            : "No eligible worker is currently available.",
+            : job.assessment
+              ? `Awaiting assigned staff with Medical ${ASSESSMENT_REQUIREMENTS[job.assessment.kind].medicalLevel}+ and no conflicting appointment.`
+              : "No eligible worker is currently available.",
         });
         continue;
       }
-      const skill = skillFor(selected, job.skillId);
-      if (!skill) continue;
+      const skill = skillFor(selected, job.skillId) ?? {
+        id: job.skillId,
+        level: 0,
+        xp: 0,
+      };
       assignedPersonId = selected.id;
       assignmentReason = `Highest eligible official ${job.skillId} level (${skill.level}); additional suitability factors and stable ordering resolve ties.`;
       busyPersonIds.add(selected.id);
@@ -291,14 +309,15 @@ export function advanceJobs(
     }
 
     const worker = people.get(assignedPersonId);
-    const skill = worker ? skillFor(worker, job.skillId) : null;
+    const skill = worker
+      ? (skillFor(worker, job.skillId) ?? { id: job.skillId, level: 0, xp: 0 })
+      : null;
     if (
       !worker ||
       !skill ||
-      skill.level === 0 ||
+      !meetsJobSkill(worker, job) ||
       (job.assessment &&
-        (skill.level < 3 ||
-          !clinicianIds.includes(worker.id) ||
+        (!clinicianIds.includes(worker.id) ||
           !patient ||
           patient.id === worker.id))
     ) {
@@ -389,7 +408,10 @@ export function advanceJobs(
       continue;
     }
 
-    const progress = Math.min(job.requiredProgress, job.progress + skill.level);
+    const progress = Math.min(
+      job.requiredProgress,
+      job.progress + Math.max(1, skill.level),
+    );
     const completed = progress >= job.requiredProgress;
     const experiencedWorker = addSkillXp(worker, job.skillId, job.xpPerTick);
     people.set(worker.id, {

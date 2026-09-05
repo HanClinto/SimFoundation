@@ -758,6 +758,10 @@ app.addEventListener("click", (event) => {
   if (psychologyPersonId) {
     controller.orderPsychologicalAssessment(psychologyPersonId);
   }
+  const moodPersonId = (event.target as Element).closest<HTMLElement>(
+    "[data-screen-mood-person-id]",
+  )?.dataset.screenMoodPersonId;
+  if (moodPersonId) controller.orderMoodScreening(moodPersonId);
 
   const authorizeJobButton = (
     event.target as Element

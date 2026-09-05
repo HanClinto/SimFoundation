@@ -114,6 +114,20 @@ export interface PsychologicalProjection {
   readonly assessment: PsychologicalAssessment | null;
 }
 
+export interface ClinicalSurveyRecord {
+  readonly id: string;
+  readonly kind: "mood" | "anomalous";
+  readonly assessedTick: number;
+  readonly recordedOrder: number;
+  readonly assessor: string;
+  readonly confidence: number;
+  readonly summary: string;
+  readonly moodEstimate: {
+    readonly minimum: number;
+    readonly maximum: number;
+  } | null;
+}
+
 export type TraitTag =
   | "work"
   | "threat-response"
@@ -221,6 +235,7 @@ export interface PersonnelRecord {
   readonly physicalObservations: readonly PhysicalObservation[];
   readonly physicalAssessments: readonly PhysicalAssessment[];
   readonly psychologicalAssessments: readonly PsychologicalAssessment[];
+  readonly clinicalSurveys: readonly ClinicalSurveyRecord[];
 }
 
 export interface DerivedMeasure {
@@ -234,446 +249,447 @@ const MAX_PSYCHOLOGICAL_ASSESSMENTS = 50;
 const MAX_TRAIT_ASSESSMENTS = 50;
 const MAX_BIAS_ASSESSMENTS = 20;
 
-const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
-  {
-    id: "person-mara-voss",
-    name: "Dr. Mara Voss",
-    assignment: "Research",
-    defaultActivity: "Reviewing SCP-9620 telemetry",
-    activity: "Reviewing SCP-9620 telemetry",
-    currentJobId: null,
-    clearance: 3,
-    resilience: 72,
-    stress: 18,
-    fear: 6,
-    needs: { satiety: 82, rest: 76 },
-    traits: {
-      methodical: {
-        label: "Methodical",
-        tags: ["work"],
-        disclosed: true,
+const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
+  [
+    {
+      id: "person-mara-voss",
+      name: "Dr. Mara Voss",
+      assignment: "Research",
+      defaultActivity: "Reviewing SCP-9620 telemetry",
+      activity: "Reviewing SCP-9620 telemetry",
+      currentJobId: null,
+      clearance: 3,
+      resilience: 72,
+      stress: 18,
+      fear: 6,
+      needs: { satiety: 82, rest: 76 },
+      traits: {
+        methodical: {
+          label: "Methodical",
+          tags: ["work"],
+          disclosed: true,
+        },
+        "psychic-sensitivity": {
+          label: "Psychically Insulated",
+          tags: ["anomalous"],
+          parameters: { sensitivity: -2 },
+          disclosed: false,
+        },
       },
-      "psychic-sensitivity": {
-        label: "Psychically Insulated",
-        tags: ["anomalous"],
-        parameters: { sensitivity: -2 },
-        disclosed: false,
+      traitEvidence: [],
+      traitAssessments: [],
+      biases: { mindMight: -2, receptiveResolute: -1 },
+      biasAssessments: [],
+      skills: [
+        { id: "research", level: 8, xp: 0 },
+        { id: "medical", level: 3, xp: 0 },
+        { id: "logistics", level: 2, xp: 0 },
+      ],
+      equipment: {
+        head: null,
+        body: {
+          id: "item-lab-coat-mara",
+          name: "Research Lab Coat",
+          description: "Standard issue coat with a Level 3 badge clip.",
+        },
+        primaryHand: {
+          id: "item-tablet-mara",
+          name: "Telemetry Tablet",
+          description: "Displays buffered SCP-9620 sensor readings.",
+        },
+        offHand: null,
+        accessory: {
+          id: "item-dosimeter-mara",
+          name: "Anomalous Dosimeter",
+          description: "Passive exposure monitor; calibration provisional.",
+        },
       },
+      inventory: [
+        {
+          id: "item-notebook-mara",
+          name: "Bound Research Notes",
+          description: "Handwritten observations and unresolved questions.",
+        },
+        {
+          id: "item-coffee-mara",
+          name: "Coffee Thermos",
+          description: "Still warm.",
+        },
+      ],
+      effects: [],
+      physicalObservations: [],
+      physicalAssessments: [],
+      psychologicalAssessments: [],
     },
-    traitEvidence: [],
-    traitAssessments: [],
-    biases: { mindMight: -2, receptiveResolute: -1 },
-    biasAssessments: [],
-    skills: [
-      { id: "research", level: 8, xp: 0 },
-      { id: "medical", level: 3, xp: 0 },
-      { id: "logistics", level: 2, xp: 0 },
-    ],
-    equipment: {
-      head: null,
-      body: {
-        id: "item-lab-coat-mara",
-        name: "Research Lab Coat",
-        description: "Standard issue coat with a Level 3 badge clip.",
+    {
+      id: "person-caleb-ward",
+      name: "Caleb Ward",
+      assignment: "Engineering",
+      defaultActivity: "Inspecting generator relays",
+      activity: "Inspecting generator relays",
+      currentJobId: null,
+      clearance: 2,
+      resilience: 61,
+      stress: 24,
+      fear: 4,
+      needs: { satiety: 69, rest: 71 },
+      traits: {
+        practical: {
+          label: "Practical",
+          tags: ["work"],
+          disclosed: true,
+        },
+        "light-sleeper": {
+          label: "Light Sleeper",
+          tags: ["medical"],
+          disclosed: true,
+        },
       },
-      primaryHand: {
-        id: "item-tablet-mara",
-        name: "Telemetry Tablet",
-        description: "Displays buffered SCP-9620 sensor readings.",
+      traitEvidence: [],
+      traitAssessments: [],
+      biases: { mindMight: 2, receptiveResolute: 2 },
+      biasAssessments: [],
+      skills: [
+        { id: "engineering", level: 7, xp: 0 },
+        { id: "logistics", level: 4, xp: 0 },
+        { id: "security", level: 2, xp: 0 },
+      ],
+      equipment: {
+        head: {
+          id: "item-hardhat-caleb",
+          name: "Utility Hard Hat",
+          description: "Impact-rated with a mounted work lamp.",
+        },
+        body: {
+          id: "item-coveralls-caleb",
+          name: "Engineering Coveralls",
+          description: "Insulated Foundation maintenance uniform.",
+        },
+        primaryHand: {
+          id: "item-multimeter-caleb",
+          name: "Diagnostic Multimeter",
+          description: "Rated for Site 828 generator relays.",
+        },
+        offHand: null,
+        accessory: {
+          id: "item-toolbelt-caleb",
+          name: "Tool Belt",
+          description: "Common repair tools in labeled loops.",
+        },
       },
-      offHand: null,
-      accessory: {
-        id: "item-dosimeter-mara",
-        name: "Anomalous Dosimeter",
-        description: "Passive exposure monitor; calibration provisional.",
-      },
+      inventory: [
+        {
+          id: "item-fuse-caleb",
+          name: "Replacement Fuse",
+          description: "Industrial 80A fuse.",
+        },
+      ],
+      effects: [],
+      physicalObservations: [],
+      physicalAssessments: [],
+      psychologicalAssessments: [],
     },
-    inventory: [
-      {
-        id: "item-notebook-mara",
-        name: "Bound Research Notes",
-        description: "Handwritten observations and unresolved questions.",
+    {
+      id: "person-priya-shah",
+      name: "Priya Shah",
+      assignment: "Medical",
+      defaultActivity: "Restocking the infirmary",
+      activity: "Restocking the infirmary",
+      currentJobId: null,
+      clearance: 2,
+      resilience: 78,
+      stress: 15,
+      fear: 3,
+      needs: { satiety: 74, rest: 83 },
+      traits: {
+        compassionate: {
+          label: "Compassionate",
+          tags: ["social"],
+          disclosed: true,
+        },
+        "steady-hands": {
+          label: "Steady Hands",
+          tags: ["medical"],
+          disclosed: true,
+        },
       },
-      {
-        id: "item-coffee-mara",
-        name: "Coffee Thermos",
-        description: "Still warm.",
+      traitEvidence: [],
+      traitAssessments: [],
+      biases: { mindMight: 1, receptiveResolute: -2 },
+      biasAssessments: [],
+      skills: [
+        { id: "medical", level: 8, xp: 0 },
+        { id: "research", level: 4, xp: 0 },
+        { id: "logistics", level: 3, xp: 0 },
+      ],
+      equipment: {
+        head: null,
+        body: {
+          id: "item-scrubs-priya",
+          name: "Medical Scrubs",
+          description: "Foundation infirmary uniform.",
+        },
+        primaryHand: null,
+        offHand: null,
+        accessory: {
+          id: "item-medkit-priya",
+          name: "Trauma Kit",
+          description: "Compact first-response supplies.",
+        },
       },
-    ],
-    effects: [],
-    physicalObservations: [],
-    physicalAssessments: [],
-    psychologicalAssessments: [],
-  },
-  {
-    id: "person-caleb-ward",
-    name: "Caleb Ward",
-    assignment: "Engineering",
-    defaultActivity: "Inspecting generator relays",
-    activity: "Inspecting generator relays",
-    currentJobId: null,
-    clearance: 2,
-    resilience: 61,
-    stress: 24,
-    fear: 4,
-    needs: { satiety: 69, rest: 71 },
-    traits: {
-      practical: {
-        label: "Practical",
-        tags: ["work"],
-        disclosed: true,
-      },
-      "light-sleeper": {
-        label: "Light Sleeper",
-        tags: ["medical"],
-        disclosed: true,
-      },
+      inventory: [
+        {
+          id: "item-sedative-priya",
+          name: "Sedative Ampoule",
+          description: "Controlled medical stock.",
+        },
+      ],
+      effects: [],
+      physicalObservations: [],
+      physicalAssessments: [],
+      psychologicalAssessments: [],
     },
-    traitEvidence: [],
-    traitAssessments: [],
-    biases: { mindMight: 2, receptiveResolute: 2 },
-    biasAssessments: [],
-    skills: [
-      { id: "engineering", level: 7, xp: 0 },
-      { id: "logistics", level: 4, xp: 0 },
-      { id: "security", level: 2, xp: 0 },
-    ],
-    equipment: {
-      head: {
-        id: "item-hardhat-caleb",
-        name: "Utility Hard Hat",
-        description: "Impact-rated with a mounted work lamp.",
+    {
+      id: "person-lena-ortiz",
+      name: "Lena Ortiz",
+      assignment: "Security",
+      defaultActivity: "Patrolling Sector B1",
+      activity: "Patrolling Sector B1",
+      currentJobId: null,
+      clearance: 2,
+      resilience: 84,
+      stress: 21,
+      fear: 2,
+      needs: { satiety: 77, rest: 68 },
+      traits: {
+        "threat-sensitivity": {
+          label: "Iron-Willed",
+          tags: ["threat-response"],
+          parameters: { sensitivity: -2 },
+          disclosed: true,
+        },
+        alert: {
+          label: "Alert",
+          tags: ["threat-response"],
+          disclosed: true,
+        },
       },
-      body: {
-        id: "item-coveralls-caleb",
-        name: "Engineering Coveralls",
-        description: "Insulated Foundation maintenance uniform.",
+      traitEvidence: [],
+      traitAssessments: [],
+      biases: { mindMight: 2, receptiveResolute: 1 },
+      biasAssessments: [],
+      skills: [
+        { id: "security", level: 8, xp: 0 },
+        { id: "medical", level: 2, xp: 0 },
+        { id: "logistics", level: 3, xp: 0 },
+      ],
+      equipment: {
+        head: {
+          id: "item-helmet-lena",
+          name: "Security Helmet",
+          description: "Light ballistic helmet with radio mount.",
+        },
+        body: {
+          id: "item-vest-lena",
+          name: "Security Vest",
+          description: "Standard protective vest.",
+        },
+        primaryHand: {
+          id: "item-baton-lena",
+          name: "Containment Baton",
+          description: "Less-lethal security baton.",
+        },
+        offHand: {
+          id: "item-radio-lena",
+          name: "Site Radio",
+          description: "Encrypted facility communications.",
+        },
+        accessory: null,
       },
-      primaryHand: {
-        id: "item-multimeter-caleb",
-        name: "Diagnostic Multimeter",
-        description: "Rated for Site 828 generator relays.",
-      },
-      offHand: null,
-      accessory: {
-        id: "item-toolbelt-caleb",
-        name: "Tool Belt",
-        description: "Common repair tools in labeled loops.",
-      },
+      inventory: [
+        {
+          id: "item-restraints-lena",
+          name: "Restraints",
+          description: "Two reusable restraint sets.",
+        },
+      ],
+      effects: [
+        {
+          id: "effect-right-forearm-laceration-lena",
+          name: "Deep right forearm laceration",
+          kind: "injury",
+          severity: "serious",
+          bodyRegions: ["rightArm"],
+          physicalHealthPenalty: 14,
+          stressRecoveryPerTick: 0,
+          expiresAtTick: null,
+        },
+      ],
+      physicalObservations: [
+        {
+          id: "observation-profuse-bleeding-lena",
+          observedTick: 0,
+          recordedOrder: 1,
+          source: "Supervisor report",
+          label: "Profuse bleeding observed",
+          bodyRegions: ["rightArm"],
+        },
+      ],
+      physicalAssessments: [],
+      psychologicalAssessments: [],
     },
-    inventory: [
-      {
-        id: "item-fuse-caleb",
-        name: "Replacement Fuse",
-        description: "Industrial 80A fuse.",
+    {
+      id: "person-jon-bell",
+      name: "Jon Bell",
+      assignment: "Facilities",
+      defaultActivity: "Cleaning the west corridor",
+      activity: "Cleaning the west corridor",
+      currentJobId: null,
+      clearance: 1,
+      resilience: 53,
+      stress: 27,
+      fear: 9,
+      needs: { satiety: 63, rest: 59 },
+      traits: {
+        sociability: {
+          label: "Sociable",
+          tags: ["social"],
+          parameters: { socialDrive: 2 },
+          disclosed: true,
+        },
+        superstitious: {
+          label: "Superstitious",
+          tags: ["anomalous"],
+          disclosed: true,
+        },
       },
-    ],
-    effects: [],
-    physicalObservations: [],
-    physicalAssessments: [],
-    psychologicalAssessments: [],
-  },
-  {
-    id: "person-priya-shah",
-    name: "Priya Shah",
-    assignment: "Medical",
-    defaultActivity: "Restocking the infirmary",
-    activity: "Restocking the infirmary",
-    currentJobId: null,
-    clearance: 2,
-    resilience: 78,
-    stress: 15,
-    fear: 3,
-    needs: { satiety: 74, rest: 83 },
-    traits: {
-      compassionate: {
-        label: "Compassionate",
-        tags: ["social"],
-        disclosed: true,
+      traitEvidence: [],
+      traitAssessments: [],
+      biases: { mindMight: 1, receptiveResolute: -1 },
+      biasAssessments: [],
+      skills: [
+        { id: "logistics", level: 6, xp: 0 },
+        { id: "engineering", level: 4, xp: 0 },
+        { id: "security", level: 2, xp: 0 },
+      ],
+      equipment: {
+        head: null,
+        body: {
+          id: "item-coveralls-jon",
+          name: "Facilities Coveralls",
+          description: "Durable gray work uniform.",
+        },
+        primaryHand: {
+          id: "item-mop-jon",
+          name: "Utility Mop",
+          description: "Color-coded for low-risk corridors.",
+        },
+        offHand: null,
+        accessory: {
+          id: "item-keys-jon",
+          name: "Service Key Ring",
+          description: "Access keys for permitted maintenance areas.",
+        },
       },
-      "steady-hands": {
-        label: "Steady Hands",
-        tags: ["medical"],
-        disclosed: true,
-      },
+      inventory: [
+        {
+          id: "item-cleaner-jon",
+          name: "Cleaning Compound",
+          description: "Non-reactive general-purpose concentrate.",
+        },
+      ],
+      effects: [
+        {
+          id: "effect-sprained-left-ankle-jon",
+          name: "Sprained left ankle",
+          kind: "injury",
+          severity: "moderate",
+          bodyRegions: ["leftFoot"],
+          physicalHealthPenalty: 9,
+          stressRecoveryPerTick: 0,
+          expiresAtTick: null,
+        },
+      ],
+      physicalObservations: [],
+      physicalAssessments: [],
+      psychologicalAssessments: [],
     },
-    traitEvidence: [],
-    traitAssessments: [],
-    biases: { mindMight: 1, receptiveResolute: -2 },
-    biasAssessments: [],
-    skills: [
-      { id: "medical", level: 8, xp: 0 },
-      { id: "research", level: 4, xp: 0 },
-      { id: "logistics", level: 3, xp: 0 },
-    ],
-    equipment: {
-      head: null,
-      body: {
-        id: "item-scrubs-priya",
-        name: "Medical Scrubs",
-        description: "Foundation infirmary uniform.",
+    {
+      id: "person-emil-novak",
+      name: "Emil Novak",
+      assignment: "Logistics",
+      defaultActivity: "Taking a scheduled break",
+      activity: "Taking a scheduled break",
+      currentJobId: null,
+      clearance: 1,
+      resilience: 47,
+      stress: 31,
+      fear: 12,
+      needs: { satiety: 58, rest: 64 },
+      traits: {
+        resourceful: {
+          label: "Resourceful",
+          tags: ["work"],
+          disclosed: true,
+        },
+        "psychic-sensitivity": {
+          label: "Psychically Attuned",
+          tags: ["anomalous"],
+          parameters: { sensitivity: 2 },
+          disclosed: false,
+        },
       },
-      primaryHand: null,
-      offHand: null,
-      accessory: {
-        id: "item-medkit-priya",
-        name: "Trauma Kit",
-        description: "Compact first-response supplies.",
+      traitEvidence: [
+        {
+          id: "evidence-scanner-response-emil",
+          observedTick: 0,
+          recordedOrder: 1,
+          source: "Inventory scanner log",
+          label: "Repeated anomalous readings while equipment was handled",
+          supportsTraitId: "psychic-sensitivity",
+        },
+      ],
+      traitAssessments: [],
+      biases: { mindMight: 0, receptiveResolute: -2 },
+      biasAssessments: [],
+      skills: [
+        { id: "logistics", level: 7, xp: 0 },
+        { id: "engineering", level: 3, xp: 0 },
+        { id: "research", level: 2, xp: 0 },
+      ],
+      equipment: {
+        head: null,
+        body: {
+          id: "item-jacket-emil",
+          name: "Logistics Jacket",
+          description: "High-visibility Foundation issue.",
+        },
+        primaryHand: null,
+        offHand: null,
+        accessory: {
+          id: "item-scanner-emil",
+          name: "Inventory Scanner",
+          description: "Tracks ordinary material transfers.",
+        },
       },
+      inventory: [
+        {
+          id: "item-manifest-emil",
+          name: "Receiving Manifest",
+          description: "Today's expected deliveries.",
+        },
+        {
+          id: "item-snack-emil",
+          name: "Wrapped Snack",
+          description: "Saved for later.",
+        },
+      ],
+      effects: [],
+      physicalObservations: [],
+      physicalAssessments: [],
+      psychologicalAssessments: [],
     },
-    inventory: [
-      {
-        id: "item-sedative-priya",
-        name: "Sedative Ampoule",
-        description: "Controlled medical stock.",
-      },
-    ],
-    effects: [],
-    physicalObservations: [],
-    physicalAssessments: [],
-    psychologicalAssessments: [],
-  },
-  {
-    id: "person-lena-ortiz",
-    name: "Lena Ortiz",
-    assignment: "Security",
-    defaultActivity: "Patrolling Sector B1",
-    activity: "Patrolling Sector B1",
-    currentJobId: null,
-    clearance: 2,
-    resilience: 84,
-    stress: 21,
-    fear: 2,
-    needs: { satiety: 77, rest: 68 },
-    traits: {
-      "threat-sensitivity": {
-        label: "Iron-Willed",
-        tags: ["threat-response"],
-        parameters: { sensitivity: -2 },
-        disclosed: true,
-      },
-      alert: {
-        label: "Alert",
-        tags: ["threat-response"],
-        disclosed: true,
-      },
-    },
-    traitEvidence: [],
-    traitAssessments: [],
-    biases: { mindMight: 2, receptiveResolute: 1 },
-    biasAssessments: [],
-    skills: [
-      { id: "security", level: 8, xp: 0 },
-      { id: "medical", level: 2, xp: 0 },
-      { id: "logistics", level: 3, xp: 0 },
-    ],
-    equipment: {
-      head: {
-        id: "item-helmet-lena",
-        name: "Security Helmet",
-        description: "Light ballistic helmet with radio mount.",
-      },
-      body: {
-        id: "item-vest-lena",
-        name: "Security Vest",
-        description: "Standard protective vest.",
-      },
-      primaryHand: {
-        id: "item-baton-lena",
-        name: "Containment Baton",
-        description: "Less-lethal security baton.",
-      },
-      offHand: {
-        id: "item-radio-lena",
-        name: "Site Radio",
-        description: "Encrypted facility communications.",
-      },
-      accessory: null,
-    },
-    inventory: [
-      {
-        id: "item-restraints-lena",
-        name: "Restraints",
-        description: "Two reusable restraint sets.",
-      },
-    ],
-    effects: [
-      {
-        id: "effect-right-forearm-laceration-lena",
-        name: "Deep right forearm laceration",
-        kind: "injury",
-        severity: "serious",
-        bodyRegions: ["rightArm"],
-        physicalHealthPenalty: 14,
-        stressRecoveryPerTick: 0,
-        expiresAtTick: null,
-      },
-    ],
-    physicalObservations: [
-      {
-        id: "observation-profuse-bleeding-lena",
-        observedTick: 0,
-        recordedOrder: 1,
-        source: "Supervisor report",
-        label: "Profuse bleeding observed",
-        bodyRegions: ["rightArm"],
-      },
-    ],
-    physicalAssessments: [],
-    psychologicalAssessments: [],
-  },
-  {
-    id: "person-jon-bell",
-    name: "Jon Bell",
-    assignment: "Facilities",
-    defaultActivity: "Cleaning the west corridor",
-    activity: "Cleaning the west corridor",
-    currentJobId: null,
-    clearance: 1,
-    resilience: 53,
-    stress: 27,
-    fear: 9,
-    needs: { satiety: 63, rest: 59 },
-    traits: {
-      sociability: {
-        label: "Sociable",
-        tags: ["social"],
-        parameters: { socialDrive: 2 },
-        disclosed: true,
-      },
-      superstitious: {
-        label: "Superstitious",
-        tags: ["anomalous"],
-        disclosed: true,
-      },
-    },
-    traitEvidence: [],
-    traitAssessments: [],
-    biases: { mindMight: 1, receptiveResolute: -1 },
-    biasAssessments: [],
-    skills: [
-      { id: "logistics", level: 6, xp: 0 },
-      { id: "engineering", level: 4, xp: 0 },
-      { id: "security", level: 2, xp: 0 },
-    ],
-    equipment: {
-      head: null,
-      body: {
-        id: "item-coveralls-jon",
-        name: "Facilities Coveralls",
-        description: "Durable gray work uniform.",
-      },
-      primaryHand: {
-        id: "item-mop-jon",
-        name: "Utility Mop",
-        description: "Color-coded for low-risk corridors.",
-      },
-      offHand: null,
-      accessory: {
-        id: "item-keys-jon",
-        name: "Service Key Ring",
-        description: "Access keys for permitted maintenance areas.",
-      },
-    },
-    inventory: [
-      {
-        id: "item-cleaner-jon",
-        name: "Cleaning Compound",
-        description: "Non-reactive general-purpose concentrate.",
-      },
-    ],
-    effects: [
-      {
-        id: "effect-sprained-left-ankle-jon",
-        name: "Sprained left ankle",
-        kind: "injury",
-        severity: "moderate",
-        bodyRegions: ["leftFoot"],
-        physicalHealthPenalty: 9,
-        stressRecoveryPerTick: 0,
-        expiresAtTick: null,
-      },
-    ],
-    physicalObservations: [],
-    physicalAssessments: [],
-    psychologicalAssessments: [],
-  },
-  {
-    id: "person-emil-novak",
-    name: "Emil Novak",
-    assignment: "Logistics",
-    defaultActivity: "Taking a scheduled break",
-    activity: "Taking a scheduled break",
-    currentJobId: null,
-    clearance: 1,
-    resilience: 47,
-    stress: 31,
-    fear: 12,
-    needs: { satiety: 58, rest: 64 },
-    traits: {
-      resourceful: {
-        label: "Resourceful",
-        tags: ["work"],
-        disclosed: true,
-      },
-      "psychic-sensitivity": {
-        label: "Psychically Attuned",
-        tags: ["anomalous"],
-        parameters: { sensitivity: 2 },
-        disclosed: false,
-      },
-    },
-    traitEvidence: [
-      {
-        id: "evidence-scanner-response-emil",
-        observedTick: 0,
-        recordedOrder: 1,
-        source: "Inventory scanner log",
-        label: "Repeated anomalous readings while equipment was handled",
-        supportsTraitId: "psychic-sensitivity",
-      },
-    ],
-    traitAssessments: [],
-    biases: { mindMight: 0, receptiveResolute: -2 },
-    biasAssessments: [],
-    skills: [
-      { id: "logistics", level: 7, xp: 0 },
-      { id: "engineering", level: 3, xp: 0 },
-      { id: "research", level: 2, xp: 0 },
-    ],
-    equipment: {
-      head: null,
-      body: {
-        id: "item-jacket-emil",
-        name: "Logistics Jacket",
-        description: "High-visibility Foundation issue.",
-      },
-      primaryHand: null,
-      offHand: null,
-      accessory: {
-        id: "item-scanner-emil",
-        name: "Inventory Scanner",
-        description: "Tracks ordinary material transfers.",
-      },
-    },
-    inventory: [
-      {
-        id: "item-manifest-emil",
-        name: "Receiving Manifest",
-        description: "Today's expected deliveries.",
-      },
-      {
-        id: "item-snack-emil",
-        name: "Wrapped Snack",
-        description: "Saved for later.",
-      },
-    ],
-    effects: [],
-    physicalObservations: [],
-    physicalAssessments: [],
-    psychologicalAssessments: [],
-  },
-];
+  ];
 
 function clamp(value: number): number {
   return Math.max(0, Math.min(100, value));
@@ -692,7 +708,10 @@ function bandFor(score: number): DerivedMeasure["band"] {
 }
 
 export function createStartingPersonnel(): readonly PersonnelRecord[] {
-  return structuredClone(STARTING_PERSONNEL);
+  return structuredClone(STARTING_PERSONNEL).map((person) => ({
+    ...person,
+    clinicalSurveys: [],
+  }));
 }
 
 export function derivePhysicalHealth(person: PersonnelRecord): number {
@@ -727,6 +746,7 @@ function nextRecordOrder(person: PersonnelRecord): number {
       ...person.traitEvidence.map(({ recordedOrder }) => recordedOrder),
       ...person.traitAssessments.map(({ recordedOrder }) => recordedOrder),
       ...person.biasAssessments.map(({ recordedOrder }) => recordedOrder),
+      ...person.clinicalSurveys.map(({ recordedOrder }) => recordedOrder),
     ) + 1
   );
 }
@@ -997,6 +1017,44 @@ function psychologicalEstimate(score: number): {
   return {
     minimum: Math.max(0, Math.round(score) - 5),
     maximum: Math.min(100, Math.round(score) + 5),
+  };
+}
+
+export function recordClinicalSurvey(
+  person: PersonnelRecord,
+  kind: ClinicalSurveyRecord["kind"],
+  assessedTick: number,
+  assessor: string,
+  medicalLevel: number,
+): PersonnelRecord {
+  const last = person.clinicalSurveys
+    .filter((record) => record.kind === kind)
+    .at(-1);
+  if (last && assessedTick - last.assessedTick < 30) return person;
+  const margin = medicalLevel >= 3 ? 12 : 20;
+  const mood = deriveMood(person).score;
+  const record: ClinicalSurveyRecord = {
+    id: `survey-${kind}-${person.id}-${assessedTick}`,
+    kind,
+    assessedTick,
+    recordedOrder: nextRecordOrder(person),
+    assessor,
+    confidence: kind === "mood" ? (medicalLevel >= 3 ? 0.65 : 0.4) : 0.7,
+    moodEstimate:
+      kind === "mood"
+        ? {
+            minimum: Math.max(0, mood - margin),
+            maximum: Math.min(100, mood + margin),
+          }
+        : null,
+    summary:
+      kind === "mood"
+        ? "Brief mood screening; psychiatric condition not evaluated."
+        : "Anomalous behavior survey completed. Findings are limited to supported evidence; absence of a finding does not establish absence of anomalous traits.",
+  };
+  return {
+    ...person,
+    clinicalSurveys: [...person.clinicalSurveys.slice(-49), record],
   };
 }
 

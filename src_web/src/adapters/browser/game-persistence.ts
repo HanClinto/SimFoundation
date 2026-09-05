@@ -197,6 +197,28 @@ function isPhysicalAssessment(value: unknown): boolean {
   );
 }
 
+function isClinicalSurvey(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.id) &&
+    isLiteral(value.kind, ["mood", "anomalous"]) &&
+    isIntegerInRange(value.assessedTick, 0) &&
+    isIntegerInRange(value.recordedOrder, 0) &&
+    isNonEmptyString(value.assessor) &&
+    isNumberInRange(value.confidence, 0, 1) &&
+    isNonEmptyString(value.summary) &&
+    (value.kind === "anomalous"
+      ? value.moodEstimate === null
+      : isRecord(value.moodEstimate) &&
+        isNumberInRange(value.moodEstimate.minimum, 0, 100) &&
+        isNumberInRange(
+          value.moodEstimate.maximum,
+          value.moodEstimate.minimum,
+          100,
+        ))
+  );
+}
+
 function isPsychologicalAssessment(value: unknown): boolean {
   const isEstimate = (estimate: unknown) =>
     isRecord(estimate) &&
@@ -336,7 +358,8 @@ function isPersonnelRecord(value: unknown): boolean {
     isArrayOf(value.effects, isPersonnelEffect) &&
     isArrayOf(value.physicalObservations, isPhysicalObservation) &&
     isArrayOf(value.physicalAssessments, isPhysicalAssessment, 50) &&
-    isArrayOf(value.psychologicalAssessments, isPsychologicalAssessment, 50)
+    isArrayOf(value.psychologicalAssessments, isPsychologicalAssessment, 50) &&
+    isArrayOf(value.clinicalSurveys, isClinicalSurvey, 50)
   );
 }
 
@@ -350,6 +373,7 @@ function isSiteJob(value: unknown): boolean {
         isNonEmptyString(value.assessment.patientId) &&
         isLiteral(value.assessment.kind, [
           "physical",
+          "mood",
           "psychological",
           "preferences",
           "anomalous",
@@ -713,7 +737,16 @@ function isGameState(value: unknown): value is GameState {
     ![0, 240, 480, 1440].includes(
       value.clinicalCare.reviewInterval as number,
     ) ||
-    !isArrayOf(value.clinicalCare.clinicianIds, isNonEmptyString, 100)
+    !isArrayOf(value.clinicalCare.clinicianIds, isNonEmptyString, 100) ||
+    [
+      value.clinicalCare.moodReviewInterval,
+      value.clinicalCare.psychiatricReviewInterval,
+      value.clinicalCare.anomalousReviewInterval,
+    ].some(
+      (interval) =>
+        interval !== undefined &&
+        ![0, 240, 480, 1440].includes(interval as number),
+    )
   )
     return false;
   if (typeof value.capabilities.anomalousPsychometrics !== "boolean")
@@ -734,13 +767,7 @@ function isGameState(value: unknown): value is GameState {
     new Set(state.clinicalCare.clinicianIds).size ===
       state.clinicalCare.clinicianIds.length &&
     state.clinicalCare.clinicianIds.every((id) =>
-      state.personnel.some(
-        (person) =>
-          person.id === id &&
-          person.skills.some(
-            (skill) => skill.id === "medical" && skill.level >= 3,
-          ),
-      ),
+      state.personnel.some((person) => person.id === id),
     ) &&
     constructionReferencesValid(state) &&
     workerReferencesValid(state) &&

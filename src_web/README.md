@@ -77,7 +77,11 @@ Temporary maps must use the same headless simulation rules as the base. They are
 
 ### Occupational Health Prototype
 
-Open Occupational Health from the Site 828 facility folder to assign eligible staff to medical duty and choose a recurring physical-review interval. Routine reviews are off by default. Manual examination and evaluation buttons now create referrals, not instant assessments. A clinician and patient travel to the medical bay; reports appear only after the appointment is completed. At least two eligible clinicians are needed to examine the medical staff themselves. Examinations reveal findings but do not treat injuries.
+Open Occupational Health from the Site 828 facility folder to assign any staff member to medical duty and choose separate recurring intervals for physical examinations, rapid mood screeners, psychiatric evaluations, and extended anomalous behavior surveys. Routine reviews are off by default. Anomalous surveys require Anomalous Psychometrics research; a configured interval waits for that research rather than exposing hidden traits.
+
+The assignment table includes all personnel and sorts by recorded Medical Skill or current job availability. A procedure selector explains disqualifications using the same requirement definitions as job execution. Assignment is not qualification: untrained staff can administer a slower, lower-confidence mood screener; physical examinations require Medical 3, psychiatric evaluation Medical 5, and anomalous surveys Medical 6. These thresholds are provisional balancing values. Current availability reflects active work and patient reservations, not a prediction of future shifts or hidden capability.
+
+Manual examination and evaluation buttons create referrals, not instant assessments. An assessor and patient travel to the medical bay; reports appear only after work completes. Mood screeners provide broad estimates without sanity scores or psychiatric contributors. Deeper psychiatric assessments retain narrower estimates and supporting contributors. At least two appropriately qualified staff are needed to evaluate the medical staff themselves. Examinations reveal findings but do not treat injuries.
 
 Personnel are general-purpose pawns with backgrounds, qualifications, preferences, and trainable skills. Scientist, engineer, custodian, medic, security officer, and similar labels describe current duties and certifications rather than immutable character classes.
 

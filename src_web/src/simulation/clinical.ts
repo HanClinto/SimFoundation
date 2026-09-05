@@ -3,6 +3,7 @@ import {
   assessPhysicalHealth,
   assessPsychologicalState,
   assessWorkPreferences,
+  recordClinicalSurvey,
   type PersonnelRecord,
 } from "./personnel";
 import type { SiteJob } from "./jobs";
@@ -10,6 +11,7 @@ import type { GameState } from "./state";
 
 export type AssessmentKind =
   | "physical"
+  | "mood"
   | "psychological"
   | "preferences"
   | "anomalous";
@@ -19,7 +21,62 @@ export interface ClinicalOrder {
 }
 export interface ClinicalCarePolicy {
   readonly reviewInterval: 0 | 240 | 480 | 1440;
+  readonly moodReviewInterval?: 0 | 240 | 480 | 1440;
+  readonly psychiatricReviewInterval?: 0 | 240 | 480 | 1440;
+  readonly anomalousReviewInterval?: 0 | 240 | 480 | 1440;
   readonly clinicianIds: readonly string[];
+}
+
+export const SURVEY_KINDS = [
+  "physical",
+  "mood",
+  "psychological",
+  "anomalous",
+] as const;
+export type SurveyKind = (typeof SURVEY_KINDS)[number];
+export const SURVEY_INTERVAL_FIELDS = {
+  physical: "reviewInterval",
+  mood: "moodReviewInterval",
+  psychological: "psychiatricReviewInterval",
+  anomalous: "anomalousReviewInterval",
+} as const;
+export const ASSESSMENT_REQUIREMENTS: Record<
+  AssessmentKind,
+  { readonly medicalLevel: number; readonly work: number }
+> = {
+  mood: { medicalLevel: 0, work: 16 },
+  physical: { medicalLevel: 3, work: 48 },
+  psychological: { medicalLevel: 5, work: 96 },
+  preferences: { medicalLevel: 3, work: 64 },
+  anomalous: { medicalLevel: 6, work: 144 },
+};
+
+export function clinicalQualificationReasons(
+  person: PersonnelRecord,
+  kind: AssessmentKind,
+  anomalousPsychometrics = true,
+): readonly string[] {
+  const reasons: string[] = [];
+  const minimum = ASSESSMENT_REQUIREMENTS[kind].medicalLevel;
+  if ((person.skills.find(({ id }) => id === "medical")?.level ?? 0) < minimum)
+    reasons.push(`Medical ${minimum} required`);
+  if (kind === "anomalous" && !anomalousPsychometrics)
+    reasons.push("Anomalous Psychometrics research required");
+  return reasons;
+}
+
+export function lastClinicalReview(
+  person: PersonnelRecord,
+  kind: AssessmentKind,
+): number | undefined {
+  return kind === "physical"
+    ? person.physicalAssessments.at(-1)?.assessedTick
+    : kind === "psychological"
+      ? person.psychologicalAssessments.at(-1)?.assessedTick
+      : kind === "preferences"
+        ? person.biasAssessments.at(-1)?.assessedTick
+        : person.clinicalSurveys.filter((record) => record.kind === kind).at(-1)
+            ?.assessedTick;
 }
 
 export function setClinicalCarePolicy(
@@ -28,16 +85,17 @@ export function setClinicalCarePolicy(
 ): GameState {
   if (
     ![0, 240, 480, 1440].includes(policy.reviewInterval) ||
+    [
+      policy.moodReviewInterval,
+      policy.psychiatricReviewInterval,
+      policy.anomalousReviewInterval,
+    ].some(
+      (interval) =>
+        interval !== undefined && ![0, 240, 480, 1440].includes(interval),
+    ) ||
     new Set(policy.clinicianIds).size !== policy.clinicianIds.length ||
     policy.clinicianIds.some(
-      (id) =>
-        !state.personnel.some(
-          (person) =>
-            person.id === id &&
-            person.skills.some(
-              (skill) => skill.id === "medical" && skill.level >= 3,
-            ),
-        ),
+      (id) => !state.personnel.some((person) => person.id === id),
     )
   )
     throw new Error("Invalid clinical care policy");
@@ -45,6 +103,9 @@ export function setClinicalCarePolicy(
     ...state,
     clinicalCare: {
       reviewInterval: policy.reviewInterval,
+      moodReviewInterval: policy.moodReviewInterval ?? 0,
+      psychiatricReviewInterval: policy.psychiatricReviewInterval ?? 0,
+      anomalousReviewInterval: policy.anomalousReviewInterval ?? 0,
       clinicianIds: [...policy.clinicianIds],
     },
   };
@@ -52,7 +113,9 @@ export function setClinicalCarePolicy(
 
 export function discoverClinicalWork(state: GameState): GameState {
   if (
-    state.clinicalCare.reviewInterval === 0 ||
+    SURVEY_KINDS.every(
+      (kind) => !state.clinicalCare[SURVEY_INTERVAL_FIELDS[kind]],
+    ) ||
     !state.world.map.rooms.some(({ kind }) => kind === "medical")
   )
     return state;
@@ -60,20 +123,26 @@ export function discoverClinicalWork(state: GameState): GameState {
   for (const person of [...state.personnel].sort((first, second) =>
     first.id.localeCompare(second.id),
   )) {
-    const last = person.physicalAssessments.at(-1)?.assessedTick;
-    if (
-      last === undefined ||
-      state.tick - last >= state.clinicalCare.reviewInterval
-    )
-      next = requestAssessment(next, person.id, "physical");
+    for (const kind of SURVEY_KINDS) {
+      const interval = state.clinicalCare[SURVEY_INTERVAL_FIELDS[kind]] ?? 0;
+      if (
+        !interval ||
+        (kind === "anomalous" && !state.capabilities.anomalousPsychometrics)
+      )
+        continue;
+      const last = lastClinicalReview(person, kind);
+      if (last === undefined || state.tick - last >= interval)
+        next = requestAssessment(next, person.id, kind);
+    }
   }
   return next;
 }
 export const ASSESSMENT_LABELS: Record<AssessmentKind, string> = {
   physical: "Physical examination",
-  psychological: "Psychological evaluation",
+  mood: "Rapid mood screener",
+  psychological: "Psychiatric evaluation",
   preferences: "Work-preference interview",
-  anomalous: "Anomalous screening",
+  anomalous: "Extended anomalous behavior survey",
 };
 
 export function requestAssessment(
@@ -97,32 +166,11 @@ export function requestAssessment(
   if (
     state.jobs.filter((job) => job.assessment && job.status !== "completed")
       .length >=
-    state.personnel.length * 4
+    state.personnel.length * 5
   )
     return state;
-  const latestTick =
-    kind === "physical"
-      ? patient.physicalAssessments.at(-1)?.assessedTick
-      : kind === "psychological"
-        ? patient.psychologicalAssessments.at(-1)?.assessedTick
-        : kind === "preferences"
-          ? patient.biasAssessments.at(-1)?.assessedTick
-          : undefined;
+  const latestTick = lastClinicalReview(patient, kind);
   if (latestTick !== undefined && state.tick - latestTick < 30) return state;
-  if (
-    kind === "anomalous" &&
-    !patient.traitEvidence.some(
-      (evidence) =>
-        !patient.traitAssessments.some((assessment) =>
-          assessment.conclusions.some(
-            (conclusion) =>
-              conclusion.traitId === evidence.supportsTraitId &&
-              conclusion.status === "confirmed",
-          ),
-        ),
-    )
-  )
-    return state;
   const room = state.world.map.rooms.find(({ kind }) => kind === "medical");
   if (!room) throw new Error("No medical bay is available");
   const sequence =
@@ -143,7 +191,7 @@ export function requestAssessment(
     preferredBiases: { mindMight: -1, receptiveResolute: -1 },
     status: "available",
     progress: 0,
-    requiredProgress: kind === "physical" ? 48 : 64,
+    requiredProgress: ASSESSMENT_REQUIREMENTS[kind].work,
     assignedPersonId: null,
     requiredWorkerId: null,
     assignmentReason: null,
@@ -181,7 +229,17 @@ export function completeAssessment(
         ? assessPsychologicalState(patient, tick)
         : kind === "preferences"
           ? assessWorkPreferences(patient, tick)
-          : assessAnomalousTraits(patient, tick);
+          : kind === "mood"
+            ? patient
+            : assessAnomalousTraits(patient, tick);
+  if (kind === "mood" || kind === "anomalous")
+    return recordClinicalSurvey(
+      assessed,
+      kind,
+      tick,
+      clinician.name,
+      clinician.skills.find(({ id }) => id === "medical")?.level ?? 0,
+    );
   return {
     ...assessed,
     physicalAssessments: assessed.physicalAssessments.map((record) =>

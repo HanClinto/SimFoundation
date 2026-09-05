@@ -11,6 +11,7 @@ import {
 } from "../src/adapters/browser/medical-view";
 import { createClinicalCareView } from "../src/adapters/browser/clinical-care-view";
 import { createController } from "../src/application/controller";
+import { completeAssessment } from "../src/simulation/clinical";
 
 beforeEach(() => {
   const window = new JSDOM("<!doctype html><html><body></body></html>").window;
@@ -27,6 +28,53 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("personnel reference windows", () => {
+  it("shows a mood screener without disclosing a psychiatric assessment", () => {
+    const state = createInitialState();
+    const person = completeAssessment(
+      state.personnel[0]!,
+      "mood",
+      10,
+      state.personnel[1]!,
+    );
+    const windows = createPersonnelInspectorWindows(document.body, [person]);
+    expect(
+      windows[0]!.querySelector('[data-field="mood-band"]')?.textContent,
+    ).toContain("Screener");
+    expect(
+      windows[0]!.querySelector('[data-field="sanity-band"]')?.textContent,
+    ).toBe("Observed only / unassessed");
+    const records = createPersonnelMedicalWindows(document.body, [person]);
+    expect(records.assessmentRecords[0]?.textContent).toContain(
+      "psychiatric condition not evaluated",
+    );
+  });
+  it("compares every pawn against the selected procedure and preserves separate review intervals", () => {
+    const controller = createController(createInitialState());
+    const host = document.createElement("div");
+    document.body.append(host);
+    const view = createClinicalCareView(host, controller);
+    expect(host.querySelectorAll("[data-assignment-person]")).toHaveLength(6);
+    const procedure = host.querySelector<HTMLSelectElement>(
+      "[data-clinical-procedure]",
+    )!;
+    procedure.value = "psychological";
+    procedure.dispatchEvent(new document.defaultView!.Event("change"));
+    expect(
+      host.querySelector(
+        '[data-assignment-person="person-mara-voss"] [data-assignment-eligibility]',
+      )?.textContent,
+    ).toBe("Medical 5 required");
+    const policy = host.querySelector<HTMLSelectElement>(
+      '[data-survey-interval="mood"]',
+    )!;
+    policy.value = "240";
+    policy.dispatchEvent(new document.defaultView!.Event("change"));
+    view.render(controller.getSnapshot());
+    expect(controller.getSnapshot().game.clinicalCare).toMatchObject({
+      reviewInterval: 0,
+      moodReviewInterval: 240,
+    });
+  });
   it("shows clinician coverage and queued referrals without exposing an examination", () => {
     const controller = createController(createInitialState());
     const host = document.createElement("div");
@@ -36,7 +84,7 @@ describe("personnel reference windows", () => {
     const row = host.querySelector(
       '[data-clinical-person="person-lena-ortiz"]',
     )!;
-    expect(row.textContent).toContain("No examination on record");
+    expect(row.textContent).toContain("No review on record");
     expect(row.textContent).toContain("Queued");
     expect(
       host.querySelector("[data-clinical-coverage]")?.textContent,

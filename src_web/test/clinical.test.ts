@@ -81,10 +81,23 @@ describe("clinical work", () => {
     expect(
       later.personnel.some((person) => person.physicalAssessments.length > 1),
     ).toBe(true);
+    const untrained = controller.setClinicalCarePolicy({
+      reviewInterval: 240,
+      clinicianIds: ["person-caleb-ward"],
+    });
+    expect(untrained.game.clinicalCare.clinicianIds).toEqual([
+      "person-caleb-ward",
+    ]);
+    expect(
+      loadGameState({
+        getItem: () => JSON.stringify(untrained.game),
+        setItem: () => {},
+      }).status,
+    ).toBe("loaded");
     expect(() =>
       controller.setClinicalCarePolicy({
         reviewInterval: 240,
-        clinicianIds: ["person-caleb-ward"],
+        clinicianIds: ["missing-person"],
       }),
     ).toThrow("Invalid clinical care policy");
   });

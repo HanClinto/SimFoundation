@@ -9,7 +9,7 @@ import {
 } from "./construction";
 import type { ClinicalCarePolicy } from "./clinical";
 
-export const GAME_STATE_VERSION = 18;
+export const GAME_STATE_VERSION = 19;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -58,6 +58,12 @@ export function createInitialState(seed = 9620): GameState {
     scp9620: createScp9620State(),
     world: createStartingWorld(personnel.map(({ id }) => id)),
     construction: createConstructionState(),
-    clinicalCare: { reviewInterval: 0, clinicianIds: ["person-priya-shah"] },
+    clinicalCare: {
+      reviewInterval: 0,
+      moodReviewInterval: 0,
+      psychiatricReviewInterval: 0,
+      anomalousReviewInterval: 0,
+      clinicianIds: ["person-priya-shah"],
+    },
   };
 }

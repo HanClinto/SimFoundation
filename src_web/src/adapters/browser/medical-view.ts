@@ -2,13 +2,13 @@ import {
   latestBiasAssessment,
   latestPhysicalAssessment,
   latestPsychologicalAssessment,
-  projectTraits,
   type BodyRegion,
   type PersonnelRecord,
 } from "../../simulation/personnel";
 import anatomyUrl from "./assets/anatomy-figure.svg";
 import { recordAge } from "./personnel-records";
 import type { SiteJob } from "../../simulation/jobs";
+import { lastClinicalReview } from "../../simulation/clinical";
 
 const BODY_REGIONS: readonly [BodyRegion, string][] = [
   ["head", "Head"],
@@ -101,7 +101,8 @@ function assessmentRecordMarkup(person: PersonnelRecord): string {
     <header class="record-heading">
       <div><strong>Assessment history</strong><span>Newest first</span></div>
       <div class="record-actions">
-        <button type="button" data-assess-psychology-person-id="${person.id}">Evaluate Mood &amp; Sanity</button>
+        <button type="button" data-screen-mood-person-id="${person.id}">Request Mood Screener</button>
+        <button type="button" data-assess-psychology-person-id="${person.id}">Request Psychiatric Evaluation</button>
         <button type="button" data-assess-biases-person-id="${person.id}">Evaluate Work Preferences</button>
         <button type="button" data-assess-traits-person-id="${person.id}" disabled>Run Anomalous Screening</button>
       </div>
@@ -498,6 +499,40 @@ function updateAssessmentRecord(
     },
   );
   const recordEntries = [
+    ...person.clinicalSurveys.map((survey) => {
+      const entry = document.createElement("article");
+      entry.className = "assessment-entry";
+      const header = document.createElement("header");
+      header.append(
+        textElement(
+          "strong",
+          survey.kind === "mood"
+            ? "Rapid mood screener"
+            : "Extended anomalous behavior survey",
+        ),
+        textElement("time", recordAge(currentTick, survey.assessedTick)),
+      );
+      entry.append(
+        header,
+        textElement(
+          "p",
+          `${survey.assessor} / ${Math.round(survey.confidence * 100)}% confidence`,
+        ),
+      );
+      if (survey.moodEstimate)
+        entry.append(
+          textElement(
+            "p",
+            `Mood estimate ${survey.moodEstimate.minimum}-${survey.moodEstimate.maximum}`,
+          ),
+        );
+      entry.append(textElement("p", survey.summary));
+      return {
+        tick: survey.assessedTick,
+        sequence: survey.recordedOrder,
+        entry,
+      };
+    }),
     ...assessmentEntries,
     ...observationEntries,
     ...traitEvidenceEntries,
@@ -545,38 +580,15 @@ export function updatePersonnelMedicalWindows(
       "[data-assess-traits-person-id]",
     );
     if (screeningButton) {
-      const projectedTraits = projectTraits(person);
-      const supportedHiddenTraits = Object.entries(person.traits).filter(
-        ([traitId, trait]) =>
-          !trait.disclosed &&
-          trait.tags.includes("anomalous") &&
-          person.traitEvidence.some(
-            ({ supportsTraitId }) => supportsTraitId === traitId,
-          ),
-      );
-      const screeningComplete =
-        supportedHiddenTraits.length > 0 &&
-        supportedHiddenTraits.every(([traitId]) =>
-          projectedTraits.some(
-            (projection) =>
-              projection.traitId === traitId &&
-              projection.status === "confirmed",
-          ),
-        );
-      screeningButton.disabled =
-        !anomalousPsychometricsUnlocked ||
-        supportedHiddenTraits.length === 0 ||
-        screeningComplete;
-      screeningButton.textContent = screeningComplete
-        ? "Screening Complete"
-        : "Run Anomalous Screening";
+      const last = lastClinicalReview(person, "anomalous");
+      const current = last !== undefined && currentTick - last < 30;
+      screeningButton.disabled = !anomalousPsychometricsUnlocked || current;
+      screeningButton.textContent = current
+        ? "Anomalous Survey Current"
+        : "Request Anomalous Survey";
       screeningButton.title = !anomalousPsychometricsUnlocked
         ? "Requires Anomalous Psychometrics research"
-        : supportedHiddenTraits.length === 0
-          ? "No qualifying anomalous evidence"
-          : screeningComplete
-            ? "Supported anomalous Traits are confirmed"
-            : "Run targeted anomalous psychometrics";
+        : "Extended behavior survey; conclusions require supporting evidence.";
     }
     const biasAssessmentButton = record.querySelector<HTMLButtonElement>(
       "[data-assess-biases-person-id]",
@@ -606,8 +618,16 @@ export function updatePersonnelMedicalWindows(
       psychologicalAssessmentButton.disabled = assessmentCurrent;
       psychologicalAssessmentButton.textContent = assessmentCurrent
         ? "Psychological Evaluation Current"
-        : "Evaluate Mood & Sanity";
+        : "Request Psychiatric Evaluation";
     }
+    const moodButton = record.querySelector<HTMLButtonElement>(
+      "[data-screen-mood-person-id]",
+    )!;
+    const lastMood = lastClinicalReview(person, "mood");
+    moodButton.disabled = lastMood !== undefined && currentTick - lastMood < 30;
+    moodButton.textContent = moodButton.disabled
+      ? "Mood Screener Current"
+      : "Request Mood Screener";
     const pending = jobs.filter(
       (job) =>
         job.assessment?.patientId === person.id && job.status !== "completed",
@@ -637,6 +657,7 @@ export function updatePersonnelMedicalWindows(
       : "Request Examination";
     for (const [kind, button] of [
       ["physical", physicalButton],
+      ["mood", moodButton],
       ["psychological", psychologicalAssessmentButton],
       ["preferences", biasAssessmentButton],
       ["anomalous", screeningButton],

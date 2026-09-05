@@ -42,6 +42,7 @@ export interface GameController {
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
   orderPsychologicalAssessment(personId: string): ControllerSnapshot;
+  orderMoodScreening(personId: string): ControllerSnapshot;
   setClinicalCarePolicy(policy: ClinicalCarePolicy): ControllerSnapshot;
   setRunning(running: boolean): ControllerSnapshot;
   subscribe(listener: ControllerListener): () => void;
@@ -127,6 +128,11 @@ export function createController(initialState: GameState): GameController {
 
     orderPsychologicalAssessment(personId) {
       state = requestAssessment(state, personId, "psychological");
+      return publish();
+    },
+
+    orderMoodScreening(personId) {
+      state = requestAssessment(state, personId, "mood");
       return publish();
     },
 

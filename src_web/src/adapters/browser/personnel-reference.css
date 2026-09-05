@@ -268,9 +268,32 @@
 }
 
 .clinical-care-body {
-  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   padding: 12px;
   background: #f5f7ee;
+}
+
+.clinical-panel {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 2px;
+}
+.clinical-panel[hidden] {
+  display: none;
+}
+.clinical-policy-heading,
+.clinical-tabs {
+  flex: 0 0 auto;
+}
+.clinical-panel .assignment-scroll {
+  max-height: none;
+}
+.clinical-panel .assignment-table {
+  width: 100%;
+  min-width: 550px;
 }
 .clinical-policy-heading {
   border-bottom: 3px double #859b84;
@@ -303,6 +326,56 @@
 }
 .clinical-register-scroll button {
   min-width: 85px;
+}
+
+.clinical-survey-policies {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 16px;
+}
+.clinical-survey-policies label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.clinical-survey-policies small {
+  color: #53644e;
+  line-height: 1.4;
+}
+.procedure-choice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.assignment-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.assignment-toolbar input {
+  width: 150px;
+}
+.assignment-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.assignment-scroll {
+  max-height: 210px;
+  overflow: auto;
+}
+.assignment-table {
+  min-width: 600px;
+}
+.assignment-table td {
+  vertical-align: top;
+}
+.assignment-table td:nth-child(4) {
+  max-width: 210px;
 }
 .medical-workspace {
   grid-template-columns: 280px minmax(190px, 1fr);

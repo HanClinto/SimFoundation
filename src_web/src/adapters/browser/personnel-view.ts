@@ -344,6 +344,13 @@ export function updatePersonnelInspectors(
       throw new Error(`Personnel inspector missing: ${person.id}`);
     const psychology = projectPsychology(person);
     const psychologicalAssessment = psychology.assessment;
+    const moodScreening = person.clinicalSurveys
+      .filter(({ kind }) => kind === "mood")
+      .at(-1);
+    const useMoodScreening =
+      moodScreening?.moodEstimate &&
+      (!psychologicalAssessment ||
+        moodScreening.assessedTick > psychologicalAssessment.assessedTick);
     const physicalAssessment = latestPhysicalAssessment(person);
     const projectedBiases = projectBiases(person);
     const projectedTraits = projectTraits(person);
@@ -420,11 +427,19 @@ export function updatePersonnelInspectors(
     setText(
       inspector,
       "mood-score",
-      psychologicalAssessment
-        ? `${psychologicalAssessment.moodEstimate.minimum}-${psychologicalAssessment.moodEstimate.maximum}`
-        : psychology.moodAppearance,
+      useMoodScreening
+        ? `${moodScreening.moodEstimate!.minimum}-${moodScreening.moodEstimate!.maximum}`
+        : psychologicalAssessment
+          ? `${psychologicalAssessment.moodEstimate.minimum}-${psychologicalAssessment.moodEstimate.maximum}`
+          : psychology.moodAppearance,
     );
-    setText(inspector, "mood-band", assessmentLabel);
+    setText(
+      inspector,
+      "mood-band",
+      useMoodScreening
+        ? `${currentTick - moodScreening.assessedTick >= 30 ? "Stale screener" : "Screener"} / ${Math.round(moodScreening.confidence * 100)}% confidence / ${recordAge(currentTick, moodScreening.assessedTick)}`
+        : assessmentLabel,
+    );
     setText(
       inspector,
       "sanity-score",
