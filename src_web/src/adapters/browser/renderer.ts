@@ -7,6 +7,8 @@ import bedUrl from "./assets/station-bed.svg";
 import mealUrl from "./assets/station-meal.svg";
 import breakUrl from "./assets/station-break.svg";
 import cameraUrl from "./assets/camera.svg";
+import chamberUrl from "./assets/an-001-chamber.svg";
+import { TRIAL_LOCATION } from "../../simulation/containment-trial";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
 
@@ -102,6 +104,7 @@ export function renderSite(
       ["meal", mealUrl],
       ["break", breakUrl],
       ["camera", cameraUrl],
+      ["chamber", chamberUrl],
     ]) {
       const image = new Image();
       image.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
@@ -257,6 +260,28 @@ export function renderSite(
         44 * camera.zoom,
         32 * camera.zoom,
       );
+    context.restore();
+  }
+  const chamber = stationImages.get("chamber");
+  if (
+    snapshot.game.containmentTrial.lastReading &&
+    chamber?.complete &&
+    chamber.naturalWidth > 0
+  ) {
+    const point = projectPosition(TRIAL_LOCATION, camera, width, height);
+    context.save();
+    context.globalAlpha = visibleTiles.has(
+      TRIAL_LOCATION.y * map.width + TRIAL_LOCATION.x,
+    )
+      ? 1
+      : 0.45;
+    context.drawImage(
+      chamber,
+      point.x - 25 * camera.zoom,
+      point.y - 34 * camera.zoom,
+      50 * camera.zoom,
+      42 * camera.zoom,
+    );
     context.restore();
   }
   const footprints = [

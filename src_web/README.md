@@ -166,6 +166,12 @@ Possible expedition rewards include:
 
 ## Anomalies
 
+### Original Containment Study
+
+**AN-001 Study** opens an illustrated investigation file for an original game anomaly, the Chalk Knot. Fit a concrete, ceramic, or composite barrier, then authorize passive contact or mechanical stimulation. Optional automatic isolation stops exposure before primary failure; leaving it disabled permits a riskier trial inside a secondary catch vessel. The material reference shows supplier resistance ratings, not foreknown anomaly compatibility.
+
+Observed trials create dated findings and supersede earlier provisional assumptions. Replacing a failed barrier consumes the study's finite allowance and requires engineering work. This is a bench-scale materials experiment, not yet a free-roaming breach or arbitrary block-building system. See [the authored catalog](docs/anomaly-catalog.md) for developer-only mechanics and explicit limitations.
+
 ### SCP-9620
 
 SCP-9620 is the dangerous, deliberately undefined center of the campaign. Its behavior, nature, and relationship to side anomalies should be discovered through play. Research choices can reveal different aspects or states across runs. Unexpected state transformations are Red incidents and may permanently alter rooms, personnel, equipment, or future research options.

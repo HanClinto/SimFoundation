@@ -5,6 +5,14 @@ import {
   type CameraPlacementCode,
 } from "../simulation/observations";
 import { advanceSimulation } from "../simulation/tick";
+import {
+  authorizeContainmentTrial,
+  isolateContainmentTrial,
+  orderTrialBarrier,
+  type BarrierMaterial,
+  type TrialProtocol,
+  type TrialCommandCode,
+} from "../simulation/containment-trial";
 import { analyzeAnomalousTraitEvidence } from "../simulation/personnel";
 import type { GameState } from "../simulation/state";
 import {
@@ -39,6 +47,15 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  orderTrialBarrier(material: BarrierMaterial): {
+    readonly code: TrialCommandCode;
+    readonly snapshot: ControllerSnapshot;
+  };
+  authorizeContainmentTrial(
+    protocol: TrialProtocol,
+    autoIsolate: boolean,
+  ): { readonly code: TrialCommandCode; readonly snapshot: ControllerSnapshot };
+  isolateContainmentTrial(): ControllerSnapshot;
   getSnapshot(): ControllerSnapshot;
   advance(tickCount?: number): ControllerSnapshot;
   replaceState(nextState: GameState): ControllerSnapshot;
@@ -85,6 +102,21 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+
+    orderTrialBarrier(material) {
+      const result = orderTrialBarrier(state, material);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    authorizeContainmentTrial(protocol, autoIsolate) {
+      const result = authorizeContainmentTrial(state, protocol, autoIsolate);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    isolateContainmentTrial() {
+      state = isolateContainmentTrial(state);
+      return publish();
+    },
 
     previewCamera(position) {
       return cameraPlacementIssue(state, position);

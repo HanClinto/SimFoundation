@@ -1006,6 +1006,97 @@ function observationReferencesValid(state: GameState): boolean {
   );
 }
 
+function isContainmentTrial(value: unknown): boolean {
+  const material = (entry: unknown) =>
+    isLiteral(entry, ["concrete", "ceramic", "composite"]);
+  const protocol = (entry: unknown) =>
+    isLiteral(entry, ["passive", "stimulated"]);
+  const phase = (entry: unknown) =>
+    isLiteral(entry, [
+      "unprepared",
+      "installing",
+      "ready",
+      "preparing",
+      "running",
+      "breached",
+      "repairing",
+    ]);
+  return (
+    isRecord(value) &&
+    value.specimenId === "AN-001" &&
+    (value.pendingMaterial === null || material(value.pendingMaterial)) &&
+    phase(value.phase) &&
+    material(value.material) &&
+    protocol(value.protocol) &&
+    isNumberInRange(value.integrity, 0, 100) &&
+    isIntegerInRange(value.elapsed, 0, 24) &&
+    isIntegerInRange(value.supplyCredits, 0, 24) &&
+    isIntegerInRange(value.spentCredits, 0, 24) &&
+    value.supplyCredits + value.spentCredits === 24 &&
+    isIntegerInRange(value.nextOrder, 1) &&
+    isNullableString(value.workOrderId) &&
+    isIntegerInRange(value.trialsCompleted, 0) &&
+    isIntegerInRange(value.breaches, 0, value.trialsCompleted) &&
+    typeof value.autoIsolate === "boolean" &&
+    (value.lastReading === null ||
+      (isRecord(value.lastReading) &&
+        isIntegerInRange(value.lastReading.observedTick, 0) &&
+        phase(value.lastReading.phase) &&
+        material(value.lastReading.material) &&
+        protocol(value.lastReading.protocol) &&
+        isNumberInRange(value.lastReading.integrity, 0, 100) &&
+        isIntegerInRange(value.lastReading.elapsed, 0, 24))) &&
+    isArrayOf(
+      value.evidence,
+      (entry) =>
+        isRecord(entry) &&
+        isNonEmptyString(entry.id) &&
+        isIntegerInRange(entry.recordedTick, 0) &&
+        isNonEmptyString(entry.label) &&
+        isLiteral(entry.certainty, ["observed", "provisional"]) &&
+        isNullableString(entry.supersedes),
+      50,
+    )
+  );
+}
+
+function trialReferencesValid(state: GameState): boolean {
+  const trial = state.containmentTrial;
+  const pending = ["installing", "preparing", "repairing"].includes(
+    trial.phase,
+  );
+  if (
+    ["installing", "repairing"].includes(trial.phase) !==
+    (trial.pendingMaterial !== null)
+  )
+    return false;
+  if (pending !== (trial.workOrderId !== null)) return false;
+  if (trial.phase === "breached" && trial.integrity !== 0) return false;
+  if (trial.lastReading && trial.lastReading.observedTick > state.tick)
+    return false;
+  if (
+    new Set(trial.evidence.map(({ id }) => id)).size !==
+      trial.evidence.length ||
+    trial.evidence.some(({ recordedTick }) => recordedTick > state.tick)
+  )
+    return false;
+  const trialJobs = state.jobs.filter(({ id }) => id.startsWith("job-trial-"));
+  if (trial.nextOrder !== trialJobs.length + 1) return false;
+  if (trial.workOrderId) {
+    const job = trialJobs.find(({ id }) => id === trial.workOrderId);
+    if (
+      !job ||
+      job.status === "completed" ||
+      job.skillId !==
+        (trial.phase === "preparing" ? "research" : "engineering") ||
+      job.workSite.x !== 69 ||
+      job.workSite.y !== 58
+    )
+      return false;
+  }
+  return true;
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -1046,7 +1137,8 @@ function isGameState(value: unknown): value is GameState {
     !isSiteWorld(value.world) ||
     !isConstructionState(value.construction) ||
     !isRoutineState(value.routines) ||
-    !isObservationState(value.observations)
+    !isObservationState(value.observations) ||
+    !isContainmentTrial(value.containmentTrial)
   )
     return false;
   const state = value as unknown as GameState;
@@ -1061,6 +1153,7 @@ function isGameState(value: unknown): value is GameState {
     constructionReferencesValid(state) &&
     routineReferencesValid(state) &&
     observationReferencesValid(state) &&
+    trialReferencesValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||
       personIds.includes(state.scp999.targetPersonId)) &&

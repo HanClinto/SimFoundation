@@ -11,6 +11,8 @@ These files follow SCPSiteManager's SCP/CC BY-SA licensing direction. They are n
 
 ## Facility Markers
 
+`an-001-chamber.svg` is original artwork authored by GitHub Copilot for SimFoundation on 2026-09-05, licensed CC BY-SA 3.0. Source: the editable SVG in this directory. Initial depiction of the original AN-001 specimen and bench-scale test chamber. No third-party imagery or canonical SCP entry was used for the specimen. Its gameplay and provenance are documented in `docs/anomaly-catalog.md`.
+
 `site-worker.svg` and `site-999.svg` are original SVG artwork created for SimFoundation by GitHub Copilot on 2026-09-05. Source: the editable SVG files in this directory. License: CC BY-SA 3.0. Modification history: initial authored personnel and SCP-999 surveillance markers. They contain no copied prototype or third-party artwork. SCP-999 is based on the [SCP Wiki article](https://scp-wiki.wikidot.com/scp-999) by ProfSnider, under CC BY-SA 3.0. These provisional map markers are not the future generic OpenIsoGfx equipment rig.
 
 On 2026-09-05, the SCP-999 marker was revised against source revision 40: a broad translucent oblate dome, without a permanent face. Dimensions remain a stylized approximation; see the local source catalog and adaptation notes under `docs/references/`.

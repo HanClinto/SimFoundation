@@ -417,6 +417,137 @@
   width: 100%;
   min-width: 500px;
 }
+
+.trial-study-body {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  overflow: hidden;
+  container-type: inline-size;
+}
+.trial-index {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 8px;
+  background: #d4dfd4;
+  border-right: 3px ridge #e3e9dd;
+  overflow: auto;
+}
+.trial-index strong {
+  font:
+    bold 21px Georgia,
+    serif;
+  color: #355543;
+  padding: 8px;
+}
+.trial-index button {
+  text-align: left;
+  padding: 6px;
+  min-width: 0;
+}
+.trial-index button[aria-pressed="true"] {
+  color: #fff;
+  background: #4e7162;
+}
+.trial-document {
+  min-width: 0;
+  overflow: auto;
+  background: #f9faf4;
+  padding: 20px;
+  color: #364e41;
+}
+.trial-document h2 {
+  margin: 0 0 12px;
+  font:
+    bold 25px Georgia,
+    serif;
+}
+.trial-document header {
+  border-bottom: 3px double #849b86;
+  padding-bottom: 8px;
+}
+.trial-document header h2 {
+  margin: 5px 0;
+}
+.trial-document p {
+  font:
+    14px/1.6 Georgia,
+    serif;
+}
+.trial-document .trial-subtitle {
+  margin: 0;
+  font-size: 19px;
+}
+.trial-illustration {
+  float: right;
+  width: 160px;
+  margin: 12px 0 12px 12px;
+}
+.trial-illustration img {
+  width: 160px;
+  height: 134px;
+  object-fit: contain;
+}
+.trial-illustration figcaption {
+  font:
+    10px/1.4 "Courier New",
+    monospace;
+  color: #6c7e68;
+}
+.trial-readings {
+  clear: both;
+  border-top: 1px solid #9faf94;
+}
+.trial-readings div {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #d3dec9;
+}
+.trial-readings dd {
+  margin: 0;
+}
+.trial-document fieldset {
+  margin: 15px 0;
+}
+.trial-document fieldset label {
+  display: block;
+  margin-bottom: 8px;
+}
+.trial-document fieldset select {
+  max-width: 100%;
+}
+.trial-document .field-row label {
+  margin: 0;
+}
+.trial-document .field-row {
+  white-space: normal;
+}
+.trial-evidence {
+  border-left: 3px solid #6e9075;
+  padding: 8px 12px;
+  margin: 12px 0;
+}
+.trial-evidence p {
+  margin: 5px 0;
+}
+.trial-evidence.superseded {
+  border-color: #b29a69;
+  color: #78816d;
+}
+.trial-evidence.superseded strong {
+  text-decoration: line-through;
+}
+@container (max-width: 480px) {
+  .trial-illustration {
+    float: none;
+    margin: 10px auto;
+  }
+  .trial-readings div {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 .clinical-survey-policies label {
   display: flex;
   flex-direction: column;

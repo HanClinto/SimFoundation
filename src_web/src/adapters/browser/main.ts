@@ -37,6 +37,8 @@ import { createClinicalCareView } from "./clinical-care-view";
 import { createDayPlanner } from "./day-planner-view";
 import { observedSnapshot } from "./observed-view";
 import { createSurveillanceView } from "./surveillance-view";
+import { createContainmentTrialWindow } from "./containment-trial-view";
+import { TRIAL_LOCATION } from "../../simulation/containment-trial";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
@@ -124,6 +126,7 @@ app.innerHTML = `
           </button>
           <button class="subsystem-icon" type="button" data-open-window="day-planner-window"><img class="subsystem-icon-asset" data-window-icon src="${controlIconUrl}" alt="" /><span>Day Planner</span></button>
           <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="containment-study-window"><img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" /><span>AN-001 Study</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -132,12 +135,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>10 available</dd></div>
+            <div><dt>Systems</dt><dd>11 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">10 objects</p>
+        <p class="status-bar-field">11 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -723,6 +726,20 @@ const surveillanceView = createSurveillanceView(
   },
 );
 
+const containmentStudy = createContainmentTrialWindow(app, controller, () => {
+  windowManager.open("camera-window");
+  siteCamera.focus(TRIAL_LOCATION);
+});
+windowManager.register(containmentStudy.element, {
+  id: "containment-study-window",
+  title: "AN-001 Study",
+  iconUrl: bookIconUrl,
+  defaultRect: { left: 300, top: 100, width: 720, height: 600 },
+  defaultOpen: false,
+  minimumWidth: 350,
+  minimumHeight: 260,
+});
+
 personnelRows.addEventListener("dblclick", (event) => {
   const row = (event.target as Element).closest<HTMLElement>(
     "[data-person-id]",
@@ -970,6 +987,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 
 function render(snapshot: ControllerSnapshot): void {
   snapshot = observedSnapshot(snapshot);
+  containmentStudy.render(snapshot);
   dayPlanner.render(snapshot);
   surveillanceView.render(snapshot);
   clinicalCareView.render(snapshot);

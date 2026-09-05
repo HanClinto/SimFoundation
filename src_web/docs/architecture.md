@@ -215,6 +215,12 @@ A sanity selector should return both a band and named contributors. Mental break
 
 ## Equipment and Affixes
 
+### Authored Containment Study
+
+`containmentTrial` owns the original AN-001 bench-scale experiment, selected material/protocol, barrier integrity, finite material allowance, pending work, trial counters, last observed reading, and bounded evidence. Engineering installs/replaces barriers; research prepares exposure. The running fixture advances independently of presentation and can auto-isolate at an integrity threshold. It models chemical and impact resistance separately. Primary failure leaves the specimen in an authored secondary catch vessel; it does not add a free-roaming entity or mutate world walls.
+
+The trial advances before site observation. Only current coverage at its location records readings and evidence or promotes the observed failure to an alert. Findings retain provenance timestamps and superseded assumption IDs. The browser case file renders `lastReading` and the evidence log rather than live integrity, while material allowance and work orders remain administrative facts. Supply credits, phase/work-order relationships, and reading/evidence timestamps are validated on load.
+
 Item instances reference immutable item definitions and zero or more affix records. Equipment effects register through explicit hooks or system queries rather than arbitrary scripts embedded in save data.
 
 Visual appearance is derived separately from equipment state. Item definitions reference visual layer IDs and attachment metadata; SVG files contain no gameplay values.

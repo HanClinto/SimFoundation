@@ -14,8 +14,12 @@ import {
   observeSite,
   type SiteObservations,
 } from "./observations";
+import {
+  createContainmentTrial,
+  type ContainmentTrial,
+} from "./containment-trial";
 
-export const GAME_STATE_VERSION = 21;
+export const GAME_STATE_VERSION = 22;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -43,6 +47,7 @@ export interface GameState {
   readonly clinicalCare: ClinicalCarePolicy;
   readonly routines: RoutineState;
   readonly observations: SiteObservations;
+  readonly containmentTrial: ContainmentTrial;
 }
 
 export function createInitialState(seed = 9620): GameState {
@@ -76,5 +81,6 @@ export function createInitialState(seed = 9620): GameState {
     },
     routines: createRoutineState(personnel),
     observations: createSiteObservations(world),
+    containmentTrial: createContainmentTrial(),
   });
 }
