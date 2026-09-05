@@ -362,7 +362,8 @@ function updateAssessmentRecord(
       : [
           Object.assign(document.createElement("p"), {
             className: "empty-record",
-            textContent: "No physical assessments are on record.",
+            textContent:
+              "No physical observations or assessments are on record.",
           }),
         ]),
   );
