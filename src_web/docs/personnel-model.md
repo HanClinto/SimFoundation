@@ -1,6 +1,6 @@
-# Proposal 5: Simplified Hybrid with Assessment Fog
+# Personnel Model: Simplified Hybrid with Assessment Fog
 
-Status: review draft and current candidate
+Status: current design specification
 
 Primary inspirations: The Sims, RimWorld, RuneScape, Project Zomboid, Arkham Horror's balanced stat sliders, Delta Green's operational uncertainty, Castle of the Winds inventory, and management games with imperfect information
 
@@ -19,19 +19,6 @@ This proposal organizes every authoritative pawn field by how and why it changes
 **Player knowledge is not another Character layer.** It belongs to a separate faction knowledge registry keyed by person ID. The simulation knows the actual pawn; the Site Director receives an assessment-limited projection. Cameras, monitors, interviews, examinations, and reports update that projection.
 
 The system favors tradeoffs over universally superior recruits. Skills provide the satisfying “number goes up” progression. Preference Biases describe favored problem-solving styles rather than raw power. Traits create categorical behavior. Equipment and Effects compose around those facts.
-
-## Major Differences from Proposal 4
-
-- `legalName` plus optional `nickname` replaces preferred name.
-- Immutable identity is separated from stable but mutable Foundation assignment and authorization.
-- Medical and moral traits are separate categories.
-- A pawn may have zero or one trait in each category; no global trait-count rule is required.
-- Five independent aptitudes are replaced with two bipolar preference biases.
-- Composure is not a Bias. It is a derived capability influenced by Traits, Health, Stress, Fear, Skills, and Effects.
-- Transient state uses Food, Energy, Social, Stress, and Fear.
-- Physical, Mental, and Emotional Health are derived values rather than stored resources.
-- Neck and wrist equipment slots are consolidated into two general-purpose Special slots.
-- Traits, practical competence, and current condition are revealed through evidence and assessment rather than automatic omniscience.
 
 ## Biases and Specialization
 
@@ -504,7 +491,7 @@ Targeted follow-up remains available when the player wants more confidence, need
 
 ### Research-tree boundary
 
-Proposal 5 does not require a complete Research Tree design. It requires only that completed research can unlock or improve facility capabilities, including recruitment screening. Illustrative nodes are:
+This personnel model does not require a complete Research Tree design. It requires only that completed research can unlock or improve facility capabilities, including recruitment screening. Illustrative nodes are:
 
 - Personnel Vetting: automatic screening for conspicuous Work-style, Threat-response, and Medical-constitution Traits
 - Behavioral Analysis: improved Social-temperament and Moral-disposition screening

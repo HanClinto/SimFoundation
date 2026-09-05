@@ -61,7 +61,7 @@ Temporary maps must use the same headless simulation rules as the base. They are
 
 Personnel are general-purpose pawns with backgrounds, qualifications, preferences, and trainable skills. Scientist, engineer, custodian, medic, security officer, and similar labels describe current duties and certifications rather than immutable character classes.
 
-The final pawn rules architecture is under review. Four complete alternatives, shared evaluation scenarios, JSON examples, and a comparison are available in the [Personnel Model Proposal Review Packet](docs/personnel-model-proposals/README.md). The current executable personnel model is a prototype and does not settle that decision.
+The current pawn rules architecture is defined in the [Personnel Model](docs/personnel-model.md). It specifies identity, Traits, preference Biases, usage-based Skills, Effects, derived Health, equipment, and assessment-limited player knowledge. The executable personnel model remains an incremental prototype of that design.
 
 Each pawn has:
 

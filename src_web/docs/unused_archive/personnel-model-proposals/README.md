@@ -1,8 +1,8 @@
-# Personnel Model Proposal Review Packet
+# Archived Personnel Model Proposal Review Packet
 
-Status: open for review
+Status: archived after selection of the Simplified Hybrid model
 
-This directory contains five complete alternatives for SCPSiteManager's pawn model. They are intentionally standalone so reviewers can comment on one model without reconstructing assumptions from chat or issue history.
+This directory preserves the superseded alternatives and comparison that informed the current [Personnel Model](../../personnel-model.md).
 
 ## Proposals
 
@@ -10,7 +10,7 @@ This directory contains five complete alternatives for SCPSiteManager's pawn mod
 2. [Classic Attributes and Skills](02-classic-attributes-and-skills.md)
 3. [Paranormal Bonds and Breaking Points](03-paranormal-bonds-and-breaking-points.md)
 4. [Layered Hybrid (Detailed)](04-layered-hybrid-recommended.md)
-5. [Simplified Hybrid with Assessment Fog (Current Candidate)](05-simplified-hybrid-assessment-fog.md)
+5. [Simplified Hybrid with Assessment Fog (selected and promoted)](../../personnel-model.md)
 
 Each proposal includes:
 

@@ -60,7 +60,7 @@ Tracking issue: [#3](https://github.com/HanClinto/SimFoundation/issues/3)
 
 First personnel slice: [#12](https://github.com/HanClinto/SimFoundation/issues/12)
 
-Object-model review packet: [personnel-model-proposals/](personnel-model-proposals/README.md)
+Personnel model: [personnel-model.md](personnel-model.md)
 
 ### Minimum
 

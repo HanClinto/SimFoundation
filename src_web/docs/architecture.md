@@ -155,7 +155,7 @@ Scoring inputs and rejection reasons must be inspectable. A pawn inspector shoul
 
 ## Psychology
 
-The final pawn object model is under review in [personnel-model-proposals/](personnel-model-proposals/README.md). Those documents compare alternative domain schemas; this section records only constraints that currently apply across proposals.
+The current pawn object model is defined in [personnel-model.md](personnel-model.md). This section records the architectural constraints that apply across its simulation and presentation layers.
 
 Store physical needs, stress, fear, memories, effects, activities, and mental resilience as facts. Derive mood and sanity from those facts through pure selectors. Recreation is modeled through restorative activities and memories that change stress, not as an independently decaying meter.
 
