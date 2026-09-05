@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="36" viewBox="0 0 24 36">
+  <g id="shadow"><ellipse cx="12" cy="32" rx="10" ry="4" fill="#000" opacity=".22"/></g>
+  <g id="legs" fill="#38413d" stroke="#242b28"><path d="M6 22h5v10H5z"/><path d="M13 22h5l1 10h-6z"/></g>
+  <g id="uniform" fill="#e5e8eb" stroke="#33443e"><path d="M6 12l6-2 6 2 2 12-8 3-8-3z"/><path d="M5 13l-3 9 4 2 3-10M19 13l3 9-4 2-3-10"/></g>
+  <g id="head" fill="#d9aa7e" stroke="#514737"><path d="M7 3l5-2 5 2v7l-5 4-5-4z"/></g>
+  <g id="hair" fill="#594a3c"><path d="M7 3l5-2 5 2v3l-5-2-5 2z"/></g>
+  <g id="badge" fill="#a4bec3"><path d="M14 16l3-1v4l-3 1z"/></g>
+</svg>

@@ -1,19 +1,48 @@
 import type { ControllerSnapshot } from "../../application/controller";
+import { tileAt, type TilePosition } from "../../simulation/world";
+import workerUrl from "./assets/site-worker.svg";
+import scp999Url from "./assets/site-999.svg";
 
-const TILE_WIDTH = 56;
-const TILE_HEIGHT = 28;
-const GRID_SIZE = 11;
+const TILE_WIDTH = 40;
+const TILE_HEIGHT = 20;
+
+export interface MapCamera {
+  readonly center: TilePosition;
+  readonly zoom: number;
+  readonly selectedId: string | null;
+}
+
+export function projectPosition(
+  position: TilePosition,
+  camera: MapCamera,
+  width: number,
+  height: number,
+): TilePosition {
+  const column = position.x - camera.center.x;
+  const row = position.y - camera.center.y;
+  return {
+    x: width / 2 + (column - row) * 20 * camera.zoom,
+    y: height / 2 + (column + row) * 10 * camera.zoom,
+  };
+}
+
+export function unprojectPosition(
+  point: TilePosition,
+  camera: MapCamera,
+  width: number,
+  height: number,
+): TilePosition {
+  const horizontal = (point.x - width / 2) / (20 * camera.zoom);
+  const vertical = (point.y - height / 2) / (10 * camera.zoom);
+  return {
+    x: camera.center.x + (horizontal + vertical) / 2,
+    y: camera.center.y + (vertical - horizontal) / 2,
+  };
+}
 
 interface Point {
   readonly x: number;
   readonly y: number;
-}
-
-function projectTile(column: number, row: number, origin: Point): Point {
-  return {
-    x: origin.x + (column - row) * (TILE_WIDTH / 2),
-    y: origin.y + (column + row) * (TILE_HEIGHT / 2),
-  };
 }
 
 function drawTile(
@@ -35,82 +64,194 @@ function drawTile(
   context.stroke();
 }
 
-function drawPawn(
-  context: CanvasRenderingContext2D,
-  point: Point,
-  color: string,
-): void {
-  context.save();
-  context.translate(point.x, point.y + 3);
-
-  context.fillStyle = "rgba(0, 0, 0, 0.28)";
-  context.beginPath();
-  context.ellipse(0, 16, 11, 5, 0, 0, Math.PI * 2);
-  context.fill();
-
-  context.fillStyle = color;
-  context.fillRect(-7, -2, 14, 17);
-  context.fillStyle = "#d9aa7e";
-  context.beginPath();
-  context.arc(0, -7, 7, 0, Math.PI * 2);
-  context.fill();
-  context.strokeStyle = "#20272b";
-  context.stroke();
-
-  context.restore();
-}
-
-function drawContainmentMarker(
-  context: CanvasRenderingContext2D,
-  point: Point,
-): void {
-  context.save();
-  context.translate(point.x, point.y - 3);
-  context.fillStyle = "#2d3338";
-  context.fillRect(-19, -9, 38, 25);
-  context.fillStyle = "#171b1e";
-  context.fillRect(-13, -3, 26, 19);
-  context.strokeStyle = "#e4bc48";
-  context.lineWidth = 3;
-  context.strokeRect(-19, -9, 38, 25);
-  context.fillStyle = "#e4bc48";
-  context.fillRect(-2, 1, 4, 10);
-  context.restore();
-}
+let worker: HTMLImageElement | null = null;
+let scp999: HTMLImageElement | null = null;
 
 export function renderSite(
   canvas: HTMLCanvasElement,
   snapshot: ControllerSnapshot,
+  camera: MapCamera = {
+    center: { x: 62.5, y: 62.5 },
+    zoom: 0.7,
+    selectedId: null,
+  },
 ): void {
+  if (!worker || !scp999) {
+    worker = new Image();
+    scp999 = new Image();
+    worker.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
+    scp999.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
+    worker.src = workerUrl;
+    scp999.src = scp999Url;
+  }
+  const width = canvas.clientWidth;
+  const height = canvas.clientHeight;
+  if (width === 0 || height === 0) return;
+  const pixelRatio = window.devicePixelRatio || 1;
+  if (
+    canvas.width !== Math.round(width * pixelRatio) ||
+    canvas.height !== Math.round(height * pixelRatio)
+  ) {
+    canvas.width = Math.round(width * pixelRatio);
+    canvas.height = Math.round(height * pixelRatio);
+  }
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas 2D is unavailable");
-
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.fillStyle = "#16232a";
-  context.fillRect(0, 0, canvas.width, canvas.height);
-
-  const origin = { x: canvas.width / 2, y: 58 };
-  for (let row = 0; row < GRID_SIZE; row += 1) {
-    for (let column = 0; column < GRID_SIZE; column += 1) {
-      const inFacility = column >= 2 && column <= 8 && row >= 2 && row <= 8;
-      const corridor = inFacility && (column === 5 || row === 5);
-      const fill = corridor ? "#90999b" : inFacility ? "#657276" : "#496a55";
-      drawTile(context, projectTile(column, row, origin), fill);
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.fillStyle = "#26382f";
+  context.fillRect(0, 0, width, height);
+  const { map, positions } = snapshot.game.world;
+  const corners = [
+    { x: -60, y: -60 },
+    { x: width + 60, y: -60 },
+    { x: -60, y: height + 60 },
+    { x: width + 60, y: height + 60 },
+  ].map((point) => unprojectPosition(point, camera, width, height));
+  const minimumX = Math.max(
+    0,
+    Math.floor(Math.min(...corners.map(({ x }) => x))),
+  );
+  const maximumX = Math.min(
+    map.width - 1,
+    Math.ceil(Math.max(...corners.map(({ x }) => x))),
+  );
+  const minimumY = Math.max(
+    0,
+    Math.floor(Math.min(...corners.map(({ y }) => y))),
+  );
+  const maximumY = Math.min(
+    map.height - 1,
+    Math.ceil(Math.max(...corners.map(({ y }) => y))),
+  );
+  const roomColors = {
+    laboratory: "#c0ccca",
+    containment: "#a2aaa8",
+    storage: "#c6c4b5",
+    dormitory: "#b6c5b7",
+    mess: "#c9c5ad",
+    medical: "#c9d7d3",
+    utilities: "#aab7bd",
+    security: "#b7c1cc",
+  };
+  for (let row = minimumY; row <= maximumY; row += 1) {
+    for (let column = minimumX; column <= maximumX; column += 1) {
+      const point = projectPosition(
+        { x: column, y: row },
+        camera,
+        width,
+        height,
+      );
+      if (
+        point.x < -40 ||
+        point.x > width + 40 ||
+        point.y < -40 ||
+        point.y > height + 40
+      )
+        continue;
+      const tile = tileAt(map, { x: column, y: row });
+      const room = map.rooms.find(
+        (room) =>
+          column >= room.x &&
+          column < room.x + room.width &&
+          row >= room.y &&
+          row < room.y + room.height,
+      );
+      const fill =
+        tile === "grass"
+          ? (column * 7 + row * 11) % 5 === 0
+            ? "#526e4d"
+            : "#5c7756"
+          : tile === "wall"
+            ? "#e0e3dd"
+            : tile === "door"
+              ? "#b69b59"
+              : room
+                ? roomColors[room.kind]
+                : "#e0ddd0";
+      context.save();
+      context.translate(point.x, point.y);
+      context.scale(camera.zoom, camera.zoom);
+      if (tile === "wall") {
+        drawTile(context, { x: 0, y: -10 }, "#727f78", "#64746b");
+        context.fillStyle = "#727f78";
+        context.fillRect(-20, -9, 40, 9);
+      }
+      drawTile(
+        context,
+        { x: 0, y: tile === "wall" ? -19 : -10 },
+        fill,
+        tile === "grass" ? "#526d4c" : "#89958d",
+      );
+      context.restore();
     }
   }
-
-  drawContainmentMarker(context, projectTile(7, 3, origin));
-
-  const patrolOffset = snapshot.game.tick % 6;
-  drawPawn(context, projectTile(3 + patrolOffset, 6, origin), "#e5e8eb");
-  drawPawn(context, projectTile(4, 7, origin), "#7897b8");
-
-  context.fillStyle = "rgba(0, 0, 0, 0.7)";
-  context.fillRect(18, 18, 244, 54);
-  context.fillStyle = "#f3f3f3";
-  context.font = "bold 18px Georgia, serif";
-  context.fillText("SITE 828 / LEVEL B1", 32, 42);
-  context.fillStyle = "#bdc9cc";
-  context.font = "13px 'Courier New', monospace";
-  context.fillText("VISUAL SYSTEM CALIBRATION", 32, 61);
+  context.textAlign = "center";
+  for (const room of map.rooms) {
+    if (camera.zoom < 0.55) continue;
+    const point = projectPosition(
+      { x: room.x + room.width / 2 - 0.5, y: room.y + room.height / 2 - 0.5 },
+      camera,
+      width,
+      height,
+    );
+    const label = room.kind.toUpperCase();
+    context.font = "10px 'Courier New', monospace";
+    const labelWidth = context.measureText(label).width + 8;
+    context.fillStyle = "rgba(242, 241, 223, .85)";
+    context.fillRect(point.x - labelWidth / 2, point.y - 7, labelWidth, 14);
+    context.fillStyle = "#38473f";
+    context.fillText(label, point.x, point.y + 3);
+  }
+  for (const [id, position] of Object.entries(positions).sort(
+    ([firstId, first], [secondId, second]) =>
+      first.x + first.y - second.x - second.y ||
+      firstId.localeCompare(secondId),
+  )) {
+    const point = projectPosition(position, camera, width, height);
+    if (
+      point.x < -40 ||
+      point.x > width + 40 ||
+      point.y < -40 ||
+      point.y > height + 40
+    )
+      continue;
+    const selected = id === camera.selectedId;
+    if (selected) {
+      context.strokeStyle = "#ffe477";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.ellipse(
+        point.x,
+        point.y,
+        14 * camera.zoom,
+        7 * camera.zoom,
+        0,
+        0,
+        Math.PI * 2,
+      );
+      context.stroke();
+    }
+    const image = id === "SCP-999" ? scp999 : worker;
+    const spriteWidth = (id === "SCP-999" ? 32 : 24) * camera.zoom;
+    const spriteHeight = (id === "SCP-999" ? 26 : 36) * camera.zoom;
+    if (image.complete && image.naturalWidth > 0)
+      context.drawImage(
+        image,
+        point.x - spriteWidth / 2,
+        point.y - spriteHeight + 4 * camera.zoom,
+        spriteWidth,
+        spriteHeight,
+      );
+    if (selected) {
+      const label =
+        snapshot.game.personnel.find((person) => person.id === id)?.name ?? id;
+      context.font = "bold 12px 'Courier New', monospace";
+      const labelWidth = context.measureText(label).width + 10;
+      context.fillStyle = "#fff9d9";
+      context.fillRect(point.x - labelWidth / 2, point.y + 10, labelWidth, 18);
+      context.fillStyle = "#24382d";
+      context.fillText(label, point.x, point.y + 23);
+    }
+  }
+  context.textAlign = "start";
 }

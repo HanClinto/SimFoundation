@@ -14,6 +14,7 @@ export function advanceSimulation(state: GameState): GameState {
     state.jobs,
     state.personnel.map((person) => advancePersonnel(person, tick)),
     tick,
+    state.world,
   );
   const scp999Result = advanceScp999(state.scp999, jobResult.personnel, tick);
   const previousJobs = new Map(state.jobs.map((job) => [job.id, job]));
@@ -105,5 +106,6 @@ export function advanceSimulation(state: GameState): GameState {
     personnel: scp999Result.personnel,
     scp999: scp999Result.anomaly,
     scp9620,
+    world: jobResult.world,
   };
 }

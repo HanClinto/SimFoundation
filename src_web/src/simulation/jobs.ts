@@ -3,6 +3,12 @@ import type {
   PersonnelRecord,
   PersonnelSkill,
 } from "./personnel";
+import {
+  findRoute,
+  sameTile,
+  type SiteWorld,
+  type TilePosition,
+} from "./world";
 
 export type JobStatus = "proposed" | "available" | "in-progress" | "completed";
 
@@ -24,17 +30,20 @@ export interface SiteJob {
   readonly assignmentReason: string | null;
   readonly authorizedTick: number | null;
   readonly completedTick: number | null;
+  readonly workSite: TilePosition;
 }
 
 export interface JobAdvanceResult {
   readonly jobs: readonly SiteJob[];
   readonly personnel: readonly PersonnelRecord[];
+  readonly world: SiteWorld;
 }
 
 export function createStartingJobs(): readonly SiteJob[] {
   return [
     {
       id: "job-calibrate-9620-sensors",
+      workSite: { x: 57, y: 55 },
       title: "Calibrate SCP-9620 sensor array",
       description:
         "Validate baseline telemetry before the next approved experiment.",
@@ -56,6 +65,7 @@ export function createStartingJobs(): readonly SiteJob[] {
 export function createTelemetryRecoveryJob(): SiteJob {
   return {
     id: "job-stabilize-9620-feedback",
+    workSite: { x: 74, y: 68 },
     title: "Stabilize SCP-9620 sensor feedback",
     description:
       "Isolate the oscillating relay bank and restore validated telemetry limits.",
@@ -76,6 +86,7 @@ export function createTelemetryRecoveryJob(): SiteJob {
 export function createBaselineObservationJob(): SiteJob {
   return {
     id: "job-record-9620-baseline",
+    workSite: { x: 57, y: 55 },
     title: "Record SCP-9620 baseline",
     description:
       "Observe the inactive apparatus under calibrated instrumentation.",
@@ -96,6 +107,7 @@ export function createBaselineObservationJob(): SiteJob {
 export function createActivationTrialJob(): SiteJob {
   return {
     id: "job-run-9620-activation-trial",
+    workSite: { x: 69, y: 55 },
     title: "Run SCP-9620 activation trial",
     description:
       "Apply the approved low-energy input and record the apparatus response.",
@@ -139,13 +151,14 @@ function selectWorker(
   job: SiteJob,
   personnel: readonly PersonnelRecord[],
   busyPersonIds: ReadonlySet<string>,
+  world: SiteWorld,
 ): PersonnelRecord | null {
   return (
     personnel
       .filter(
         (person) =>
           !busyPersonIds.has(person.id) &&
-          skillFor(person, job.skillId) !== null,
+          (skillFor(person, job.skillId)?.level ?? 0) > 0,
       )
       .sort((first, second) => {
         const firstSkill = skillFor(first, job.skillId)?.level ?? 0;
@@ -155,7 +168,14 @@ function selectWorker(
           biasAlignment(second.biases, job.preferredBiases) -
           (firstSkill * 100 + biasAlignment(first.biases, job.preferredBiases));
         return scoreDifference || first.id.localeCompare(second.id);
-      })[0] ?? null
+      })
+      .find((person) => {
+        const position = world.positions[person.id];
+        return (
+          position !== undefined &&
+          findRoute(world.map, position, job.workSite) !== null
+        );
+      }) ?? null
   );
 }
 
@@ -176,8 +196,10 @@ export function advanceJobs(
   jobs: readonly SiteJob[],
   personnel: readonly PersonnelRecord[],
   tick: number,
+  world: SiteWorld,
 ): JobAdvanceResult {
   const people = new Map(personnel.map((person) => [person.id, person]));
+  const positions = { ...world.positions };
   const busyPersonIds = new Set(
     jobs.flatMap((job) =>
       job.status === "in-progress" && job.assignedPersonId
@@ -201,11 +223,23 @@ export function advanceJobs(
     let assignedPersonId = job.assignedPersonId;
     let assignmentReason = job.assignmentReason;
     if (!assignedPersonId) {
-      const selected = selectWorker(job, [...people.values()], busyPersonIds);
+      const selected = selectWorker(
+        job,
+        [...people.values()],
+        busyPersonIds,
+        world,
+      );
       if (!selected) {
+        const hasWorker = personnel.some(
+          (person) =>
+            !busyPersonIds.has(person.id) &&
+            (skillFor(person, job.skillId)?.level ?? 0) > 0,
+        );
         advancedJobsById.set(job.id, {
           ...job,
-          assignmentReason: "No eligible worker is currently available.",
+          assignmentReason: hasWorker
+            ? "No eligible worker can reach the work site."
+            : "No eligible worker is currently available.",
         });
         continue;
       }
@@ -218,12 +252,54 @@ export function advanceJobs(
 
     const worker = people.get(assignedPersonId);
     const skill = worker ? skillFor(worker, job.skillId) : null;
-    if (!worker || !skill) {
+    if (!worker || !skill || skill.level === 0) {
+      if (worker)
+        people.set(worker.id, {
+          ...worker,
+          currentJobId: null,
+          activity: worker.defaultActivity,
+        });
+      busyPersonIds.delete(assignedPersonId);
       advancedJobsById.set(job.id, {
         ...job,
         status: "available" as const,
         assignedPersonId: null,
         assignmentReason: "The assigned worker is no longer eligible.",
+      });
+      continue;
+    }
+
+    const position = positions[worker.id];
+    const route = position
+      ? findRoute(world.map, position, job.workSite)
+      : null;
+    if (route === null) {
+      people.set(worker.id, {
+        ...worker,
+        currentJobId: null,
+        activity: worker.defaultActivity,
+      });
+      busyPersonIds.delete(worker.id);
+      advancedJobsById.set(job.id, {
+        ...job,
+        status: "available",
+        assignedPersonId: null,
+        assignmentReason: "The route to the work site is blocked.",
+      });
+      continue;
+    }
+    if (position && !sameTile(position, job.workSite)) {
+      positions[worker.id] = route[0]!;
+      people.set(worker.id, {
+        ...worker,
+        currentJobId: job.id,
+        activity: `Travelling: ${job.title}`,
+      });
+      advancedJobsById.set(job.id, {
+        ...job,
+        status: "in-progress",
+        assignedPersonId,
+        assignmentReason,
       });
       continue;
     }
@@ -250,5 +326,6 @@ export function advanceJobs(
   return {
     jobs: jobs.map((job) => advancedJobsById.get(job.id) ?? job),
     personnel: [...people.values()],
+    world: { ...world, positions },
   };
 }

@@ -76,6 +76,12 @@ The browser stores authoritative game state under `scp-site-manager.game-state.v
 
 Resident anomaly records are authoritative simulation state. The first implementation stores SCP-999's protocol state, target, interaction boundary, cooldown, and last completed contact. The browser Anomaly Registry only projects those records; target choice and personnel Effects remain deterministic headless behavior.
 
+The physical-site prototype adds `world.map` and `world.positions` to versioned state. The 128x128 map contains a compact 30x30 starting footprint, authored room bounds, and grass/floor/wall/door tiles. Positions are keyed by personnel and resident-anomaly IDs. Cardinal A\* routes use the `pathfinding` package with stable neighbor ordering; walls are solid, doors passable, and personnel share walkable tiles (soft occupancy). Traffic collision and exclusive workstation reservations are not implemented yet.
+
+Jobs own a serializable `workSite`. Eligibility requires a positive relevant Skill and a reachable destination. Workers move one tile per tick and earn no work progress or XP while travelling. A lost route releases the worker, preserves completed progress, and exposes a blocked reason. The next tick can reconsider work when access returns. Routes are derived from current topology rather than serialized, so reload and obstruction recovery use the same path rules. Room categories currently describe space; furniture, room effectiveness, power, and construction are subsequent slices.
+
+The Camera Feed projects map tiles and actual occupant positions, with browser-owned pan/zoom/selection and existing dossier links. It never advances positions. Map/room dimensions, terrain length, positions, required occupant IDs, unique IDs, and work-site bounds are validated on load. Incompatible development saves deliberately require a fresh site.
+
 SCP-9620's experiment is also authoritative state. Calibration, passive baseline observation, activation, and incident recovery are separate serializable jobs; completion records observations and proposes the next stage without authorizing it. Only activation raises the Yellow feedback incident, and recovery leaves the apparatus stabilized while its function remains unresolved.
 
 Facility and map windows are inspectors over simulation-owned map entities. Global playback and lifecycle controls live in dedicated utility windows. Raw deterministic internals such as tick number and seed are exposed only through opt-in developer inspectors.

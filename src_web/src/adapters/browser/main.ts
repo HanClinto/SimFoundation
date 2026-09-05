@@ -31,7 +31,7 @@ import {
   updatePersonnelRoster,
 } from "./personnel-view";
 import { refreshForNewDeployment } from "./deployment-version";
-import { renderSite } from "./renderer";
+import { createSiteCamera } from "./camera-view";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
@@ -142,20 +142,22 @@ app.innerHTML = `
         <button type="button" aria-label="Close" data-window-close></button>
       </div>
     </div>
-    <nav class="menu-bar" aria-label="Camera feed menu">
-      <button type="button"><u>F</u>eed</button>
-      <button type="button"><u>V</u>iew</button>
-      <button type="button"><u>O</u>verlays</button>
-      <button type="button"><u>H</u>elp</button>
-    </nav>
+    <div class="camera-toolbar" role="toolbar" aria-label="Camera controls">
+      <button type="button" data-camera-action="out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+      <output data-camera-zoom aria-label="Map zoom">70%</output>
+      <button type="button" data-camera-action="in" title="Zoom in" aria-label="Zoom in">+</button>
+      <button type="button" data-camera-action="home" title="Center on Site 828" aria-label="Center on Site 828">&#8962;</button>
+      <select data-camera-entity aria-label="Focus personnel"></select>
+      <button type="button" data-camera-action="inspect" disabled>Open Record</button>
+    </div>
     <div class="window-body camera-body">
       <div class="viewport-shell">
-        <canvas id="site-canvas" width="960" height="540" aria-label="Isometric view of Site 828"></canvas>
+        <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
       </div>
       <div class="status-bar">
         <p class="status-bar-field">LIVE</p>
         <p class="status-bar-field" id="camera-game-time">08:00</p>
-        <p class="status-bar-field">Sector B1</p>
+        <p class="status-bar-field camera-selection" data-camera-status>Site 828 / Live surveillance</p>
       </div>
     </div>
     <div class="resize-grip" aria-hidden="true"></div>
@@ -640,6 +642,16 @@ function openPersonnelInspector(personId: string): void {
   windowManager.open(`personnel-inspector-${personId}`);
 }
 
+const siteCamera = createSiteCamera(
+  canvas,
+  requireElement<HTMLElement>("#camera-window"),
+  () => controller.getSnapshot(),
+  (id) => {
+    if (id === "SCP-999") windowManager.open("anomaly-window");
+    else openPersonnelInspector(id);
+  },
+);
+
 personnelRows.addEventListener("dblclick", (event) => {
   const row = (event.target as Element).closest<HTMLElement>(
     "[data-person-id]",
@@ -872,7 +884,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
-  renderSite(canvas, snapshot);
+  siteCamera.render(snapshot);
   updatePersonnelRoster(personnelRows, snapshot.game.personnel);
   updatePersonnelInspectors(
     personnelInspectors,

@@ -25,6 +25,52 @@ function memoryStorage(initialValue: string | null = null): StoragePort {
 }
 
 describe("game persistence", () => {
+  it("rejects malformed maps and missing, duplicate, or obstructed occupants", () => {
+    const state = createInitialState();
+    const positions = { ...state.world.positions };
+    delete positions["person-mara-voss"];
+    const brokenWorlds = [
+      { ...state.world, map: { ...state.world.map, tiles: [] } },
+      { ...state.world, map: { ...state.world.map, width: 10000 } },
+      { ...state.world, map: { ...state.world.map, rooms: [{ id: "bad" }] } },
+      { ...state.world, positions },
+      {
+        ...state.world,
+        positions: { ...state.world.positions, stranger: { x: 62, y: 62 } },
+      },
+      {
+        ...state.world,
+        positions: {
+          ...state.world.positions,
+          "person-mara-voss": { x: 48, y: 48 },
+        },
+      },
+      {
+        ...state.world,
+        positions: {
+          ...state.world.positions,
+          "person-mara-voss": { x: 128, y: 50 },
+        },
+      },
+    ];
+    for (const world of brokenWorlds)
+      expect(
+        loadGameState(memoryStorage(JSON.stringify({ ...state, world })))
+          .status,
+      ).toBe("invalid");
+  });
+
+  it("continues a worker's journey identically after save and reload", () => {
+    const original = createController(createInitialState());
+    original.authorizeJob("job-calibrate-9620-sensors");
+    const storage = memoryStorage();
+    saveGameState(storage, original.advance().game);
+    const loaded = loadGameState(storage);
+    if (loaded.status !== "loaded") throw new Error("save did not load");
+    const resumed = createController(loaded.state);
+    expect(resumed.advance(20).game).toEqual(original.advance(20).game);
+  });
+
   it("round-trips deterministic job and incident progress", () => {
     const storage = memoryStorage();
     const controller = createController(createInitialState(42));
@@ -150,10 +196,10 @@ describe("game persistence", () => {
     let controller = createController(createInitialState(42));
 
     for (const [jobId, ticks] of [
-      ["job-calibrate-9620-sensors", 8],
+      ["job-calibrate-9620-sensors", 11],
       ["job-record-9620-baseline", 6],
-      ["job-run-9620-activation-trial", 5],
-      ["job-stabilize-9620-feedback", 8],
+      ["job-run-9620-activation-trial", 17],
+      ["job-stabilize-9620-feedback", 9],
     ] as const) {
       controller.authorizeJob(jobId);
       saveGameState(storage, controller.advance(ticks).game);

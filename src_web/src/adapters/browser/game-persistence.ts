@@ -1,4 +1,5 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
+import { isWalkable, tileAt, type SiteWorld } from "../../simulation/world";
 
 export const GAME_STATE_STORAGE_KEY = "scp-site-manager.game-state.v1";
 
@@ -350,7 +351,63 @@ function isSiteJob(value: unknown): boolean {
     isNullableString(value.assignedPersonId) &&
     isNullableString(value.assignmentReason) &&
     isNullableTick(value.authorizedTick) &&
-    isNullableTick(value.completedTick)
+    isNullableTick(value.completedTick) &&
+    isRecord(value.workSite) &&
+    isIntegerInRange(value.workSite.x, 0, 127) &&
+    isIntegerInRange(value.workSite.y, 0, 127)
+  );
+}
+
+function isSiteWorld(value: unknown): value is SiteWorld {
+  if (!isRecord(value) || !isRecord(value.map) || !isRecord(value.positions))
+    return false;
+  const map = value.map;
+  if (
+    !isNonEmptyString(map.id) ||
+    !isIntegerInRange(map.width, 1, 128) ||
+    !isIntegerInRange(map.height, 1, 128)
+  )
+    return false;
+  const width = map.width;
+  const height = map.height;
+  if (
+    !isArrayOf(map.tiles, (tile) =>
+      isLiteral(tile, ["grass", "floor", "wall", "door"]),
+    ) ||
+    map.tiles.length !== width * height
+  )
+    return false;
+  if (
+    !isArrayOf(
+      map.rooms,
+      (room) =>
+        isRecord(room) &&
+        isNonEmptyString(room.id) &&
+        isNonEmptyString(room.name) &&
+        isLiteral(room.kind, [
+          "laboratory",
+          "containment",
+          "storage",
+          "dormitory",
+          "mess",
+          "medical",
+          "utilities",
+          "security",
+        ]) &&
+        isIntegerInRange(room.x, 0, width - 1) &&
+        isIntegerInRange(room.y, 0, height - 1) &&
+        isIntegerInRange(room.width, 1, width - room.x) &&
+        isIntegerInRange(room.height, 1, height - room.y),
+      128,
+    )
+  )
+    return false;
+  return Object.values(value.positions).every(
+    (position) =>
+      isRecord(position) &&
+      isIntegerInRange(position.x, 0, width - 1) &&
+      isIntegerInRange(position.y, 0, height - 1) &&
+      (map.tiles as unknown[])[position.y * width + position.x] !== "wall",
   );
 }
 
@@ -410,11 +467,33 @@ function isGameState(value: unknown): value is GameState {
   if (!isRecord(value.capabilities)) return false;
   if (typeof value.capabilities.anomalousPsychometrics !== "boolean")
     return false;
+  if (
+    !isArrayOf(value.jobs, isSiteJob) ||
+    !isArrayOf(value.personnel, isPersonnelRecord) ||
+    !isScp999State(value.scp999) ||
+    !isScp9620State(value.scp9620) ||
+    !isSiteWorld(value.world)
+  )
+    return false;
+  const state = value as unknown as GameState;
+  const personIds = state.personnel.map(({ id }) => id);
+  const entityIds = [...personIds, "SCP-999"];
   return (
-    isArrayOf(value.jobs, isSiteJob) &&
-    isArrayOf(value.personnel, isPersonnelRecord) &&
-    isScp999State(value.scp999) &&
-    isScp9620State(value.scp9620)
+    new Set(entityIds).size === entityIds.length &&
+    Object.keys(state.world.positions).length === entityIds.length &&
+    entityIds.every((id) => {
+      const position = state.world.positions[id];
+      return position !== undefined && isWalkable(state.world.map, position);
+    }) &&
+    new Set(state.jobs.map(({ id }) => id)).size === state.jobs.length &&
+    new Set(state.world.map.rooms.map(({ id }) => id)).size ===
+      state.world.map.rooms.length &&
+    state.jobs.every(
+      (job) =>
+        tileAt(state.world.map, job.workSite) !== null &&
+        (job.assignedPersonId === null ||
+          personIds.includes(job.assignedPersonId)),
+    )
   );
 }
 
