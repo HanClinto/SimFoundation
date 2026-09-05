@@ -287,6 +287,7 @@ textarea {
 }
 
 .viewport-shell {
+  position: relative;
   min-width: 0;
   padding: 3px;
   overflow: hidden;

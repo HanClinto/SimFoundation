@@ -4,6 +4,7 @@ import { createSiteMap } from "../src/adapters/browser/site-map-view";
 import { createController } from "../src/application/controller";
 import { createInitialState } from "../src/simulation/state";
 import { renderSite } from "../src/adapters/browser/renderer";
+import { layoutPawnBubbles } from "../src/adapters/browser/pawn-bubbles";
 vi.mock("../src/adapters/browser/renderer", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   renderSite: vi.fn(),
@@ -91,4 +92,54 @@ it("combines independent layers without changing pinned placement and cancels wi
   const count = open.mock.calls.length;
   pointer("dblclick", 100000);
   expect(open).toHaveBeenCalledTimes(count);
+  Object.defineProperties(canvas, {
+    clientWidth: { value: 760 },
+    clientHeight: { value: 420 },
+  });
+  view.focus({ x: 54, y: 55 });
+  const home = document.createElement("button");
+  home.dataset.cameraAction = "home";
+  root.append(home);
+  home.click();
+  view.focus({ x: 54, y: 55 });
+  const camera = vi.mocked(renderSite).mock.calls.at(-1)![2]!;
+  const bubbles = layoutPawnBubbles(
+    controller.getSnapshot().game,
+    "world",
+    camera.zoom,
+    760,
+    420,
+    (position) => ({
+      x: 380 + (position.x - 54 - (position.y - 55)) * 20 * camera.zoom,
+      y: 210 + (position.x - 54 + position.y - 55) * 10 * camera.zoom,
+    }),
+    camera.selectedId,
+  );
+  const bubble = bubbles.find(
+    (bubble) => bubble.personId === "person-mara-voss",
+  )!;
+  expect(bubble).toBeDefined();
+  canvas.dispatchEvent(
+    new window.MouseEvent("pointermove", {
+      clientX: bubble.x + 5,
+      clientY: bubble.y + 5,
+    }),
+  );
+  const tooltip = root.querySelector<HTMLElement>('[role="tooltip"]')!;
+  expect(tooltip.hidden).toBe(false);
+  expect(tooltip.textContent).toContain("Dr. Mara Voss");
+  canvas.dispatchEvent(
+    new window.MouseEvent("dblclick", {
+      clientX: bubble.x + 5,
+      clientY: bubble.y + 5,
+    }),
+  );
+  expect(open).toHaveBeenLastCalledWith("person-mara-voss", "world");
+  const activity = document.createElement("input");
+  activity.type = "checkbox";
+  activity.dataset.mapOverlay = "activity";
+  activity.checked = false;
+  root.append(activity);
+  activity.dispatchEvent(new window.Event("change", { bubbles: true }));
+  expect(tooltip.hidden).toBe(true);
 });

@@ -202,6 +202,9 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 ## Current Prototype Decisions
 
+- Pawn activity uses original pixel-icon bubbles at stable screen sizes: an action or intent bubble plus an outward-mood badge when awake. Action cues come from routine/job state, not default biography text. Sleeping, eating, breaks, travel, hauling, engineering, clinical work, research, security work, blocked needs, and active social contact have distinct symbols. Hover gives a plain-language label; clicking selects the pawn and double-clicking opens its record. Selected-pawn status text also exposes the labels for keyboard use.
+- Activity is an independent Layers toggle, enabled by default with Objects. Bubbles disappear below 45% zoom and for unseen pawns in Recorded view; visible emotion uses recorded outward appearance, not psychiatric diagnosis. World view can show unmet hunger/rest intent. Sleeping suppresses mood; masking/reserved behavior remains respected. Crowd layout prioritizes actions, offsets bubbles around other indicators and pawn silhouettes, and omits secondary cues when space is unavailable.
+
 - Fresh sites use coherent room-sized examples of all four material families on both floors and walls. Room finishes live in the simulation, not special rendering rules. The lab and outer shell retain concrete; medical areas demonstrate ceramic, utilities and storage steel, and quarters/security composite. Saved sites are not silently refinished when the starting layout changes.
 - Disabled replacement controls show their current reason beside the action. Opening Engineering without a tile shows an empty-selection state and a Choose tile command, rather than an unexplained disabled button.
 

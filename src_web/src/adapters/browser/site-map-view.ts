@@ -5,6 +5,8 @@ import type {
 import type { TilePosition } from "../../simulation/world";
 import { observedSnapshot } from "./observed-view";
 import { mapObjects } from "./map-objects";
+import { layoutPawnBubbles, bubbleAt, type PawnBubble } from "./pawn-bubbles";
+import { pawnCues } from "./pawn-cues";
 import {
   renderSite,
   projectPosition,
@@ -59,6 +61,29 @@ export function createSiteMap(
     '[data-camera-action="confirm"]',
   )!;
   let objectSignature = "";
+  let bubbles: readonly PawnBubble[] = [];
+  let hoverPoint: TilePosition | null = null;
+  const tooltip = document.createElement("div");
+  tooltip.className = "pawn-cue-tooltip";
+  tooltip.id = "pawn-cue-tooltip";
+  tooltip.setAttribute("role", "tooltip");
+  tooltip.hidden = true;
+  canvas.parentElement!.append(tooltip);
+  function updateTooltip() {
+    const bubble =
+      !placement && hoverPoint ? bubbleAt(bubbles, hoverPoint) : undefined;
+    tooltip.hidden = !bubble;
+    canvas.style.cursor = bubble ? "pointer" : "";
+    if (!bubble || !hoverPoint) {
+      canvas.removeAttribute("aria-describedby");
+      return;
+    }
+    tooltip.textContent = bubble.title;
+    canvas.setAttribute("aria-describedby", tooltip.id);
+    tooltip.style.maxWidth = `${Math.max(100, Math.min(280, canvas.clientWidth - 12))}px`;
+    tooltip.style.left = `${canvas.offsetLeft + Math.max(4, Math.min(canvas.clientWidth - tooltip.offsetWidth - 4, hoverPoint.x + 12))}px`;
+    tooltip.style.top = `${canvas.offsetTop + Math.max(4, Math.min(canvas.clientHeight - tooltip.offsetHeight - 4, hoverPoint.y + 16))}px`;
+  }
   const displayed = () =>
     camera.perspective === "recorded" ? observedSnapshot(current) : current;
 
@@ -93,9 +118,14 @@ export function createSiteMap(
     }
     entitySelect.value = camera.selectedId ?? "";
     const selected = objects.find((object) => object.id === camera.selectedId);
+    const selectedCues = selected
+      ? pawnCues(displayed().game, selected.id, camera.perspective ?? "world")
+      : [];
     status.textContent = camera.selectedId?.startsWith("tile:")
       ? `Tile ${camera.selectedId.slice(5).replace(":", " / ")}`
-      : (selected?.name ?? "No selection");
+      : selected
+        ? `${selected.name}${selectedCues.length ? ` / ${selectedCues.map((cue) => cue.label).join(" / ")}` : ""}`
+        : "No selection";
     const perspectiveLabel = element.querySelector(
       "[data-camera-perspective-label]",
     );
@@ -105,6 +135,25 @@ export function createSiteMap(
     zoomLabel.value = `${Math.round(camera.zoom * 100)}%`;
     inspect.disabled = camera.selectedId === null;
     renderSite(canvas, current, camera);
+    bubbles =
+      camera.overlays?.objects && camera.overlays.activity
+        ? layoutPawnBubbles(
+            displayed().game,
+            camera.perspective ?? "world",
+            camera.zoom,
+            canvas.clientWidth,
+            canvas.clientHeight,
+            (position) =>
+              projectPosition(
+                position,
+                camera,
+                canvas.clientWidth,
+                canvas.clientHeight,
+              ),
+            camera.selectedId,
+          )
+        : [];
+    updateTooltip();
   }
   function focus(position: TilePosition) {
     camera = {
@@ -232,6 +281,8 @@ export function createSiteMap(
     return { x: Math.round(position.x), y: Math.round(position.y) };
   };
   function selectionAt(point: TilePosition) {
+    const bubble = bubbleAt(bubbles, point);
+    if (bubble) return bubble.personId;
     const position = tileAtPoint(point);
     if (
       position.x < 0 ||
@@ -276,6 +327,8 @@ export function createSiteMap(
   } | null = null;
   canvas.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
+    hoverPoint = null;
+    updateTooltip();
     canvas.focus();
     drag = { start: localPoint(event), center: camera.center, moved: false };
     canvas.setPointerCapture(event.pointerId);
@@ -286,6 +339,9 @@ export function createSiteMap(
       if (placement) {
         placement.move(tileAtPoint(point));
         render(current);
+      } else {
+        hoverPoint = point;
+        updateTooltip();
       }
       return;
     }
@@ -316,6 +372,12 @@ export function createSiteMap(
   });
   canvas.addEventListener("pointercancel", () => {
     drag = null;
+    hoverPoint = null;
+    updateTooltip();
+  });
+  canvas.addEventListener("pointerleave", () => {
+    hoverPoint = null;
+    updateTooltip();
   });
   canvas.addEventListener("dblclick", (event) => {
     if (placement) return;

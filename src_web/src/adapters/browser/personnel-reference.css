@@ -514,6 +514,23 @@
   height: 12px;
   border: 1px solid #3f5248;
 }
+.pawn-cue-tooltip {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+  padding: 6px 8px;
+  border: 1px solid #344d42;
+  background: #ffffe1;
+  color: #20392e;
+  font:
+    12px/1.4 Tahoma,
+    sans-serif;
+  overflow-wrap: anywhere;
+  box-shadow: 2px 2px 0 #344d4240;
+}
+.pawn-cue-tooltip[hidden] {
+  display: none;
+}
 .map-layers {
   position: relative;
   margin-left: auto;

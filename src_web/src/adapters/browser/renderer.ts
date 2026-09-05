@@ -18,6 +18,7 @@ import {
   type MapPerspective,
 } from "./map-settings";
 import type { PlacementTile } from "./placement";
+import { layoutPawnBubbles, drawPawnBubbles } from "./pawn-bubbles";
 import {
   MATERIAL_ART,
   visibleSurface,
@@ -510,27 +511,20 @@ export function renderSite(
       context.fillStyle = "#24382d";
       context.fillText(label, point.x, point.y + 23);
     }
-    const routine = snapshot.game.routines.activities[id];
-    if (live && routine && routine.progress > 0 && camera.zoom >= 0.7) {
-      const label =
-        routine.kind === "meal"
-          ? "Meal"
-          : routine.kind === "sleep"
-            ? "Rest"
-            : "Break";
-      context.font = "10px 'Courier New', monospace";
-      const labelWidth = context.measureText(label).width + 8;
-      context.fillStyle = "#f4f2dd";
-      context.fillRect(
-        point.x - labelWidth / 2,
-        point.y - spriteHeight - 15,
-        labelWidth,
-        14,
-      );
-      context.fillStyle = "#405949";
-      context.fillText(label, point.x, point.y - spriteHeight - 5);
-    }
   }
+  if (overlays.objects && overlays.activity !== false)
+    drawPawnBubbles(
+      context,
+      layoutPawnBubbles(
+        snapshot.game,
+        recorded ? "recorded" : "world",
+        camera.zoom,
+        width,
+        height,
+        (position) => projectPosition(position, camera, width, height),
+        camera.selectedId,
+      ),
+    );
   context.textAlign = "start";
   const selectedObject = mapObjects(snapshot.game, camera.perspective).find(
     ({ id }) => id === camera.selectedId,
