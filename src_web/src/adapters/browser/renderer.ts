@@ -18,6 +18,12 @@ import {
   type MapPerspective,
 } from "./map-settings";
 import type { PlacementTile } from "./placement";
+import {
+  MATERIAL_ART,
+  visibleSurface,
+  drawMaterialSides,
+  drawMaterialTop,
+} from "./material-art";
 
 const TILE_WIDTH = 40;
 const TILE_HEIGHT = 20;
@@ -219,6 +225,11 @@ export function renderSite(
           row >= room.y &&
           row < room.y + room.height,
       );
+      const installed = visibleSurface(
+        knowledge.knownSurfaces[row * map.width + column],
+        tile,
+      );
+      const art = installed ? MATERIAL_ART[installed.material] : null;
       const fill =
         camera.base === "materials"
           ? surface
@@ -228,13 +239,9 @@ export function renderSite(
             ? (column * 7 + row * 11) % 5 === 0
               ? "#526e4d"
               : "#5c7756"
-            : tile === "wall"
-              ? "#e0e3dd"
-              : tile === "door" || tile === "closed-door"
-                ? "#b69b59"
-                : room
-                  ? roomColors[room.kind]
-                  : "#e0ddd0";
+            : installed?.material === "concrete" && tile === "floor" && room
+              ? roomColors[room.kind]
+              : (art?.top ?? "#e0ddd0");
       context.save();
       context.globalAlpha =
         (!recorded && !overlays.coverage) ||
@@ -243,17 +250,26 @@ export function renderSite(
           : 0.48;
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
-      if (tile === "wall" || tile === "closed-door") {
-        drawTile(context, { x: 0, y: -10 }, "#727f78", "#64746b");
-        context.fillStyle = "#727f78";
-        context.fillRect(-20, -9, 40, 9);
-      }
+      const raised = tile === "wall" || tile === "closed-door";
+      if (raised && installed)
+        drawMaterialSides(context, installed.material, camera.zoom >= 0.55);
       drawTile(
         context,
-        { x: 0, y: tile === "wall" || tile === "closed-door" ? -19 : -10 },
+        { x: 0, y: raised ? -19 : -10 },
         fill,
-        tile === "grass" ? "#526d4c" : "#89958d",
+        tile === "grass" ? "#526d4c" : (art?.edge ?? "#89958d"),
       );
+      if (installed && camera.zoom >= 0.55)
+        drawMaterialTop(context, installed.material, raised);
+      if (tile === "door" || tile === "closed-door") {
+        context.strokeStyle = "#dfbc52";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(-12, raised ? -5 : 4);
+        context.lineTo(0, raised ? 1 : 10);
+        context.lineTo(12, raised ? -5 : 4);
+        context.stroke();
+      }
       context.restore();
     }
   }

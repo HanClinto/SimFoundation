@@ -202,6 +202,8 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 ## Current Prototype Decisions
 
+- Installed materials are visible in the normal Site base map, not only the Materials base. Concrete uses muted casting seams and aggregate marks; steel uses cool metal panels, highlights, and rivets; ceramic uses a pale grout grid; composite uses dark green ribbed panels. Walls have matching shaded sides, while floors use flat versions of the same treatments. Detail appears at 55% zoom and above; material colors remain at lower zoom. Doors retain a contrasting threshold marker. Appearance follows installed state or the last recorded observation, never a pending replacement order.
+
 - Inventory, pawn identity, and anomaly identity icons use 32x32 display boxes with labels outside the icon. Larger anatomy, uniform, and chamber images are reference illustrations, not oversized identity icons.
 - Placement starts in its owning inspector, with only a temporary Confirm/Cancel bar in the map. Clicks pin the supplied footprint; changing layers never changes placement. The permanent Inspect/Plan Laboratory/Place Camera selector is removed.
 - The Layers panel provides World/Recorded perspective, Site/Materials base maps, Floors/Structures, and independent Condition, Rooms, Objects, Coverage, and Projects toggles. Condition outlines compose over material colors. Engineering follows the chosen physical perspective; clinical records do not.
