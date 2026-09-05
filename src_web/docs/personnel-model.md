@@ -18,7 +18,7 @@ This proposal organizes every authoritative pawn field by how and why it changes
 
 **Player knowledge is not another Character layer.** It belongs to a separate faction knowledge registry keyed by person ID. The simulation knows the actual pawn; the Site Director receives an assessment-limited projection. Cameras, monitors, interviews, examinations, and reports update that projection.
 
-The system favors tradeoffs over universally superior recruits. Skills provide the satisfying “number goes up” progression. Preference Biases describe favored problem-solving styles rather than raw power. Traits create categorical behavior. Equipment and Effects compose around those facts.
+The system favors tradeoffs over universally superior recruits. Skills provide the satisfying “number goes up” progression. Preference Biases describe favored problem-solving styles rather than raw power. Traits create distinctive parameterized or categorical behavior. Equipment and Effects compose around those facts.
 
 ## Biases and Specialization
 
@@ -114,72 +114,80 @@ Legal name is the administrative name. Nickname is optional and is used in infor
 
 #### Traits
 
-A pawn may have zero or one trait from each category. No trait means ordinary behavior for that category. Traits ordinarily do not change; rare authored events add permanent Effects rather than silently rewriting personality. The authoritative pawn stores actual Traits, but a new candidate's dossier begins with only disclosed or already evidenced Traits.
+A pawn has a record of Trait instances keyed by definition ID. There is no fixed category count or one-per-category rule. A definition may be a simple marker or declare typed parameters with ranges and defaults. The keyed record structurally permits at most one instance of a given definition, so a signed parameter represents a real continuum without creating contradictory paired Traits.
 
-##### Work-style traits
+Examples:
+
+- Constitution uses `hardiness` from `-3` Frail to `+3` Hardy.
+- Pain Response uses `sensitivity` from `-3` High Pain Tolerance to `+3` Low Pain Tolerance.
+- Sociability uses `socialDrive` from `-3` Solitary to `+3` Sociable.
+- Work Drive uses `workDrive` from `-3` Goof-Off to `+3` Workaholic.
+- Anomalous Luck uses `fortune` from `-3` extreme misfortune to `+3` extreme good fortune.
+
+Zero represents ordinary behavior. An instance whose parameters are all at their defaults is canonically omitted, so missing and neutral states cannot diverge. Parameters need not be bipolar: Fast Healer can use a positive `recoveryRate`, while Methodical can use independent `quality` and `taskStartSpeed` parameters. Parameters are local inputs to that definition's Effects, not globally queryable character attributes.
+
+Broad labels such as `work`, `threat-response`, `social`, `anomalous`, `medical`, and `conduct` are non-exclusive tags. They support content browsing, assessment research, UI grouping, and generation budgets; they do not limit how many tagged Traits a pawn may have. A Psychically Attuned pawn can also have Anomalous Luck.
+
+When two distinct definitions truly cannot coexist, their definitions declare the same explicit incompatibility group. This should be rare. Prefer one parameterized definition when the concepts are opposite ends of the same idea, and permit combinations when they create coherent characters.
+
+Trait definitions are immutable content records loaded with the rest of the simulation definitions:
+
+```json
+{
+  "id": "constitution",
+  "tags": ["medical"],
+  "parameters": {
+    "hardiness": {
+      "type": "integer",
+      "minimum": -3,
+      "maximum": 3,
+      "default": 0
+    }
+  },
+  "incompatibilityGroupIds": [],
+  "effectDefinitionId": "trait-constitution"
+}
+```
+
+Content loading validates parameter names and ranges, referenced Effect definitions, and incompatibility groups. Pawn creation validates each instance against that registry and removes all-default instances.
+
+Representative Trait definitions include:
 
 - Methodical: higher quality, slower task start, lower error chance
-- Industrious: selects work quickly, dislikes idleness
-- Workaholic: works past schedule, accumulates long-shift Stress more slowly, resists stopping
-- Goof-Off: seeks breaks early, restores Emotional Health efficiently, lower sustained-work tolerance
 - Perfectionist: repeats low-quality work, high quality ceiling, Stress from rushed orders
-
-##### Threat-response traits
-
-- Stoic: delayed panic, Fear remains internally significant
-- Scaredy-Cat: rapid Fear gain, early retreat
-- Reckless: low perceived danger, accepts unsafe work
+- Stoic: delayed panic while Fear remains internally significant
 - Vigilant: detects threats early, gains Stress during prolonged alerts
 - Freeze-Prone: low action reliability during sudden acute Fear
-
-##### Social-temperament traits
-
 - Compassionate: effective comfort, stronger reaction to others' suffering
 - Abrasive: relationship friction, resists social manipulation
-- Sociable: strong Social recovery from company, suffers isolation
-- Solitary: works well alone, weak group recreation benefit
 - Charismatic: increases group confidence, attracts attention and responsibility
-
-##### Anomalous-disposition traits
-
 - Psychically Attuned: perceives subtle anomalous effects, greater exposure risk
 - Psychically Insulated: reduced psychic influence, misses subtle signals
 - Superstitious: rituals reduce Stress; uncertain anomaly states raise Fear
 - Skeptical: resists rumor and suggestion; undeniable impossibility damages Mental Health more
 - Resonant: anomalous equipment Effects are stronger in both directions
-
-Anomalous-disposition Traits require specialized screening unlocked by research. Until then, the Foundation may know only observed symptoms or a low-confidence suspicion. There is no separate Anomalous Profile attribute.
-
-##### Medical-constitution traits
-
-- Robust: slower Physical Health loss from ordinary illness and exertion
-- Sickly: greater illness risk, faster benefit from careful preventive treatment
-- Low Pain Tolerance: Pain creates larger Stress and work penalties
-- High Pain Tolerance: functions through Pain but may conceal injury
 - Fast Healer: recovery Effects progress faster
-
-##### Moral-disposition traits
-
 - Altruistic: prioritizes rescue, suffers from harmful orders
 - Pragmatic: lower moral-injury pressure from necessary tradeoffs
 - Greedy: responds strongly to rewards, theft/corruption break patterns become eligible
 - Obsessive: persists toward a focus, resists task switching
 - Homicidal: violence threshold is lower; violent break patterns become eligible; the candidate may conceal it during screening; trust penalties apply when discovered
 
-Each Trait definition references one always-eligible Effect definition. Conditional trait behavior uses `activeWhen` on that ordinary Effect. There is no separate trait-modifier engine.
+Traits ordinarily do not change. Rare authored events add permanent Effects or explicitly change a Trait parameter with visible history rather than silently rewriting personality. The authoritative pawn stores actual Trait instances and parameters, but a new candidate's dossier begins with only disclosed or evidenced conclusions. Anomalous Traits require specialized screening unlocked by research; there is no separate Anomalous Profile or visible Luck attribute.
 
-Representative mappings cover every trait category:
+Each Trait definition references one always-eligible Effect definition. Parameter values feed that Effect's modifier templates, and conditional behavior uses `activeWhen` on the ordinary Effect. There is no separate trait-modifier engine.
 
-| Trait               | Effect behavior                                                                                               |
-| ------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Methodical          | Continuous Work Quality increase and Task Start Speed decrease                                                |
-| Scaredy-Cat         | Continuous Fear Gain increase and Panic Threshold decrease                                                    |
-| Sociable            | Conditional Social Recovery increase while interacting; Social Drain increase while isolated                  |
-| Psychically Attuned | Continuous Anomaly Detection increase and anomalous Effect magnitude increase                                 |
-| High Pain Tolerance | Conditional Pain Response reduction while a painful injury Effect is active                                   |
-| Homicidal           | Conditional violent-break eligibility, lower violence inhibition, and Moral-disposition screening concealment |
+| Trait definition    | Parameter example | Effect behavior                                                                           |
+| ------------------- | ----------------- | ----------------------------------------------------------------------------------------- |
+| Methodical          | `quality: 0.7`    | Work Quality increase and Task Start Speed decrease                                       |
+| Threat Sensitivity  | `sensitivity: 2`  | Fear Gain increase and Panic Threshold decrease                                           |
+| Sociability         | `socialDrive: 2`  | Social Recovery increase while interacting; Social Drain increase while isolated          |
+| Psychic Sensitivity | `sensitivity: -2` | Anomaly Detection and anomalous Effect magnitude changes                                  |
+| Anomalous Luck      | `fortune: 3`      | Favorable shifts to stochastic checks made for this pawn                                  |
+| Pain Response       | `sensitivity: -2` | Pain Response reduction while a painful Injury Effect is active                           |
+| Homicidal           | none              | Violent-break eligibility, lower violence inhibition, and `conduct` screening concealment |
 
-Exact numeric balance belongs to trait definitions and testing, not the Character schema.
+Exact numeric balance belongs to Trait definitions and testing, not the Character schema. Content generation may use a soft Trait budget to keep pawns legible, but the runtime schema imposes no arbitrary total or tag-based cap.
 
 #### Biases
 
@@ -201,7 +209,7 @@ This is not Intelligence versus Strength. It records which problem-solving mode 
 
 This is not awareness versus courage. It records whether a pawn prefers to absorb and adapt or establish and execute a plan.
 
-Anomalous sensitivity is not a third Bias. It is represented by the Anomalous-disposition Trait category, where it can remain partially hidden until Foundation screening or later evidence establishes it.
+Anomalous sensitivity is not a third Bias. It is represented by tagged, potentially parameterized Traits that can remain partially hidden until Foundation screening or later evidence establishes them.
 
 ### 2. Stable
 
@@ -350,7 +358,8 @@ This is one data shape with optional fields, not a hierarchy of Effect subclasse
 - Pressure: stressGain, stressRecovery, fearGain, fearRecovery
 - Derived Health: physicalHealth, mentalHealth, emotionalHealth, domainMinimum, domainMaximum
 - Psychology: panicThreshold, breakThreshold, compliance
-- Detection: hazardDetection, anomalyDetection, deceptionDetection, assessmentConcealment by Trait category
+- Detection: hazardDetection, anomalyDetection, deceptionDetection, assessmentConcealment by Trait tag
+- Checks: checkModifier by tag, fortuneModifier, outcomeShift
 - Combat: accuracy, defense, damage, painResponse
 - Access: clearanceOverride, protocolPermission
 
@@ -369,13 +378,45 @@ For example, the Homicidal Trait's ordinary Effect can include:
 
 ```json
 {
-  "target": "assessmentConcealment:moralDisposition",
+  "target": "assessmentConcealment:conduct",
   "operation": "add",
   "value": 0.2
 }
 ```
 
 This is an input to assessment resolution, not a second concealment system.
+
+#### Deterministic D100 checks
+
+Stochastic actions use one subject-centered D100 resolver. Higher totals are always better for the subject making the check.
+
+```text
+check total = D100
+            + relevant skill contribution
+            + equipment and situational modifiers
+            + active Effect modifiers
+            + optional fortune modifier
+```
+
+A raw result near the middle is neutral, low is unfavorable, and high is favorable. Content interprets the total through a difficulty or ordered outcome table rather than reversing the meaning for different actions. D100 is preferred over D20 because one-point modifiers remain useful without forcing every adjustment into five-percent steps.
+
+Unopposed checks compare the total with content-defined thresholds. Opposed actions make a separate check for each subject and compare totals; ties favor the defender or existing state. An attacker therefore wants a high attack total, while the defender independently wants a high dodge, block, or resistance total. Skills and equipment contribute only when relevant to that subject's check.
+
+Routine work does not roll merely because the resolver exists. Predictable jobs use capability calculations; attacks, dodges, resistance, injury avoidance, uncertain incidents, and other explicitly stochastic actions call the D100 resolver. This prevents random checks from swallowing the management simulation.
+
+Every roll uses the simulation seed plus stable event, check-role, and subject identifiers. Saving and replaying the same state produces the same results rather than allowing reload-based rerolls. Ordinary UI reports outcomes and known contributors, while exact rolls and hidden modifiers remain debug-only.
+
+#### Hidden fortune
+
+Luck is never a visible attribute, meter, or percentage. Anomalous Luck is a sparse authoritative Trait whose signed `fortune` parameter feeds its ordinary Effect into D100 checks that opt into fortune. The provisional conversion is five D100 points per `fortune` step, producing a range from -15 to +15. A missing Anomalous Luck Trait is the canonical ordinary state.
+
+Because checks are subject-centered, positive fortune can improve the same pawn's attack check and later improve their dodge, block, resistance, or injury-avoidance check when they are defending. It does not modify another pawn's roll merely because the fortunate pawn participates in the scene.
+
+For an injury-producing incident, the resolver interprets the total through ordered outcomes such as `no injury`, `minor injury`, `serious injury`, and `fatal injury`. Strong positive fortune can negate most ordinary injuries by turning them into near misses. Negative fortune shifts outcomes toward greater severity. Explicitly unavoidable authored consequences bypass the check, and fortune does not remove an Injury Effect after it has already been created.
+
+The launch rule does not conserve or displace luck. A future extension may add hidden probability pressure after successful interventions, increasing later collateral mishap risk before decaying, but that requires its own balance and representation decision.
+
+Ordinary UI reports only observable evidence such as `survived an improbable accident` or, after sufficient research and assessment, `probability distortion suspected`. It never reveals the underlying `fortune` value, modifier, or roll. Debug tools may expose those values for testing.
 
 ### 5. Derived
 
@@ -400,7 +441,7 @@ The simulation can calculate exact Health, but ordinary UI reveals only assessme
 
 - Mood: immediate subjective wellbeing from Needs, Emotional Health, Stress, and active Effects
 - Sanity: coherent functioning from Mental Health, Fear, Stress, anomalous exposure, and active Effects
-- Composure: ability to execute an intended action under current pressure; derived from Mental/Emotional Health, Stress, Fear, Threat Response, relevant training, and active Effects
+- Composure: ability to execute an intended action under current pressure; derived from Mental/Emotional Health, Stress, Fear, relevant training, and active Trait Effects
 
 Sanity answers “is this pawn currently interpreting reality coherently?” Composure answers “can this pawn carry out the intended action under pressure?” A pawn can understand what is happening but freeze, or remain operational while suffering distorted perceptions.
 
@@ -479,13 +520,13 @@ New candidates do not expose their authoritative Trait set to the player. Their 
 An assessment protocol defines:
 
 - Research prerequisite
-- Detectable Trait categories and individual Traits
+- Detectable Trait tags, definitions, and parameters
 - Whether it runs automatically at intake or requires a targeted follow-up
 - Optional relevant Skill: Medicine for medical and much psychological screening, Social for interviews, Security for records and behavioral investigation, or Anomaly Handling for anomalous screening
 - Optional room, equipment, time, and certification requirements
 - Base sensitivity and which evidence it can treat as corroboration
 
-The simplest launch default is for recruitment to run the site's best automatic intake protocol when a candidate appears. The Site Director and routine administrative staff are implied actors, so this does not require a pawn job, room reservation, or repeated player order. Research unlocks broader Trait categories and raises the quality of this facility-wide screening capability.
+The simplest launch default is for recruitment to run the site's best automatic intake protocol when a candidate appears. The Site Director and routine administrative staff are implied actors, so this does not require a pawn job, room reservation, or repeated player order. Research unlocks broader Trait tags and raises the quality of this facility-wide screening capability.
 
 Targeted follow-up remains available when the player wants more confidence, needs a clinical opinion, or investigates contradictory evidence. Those assessments may assign a qualified worker and consume room, equipment, and time. There is no separate Assessment Skill; optional worker-assisted protocols use existing Skills. This preserves personnel work as a meaningful choice without making every administrative action a labor-scheduling task.
 
@@ -493,11 +534,11 @@ Targeted follow-up remains available when the player wants more confidence, need
 
 This personnel model does not require a complete Research Tree design. It requires only that completed research can unlock or improve facility capabilities, including recruitment screening. Illustrative nodes are:
 
-- Personnel Vetting: automatic screening for conspicuous Work-style, Threat-response, and Medical-constitution Traits
-- Behavioral Analysis: improved Social-temperament and Moral-disposition screening
-- Anomalous Psychometrics: first reliable screening for Anomalous-disposition Traits
+- Personnel Vetting: automatic screening for conspicuous Traits tagged `work`, `threat-response`, and `medical`
+- Behavioral Analysis: improved screening for Traits tagged `social` and `conduct`
+- Anomalous Psychometrics: first reliable screening for Traits tagged `anomalous` and automatic statistical analysis of incident logs
 
-These names and tiers are provisional content. The model stores the protocol version used for each conclusion, so a later Research Tree can replace or expand them without changing pawn data.
+These names and tiers are provisional content. The model stores the protocol version used for each conclusion, so a later Research Tree can replace or expand them without changing pawn data. Once Anomalous Psychometrics is unlocked, the facility automatically aggregates tagged near misses and injury outcomes as evidence of probability distortion. A targeted follow-up may use Anomaly Handling, but routine incident-log analysis does not require a pawn assignment.
 
 Detection is deterministic at completion:
 
@@ -509,13 +550,13 @@ detection margin = protocol sensitivity
                  - active concealment effect modifiers
 ```
 
-Each protocol maps the resulting margin to `confirmed`, `suspected`, or `ruled-out`. Evidence is tagged observation or record data, such as unexplained violence, falsified history, repeated protocol violations, or anomalous test response. Evidence can raise confidence but never directly creates or changes a Trait. A Homicidal Trait's ordinary Trait Effect can apply concealment against Moral-disposition screening; sufficiently advanced research, strong evidence, or an optional skilled follow-up can overcome it without a separate deception subsystem.
+Each protocol maps the resulting margin to `confirmed`, `suspected`, or `ruled-out`. Evidence is tagged observation or record data, such as unexplained violence, falsified history, repeated protocol violations, or anomalous test response. Evidence can raise confidence but never directly creates or changes a Trait. A Homicidal Trait's ordinary Trait Effect can apply concealment against `conduct` screening; sufficiently advanced research, strong evidence, or an optional skilled follow-up can overcome it without a separate deception subsystem.
 
 Example progression:
 
 1. Basic automatic intake reveals identity, declared history, obvious medical conditions, and conspicuous behavior.
-2. Improved personnel screening automatically identifies or rules out more common Work-style, Threat-response, Social-temperament, Medical-constitution, and Moral-disposition Traits.
-3. Anomalous psychology research adds Anomalous-disposition Traits to automatic intake screening.
+2. Improved personnel screening automatically identifies or rules out more definitions tagged `work`, `threat-response`, `social`, `medical`, and `conduct`.
+3. Anomalous psychology research adds Traits tagged `anomalous` to automatic intake screening.
 4. New research automatically improves future candidate reports; whether it also reprocesses archived evidence is an open tuning decision.
 5. Targeted reassessment, corroborating incidents, or a better protocol can promote a suspicion to confirmed, overturn an old negative screen, or expose deliberate concealment.
 
@@ -537,7 +578,7 @@ Every assessment stores:
 
 Physical assessments are easiest and most precise. Mental assessments require trained Medicine, suitable tools, and time. Emotional assessments require Social skill, trust, privacy, and often self-report. A continuous emotional monitor should not be ordinary technology.
 
-Trait conclusions use the same assessment record as conditions and practical competence rather than a separate disclosure system. Confirmed immutable Traits do not become stale. Suspicions can gain or lose confidence, and `ruled-out` applies only to the protocol version and evidence available at that time; it is not proof that the authoritative category is empty.
+Trait conclusions use the same assessment record as conditions and practical competence rather than a separate disclosure system. Confirmed immutable Traits do not become stale. Suspicions can gain or lose confidence, and `ruled-out` applies only to the protocol version and evidence available at that time; it is not proof that the Trait is absent or its parameters are neutral.
 
 Provisional staleness policy:
 
@@ -591,12 +632,12 @@ A map tile is visible when covered by a powered, functioning camera or directly 
       "recruitedTick": 0
     },
     "traits": {
-      "workStyle": "methodical",
-      "threatResponse": null,
-      "socialTemperament": null,
-      "anomalousDisposition": "psychically-insulated",
-      "medicalConstitution": null,
-      "moralDisposition": null
+      "methodical": {
+        "parameters": { "quality": 0.7, "taskStartSpeed": -0.3 }
+      },
+      "psychic-sensitivity": {
+        "parameters": { "sensitivity": -2 }
+      }
     },
     "biases": {
       "mindMight": -2,
@@ -855,9 +896,12 @@ A map tile is visible when covered by a powered, functioning camera or directly 
           "evidenceRefs": ["interview-17", "work-sample-17"]
         },
         {
-          "subjectId": "psychically-insulated",
+          "subjectId": "psychic-sensitivity",
           "status": "suspected",
           "confidence": 0.46,
+          "parameterEstimates": {
+            "sensitivity": { "minimum": -3, "maximum": -1 }
+          },
           "evidenceRefs": ["interview-17"]
         },
         {
@@ -901,11 +945,16 @@ A map tile is visible when covered by a powered, functioning camera or directly 
     "fear": { "status": "unknown" }
   },
   "traits": [
-    { "traitId": "methodical", "status": "confirmed", "confidence": "high" },
     {
-      "traitId": "psychically-insulated",
+      "definitionId": "methodical",
+      "status": "confirmed",
+      "confidence": "high"
+    },
+    {
+      "definitionId": "psychic-sensitivity",
       "status": "suspected",
-      "confidence": "low"
+      "confidence": "low",
+      "parameterLabel": "probably insulated"
     }
   ],
   "knownEffects": ["effect-mild-sleep-disruption-mara"],
@@ -921,17 +970,17 @@ A map tile is visible when covered by a powered, functioning camera or directly 
   "personId": "candidate-elin-ward",
   "protocolId": "targeted-personnel-interview-v2",
   "assignedAssessorId": "person-priya-shah",
-  "requestedTraitCategories": [
-    "workStyle",
-    "threatResponse",
-    "socialTemperament",
-    "medicalConstitution",
-    "moralDisposition"
+  "requestedTraitTags": [
+    "work",
+    "threat-response",
+    "social",
+    "medical",
+    "conduct"
   ]
 }
 ```
 
-Automatic intake creates an assessment record without an order. A targeted order is reserved for follow-up and references a protocol whose definition owns research, room, equipment, certification, duration, and detectable-category requirements. Anomalous-disposition is absent because this site has not yet unlocked a compatible protocol.
+Automatic intake creates an assessment record without an order. A targeted order is reserved for follow-up and references a protocol whose definition owns research, room, equipment, certification, duration, and detectable-tag requirements. The `anomalous` tag is absent because this site has not yet unlocked a compatible protocol.
 
 ## Mutation Ownership
 
@@ -952,7 +1001,7 @@ Automatic intake creates an assessment record without an order. A targeted order
 
 ### Who you are
 
-Your legal name, optional nickname, background, and traits describe a stable person. You may have one trait from each category or none; absence means ordinary behavior.
+Your legal name, optional nickname, background, and Traits describe a stable person. Traits may be simple qualities or carry parameters such as hardiness, sociability, or anomalous fortune. Opposite tendencies share one parameter instead of appearing as contradictory Traits. There is no fixed number of Traits a person must have.
 
 ### What the Foundation currently asks of you
 
@@ -965,7 +1014,7 @@ Mark each axis from -3 to +3:
 - Mind (-) to Might (+)
 - Receptive (-) to Resolute (+)
 
-A balanced zero is valid. These are preferred problem-solving approaches, not power totals. Skills remain the primary measure of competence. Anomalous sensitivity is represented by known or hidden Anomalous-disposition Traits rather than a third axis.
+A balanced zero is valid. These are preferred problem-solving approaches, not power totals. Skills remain the primary measure of competence. Anomalous sensitivity is represented by known or hidden parameterized Traits rather than a third Bias.
 
 ### What you have learned
 
@@ -1023,6 +1072,12 @@ Jon suffers a Sprained Ankle Effect. It reduces derived Physical Health and Move
 
 A Missing Foot condition is permanent unless compensated by a prosthetic equipment effect.
 
+### Anomalous Luck near miss
+
+An equipment failure would normally give Rowan a serious Crush Injury. Rowan's hidden positive Anomalous Luck parameter shifts the deterministic incident result to `no injury`, so no Injury Effect is created. The event report says that a falling beam missed Rowan by centimeters; it does not announce a luck activation.
+
+Repeated near misses become evidence for Anomalous Psychometrics. A later assessment may report `probability distortion suspected` without exposing a Luck score. If displaced probability pressure is enabled, the intervention also raises the chance of a later collateral equipment failure until that hidden pressure decays.
+
 ### Facility camera failure
 
 Power loss disables Camera B1-07. The map becomes stale outside occupied direct-observation areas. Mara's location remains “last seen at 09:42.” Continuous wearable telemetry can show that she is alive without revealing where she is.
@@ -1063,7 +1118,7 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 ### Core
 
 - Immutable Identity and stable Foundation Assignment split
-- Six trait categories, zero or one trait per category
+- Parameterized Trait definitions with optional incompatibility groups and non-exclusive authoring tags
 - Two bipolar preference biases
 - Eight core skills with use-based XP
 - Food, Energy, Social, Stress, Fear
@@ -1080,6 +1135,9 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 - Permanent exposure scars
 - Deliberate trait transformation
 - Advanced neural monitoring
+- Subject-centered deterministic D100 check resolver
+- Anomalous Luck check modifiers
+- Displaced-misfortune pressure
 - Prosthetics and permanent disability adaptation
 - Legal-name changes
 
@@ -1118,6 +1176,8 @@ May reveal actual transient values, hidden effects, exact health, real location,
 5. Should improved screening run automatically, require a Director action, or reserve pawn assignments for targeted follow-up only?
 6. Which physical monitors are available at game start, and what infrastructure powers them?
 7. Should official skill/certification records always be known while practical competence assessments become stale?
-8. Should rare personality-changing events add permanent Effects only, or may they explicitly replace a Trait with player-visible history?
+8. Should rare personality-changing events add permanent Effects only, or may they explicitly add, remove, or change a Trait parameter with player-visible history?
 9. Should dossiers show numeric ranges, qualitative labels, or both?
 10. How should conflicting reports from cameras, monitors, clinicians, supervisors, and self-reports be resolved?
+11. Should positive-fortune interventions always create displaced probability pressure, only do so for severe avoided injuries, or have no conservation rule?
+12. Should Anomalous Luck remain a sparse Trait, or should every pawn receive a hidden fortune parameter despite the risk of creating an invisible universal power score?
