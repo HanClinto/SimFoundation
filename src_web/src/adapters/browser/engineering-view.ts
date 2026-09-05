@@ -53,6 +53,17 @@ export function createEngineeringWindow(
   const feedback = element.querySelector<HTMLElement>(
     "[data-surface-feedback]",
   )!;
+  const availability = document.createElement("p");
+  availability.dataset.surfaceAvailability = "";
+  availability.setAttribute("role", "status");
+  availability.id = "surface-availability";
+  replace.setAttribute("aria-describedby", availability.id);
+  replace.parentElement!.after(availability);
+  const chooseTile = document.createElement("button");
+  chooseTile.type = "button";
+  chooseTile.textContent = "Choose tile";
+  chooseTile.dataset.openRelatedWindow = "camera-window";
+  availability.after(chooseTile);
   let position: TilePosition | null = null;
   let perspective: MapPerspective = "recorded";
   let current = controller.getSnapshot();
@@ -106,17 +117,28 @@ export function createEngineeringWindow(
       ? surfaces[position.y * snapshot.game.world.map.width + position.x]
       : undefined;
     const surface = cell?.[layer];
-    replace.disabled =
-      !surface ||
-      snapshot.game.construction.availableMaterials <
-        MATERIALS[materialSelect.value as MaterialId].cost ||
-      snapshot.game.environment.orders.some(
-        (order) =>
-          position &&
-          sameTile(order.position, position) &&
-          order.layer === layer &&
-          order.phase !== "completed",
-      );
+    const pending = snapshot.game.environment.orders.find(
+      (order) =>
+        position &&
+        sameTile(order.position, position) &&
+        order.layer === layer &&
+        order.phase !== "completed",
+    );
+    const cost = MATERIALS[materialSelect.value as MaterialId].cost;
+    const reason = !position
+      ? "No tile selected."
+      : !surface
+        ? `No ${layer} ${perspective === "recorded" ? "on record" : "installed"} at this tile.`
+        : pending
+          ? `Replacement already queued: ${pending.phase}.`
+          : snapshot.game.construction.availableMaterials < cost
+            ? `Replacement requires ${cost} material units; ${snapshot.game.construction.availableMaterials} available.`
+            : "";
+    replace.disabled = reason !== "";
+    replace.title = reason || "Queue material delivery and installation";
+    availability.textContent = reason;
+    availability.hidden = reason === "";
+    chooseTile.hidden = position !== null;
     doorButton.hidden =
       layer !== "structure" ||
       !surface ||
@@ -129,7 +151,10 @@ export function createEngineeringWindow(
       : null;
     doorButton.textContent =
       doorSetting === "closed-door" ? "Open door" : "Close door";
-    if (!position) return;
+    if (!position) {
+      element.querySelector("[data-tile-record]")!.replaceChildren();
+      return;
+    }
     element.querySelector("[data-tile-record]")!.replaceChildren(
       ...engineeringRecord(snapshot.game, position, layer, perspective).map(
         ([label, value]) => {

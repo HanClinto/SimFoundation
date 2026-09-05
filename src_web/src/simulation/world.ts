@@ -1,5 +1,9 @@
 import PF from "pathfinding";
-import { surfacesForTile, type TileSurfaces } from "./materials";
+import {
+  surfacesForTile,
+  type MaterialId,
+  type TileSurfaces,
+} from "./materials";
 
 export type TileKind = "grass" | "floor" | "wall" | "door" | "closed-door";
 
@@ -211,6 +215,35 @@ export function createStartingMap(): SiteMap {
       tile === "grass" ? [] : [[index, surfacesForTile(tile)]],
     ),
   );
+  const finishes: Record<
+    SiteRoom["kind"],
+    { floor: MaterialId; wall: MaterialId }
+  > = {
+    laboratory: { floor: "concrete", wall: "concrete" },
+    containment: { floor: "ceramic", wall: "composite" },
+    storage: { floor: "concrete", wall: "steel" },
+    dormitory: { floor: "composite", wall: "composite" },
+    mess: { floor: "ceramic", wall: "concrete" },
+    medical: { floor: "ceramic", wall: "ceramic" },
+    utilities: { floor: "steel", wall: "steel" },
+    security: { floor: "composite", wall: "composite" },
+  };
+  for (const room of rooms) {
+    const finish = finishes[room.kind];
+    for (let row = room.y; row < room.y + room.height; row += 1) {
+      for (let column = room.x; column < room.x + room.width; column += 1) {
+        const index = row * width + column;
+        const cell = surfaces[index]!;
+        surfaces[index] = {
+          floor: cell.floor ? { ...cell.floor, material: finish.floor } : null,
+          structure:
+            cell.structure?.kind === "wall"
+              ? { ...cell.structure, material: finish.wall }
+              : cell.structure,
+        };
+      }
+    }
+  }
   return { id: "map-site-828", width, height, tiles, surfaces, rooms };
 }
 

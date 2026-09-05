@@ -202,6 +202,9 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 ## Current Prototype Decisions
 
+- Fresh sites use coherent room-sized examples of all four material families on both floors and walls. Room finishes live in the simulation, not special rendering rules. The lab and outer shell retain concrete; medical areas demonstrate ceramic, utilities and storage steel, and quarters/security composite. Saved sites are not silently refinished when the starting layout changes.
+- Disabled replacement controls show their current reason beside the action. Opening Engineering without a tile shows an empty-selection state and a Choose tile command, rather than an unexplained disabled button.
+
 - Installed materials are visible in the normal Site base map, not only the Materials base. Concrete uses muted casting seams and aggregate marks; steel uses cool metal panels, highlights, and rivets; ceramic uses a pale grout grid; composite uses dark green ribbed panels. Walls have matching shaded sides, while floors use flat versions of the same treatments. Detail appears at 55% zoom and above; material colors remain at lower zoom. Doors retain a contrasting threshold marker. Appearance follows installed state or the last recorded observation, never a pending replacement order.
 
 - Inventory, pawn identity, and anomaly identity icons use 32x32 display boxes with labels outside the icon. Larger anatomy, uniform, and chamber images are reference illustrations, not oversized identity icons.
