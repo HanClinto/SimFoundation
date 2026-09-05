@@ -42,6 +42,32 @@
   background: #e7ece3;
   color: #344a3d;
 }
+
+.identity-portrait img {
+  width: 65px;
+  height: 80px;
+  top: 0;
+  left: 0;
+  object-fit: cover;
+}
+.pawn-identity {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  width: 105px;
+  margin: auto;
+  text-align: center;
+}
+.pawn-identity img {
+  width: 32px;
+  height: 40px;
+  object-fit: cover;
+  background: #dbe5d7;
+  border: 1px solid #98ac98;
+}
+.pawn-identity span {
+  line-height: 1.25;
+}
 .dossier-tabs {
   padding: 0 5px;
   margin-top: 7px;

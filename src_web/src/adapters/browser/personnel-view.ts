@@ -9,6 +9,7 @@ import {
 import { recordedInfluences, recordAge } from "./personnel-records";
 import { equipmentIllustration } from "./equipment-art";
 import figureUrl from "./assets/personnel-figure.svg";
+import { pawnPortrait } from "./pawn-art";
 
 function initials(name: string): string {
   return name
@@ -92,7 +93,7 @@ export function createPersonnelInspectorWindows(
       </div>
       <div class="window-body pawn-inspector-body">
         <header class="pawn-summary">
-          <div class="pawn-portrait" aria-hidden="true"><img src="${figureUrl}" alt="" /><span data-field="initials"></span></div>
+          <div class="pawn-portrait identity-portrait" aria-hidden="true"><img src="${pawnPortrait(person.id)}" alt="" /><span data-field="initials"></span></div>
           <div>
             <h2 data-field="name"></h2>
             <p><span data-field="assignment"></span> / Clearance <span data-field="clearance"></span></p>

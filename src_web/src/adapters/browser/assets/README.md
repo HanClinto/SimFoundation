@@ -1,5 +1,7 @@
 # Browser Chrome Icons
 
+On 2026-09-05 the original facility, folder, library, alarm, budget, records, work orders, playback, monitor, camera, personnel, and medical icons were redrawn by GitHub Copilot on a shared 32x32 canvas with consistent outlines and limited-color highlights. Their editable SVGs are the sources, licensed CC BY-SA 3.0. The canonical SCP emblem was not changed. Pawn portraits derive from the original personnel reference illustration with per-person display palettes; these are provisional appearance choices, not inferred personality or clinical information.
+
 These small SVGs support SCPSiteManager's desktop chrome.
 
 - `alarm.svg`, `book.svg`, `budget.svg`, `camera.svg`, `control.svg`, `debug.svg`, `folder.svg`, `facility.svg`, `medical.svg`, `personnel.svg`, `records.svg`, and `work-orders.svg` are original project artwork.

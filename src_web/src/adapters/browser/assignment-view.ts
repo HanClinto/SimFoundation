@@ -3,6 +3,7 @@ import type {
   PersonnelSkill,
 } from "../../simulation/personnel";
 import type { SiteJob } from "../../simulation/jobs";
+import { pawnPortrait } from "./pawn-art";
 
 export interface AssignmentViewOptions {
   readonly id: string;
@@ -65,7 +66,9 @@ export function createAssignmentView(
         row = document.createElement("tr");
         row.dataset.assignmentPerson = person.id;
         row.innerHTML =
-          '<td><div class="field-row"><input type="checkbox" data-assignment-toggle /><label></label></div></td><td data-assignment-name></td><td data-assignment-skill></td><td data-assignment-availability></td><td data-assignment-eligibility></td>';
+          '<td><div class="field-row"><input type="checkbox" data-assignment-toggle /><label></label></div></td><td><div class="pawn-identity"><img data-assignment-portrait alt="" /><span data-assignment-name></span></div></td><td data-assignment-skill></td><td data-assignment-availability></td><td data-assignment-eligibility></td>';
+        row.querySelector<HTMLImageElement>("[data-assignment-portrait]")!.src =
+          pawnPortrait(person.id);
         const input = row.querySelector<HTMLInputElement>("input")!;
         input.id = `${options.id}-${person.id}`;
         input.dataset.assignmentToggle = person.id;

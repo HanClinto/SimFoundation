@@ -1,11 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 20" shape-rendering="crispEdges">
-  <path d="M2 8h20v10H2z" fill="#7f8b8e" stroke="#202426" stroke-width="1.5"/>
-  <path d="M5 5h14v3H5z" fill="#aab3b5" stroke="#202426"/>
-  <path d="M8 2h8v3H8z" fill="#c5ccce" stroke="#202426"/>
-  <path d="M11 0h2v2h-2z" fill="#4b5558"/>
-  <path d="M4 10h4v3H4zm12 0h4v3h-4z" fill="#b9d8da" stroke="#34484e"/>
-  <path d="M9 12h6v6H9z" fill="#30383b" stroke="#202426"/>
-  <path d="M10 13h4v5h-4z" fill="#58666a"/>
-  <path d="M3 9h18M6 6h12" stroke="#e2e7e8"/>
-  <path d="M0 18h24v2H0z" fill="#4b5558" stroke="#202426"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <g stroke="#374b46" stroke-width="1.2" stroke-linejoin="round">
+    <path d="M2 24l14-7 14 7-14 7z" fill="#8eab93"/>
+    <path d="M5 12l12-6 11 6v12l-12 6-11-6z" fill="#b6c9c3"/>
+    <path d="M5 12l11 6 12-6-11-6z" fill="#e1e8dc"/>
+    <path d="M16 18v12l12-6V12z" fill="#7f9e94"/>
+    <path d="M10 8V5l8-4 6 4v5l-8 4z" fill="#cbd8cd"/>
+    <path d="M10 5l6 4 8-4M16 9v5" fill="none"/>
+    <path d="M8 16l5 3v4l-5-3zM20 19l5-2v4l-5 2z" fill="#a8d9df"/>
+    <path d="M17 24l3-2v6l-3 2z" fill="#344f48"/>
+  </g>
 </svg>

@@ -8,6 +8,8 @@ describe("reusable assignment table", () => {
   it("lists untrained personnel, supports variable selection, and sorts skill independently from availability", () => {
     const window = new JSDOM("<!doctype html><body></body>").window;
     vi.stubGlobal("document", window.document);
+    vi.stubGlobal("DOMParser", window.DOMParser);
+    vi.stubGlobal("XMLSerializer", window.XMLSerializer);
     const host = document.createElement("div");
     document.body.append(host);
     const state = createInitialState();
@@ -21,6 +23,15 @@ describe("reusable assignment table", () => {
     });
     view.render(state.personnel, [], []);
     expect(host.querySelectorAll("tbody tr")).toHaveLength(6);
+    expect(host.querySelectorAll("[data-assignment-portrait]")).toHaveLength(6);
+    expect(
+      new Set(
+        Array.from(
+          host.querySelectorAll<HTMLImageElement>("[data-assignment-portrait]"),
+          (image) => image.src,
+        ),
+      ).size,
+    ).toBe(6);
     const checkbox = host.querySelector<HTMLInputElement>(
       '[data-assignment-toggle="person-caleb-ward"]',
     )!;
