@@ -9,6 +9,8 @@ import {
   analyzeAnomalousTraitEvidence,
   assessAnomalousTraits,
   projectTraits,
+  assessWorkPreferences,
+  projectBiases,
 } from "../src/simulation/personnel";
 import { createInitialState } from "../src/simulation/state";
 import { advanceSimulation } from "../src/simulation/tick";
@@ -188,6 +190,62 @@ describe("personnel simulation", () => {
       label: "Psychically Attuned",
       status: "confirmed",
       confidence: 0.9,
+    });
+  });
+
+  it("projects work preferences as named ranges rather than exact Biases", () => {
+    const mara = createInitialState().personnel.find(
+      ({ id }) => id === "person-mara-voss",
+    );
+    if (!mara) throw new Error("Mara Voss missing");
+
+    expect(mara.biases).toEqual({ mindMight: -2, receptiveResolute: -1 });
+    expect(projectBiases(mara)).toBeNull();
+
+    const assessed = assessWorkPreferences(mara, 40);
+    expect(projectBiases(assessed)).toEqual({
+      mindMight: { label: "Mind", estimate: { minimum: -3, maximum: -1 } },
+      receptiveResolute: {
+        label: "Receptive",
+        estimate: { minimum: -2, maximum: 0 },
+      },
+      confidence: 0.8,
+      assessedTick: 40,
+    });
+    expect(assessWorkPreferences(assessed, 50).biasAssessments).toHaveLength(1);
+  });
+
+  it.each([
+    {
+      biases: { mindMight: 0, receptiveResolute: 0 },
+      mindMight: { label: "Balanced", minimum: -1, maximum: 1 },
+      receptiveResolute: { label: "Balanced", minimum: -1, maximum: 1 },
+    },
+    {
+      biases: { mindMight: -3, receptiveResolute: 3 },
+      mindMight: { label: "Mind", minimum: -3, maximum: -2 },
+      receptiveResolute: { label: "Resolute", minimum: 2, maximum: 3 },
+    },
+  ])("labels and clamps Bias assessment boundaries", (testCase) => {
+    const basePerson = createInitialState().personnel[0];
+    if (!basePerson) throw new Error("starting person missing");
+    const projection = projectBiases(
+      assessWorkPreferences({ ...basePerson, biases: testCase.biases }, 40),
+    );
+
+    expect(projection?.mindMight).toEqual({
+      label: testCase.mindMight.label,
+      estimate: {
+        minimum: testCase.mindMight.minimum,
+        maximum: testCase.mindMight.maximum,
+      },
+    });
+    expect(projection?.receptiveResolute).toEqual({
+      label: testCase.receptiveResolute.label,
+      estimate: {
+        minimum: testCase.receptiveResolute.minimum,
+        maximum: testCase.receptiveResolute.maximum,
+      },
     });
   });
 });

@@ -1,4 +1,5 @@
 import {
+  latestBiasAssessment,
   latestPhysicalAssessment,
   projectTraits,
   type BodyRegion,
@@ -91,7 +92,10 @@ function assessmentRecordMarkup(person: PersonnelRecord): string {
   return `
     <header class="record-heading">
       <div><strong>Assessment history</strong><span>Newest first</span></div>
-      <button type="button" data-assess-traits-person-id="${person.id}" disabled>Run Anomalous Screening</button>
+      <div class="record-actions">
+        <button type="button" data-assess-biases-person-id="${person.id}">Evaluate Work Preferences</button>
+        <button type="button" data-assess-traits-person-id="${person.id}" disabled>Run Anomalous Screening</button>
+      </div>
     </header>
     <div class="assessment-history" data-assessment-field="history"></div>
   `;
@@ -416,11 +420,49 @@ function updateAssessmentRecord(
       entry,
     };
   });
+  const biasAssessmentEntries = person.biasAssessments.map((assessment) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry bias-assessment-entry";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", assessment.method),
+      textElement(
+        "time",
+        `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
+      ),
+    );
+    const details = document.createElement("dl");
+    for (const [term, estimate] of [
+      ["Mind / Might", assessment.estimates.mindMight],
+      ["Receptive / Resolute", assessment.estimates.receptiveResolute],
+    ] as const) {
+      const row = document.createElement("div");
+      row.append(
+        textElement("dt", term),
+        textElement("dd", `${estimate.minimum} to ${estimate.maximum}`),
+      );
+      details.append(row);
+    }
+    entry.append(
+      header,
+      details,
+      textElement(
+        "p",
+        `${Math.round(assessment.confidence * 100)}% confidence`,
+      ),
+    );
+    return {
+      tick: assessment.assessedTick,
+      sequence: assessment.recordedOrder,
+      entry,
+    };
+  });
   const recordEntries = [
     ...assessmentEntries,
     ...observationEntries,
     ...traitEvidenceEntries,
     ...traitAssessmentEntries,
+    ...biasAssessmentEntries,
   ]
     .sort(
       (first, second) =>
@@ -493,6 +535,22 @@ export function updatePersonnelMedicalWindows(
           : screeningComplete
             ? "Supported anomalous Traits are confirmed"
             : "Run targeted anomalous psychometrics";
+    }
+    const biasAssessmentButton = record.querySelector<HTMLButtonElement>(
+      "[data-assess-biases-person-id]",
+    );
+    if (biasAssessmentButton) {
+      const latestAssessment = latestBiasAssessment(person);
+      const assessmentCurrent =
+        latestAssessment !== null &&
+        currentTick - latestAssessment.assessedTick < 30;
+      biasAssessmentButton.disabled = assessmentCurrent;
+      biasAssessmentButton.textContent = assessmentCurrent
+        ? "Evaluation Current"
+        : "Evaluate Work Preferences";
+      biasAssessmentButton.title = assessmentCurrent
+        ? "Work-preference evaluation is current"
+        : "Run a structured work-preference evaluation";
     }
   }
 }

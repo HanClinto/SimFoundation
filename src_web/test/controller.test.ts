@@ -119,4 +119,25 @@ describe("game controller", () => {
         ?.traitAssessments,
     ).toHaveLength(2);
   });
+
+  it("orders a bounded work-preference evaluation", () => {
+    const controller = createController(createInitialState());
+    const assessed =
+      controller.orderWorkPreferenceAssessment("person-mara-voss");
+    const mara = assessed.game.personnel.find(
+      ({ id }) => id === "person-mara-voss",
+    );
+
+    expect(mara?.biasAssessments).toHaveLength(1);
+    expect(mara?.biasAssessments[0]?.estimates.mindMight).toEqual({
+      minimum: -3,
+      maximum: -1,
+    });
+    expect(
+      controller
+        .orderWorkPreferenceAssessment("person-mara-voss")
+        .game.personnel.find(({ id }) => id === "person-mara-voss")
+        ?.biasAssessments,
+    ).toHaveLength(1);
+  });
 });

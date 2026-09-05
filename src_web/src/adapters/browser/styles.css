@@ -1011,6 +1011,24 @@ textarea {
   min-width: 0;
 }
 
+.preference-summary {
+  margin: 0;
+}
+
+.preference-summary div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px dotted #aaa;
+}
+
+.preference-summary dd {
+  margin: 0;
+  font-weight: bold;
+  text-align: right;
+}
+
 .derived-score {
   display: inline-block;
   margin-right: 6px;
@@ -1350,7 +1368,13 @@ textarea {
   gap: 2px;
 }
 
-.record-heading button {
+.record-actions {
+  display: flex !important;
+  flex-wrap: wrap;
+  justify-content: end;
+}
+
+.record-actions button {
   min-width: 168px;
 }
 

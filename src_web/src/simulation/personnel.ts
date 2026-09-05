@@ -134,6 +134,41 @@ export interface TraitProjection {
   readonly confidence: number;
 }
 
+export interface PersonnelBiases {
+  readonly mindMight: number;
+  readonly receptiveResolute: number;
+}
+
+export interface BiasEstimate {
+  readonly minimum: number;
+  readonly maximum: number;
+}
+
+export interface BiasAssessment {
+  readonly id: string;
+  readonly assessedTick: number;
+  readonly recordedOrder: number;
+  readonly method: string;
+  readonly confidence: number;
+  readonly estimates: {
+    readonly mindMight: BiasEstimate;
+    readonly receptiveResolute: BiasEstimate;
+  };
+}
+
+export interface BiasProjection {
+  readonly mindMight: {
+    readonly label: "Mind" | "Balanced" | "Might";
+    readonly estimate: BiasEstimate;
+  };
+  readonly receptiveResolute: {
+    readonly label: "Receptive" | "Balanced" | "Resolute";
+    readonly estimate: BiasEstimate;
+  };
+  readonly confidence: number;
+  readonly assessedTick: number;
+}
+
 export interface PersonnelRecord {
   readonly id: string;
   readonly name: string;
@@ -147,6 +182,8 @@ export interface PersonnelRecord {
   readonly traits: Readonly<Record<string, PersonnelTrait>>;
   readonly traitEvidence: readonly TraitEvidence[];
   readonly traitAssessments: readonly TraitAssessment[];
+  readonly biases: PersonnelBiases;
+  readonly biasAssessments: readonly BiasAssessment[];
   readonly skills: readonly PersonnelSkill[];
   readonly equipment: PersonnelEquipment;
   readonly inventory: readonly PersonnelItem[];
@@ -163,6 +200,7 @@ export interface DerivedMeasure {
 
 const MAX_PHYSICAL_ASSESSMENTS = 50;
 const MAX_TRAIT_ASSESSMENTS = 50;
+const MAX_BIAS_ASSESSMENTS = 20;
 
 const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
   {
@@ -190,6 +228,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     },
     traitEvidence: [],
     traitAssessments: [],
+    biases: { mindMight: -2, receptiveResolute: -1 },
+    biasAssessments: [],
     skills: [
       { id: "research", level: 8 },
       { id: "medical", level: 3 },
@@ -254,6 +294,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     },
     traitEvidence: [],
     traitAssessments: [],
+    biases: { mindMight: 2, receptiveResolute: 2 },
+    biasAssessments: [],
     skills: [
       { id: "engineering", level: 7 },
       { id: "logistics", level: 4 },
@@ -317,6 +359,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     },
     traitEvidence: [],
     traitAssessments: [],
+    biases: { mindMight: 1, receptiveResolute: -2 },
+    biasAssessments: [],
     skills: [
       { id: "medical", level: 8 },
       { id: "research", level: 4 },
@@ -373,6 +417,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     },
     traitEvidence: [],
     traitAssessments: [],
+    biases: { mindMight: 2, receptiveResolute: 1 },
+    biasAssessments: [],
     skills: [
       { id: "security", level: 8 },
       { id: "medical", level: 2 },
@@ -455,6 +501,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     },
     traitEvidence: [],
     traitAssessments: [],
+    biases: { mindMight: 1, receptiveResolute: -1 },
+    biasAssessments: [],
     skills: [
       { id: "logistics", level: 6 },
       { id: "engineering", level: 4 },
@@ -533,6 +581,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
       },
     ],
     traitAssessments: [],
+    biases: { mindMight: 0, receptiveResolute: -2 },
+    biasAssessments: [],
     skills: [
       { id: "logistics", level: 7 },
       { id: "engineering", level: 3 },
@@ -619,6 +669,7 @@ function nextRecordOrder(person: PersonnelRecord): number {
       ...person.physicalAssessments.map(({ recordedOrder }) => recordedOrder),
       ...person.traitEvidence.map(({ recordedOrder }) => recordedOrder),
       ...person.traitAssessments.map(({ recordedOrder }) => recordedOrder),
+      ...person.biasAssessments.map(({ recordedOrder }) => recordedOrder),
     ) + 1
   );
 }
@@ -740,6 +791,90 @@ export function assessAnomalousTraits(
     "confirmed",
     0.9,
   );
+}
+
+function clampBias(value: number): number {
+  return Math.max(-3, Math.min(3, value));
+}
+
+function biasLabel<
+  Negative extends "Mind" | "Receptive",
+  Positive extends "Might" | "Resolute",
+>(
+  estimate: BiasEstimate,
+  negative: Negative,
+  positive: Positive,
+): Negative | "Balanced" | Positive {
+  const midpoint = (estimate.minimum + estimate.maximum) / 2;
+  if (midpoint <= -0.5) return negative;
+  if (midpoint >= 0.5) return positive;
+  return "Balanced";
+}
+
+export function latestBiasAssessment(
+  person: PersonnelRecord,
+): BiasAssessment | null {
+  return person.biasAssessments.at(-1) ?? null;
+}
+
+export function projectBiases(person: PersonnelRecord): BiasProjection | null {
+  const assessment = latestBiasAssessment(person);
+  if (!assessment) return null;
+  return {
+    mindMight: {
+      label: biasLabel(assessment.estimates.mindMight, "Mind", "Might"),
+      estimate: assessment.estimates.mindMight,
+    },
+    receptiveResolute: {
+      label: biasLabel(
+        assessment.estimates.receptiveResolute,
+        "Receptive",
+        "Resolute",
+      ),
+      estimate: assessment.estimates.receptiveResolute,
+    },
+    confidence: assessment.confidence,
+    assessedTick: assessment.assessedTick,
+  };
+}
+
+export function assessWorkPreferences(
+  person: PersonnelRecord,
+  assessedTick: number,
+): PersonnelRecord {
+  const previousAssessment = latestBiasAssessment(person);
+  if (
+    previousAssessment &&
+    assessedTick - previousAssessment.assessedTick < 30
+  ) {
+    return person;
+  }
+
+  const assessment: BiasAssessment = {
+    id: `biases-${person.id}-${assessedTick}`,
+    assessedTick,
+    recordedOrder: nextRecordOrder(person),
+    method: "Structured work-preference evaluation",
+    confidence: 0.8,
+    estimates: {
+      mindMight: {
+        minimum: clampBias(person.biases.mindMight - 1),
+        maximum: clampBias(person.biases.mindMight + 1),
+      },
+      receptiveResolute: {
+        minimum: clampBias(person.biases.receptiveResolute - 1),
+        maximum: clampBias(person.biases.receptiveResolute + 1),
+      },
+    },
+  };
+
+  return {
+    ...person,
+    biasAssessments: [
+      ...person.biasAssessments.slice(-(MAX_BIAS_ASSESSMENTS - 1)),
+      assessment,
+    ],
+  };
 }
 
 export function assessPhysicalHealth(

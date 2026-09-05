@@ -581,6 +581,12 @@ app.addEventListener("click", (event) => {
   ).closest<HTMLButtonElement>("[data-assess-traits-person-id]");
   const traitPersonId = traitAssessmentButton?.dataset.assessTraitsPersonId;
   if (traitPersonId) controller.orderAnomalousAssessment(traitPersonId);
+
+  const biasAssessmentButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-assess-biases-person-id]");
+  const biasPersonId = biasAssessmentButton?.dataset.assessBiasesPersonId;
+  if (biasPersonId) controller.orderWorkPreferenceAssessment(biasPersonId);
 });
 
 unlockPsychometricsButton.addEventListener("click", () => {

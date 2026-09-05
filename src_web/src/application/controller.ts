@@ -3,6 +3,7 @@ import {
   analyzeAnomalousTraitEvidence,
   assessAnomalousTraits,
   assessPhysicalHealth,
+  assessWorkPreferences,
 } from "../simulation/personnel";
 import type { GameState } from "../simulation/state";
 
@@ -18,6 +19,7 @@ export interface GameController {
   advance(tickCount?: number): ControllerSnapshot;
   unlockAnomalousPsychometrics(): ControllerSnapshot;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
+  orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
   setRunning(running: boolean): ControllerSnapshot;
   subscribe(listener: ControllerListener): () => void;
@@ -95,6 +97,21 @@ export function createController(initialState: GameState): GameController {
         personnel: state.personnel.map((person) =>
           person.id === personId
             ? assessAnomalousTraits(person, state.tick)
+            : person,
+        ),
+      };
+      return publish();
+    },
+
+    orderWorkPreferenceAssessment(personId) {
+      if (!state.personnel.some(({ id }) => id === personId)) {
+        throw new Error(`Unknown person: ${personId}`);
+      }
+      state = {
+        ...state,
+        personnel: state.personnel.map((person) =>
+          person.id === personId
+            ? assessWorkPreferences(person, state.tick)
             : person,
         ),
       };

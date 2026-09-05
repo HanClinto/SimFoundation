@@ -1179,6 +1179,8 @@ The dossier is a compact summary and launcher rather than the only home for all 
 - Show newest-first assessment history with method, assessor, timestamp, confidence, estimated range, and conclusions.
 - Preserve superseded reports so changes in knowledge remain inspectable.
 - Scheduling an examination is a simulation command; opening or arranging its windows is presentation state.
+- Structured work-preference evaluations reveal named Bias tendencies and bounded axis ranges, never exact authoritative values.
+- Active employees' Skill levels may remain visible as official training records; practical competence estimates are separate assessment results when that distinction becomes gameplay-relevant.
 
 ### Debug view
 

@@ -2,6 +2,7 @@ import {
   deriveMood,
   deriveSanity,
   latestPhysicalAssessment,
+  projectBiases,
   projectTraits,
   type PersonnelRecord,
 } from "../../simulation/personnel";
@@ -111,7 +112,7 @@ export function createPersonnelInspectorWindows(
         <section id="dossier-${person.id}-panel-skills" class="dossier-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-skills" aria-hidden="true" data-dossier-panel="skills" hidden>
           <fieldset>
             <legend>Training record</legend>
-            <p class="system-note">Skill levels range from 1 (novice) to 10 (expert).</p>
+            <p class="system-note">Official training record. Levels range from 1 (novice) to 10 (expert); current practical performance may differ.</p>
             <table class="data-table compact-table">
               <thead><tr><th>Skill</th><th>Level</th></tr></thead>
               <tbody data-field="skills"></tbody>
@@ -122,6 +123,14 @@ export function createPersonnelInspectorWindows(
           <fieldset>
             <legend>Traits</legend>
             <p data-field="traits"></p>
+          </fieldset>
+          <fieldset>
+            <legend>Work preferences</legend>
+            <dl class="preference-summary">
+              <div><dt>Mind / Might</dt><dd data-field="bias-mind-might">Unassessed</dd></div>
+              <div><dt>Receptive / Resolute</dt><dd data-field="bias-receptive-resolute">Unassessed</dd></div>
+            </dl>
+            <p class="system-note" data-field="bias-assessment-meta">No work-preference evaluation on record.</p>
           </fieldset>
           <div class="psychology-grid">
             <fieldset>
@@ -252,6 +261,7 @@ export function updatePersonnelInspectors(
     const mood = deriveMood(person);
     const sanity = deriveSanity(person);
     const physicalAssessment = latestPhysicalAssessment(person);
+    const projectedBiases = projectBiases(person);
     const projectedTraits = projectTraits(person);
     const traitSummary =
       projectedTraits.length > 0
@@ -286,6 +296,27 @@ export function updatePersonnelInspectors(
     );
     setText(inspector, "traits", traitSummary);
     setText(inspector, "traits-summary", traitSummary);
+    setText(
+      inspector,
+      "bias-mind-might",
+      projectedBiases
+        ? `${projectedBiases.mindMight.label} (${projectedBiases.mindMight.estimate.minimum} to ${projectedBiases.mindMight.estimate.maximum})`
+        : "Unassessed",
+    );
+    setText(
+      inspector,
+      "bias-receptive-resolute",
+      projectedBiases
+        ? `${projectedBiases.receptiveResolute.label} (${projectedBiases.receptiveResolute.estimate.minimum} to ${projectedBiases.receptiveResolute.estimate.maximum})`
+        : "Unassessed",
+    );
+    setText(
+      inspector,
+      "bias-assessment-meta",
+      projectedBiases
+        ? `${Math.round(projectedBiases.confidence * 100)}% confidence / assessment tick ${projectedBiases.assessedTick}`
+        : "No work-preference evaluation on record.",
+    );
     const bestSkill = [...person.skills].sort(
       (first, second) => second.level - first.level,
     )[0];
