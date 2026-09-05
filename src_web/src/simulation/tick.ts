@@ -2,6 +2,7 @@ import { observeSite } from "./observations";
 import {
   advanceContainmentTrial,
   observeContainmentTrial,
+  discoverTrialMaintenance,
 } from "./containment-trial";
 import {
   advanceJobs,
@@ -129,21 +130,23 @@ export function advanceSimulation(state: GameState): GameState {
       ],
     };
   }
-  return observeContainmentTrial(
-    observeSite(
-      advanceContainmentTrial(
-        advanceConstruction(
-          advancePantrySupply({
-            ...state,
-            tick,
-            gameMinute: state.gameMinute,
-            incident,
-            jobs,
-            personnel: scp999Result.personnel,
-            scp999: scp999Result.anomaly,
-            scp9620,
-            world: scp999Result.world,
-          }),
+  return discoverTrialMaintenance(
+    observeContainmentTrial(
+      observeSite(
+        advanceContainmentTrial(
+          advanceConstruction(
+            advancePantrySupply({
+              ...state,
+              tick,
+              gameMinute: state.gameMinute,
+              incident,
+              jobs,
+              personnel: scp999Result.personnel,
+              scp999: scp999Result.anomaly,
+              scp9620,
+              world: scp999Result.world,
+            }),
+          ),
         ),
       ),
     ),

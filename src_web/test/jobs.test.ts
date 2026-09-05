@@ -11,6 +11,74 @@ import { createInitialState } from "../src/simulation/state";
 import { advanceSimulation } from "../src/simulation/tick";
 
 describe("site jobs", () => {
+  it("preempts routine work for emergencies without losing progress or taking a cargo carrier", () => {
+    const state = createInitialState();
+    const person = state.personnel[0]!;
+    const routine: SiteJob = {
+      ...state.jobs[0]!,
+      status: "in-progress",
+      assignedPersonId: person.id,
+      authorizedTick: 0,
+      progress: 24,
+      priority: 45,
+    };
+    const emergency: SiteJob = {
+      ...routine,
+      id: "job-emergency",
+      title: "Emergency repair",
+      status: "available",
+      assignedPersonId: null,
+      priority: 95,
+      progress: 0,
+    };
+    const result = advanceJobs(
+      [routine, emergency],
+      [{ ...person, currentJobId: routine.id }],
+      1,
+      state.world,
+    );
+    expect(result.jobs[0]).toMatchObject({
+      status: "available",
+      progress: 24,
+      assignedPersonId: null,
+    });
+    expect(result.jobs[1]?.assignedPersonId).toBe(person.id);
+    expect(result.personnel[0]?.currentJobId).toBe(emergency.id);
+    const carrying = advanceJobs(
+      [{ ...routine, requiredWorkerId: person.id }, emergency],
+      [person],
+      1,
+      state.world,
+    );
+    expect(carrying.jobs[0]?.assignedPersonId).toBe(person.id);
+    expect(carrying.jobs[1]?.assignedPersonId).toBeNull();
+    const unavailable = advanceJobs(
+      [routine, emergency],
+      [person],
+      1,
+      state.world,
+      [],
+      [person.id],
+    );
+    expect(unavailable.jobs[1]?.assignedPersonId).toBeNull();
+    const clinical = advanceJobs(
+      [
+        {
+          ...routine,
+          assessment: { kind: "mood", patientId: state.personnel[1]!.id },
+        },
+        emergency,
+      ],
+      state.personnel.map((candidate) => ({
+        ...candidate,
+        skills: candidate.id === person.id ? candidate.skills : [],
+      })),
+      1,
+      state.world,
+      [person.id],
+    );
+    expect(clinical.jobs[1]?.assignedPersonId).toBeNull();
+  });
   it("blocks inaccessible work and resumes when access is restored", () => {
     const state = createInitialState();
     const job = authorizeJob(state.jobs[0]!, 0);

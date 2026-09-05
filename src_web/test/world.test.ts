@@ -59,6 +59,7 @@ describe("physical site map", () => {
     for (const room of map.rooms) {
       expect(
         findRoute(map, { x: 62, y: 78 }, { x: room.x + 1, y: room.y + 1 }),
+        room.name,
       ).not.toBeNull();
     }
   });

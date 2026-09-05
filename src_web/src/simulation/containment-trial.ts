@@ -1,9 +1,26 @@
 import type { GameState } from "./state";
 import type { SiteJob } from "./jobs";
-import type { TilePosition } from "./world";
+import { sameTile, type TilePosition } from "./world";
 
 export const TRIAL_LOCATION: TilePosition = { x: 70, y: 58 };
-export const TRIAL_WORK_SITE: TilePosition = { x: 69, y: 58 };
+export const TRIAL_WORK_SITE: TilePosition = { x: 70, y: 60 };
+export const TRIAL_BARRIER_LOCATION: TilePosition = { x: 70, y: 61 };
+export const TRIAL_SECONDARY_LOCATION: TilePosition = { x: 70, y: 63 };
+
+function updateTrialBarrier(state: GameState): GameState {
+  const tiles = [...state.world.map.tiles];
+  tiles[
+    TRIAL_BARRIER_LOCATION.y * state.world.map.width + TRIAL_BARRIER_LOCATION.x
+  ] = state.containmentTrial.integrity === 0 ? "floor" : "wall";
+  tiles[
+    TRIAL_SECONDARY_LOCATION.y * state.world.map.width +
+      TRIAL_SECONDARY_LOCATION.x
+  ] = state.containmentTrial.secondaryIntegrity === 0 ? "floor" : "closed-door";
+  return {
+    ...state,
+    world: { ...state.world, map: { ...state.world.map, tiles } },
+  };
+}
 export const BARRIER_MATERIALS = {
   concrete: {
     name: "Concrete",
@@ -66,6 +83,21 @@ export interface ContainmentTrial {
   readonly autoIsolate: boolean;
   readonly lastReading: TrialReading | null;
   readonly evidence: readonly TrialEvidence[];
+  readonly secondaryIntegrity: number;
+  readonly supplyStage: "collecting" | "delivering" | "fitting" | null;
+  readonly automaticRepairs: boolean;
+  readonly repairMaterial: BarrierMaterial;
+  readonly maintenanceReason: string | null;
+  readonly barrierReadings: Readonly<
+    Record<
+      "primary" | "secondary",
+      {
+        readonly material: BarrierMaterial;
+        readonly integrity: number;
+        readonly observedTick: number;
+      } | null
+    >
+  >;
 }
 
 export type TrialCommandCode =
@@ -98,6 +130,12 @@ export function createContainmentTrial(): ContainmentTrial {
     autoIsolate: true,
     lastReading: null,
     evidence: [],
+    secondaryIntegrity: 100,
+    supplyStage: null,
+    automaticRepairs: false,
+    repairMaterial: "composite",
+    maintenanceReason: null,
+    barrierReadings: { primary: null, secondary: null },
   };
 }
 
@@ -107,15 +145,16 @@ function workOrder(
   skillId: SiteJob["skillId"],
   work: number,
   phase: TrialPhase,
+  workSite: TilePosition = TRIAL_WORK_SITE,
 ): GameState {
   const id = `job-trial-${state.containmentTrial.nextOrder}`;
   const job: SiteJob = {
     id,
     title,
     description:
-      "AN-001 bench-scale containment study. Secondary catch vessel required.",
+      "AN-001 enclosure work package. Materials must be delivered before fitting; restore the primary panel and secondary lining.",
     skillId,
-    priority: phase === "repairing" ? 85 : 45,
+    priority: phase === "repairing" ? 95 : 45,
     xpPerTick: 1,
     preferredBiases: {
       mindMight: skillId === "engineering" ? 1 : -1,
@@ -128,7 +167,7 @@ function workOrder(
     assignmentReason: null,
     authorizedTick: state.tick,
     completedTick: null,
-    workSite: TRIAL_WORK_SITE,
+    workSite,
     requiredWorkerId: null,
   };
   return {
@@ -161,6 +200,8 @@ export function orderTrialBarrier(
     containmentTrial: {
       ...state.containmentTrial,
       pendingMaterial: material,
+      supplyStage: "collecting" as const,
+      maintenanceReason: null,
       supplyCredits: state.containmentTrial.supplyCredits - definition.cost,
       spentCredits: state.containmentTrial.spentCredits + definition.cost,
     },
@@ -169,10 +210,11 @@ export function orderTrialBarrier(
     code: "accepted",
     state: workOrder(
       next,
-      `Fit ${definition.name.toLowerCase()} test barrier`,
-      "engineering",
-      42,
+      `Collect ${definition.name.toLowerCase()} enclosure repair kit`,
+      "logistics",
+      8,
       state.containmentTrial.phase === "breached" ? "repairing" : "installing",
+      state.construction.stockpile,
     ),
   };
 }
@@ -225,12 +267,77 @@ export function isolateContainmentTrial(state: GameState): GameState {
 
 export function advanceContainmentTrial(state: GameState): GameState {
   let trial = state.containmentTrial;
-  if (
-    trial.workOrderId &&
-    state.jobs.some(
-      (job) => job.id === trial.workOrderId && job.status === "completed",
-    )
-  ) {
+  if (trial.integrity === 0 && trial.secondaryIntegrity > 0) {
+    const loss =
+      Math.max(0.1, 9 - BARRIER_MATERIALS.composite.corrosionResistance) *
+      0.175;
+    trial = {
+      ...trial,
+      secondaryIntegrity: Math.max(
+        0,
+        Math.round((trial.secondaryIntegrity - loss) * 100) / 100,
+      ),
+    };
+    state = updateTrialBarrier({ ...state, containmentTrial: trial });
+  }
+  const completedWork = state.jobs.find(
+    (job) => job.id === trial.workOrderId && job.status === "completed",
+  );
+  if (completedWork) {
+    if (trial.supplyStage === "collecting") {
+      return {
+        ...state,
+        jobs: state.jobs.map((job) =>
+          job.id === completedWork.id
+            ? {
+                ...job,
+                title: job.title.replace("Collect", "Deliver"),
+                status: "in-progress",
+                progress: 0,
+                completedTick: null,
+                workSite: TRIAL_WORK_SITE,
+                requiredWorkerId: completedWork.assignedPersonId,
+              }
+            : job,
+        ),
+        personnel: state.personnel.map((person) =>
+          person.id === completedWork.assignedPersonId
+            ? {
+                ...person,
+                currentJobId: completedWork.id,
+                activity: "Delivering AN-001 enclosure materials",
+              }
+            : person,
+        ),
+        containmentTrial: { ...trial, supplyStage: "delivering" },
+      };
+    }
+    if (trial.supplyStage === "delivering") {
+      return workOrder(
+        { ...state, containmentTrial: { ...trial, supplyStage: "fitting" } },
+        `Fit ${BARRIER_MATERIALS[trial.pendingMaterial!].name.toLowerCase()} enclosure barrier`,
+        "engineering",
+        42,
+        trial.phase,
+      );
+    }
+    if (
+      trial.supplyStage === "fitting" &&
+      Object.values(state.world.positions).some(
+        (position) =>
+          sameTile(position, TRIAL_BARRIER_LOCATION) ||
+          sameTile(position, TRIAL_SECONDARY_LOCATION),
+      )
+    ) {
+      return {
+        ...state,
+        containmentTrial: {
+          ...trial,
+          maintenanceReason:
+            "Final assembly awaits clearance of the barrier footprint.",
+        },
+      };
+    }
     trial =
       trial.phase === "preparing"
         ? { ...trial, phase: "running", elapsed: 0, workOrderId: null }
@@ -240,10 +347,13 @@ export function advanceContainmentTrial(state: GameState): GameState {
             material: trial.pendingMaterial ?? trial.material,
             pendingMaterial: null,
             integrity: 100,
+            secondaryIntegrity: 100,
+            supplyStage: null,
+            maintenanceReason: null,
             elapsed: 0,
             workOrderId: null,
           };
-    return { ...state, containmentTrial: trial };
+    return updateTrialBarrier({ ...state, containmentTrial: trial });
   }
   if (trial.phase !== "running") return state;
   const material = BARRIER_MATERIALS[trial.material];
@@ -260,7 +370,7 @@ export function advanceContainmentTrial(state: GameState): GameState {
   const breached = integrity === 0;
   const isolated = trial.autoIsolate && integrity <= 30;
   const finished = elapsed >= 24 || isolated;
-  return {
+  return updateTrialBarrier({
     ...state,
     containmentTrial: {
       ...trial,
@@ -270,15 +380,121 @@ export function advanceContainmentTrial(state: GameState): GameState {
       breaches: trial.breaches + Number(breached),
       trialsCompleted: trial.trialsCompleted + Number(breached || finished),
     },
+  });
+}
+
+export function setTrialMaintenance(
+  state: GameState,
+  automaticRepairs: boolean,
+  repairMaterial: BarrierMaterial,
+): GameState {
+  if (
+    typeof automaticRepairs !== "boolean" ||
+    !Object.hasOwn(BARRIER_MATERIALS, repairMaterial)
+  )
+    return state;
+  return {
+    ...state,
+    containmentTrial: {
+      ...state.containmentTrial,
+      automaticRepairs,
+      repairMaterial,
+      maintenanceReason: null,
+    },
   };
 }
 
+export function discoverTrialMaintenance(state: GameState): GameState {
+  const trial = state.containmentTrial;
+  const reading = trial.barrierReadings.primary;
+  if (
+    !trial.automaticRepairs ||
+    trial.workOrderId ||
+    !reading ||
+    reading.observedTick !== state.tick ||
+    reading.integrity > 55 ||
+    !["ready", "breached"].includes(trial.phase)
+  )
+    return state;
+  const result = orderTrialBarrier(state, trial.repairMaterial);
+  return result.code === "accepted"
+    ? result.state
+    : {
+        ...state,
+        containmentTrial: {
+          ...trial,
+          maintenanceReason:
+            "Automatic repair blocked: insufficient enclosure materials.",
+        },
+      };
+}
+
 export function observeContainmentTrial(state: GameState): GameState {
+  const barrierReadings = { ...state.containmentTrial.barrierReadings };
+  for (const [id, position] of [
+    ["primary", TRIAL_BARRIER_LOCATION],
+    ["secondary", TRIAL_SECONDARY_LOCATION],
+  ] as const) {
+    if (
+      state.observations.visibleTiles.includes(
+        position.y * state.world.map.width + position.x,
+      )
+    ) {
+      barrierReadings[id] = {
+        observedTick: state.tick,
+        material:
+          id === "primary" ? state.containmentTrial.material : "composite",
+        integrity:
+          id === "primary"
+            ? state.containmentTrial.integrity
+            : state.containmentTrial.secondaryIntegrity,
+      };
+    }
+  }
+  state = {
+    ...state,
+    containmentTrial: { ...state.containmentTrial, barrierReadings },
+  };
+  const secondary = barrierReadings.secondary;
+  if (secondary?.observedTick === state.tick && secondary.integrity < 95) {
+    const id = `secondary-${secondary.integrity === 0 ? "failed" : "damaged"}-${state.containmentTrial.breaches}`;
+    if (!state.containmentTrial.evidence.some((entry) => entry.id === id))
+      state = {
+        ...state,
+        containmentTrial: {
+          ...state.containmentTrial,
+          evidence: [
+            ...state.containmentTrial.evidence,
+            {
+              id,
+              recordedTick: state.tick,
+              certainty: "observed" as const,
+              supersedes: null,
+              label:
+                secondary.integrity === 0
+                  ? "Secondary hatch failed after continued contact. Both barriers are open; localized spill remains at the enclosure."
+                  : "Secondary composite lining is losing integrity after primary wall failure. The catch enclosure provides limited response time.",
+            },
+          ].slice(-50),
+        },
+      };
+  }
+  if (secondary?.observedTick === state.tick && secondary.integrity === 0) {
+    state = {
+      ...state,
+      incident: {
+        level: "red",
+        summary:
+          "AN-001 secondary enclosure failed; localized spill requires rebuilding",
+      },
+    };
+  }
   const trial = state.containmentTrial;
   if (
     trial.phase === "unprepared" ||
     !state.observations.visibleTiles.includes(
-      TRIAL_LOCATION.y * state.world.map.width + TRIAL_LOCATION.x,
+      TRIAL_BARRIER_LOCATION.y * state.world.map.width +
+        TRIAL_BARRIER_LOCATION.x,
     )
   )
     return state;
@@ -304,6 +520,12 @@ export function observeContainmentTrial(state: GameState): GameState {
       `${BARRIER_MATERIALS[trial.material].name} test barrier installed. Suitability for AN-001 exposure remains provisional.`,
       "provisional",
     );
+  if (trial.phase === "ready" && trial.elapsed === 0 && trial.breaches > 0)
+    add(
+      `restored-${trial.nextOrder}`,
+      `Enclosure restored after material delivery and engineering assembly. Primary panel: ${BARRIER_MATERIALS[trial.material].name}. Secondary lining renewed; previous failure observations remain on record.`,
+      "observed",
+    );
   if (
     ["running", "ready", "breached"].includes(trial.phase) &&
     trial.elapsed > 0 &&
@@ -327,7 +549,7 @@ export function observeContainmentTrial(state: GameState): GameState {
   if (trial.phase === "breached")
     add(
       `breach-${trial.material}-${trial.protocol}`,
-      `Primary ${BARRIER_MATERIALS[trial.material].name.toLowerCase()} barrier failed during ${trial.protocol} exposure. Secondary catch vessel retained the specimen. Previous suitability assumption withdrawn.`,
+      `Primary ${BARRIER_MATERIALS[trial.material].name.toLowerCase()} barrier failed during ${trial.protocol} exposure, opening the room wall. Secondary containment now requires inspection. Previous suitability assumption withdrawn.`,
       "observed",
       `baseline-${trial.material}`,
     );
@@ -355,8 +577,7 @@ export function observeContainmentTrial(state: GameState): GameState {
     trial.phase === "breached" && state.incident.level !== "red"
       ? {
           level: "orange" as const,
-          summary:
-            "AN-001 primary test barrier failed; secondary vessel holding",
+          summary: "AN-001 primary wall failed; inspect secondary containment",
         }
       : state.incident.summary.startsWith("AN-001") && trial.phase === "ready"
         ? state.scp9620.phase === "feedback-incident"
@@ -364,7 +585,15 @@ export function observeContainmentTrial(state: GameState): GameState {
               level: "yellow" as const,
               summary: "SCP-9620 telemetry feedback outside validated limits",
             }
-          : { level: "green" as const, summary: "AN-001 test vessel secured" }
+          : trial.integrity <= 55
+            ? {
+                level: "yellow" as const,
+                summary: "AN-001 observed barrier damage requires replacement",
+              }
+            : {
+                level: "green" as const,
+                summary: "AN-001 enclosure restored and secured",
+              }
         : state.incident;
   return {
     ...state,

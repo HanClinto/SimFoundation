@@ -4,6 +4,7 @@ import { projectPsychology } from "./personnel";
 import type { Scp999State } from "./scp-999";
 import {
   tileAt,
+  isWalkable,
   type SiteMap,
   type SiteRoom,
   type SiteWorld,
@@ -71,11 +72,11 @@ export function canObserve(
     if (
       x !== previousX &&
       y !== previousY &&
-      (tileAt(map, { x: x!, y: previousY! }) === "wall" ||
-        tileAt(map, { x: previousX!, y: y! }) === "wall")
+      (!isWalkable(map, { x: x!, y: previousY! }) ||
+        !isWalkable(map, { x: previousX!, y: y! }))
     )
       return false;
-    if (index < ray.length - 1 && tileAt(map, { x: x!, y: y! }) === "wall")
+    if (index < ray.length - 1 && !isWalkable(map, { x: x!, y: y! }))
       return false;
   }
   return true;

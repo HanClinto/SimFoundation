@@ -6,6 +6,41 @@ import { createInitialState } from "../src/simulation/state";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("containment investigation file", () => {
+  it("sets repair policy without ordering work and links both physical barriers", () => {
+    const window = new JSDOM("<!doctype html><body></body>").window;
+    vi.stubGlobal("document", window.document);
+    const controller = createController(createInitialState());
+    const inspect = vi.fn();
+    const view = createContainmentTrialWindow(
+      document.body,
+      controller,
+      () => {},
+      inspect,
+    );
+    view.element.querySelector<HTMLSelectElement>(
+      "[data-repair-material]",
+    )!.value = "ceramic";
+    view.element.querySelector<HTMLInputElement>("#trial-auto-repair")!.click();
+    expect(controller.getSnapshot().game.containmentTrial).toMatchObject({
+      automaticRepairs: true,
+      repairMaterial: "ceramic",
+      workOrderId: null,
+    });
+    view.element
+      .querySelector<HTMLButtonElement>('[data-trial-inspect="primary"]')!
+      .click();
+    view.element
+      .querySelector<HTMLButtonElement>('[data-trial-inspect="secondary"]')!
+      .click();
+    expect(inspect.mock.calls).toEqual([
+      [{ x: 70, y: 61 }],
+      [{ x: 70, y: 63 }],
+    ]);
+    view.element.querySelector<HTMLButtonElement>("[data-trial-fit]")!.click();
+    expect(
+      view.element.querySelector("[data-trial-stage]")?.textContent,
+    ).toContain("collect materials");
+  });
   it("makes installation prerequisites visible and disables premature exposure", () => {
     const window = new JSDOM("<!doctype html><body></body>").window;
     vi.stubGlobal("document", window.document);

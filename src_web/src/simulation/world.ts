@@ -1,6 +1,6 @@
 import PF from "pathfinding";
 
-export type TileKind = "grass" | "floor" | "wall" | "door";
+export type TileKind = "grass" | "floor" | "wall" | "door" | "closed-door";
 
 export interface TilePosition {
   readonly x: number;
@@ -53,7 +53,7 @@ export function tileAt(map: SiteMap, position: TilePosition): TileKind | null {
 
 export function isWalkable(map: SiteMap, position: TilePosition): boolean {
   const tile = tileAt(map, position);
-  return tile !== null && tile !== "wall";
+  return tile !== null && tile !== "wall" && tile !== "closed-door";
 }
 
 export function sameTile(first: TilePosition, second: TilePosition): boolean {
@@ -192,16 +192,27 @@ export function createStartingMap(): SiteMap {
   for (const door of [
     { x: 61, y: 55 },
     { x: 64, y: 55 },
+    { x: 74, y: 61 },
     { x: 52, y: 64 },
     { x: 58, y: 64 },
     { x: 61, y: 73 },
     { x: 67, y: 64 },
+    { x: 69, y: 70 },
     { x: 73, y: 64 },
     { x: 71, y: 73 },
     { x: 62, y: 77 },
     { x: 63, y: 77 },
   ])
     tiles[door.y * width + door.x] = "door";
+  for (const position of [
+    { x: 69, y: 62 },
+    { x: 71, y: 62 },
+    { x: 69, y: 63 },
+    { x: 70, y: 63 },
+    { x: 71, y: 63 },
+  ])
+    tiles[position.y * width + position.x] = "wall";
+  tiles[63 * width + 70] = "closed-door";
   return { id: "map-site-828", width, height, tiles, rooms };
 }
 

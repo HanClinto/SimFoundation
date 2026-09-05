@@ -204,7 +204,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 - Inventory, pawn identity, and anomaly identity icons use 32x32 display boxes with labels outside the icon. Larger anatomy, uniform, and chamber images are reference illustrations, not oversized identity icons.
 - Placement clicks pin the preview; hovering away to authorize does not move it. Click elsewhere to reposition. Map cameras and AN-001 use the same select/open pattern as personnel.
-- Engineering overlay exposes recorded tile data without manufacturing material or integrity values for ordinary tiles. Damage simulation remains confined to the instrumented AN-001 fixture.
+- Engineering overlay exposes recorded tile data without manufacturing material or integrity values for ordinary tiles. AN-001's primary wall and sealed secondary hatch display their last inspected integrity; failure opens the real map tile. Unseen damage does not update these markers.
 - Day Planner has directly selectable Work/Free/Sleep paint modes and drag painting. Preset application names the selected person and reports the full-day change. Hourly skill coverage counts scheduled recorded skills, not exclusive job assignment or guaranteed availability.
 
 - Occupational Health is a facility subwindow for clinical duty assignment, routine review cadence, appointment status, and chart access. Assessment buttons create referrals; they no longer immediately reveal findings. Clinical appointments require a distinct attending clinician and patient, so coverage and staff availability matter.

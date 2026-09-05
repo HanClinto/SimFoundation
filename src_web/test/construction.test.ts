@@ -19,8 +19,23 @@ describe("laboratory annex construction", () => {
   it("continues the expansion, experiment, and recovery loop identically after reload", () => {
     const original = createController(createInitialState(828));
     original.placeLaboratory({ x: 59, y: 80 });
-    original.advance(160);
-    original.setResearchLaboratory("room-blueprint-lab-1");
+    for (
+      let tick = 0;
+      tick < 240 &&
+      original
+        .getSnapshot()
+        .game.jobs.find(
+          (job) =>
+            job.id ===
+            original.getSnapshot().game.construction.blueprints[0]
+              ?.commissionJobId,
+        )?.status !== "completed";
+      tick += 1
+    )
+      original.advance();
+    expect(original.setResearchLaboratory("room-blueprint-lab-1").code).toBe(
+      "laboratory-selected",
+    );
     original.authorizeJob("job-calibrate-9620-sensors");
     const saved = original.advance(3).game;
     const loaded = loadGameState({
@@ -58,7 +73,7 @@ describe("laboratory annex construction", () => {
     expect(recovered.scp9620.phase).toBe("stabilized");
     expect(recovered.construction.availableMaterials).toBe(120);
     expect(recovered.world.map.rooms).toHaveLength(9);
-  });
+  }, 20_000);
 
   it("uses a commissioned annex for new research without moving active work", () => {
     const controller = createController(
@@ -67,7 +82,20 @@ describe("laboratory annex construction", () => {
     expect(controller.setResearchLaboratory("room-blueprint-lab-1").code).toBe(
       "not-commissioned",
     );
-    controller.advance(160);
+    for (
+      let tick = 0;
+      tick < 240 &&
+      controller
+        .getSnapshot()
+        .game.jobs.find(
+          (job) =>
+            job.id ===
+            controller.getSnapshot().game.construction.blueprints[0]
+              ?.commissionJobId,
+        )?.status !== "completed";
+      tick += 1
+    )
+      controller.advance();
     expect(controller.setResearchLaboratory("room-blueprint-lab-1").code).toBe(
       "laboratory-selected",
     );

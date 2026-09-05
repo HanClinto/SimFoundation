@@ -9,6 +9,7 @@ import {
   authorizeContainmentTrial,
   isolateContainmentTrial,
   orderTrialBarrier,
+  setTrialMaintenance,
   type BarrierMaterial,
   type TrialProtocol,
   type TrialCommandCode,
@@ -56,6 +57,10 @@ export interface GameController {
     autoIsolate: boolean,
   ): { readonly code: TrialCommandCode; readonly snapshot: ControllerSnapshot };
   isolateContainmentTrial(): ControllerSnapshot;
+  setTrialMaintenance(
+    automaticRepairs: boolean,
+    repairMaterial: BarrierMaterial,
+  ): ControllerSnapshot;
   getSnapshot(): ControllerSnapshot;
   advance(tickCount?: number): ControllerSnapshot;
   replaceState(nextState: GameState): ControllerSnapshot;
@@ -115,6 +120,10 @@ export function createController(initialState: GameState): GameController {
     },
     isolateContainmentTrial() {
       state = isolateContainmentTrial(state);
+      return publish();
+    },
+    setTrialMaintenance(automaticRepairs, repairMaterial) {
+      state = setTrialMaintenance(state, automaticRepairs, repairMaterial);
       return publish();
     },
 

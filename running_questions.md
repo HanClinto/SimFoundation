@@ -38,7 +38,7 @@ Hosted CI exposed a timeout in the intentional two-day replay: 7.6 seconds on th
 
 1. Open Day Planner and inspect the schedules and finite meal supply.
 2. Open Surveillance, disable a camera, and compare live coverage with remembered terrain and last sightings.
-3. Open AN-001 Study: review Materials, fit a barrier, and choose a protocol. Protective isolation is enabled by default. Primary failure remains inside the secondary vessel in this prototype.
+3. Open AN-001 Study: review Materials, order a barrier kit, and choose a protocol after delivery and fitting. Protective isolation is enabled by default. Primary failure opens the room wall; secondary lining provides limited response time and can also fail. Enable maintenance policy or order a replacement, then inspect both barrier records and Findings. Damage remains localized to this enclosure.
 4. Open Occupational Health's Assignments tab to compare portraits, skill, procedure eligibility, and current availability.
 
 ### Scope Notes

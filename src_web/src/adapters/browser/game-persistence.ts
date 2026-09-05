@@ -1,5 +1,10 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import {
+  TRIAL_WORK_SITE,
+  TRIAL_BARRIER_LOCATION,
+  TRIAL_SECONDARY_LOCATION,
+} from "../../simulation/containment-trial";
+import {
   isWalkable,
   sameTile,
   tileAt,
@@ -420,7 +425,7 @@ function isSiteWorld(value: unknown): value is SiteWorld {
   const height = map.height;
   if (
     !isArrayOf(map.tiles, (tile) =>
-      isLiteral(tile, ["grass", "floor", "wall", "door"]),
+      isLiteral(tile, ["grass", "floor", "wall", "door", "closed-door"]),
     ) ||
     map.tiles.length !== width * height
   )
@@ -855,7 +860,8 @@ function isObservationState(value: unknown): boolean {
     isArrayOf(
       value.knownTiles,
       (tile) =>
-        tile === null || isLiteral(tile, ["grass", "floor", "wall", "door"]),
+        tile === null ||
+        isLiteral(tile, ["grass", "floor", "wall", "door", "closed-door"]),
       16384,
     ) &&
     isArrayOf(
@@ -1029,6 +1035,21 @@ function isContainmentTrial(value: unknown): boolean {
     material(value.material) &&
     protocol(value.protocol) &&
     isNumberInRange(value.integrity, 0, 100) &&
+    isNumberInRange(value.secondaryIntegrity, 0, 100) &&
+    (value.supplyStage === null ||
+      isLiteral(value.supplyStage, ["collecting", "delivering", "fitting"])) &&
+    typeof value.automaticRepairs === "boolean" &&
+    material(value.repairMaterial) &&
+    isNullableString(value.maintenanceReason) &&
+    isRecord(value.barrierReadings) &&
+    [value.barrierReadings.primary, value.barrierReadings.secondary].every(
+      (reading) =>
+        reading === null ||
+        (isRecord(reading) &&
+          material(reading.material) &&
+          isNumberInRange(reading.integrity, 0, 100) &&
+          isIntegerInRange(reading.observedTick, 0)),
+    ) &&
     isIntegerInRange(value.elapsed, 0, 24) &&
     isIntegerInRange(value.supplyCredits, 0, 24) &&
     isIntegerInRange(value.spentCredits, 0, 24) &&
@@ -1071,6 +1092,21 @@ function trialReferencesValid(state: GameState): boolean {
   )
     return false;
   if (pending !== (trial.workOrderId !== null)) return false;
+  if ((trial.pendingMaterial !== null) !== (trial.supplyStage !== null))
+    return false;
+  if (
+    Object.values(trial.barrierReadings).some(
+      (reading) => reading && reading.observedTick > state.tick,
+    )
+  )
+    return false;
+  if (
+    tileAt(state.world.map, TRIAL_BARRIER_LOCATION) !==
+      (trial.integrity === 0 ? "floor" : "wall") ||
+    tileAt(state.world.map, TRIAL_SECONDARY_LOCATION) !==
+      (trial.secondaryIntegrity === 0 ? "floor" : "closed-door")
+  )
+    return false;
   if (trial.phase === "breached" && trial.integrity !== 0) return false;
   if (trial.lastReading && trial.lastReading.observedTick > state.tick)
     return false;
@@ -1085,12 +1121,27 @@ function trialReferencesValid(state: GameState): boolean {
   if (trial.workOrderId) {
     const job = trialJobs.find(({ id }) => id === trial.workOrderId);
     if (
+      job &&
+      ((trial.supplyStage === "delivering" && job.requiredWorkerId === null) ||
+        (trial.supplyStage !== "delivering" && job.requiredWorkerId !== null))
+    )
+      return false;
+    if (
       !job ||
-      job.status === "completed" ||
+      (job.status === "completed" &&
+        !(trial.supplyStage === "fitting" && trial.maintenanceReason)) ||
       job.skillId !==
-        (trial.phase === "preparing" ? "research" : "engineering") ||
-      job.workSite.x !== 69 ||
-      job.workSite.y !== 58
+        (trial.phase === "preparing"
+          ? "research"
+          : trial.supplyStage === "fitting"
+            ? "engineering"
+            : "logistics") ||
+      !sameTile(
+        job.workSite,
+        trial.supplyStage === "collecting"
+          ? state.construction.stockpile
+          : TRIAL_WORK_SITE,
+      )
     )
       return false;
   }

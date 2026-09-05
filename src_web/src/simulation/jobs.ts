@@ -248,7 +248,8 @@ export function advanceJobs(
       second.priority - first.priority || first.id.localeCompare(second.id),
   );
 
-  for (const job of orderedJobs) {
+  for (const queuedJob of orderedJobs) {
+    const job = advancedJobsById.get(queuedJob.id) ?? queuedJob;
     if (job.status === "proposed" || job.status === "completed") {
       advancedJobsById.set(job.id, job);
       continue;
@@ -271,13 +272,52 @@ export function advanceJobs(
       continue;
     }
     if (!assignedPersonId) {
-      const selected = selectWorker(
+      let selected = selectWorker(
         job,
         [...people.values()],
         busyPersonIds,
         world,
         clinicianIds,
       );
+      if (!selected && job.priority >= 90 && !job.assessment) {
+        const interruptible = orderedJobs.filter(
+          (candidate) =>
+            candidate.status === "in-progress" &&
+            candidate.priority < 90 &&
+            !candidate.assessment &&
+            candidate.requiredWorkerId === null &&
+            candidate.assignedPersonId &&
+            !unavailablePersonIds.includes(candidate.assignedPersonId) &&
+            !advancedJobsById.has(candidate.id),
+        );
+        const interruptibleIds = new Set(
+          interruptible.map((candidate) => candidate.assignedPersonId!),
+        );
+        selected = selectWorker(
+          job,
+          [...people.values()],
+          new Set([...busyPersonIds].filter((id) => !interruptibleIds.has(id))),
+          world,
+          clinicianIds,
+        );
+        const interrupted = interruptible.find(
+          (candidate) => candidate.assignedPersonId === selected?.id,
+        );
+        if (selected && interrupted) {
+          advancedJobsById.set(interrupted.id, {
+            ...interrupted,
+            status: "available",
+            assignedPersonId: null,
+            assignmentReason: `Interrupted for emergency work: ${job.title}`,
+          });
+          people.set(selected.id, {
+            ...selected,
+            currentJobId: null,
+            activity: "Reassigned to emergency work",
+          });
+          busyPersonIds.delete(selected.id);
+        }
+      }
       if (!selected) {
         const hasWorker = personnel.some(
           (person) =>
@@ -292,11 +332,15 @@ export function advanceJobs(
         );
         advancedJobsById.set(job.id, {
           ...job,
-          assignmentReason: hasWorker
-            ? "No eligible worker can reach the work site."
-            : job.assessment
-              ? `Awaiting assigned staff with Medical ${ASSESSMENT_REQUIREMENTS[job.assessment.kind].medicalLevel}+ and no conflicting appointment.`
-              : "No eligible worker is currently available.",
+          assignmentReason: job.assignmentReason?.startsWith(
+            "Interrupted for emergency work:",
+          )
+            ? job.assignmentReason
+            : hasWorker
+              ? "No eligible worker can reach the work site."
+              : job.assessment
+                ? `Awaiting assigned staff with Medical ${ASSESSMENT_REQUIREMENTS[job.assessment.kind].medicalLevel}+ and no conflicting appointment.`
+                : "No eligible worker is currently available.",
         });
         continue;
       }

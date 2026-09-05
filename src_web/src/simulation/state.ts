@@ -19,7 +19,7 @@ import {
   type ContainmentTrial,
 } from "./containment-trial";
 
-export const GAME_STATE_VERSION = 22;
+export const GAME_STATE_VERSION = 23;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

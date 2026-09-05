@@ -4,13 +4,15 @@ import type {
 } from "../../application/controller";
 import {
   BARRIER_MATERIALS,
-  TRIAL_LOCATION,
+  TRIAL_BARRIER_LOCATION,
+  TRIAL_SECONDARY_LOCATION,
   type BarrierMaterial,
   type TrialProtocol,
   type TrialCommandCode,
 } from "../../simulation/containment-trial";
 import chamberUrl from "./assets/an-001-chamber.svg";
 import { recordAge } from "./personnel-records";
+import type { TilePosition } from "../../simulation/world";
 
 const messages: Record<TrialCommandCode, string> = {
   accepted: "Work package accepted.",
@@ -25,6 +27,7 @@ export function createContainmentTrialWindow(
   host: HTMLElement,
   controller: GameController,
   locate: () => void,
+  inspect: (position: TilePosition) => void = locate,
 ) {
   const element = document.createElement("section");
   element.id = "containment-study-window";
@@ -66,6 +69,34 @@ export function createContainmentTrialWindow(
   progressPanel.innerHTML =
     '<strong data-trial-stage></strong><p data-trial-next></p><progress data-trial-progress aria-label="Active work progress" hidden></progress><p data-trial-worker></p><button type="button" data-open-related-window="work-orders-window">Open work orders</button>';
   protocolSection.querySelector("h2")!.after(progressPanel);
+  const maintenance = document.createElement("fieldset");
+  maintenance.innerHTML = `<legend>Enclosure maintenance</legend><div class="field-row"><input type="checkbox" id="trial-auto-repair"/><label for="trial-auto-repair">Repair observed damage at 55% or below</label></div><label>Replacement material <select data-repair-material aria-label="Automatic repair material">${Object.entries(
+    BARRIER_MATERIALS,
+  )
+    .map(([id, material]) => `<option value="${id}">${material.name}</option>`)
+    .join(
+      "",
+    )}</select></label><p data-maintenance-status></p><p data-secondary-reading></p>`;
+  protocolSection.append(maintenance);
+  const structures = document.createElement("div");
+  structures.className = "dossier-actions";
+  structures.innerHTML =
+    '<button type="button" data-trial-inspect="primary">Inspect primary wall</button><button type="button" data-trial-inspect="secondary">Inspect secondary hatch</button>';
+  maintenance.append(structures);
+  const scope = document.createElement("p");
+  scope.textContent =
+    "Directed exposure acts on the room's replaceable wall. Failure exposes the secondary hatch lining to continued contact. Both barriers can fail; damage remains localized to this enclosure.";
+  element.querySelector('[data-trial-section="case"]')!.append(scope);
+  maintenance.addEventListener("change", () =>
+    render(
+      controller.setTrialMaintenance(
+        maintenance.querySelector<HTMLInputElement>("#trial-auto-repair")!
+          .checked,
+        maintenance.querySelector<HTMLSelectElement>("[data-repair-material]")!
+          .value as BarrierMaterial,
+      ),
+    ),
+  );
   const fit = element.querySelector<HTMLButtonElement>("[data-trial-fit]")!;
   const authorize = element.querySelector<HTMLButtonElement>(
     "[data-trial-authorize]",
@@ -96,6 +127,14 @@ export function createContainmentTrialWindow(
         section.hidden = section.dataset.trialSection !== page;
     }
     if (target.closest("[data-trial-locate]")) locate();
+    const barrier = target.closest<HTMLElement>("[data-trial-inspect]")?.dataset
+      .trialInspect;
+    if (barrier)
+      inspect(
+        barrier === "primary"
+          ? TRIAL_BARRIER_LOCATION
+          : TRIAL_SECONDARY_LOCATION,
+      );
     if (target.closest("[data-trial-fit]")) {
       const result = controller.orderTrialBarrier(
         element.querySelector<HTMLSelectElement>("[data-trial-material]")!
@@ -124,7 +163,8 @@ export function createContainmentTrialWindow(
     const trial = snapshot.game.containmentTrial;
     const reading = trial.lastReading;
     const live = snapshot.game.observations.visibleTiles.includes(
-      TRIAL_LOCATION.y * snapshot.game.world.map.width + TRIAL_LOCATION.x,
+      TRIAL_BARRIER_LOCATION.y * snapshot.game.world.map.width +
+        TRIAL_BARRIER_LOCATION.x,
     );
     element.querySelector("[data-trial-observed]")!.textContent = reading
       ? `${recordAge(snapshot.game.tick, reading.observedTick)}${live ? " / Current coverage" : " / Current state unknown"}`
@@ -135,7 +175,22 @@ export function createContainmentTrialWindow(
       ? `${reading.integrity}% / ${BARRIER_MATERIALS[reading.material].name}`
       : "No recorded reading";
     element.querySelector("[data-trial-supplies]")!.textContent =
-      `Material allowance: ${trial.supplyCredits} units remaining / ${trial.spentCredits} committed`;
+      `Enclosure repair kits: ${trial.supplyCredits} material units remaining / ${trial.spentCredits} committed`;
+    maintenance.querySelector<HTMLInputElement>("#trial-auto-repair")!.checked =
+      trial.automaticRepairs;
+    maintenance.querySelector<HTMLSelectElement>(
+      "[data-repair-material]",
+    )!.value = trial.repairMaterial;
+    maintenance.querySelector("[data-maintenance-status]")!.textContent =
+      trial.maintenanceReason ??
+      (trial.automaticRepairs
+        ? "Policy active. Repairs wait until exposure ends; observed failures receive emergency priority."
+        : "Manual maintenance. Each kit restores the primary panel and secondary lining.");
+    const secondary = trial.barrierReadings.secondary;
+    maintenance.querySelector("[data-secondary-reading]")!.textContent =
+      secondary
+        ? `Secondary enclosure: ${secondary.integrity}% / ${recordAge(snapshot.game.tick, secondary.observedTick)}`
+        : "Secondary enclosure: no inspection on record";
     const work = snapshot.game.jobs.find(({ id }) => id === trial.workOrderId);
     const phase = work ? trial.phase : (reading?.phase ?? "unprepared");
     const stages = {
@@ -165,10 +220,13 @@ export function createContainmentTrialWindow(
       ],
       breached: [
         "4. Primary barrier failed",
-        "The secondary vessel retained the specimen. Fit a replacement barrier before authorizing another trial.",
+        "The primary wall is open. Inspect secondary containment and deliver a repair kit before another trial.",
       ],
     } as const;
     element.querySelector("[data-trial-stage]")!.textContent = stages[phase][0];
+    if (trial.supplyStage)
+      element.querySelector("[data-trial-stage]")!.textContent =
+        `${phase === "repairing" ? "Emergency repair" : "Barrier installation"}: ${{ collecting: "collect materials", delivering: "deliver materials", fitting: "fit barrier" }[trial.supplyStage]}`;
     element.querySelector("[data-trial-next]")!.textContent =
       !live && reading
         ? `Last recorded state. Restore observation for current readings. ${stages[phase][1]}`

@@ -1,5 +1,12 @@
 import type { GameState } from "../../simulation/state";
-import { TRIAL_LOCATION } from "../../simulation/containment-trial";
+import {
+  TRIAL_LOCATION,
+  TRIAL_BARRIER_LOCATION,
+  TRIAL_SECONDARY_LOCATION,
+  TRIAL_WORK_SITE,
+  BARRIER_MATERIALS,
+} from "../../simulation/containment-trial";
+import { sameTile } from "../../simulation/world";
 import type { TilePosition } from "../../simulation/world";
 
 export function mapObjects(state: GameState): readonly {
@@ -58,9 +65,33 @@ export function engineeringRecord(
       position.y < room.y + room.height,
   );
   rows.push(["Room", room?.name ?? "Exterior / corridor"]);
-  if (
-    position.x === TRIAL_LOCATION.x &&
-    position.y === TRIAL_LOCATION.y &&
+  const barrier = sameTile(position, TRIAL_BARRIER_LOCATION)
+    ? "primary"
+    : sameTile(position, TRIAL_SECONDARY_LOCATION)
+      ? "secondary"
+      : null;
+  if (barrier) {
+    const reading = state.containmentTrial.barrierReadings[barrier];
+    rows.push(
+      [
+        "Structure",
+        barrier === "primary"
+          ? "AN-001 replaceable primary wall"
+          : "AN-001 sealed secondary hatch",
+      ],
+      [
+        "Material",
+        reading ? BARRIER_MATERIALS[reading.material].name : "Unassessed",
+      ],
+      [
+        "Recorded integrity",
+        reading
+          ? `${reading.integrity}% / observed ${state.tick - reading.observedTick} minutes ago`
+          : "No inspection on record",
+      ],
+    );
+  } else if (
+    sameTile(position, TRIAL_LOCATION) &&
     state.containmentTrial.lastReading
   ) {
     rows.push(
@@ -73,12 +104,12 @@ export function engineeringRecord(
   } else
     rows.push(
       ["Material", "No material specification on record"],
-      ["Integrity", "Tile damage is not modeled"],
+      ["Integrity", "Damage is not modeled for this tile"],
     );
   const jobs = state.jobs.filter(
     (job) =>
-      job.workSite.x === position.x &&
-      job.workSite.y === position.y &&
+      (sameTile(job.workSite, position) ||
+        (barrier && job.id === state.containmentTrial.workOrderId)) &&
       job.status !== "completed",
   );
   rows.push([
@@ -87,5 +118,13 @@ export function engineeringRecord(
       .map((job) => `${job.title}: ${job.assignmentReason ?? job.status}`)
       .join("; ") || "No open orders",
   ]);
+  if (barrier || sameTile(position, TRIAL_WORK_SITE))
+    rows.push([
+      "Maintenance",
+      state.containmentTrial.maintenanceReason ??
+        (state.containmentTrial.automaticRepairs
+          ? `Automatic / ${BARRIER_MATERIALS[state.containmentTrial.repairMaterial].name}`
+          : "Manual"),
+    ]);
   return rows;
 }

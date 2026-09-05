@@ -89,6 +89,14 @@ Click a placement preview to pin it, then use its authorization button; click an
 
 The map shows bright live coverage, dim remembered terrain, unknown areas beyond the initial survey, and labeled last-sighting markers. Unseen anomalies continue simulating, but their registry and map information remain at the last recorded observation. Camera placement and range are provisional abstractions; power, communications failures, and directional lenses remain future work.
 
+### Physical Containment and Repair
+
+AN-001 now acts on a replaceable room wall and a sealed secondary hatch. Failure opens a real path and sight line. Secondary containment degrades after primary failure, providing limited time to respond; observed primary and secondary failures raise Orange and Red respectively. Damage and spill remain localized to this enclosure, not arbitrary facility tiles.
+
+In **AN-001 Study > Protocols**, choose a replacement material and optionally enable automatic maintenance at 55% observed integrity. Repairs wait until exposure ends. A finite kit is collected from Materials Store, delivered by its carrier, and fitted by engineering. Emergency packages can interrupt routine work, but preserve appointments, urgent needs, and cargo deliveries. Rebuilding waits for occupied barrier tiles to clear. Engineering view shows the last recorded integrity of each barrier; direct inspection links are available in Protocols.
+
+A useful test is concrete with passive exposure and protective isolation disabled, followed by ceramic replacement and another passive trial. The first material fails; the second survives the bounded exposure. Both failures and restoration remain in Findings. Save schema is now 23; earlier development saves require a fresh session.
+
 ### Occupational Health Prototype
 
 Open Occupational Health from the Site 828 facility folder to assign any staff member to medical duty and choose separate recurring intervals for physical examinations, rapid mood screeners, psychiatric evaluations, and extended anomalous behavior surveys. Routine reviews are off by default. Anomalous surveys require Anomalous Psychometrics research; a configured interval waits for that research rather than exposing hidden traits.

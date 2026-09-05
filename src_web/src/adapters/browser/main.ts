@@ -752,10 +752,20 @@ const surveillanceView = createSurveillanceView(
   },
 );
 
-const containmentStudy = createContainmentTrialWindow(app, controller, () => {
-  windowManager.open("camera-window");
-  siteCamera.focus(TRIAL_LOCATION);
-});
+const containmentStudy = createContainmentTrialWindow(
+  app,
+  controller,
+  () => {
+    windowManager.open("camera-window");
+    siteCamera.focus(TRIAL_LOCATION);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+    engineeringView.select(position, controller.getSnapshot());
+    windowManager.open("engineering-window");
+  },
+);
 const constructionView = createConstructionWindow(
   app,
   controller,

@@ -8,7 +8,11 @@ import mealUrl from "./assets/station-meal.svg";
 import breakUrl from "./assets/station-break.svg";
 import cameraUrl from "./assets/camera.svg";
 import chamberUrl from "./assets/an-001-chamber.svg";
-import { TRIAL_LOCATION } from "../../simulation/containment-trial";
+import {
+  TRIAL_LOCATION,
+  TRIAL_BARRIER_LOCATION,
+  TRIAL_SECONDARY_LOCATION,
+} from "../../simulation/containment-trial";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
 import { mapObjects } from "./map-objects";
@@ -196,6 +200,7 @@ export function renderSite(
               floor: "#a5c3ba",
               wall: "#d7b78a",
               door: "#d8d478",
+              "closed-door": "#d8d478",
               grass: "#6a866c",
             }[tile]
           : tile === "grass"
@@ -204,7 +209,7 @@ export function renderSite(
               : "#5c7756"
             : tile === "wall"
               ? "#e0e3dd"
-              : tile === "door"
+              : tile === "door" || tile === "closed-door"
                 ? "#b69b59"
                 : room
                   ? roomColors[room.kind]
@@ -215,17 +220,47 @@ export function renderSite(
         : 0.48;
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
-      if (tile === "wall") {
+      if (tile === "wall" || tile === "closed-door") {
         drawTile(context, { x: 0, y: -10 }, "#727f78", "#64746b");
         context.fillStyle = "#727f78";
         context.fillRect(-20, -9, 40, 9);
       }
       drawTile(
         context,
-        { x: 0, y: tile === "wall" ? -19 : -10 },
+        { x: 0, y: tile === "wall" || tile === "closed-door" ? -19 : -10 },
         fill,
         tile === "grass" ? "#526d4c" : "#89958d",
       );
+      context.restore();
+    }
+  }
+  if (camera.overlay === "engineering") {
+    for (const [id, position] of [
+      ["primary", TRIAL_BARRIER_LOCATION],
+      ["secondary", TRIAL_SECONDARY_LOCATION],
+    ] as const) {
+      const reading = snapshot.game.containmentTrial.barrierReadings[id];
+      if (!reading) continue;
+      const point = projectPosition(position, camera, width, height);
+      context.save();
+      context.globalAlpha =
+        reading.observedTick === snapshot.game.tick ? 1 : 0.55;
+      context.translate(point.x, point.y);
+      context.scale(camera.zoom, camera.zoom);
+      drawTile(
+        context,
+        { x: 0, y: -20 },
+        reading.integrity === 0
+          ? "#d46056"
+          : reading.integrity <= 55
+            ? "#eac65f"
+            : "#8fcab6",
+        "#26382f",
+      );
+      context.font = "bold 11px 'Courier New', monospace";
+      context.textAlign = "center";
+      context.fillStyle = "#152b26";
+      context.fillText(`${Math.round(reading.integrity)}%`, 0, -6);
       context.restore();
     }
   }

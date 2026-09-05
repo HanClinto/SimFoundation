@@ -7,14 +7,47 @@ import {
   authorizeContainmentTrial,
   isolateContainmentTrial,
   BARRIER_MATERIALS,
+  TRIAL_BARRIER_LOCATION,
   type BarrierMaterial,
   type TrialProtocol,
 } from "../src/simulation/containment-trial";
 import { advanceSimulation } from "../src/simulation/tick";
 import { createController } from "../src/application/controller";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { findRoute, isWalkable } from "../src/simulation/world";
 
 describe("authored material containment trial", () => {
+  it("opens a real route on failure and closes it only after rebuilding", () => {
+    const initial = createInitialState();
+    expect(isWalkable(initial.world.map, TRIAL_BARRIER_LOCATION)).toBe(false);
+    const failed = advanceContainmentTrial({
+      ...initial,
+      containmentTrial: {
+        ...initial.containmentTrial,
+        phase: "running",
+        integrity: 1,
+        autoIsolate: false,
+      },
+    });
+    expect(isWalkable(failed.world.map, TRIAL_BARRIER_LOCATION)).toBe(true);
+    expect(
+      findRoute(failed.world.map, { x: 70, y: 60 }, { x: 70, y: 62 }),
+    ).toEqual([TRIAL_BARRIER_LOCATION, { x: 70, y: 62 }]);
+    const ordered = orderTrialBarrier(failed, "composite").state;
+    expect(isWalkable(ordered.world.map, TRIAL_BARRIER_LOCATION)).toBe(true);
+    let rebuilt = ordered;
+    for (let stage = 0; stage < 3; stage += 1)
+      rebuilt = advanceContainmentTrial({
+        ...rebuilt,
+        jobs: rebuilt.jobs.map((job) =>
+          job.id === rebuilt.containmentTrial.workOrderId
+            ? { ...job, status: "completed", progress: job.requiredProgress }
+            : job,
+        ),
+      });
+    expect(isWalkable(rebuilt.world.map, TRIAL_BARRIER_LOCATION)).toBe(false);
+    expect(rebuilt.containmentTrial.material).toBe("composite");
+  });
   it("does not attribute old damage to a replacement material before installation", () => {
     const initial = createInitialState();
     const failed = {
