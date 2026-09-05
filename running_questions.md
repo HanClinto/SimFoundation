@@ -18,6 +18,28 @@ Nonblocking questions and provisional choices from the unattended development ru
 
 ## Handoff Status
 
+### Published Checkpoints
+
+| Commit    | Result                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------- |
+| `6d00402` | Consistent original subsystem icons and distinct pawn portraits with captions                |
+| `9d79e18` | Needs-driven meals, sleep, breaks, hourly schedules, pantry hauling, and Day Planner         |
+| `69c66c8` | Local sight, remembered facility observations, camera installation, and Surveillance         |
+| `1d66263` | Local SCP-999 encounters, immediate contact effects, and reserved/masking expressions        |
+| `62081d1` | Original AN-001 material trial, observable failure, repair, and illustrated evidence archive |
+| `5c73616` | Independent Construction inspector coordinated with Camera Feed                              |
+
+The final validation checkpoint adds exact-tick Orange/Red auto-pause, safe manual resume, and a full-day integrated replay. The required pipeline passes 111 tests across 26 files, strict typechecking, formatting, production build, and deployment verification. Browser checks covered the principal controls, asset rendering, hidden-state presentation, trial failure/repair, and exact pause/resume behavior. No claim of a completed 6-8-hour background process is implied; work runs only while the active agent session is executing.
+
+### Suggested Review
+
+1. Open Day Planner and inspect the schedules and finite meal supply.
+2. Open Surveillance, disable a camera, and compare live coverage with remembered terrain and last sightings.
+3. Open AN-001 Study: review Materials, fit a barrier, and choose a protocol. Protective isolation is enabled by default. Primary failure remains inside the secondary vessel in this prototype.
+4. Open Occupational Health's Assignments tab to compare portraits, skill, procedure eligibility, and current availability.
+
+### Scope Notes
+
 - Published `6d00402`: consistent original subsystem icons and pawn portrait/caption identities.
 - Completed daily-routine checkpoint: physical meals, sleep and breaks; hourly schedules; finite pantry/store logistics; Day Planner. A two-day headless scenario sustains routine needs and passes deterministic save continuation. Browser checks verified schedule edits, physical meal arrival, food consumption, and seat-contention reporting. Full validation passes 89 tests.
 - Completed observation-memory checkpoint: local awake-personnel/camera sight, wall occlusion, remembered terrain and sightings, physical camera installation, Surveillance inspector, and frozen unseen SCP-999 records. Browser fixture verified that an unseen anomaly's changed location and state remain hidden. Current sensing assumes functioning personnel communications and omnidirectional cameras; power, radio failures, and directional lenses are not modeled.
@@ -25,5 +47,6 @@ Nonblocking questions and provisional choices from the unattended development ru
 - Completed authored experiment: AN-001, the Chalk Knot, has a bench-scale study with concrete/ceramic/composite tradeoffs, passive versus stimulated exposure, optional protective isolation, observed degradation/failure, engineering repair, and a reference-book case file with superseded assumptions. Full validation passes 106 tests. The secondary catch vessel is an authored safety constraint; this does not yet implement free-roaming tactical recontainment or material properties for arbitrary world walls.
 - Remaining broad work: facility-scale containment, staffing refusals and breakdowns, formal skill progression, procurement, power, and richer anomaly care. These are not implied complete by the delivered prototypes.
 - Construction now has its own coordinated modeless window instead of occupying Camera Feed space. The register owns cancellation and laboratory choice; Plan and Locate actions open/focus the camera.
+- Integrated one-day test runs clinical care, routine needs, annex construction, SCP-9620 research/recovery, camera installation, and AN-001 failure/repair together, checking reservations and valid deterministic save checkpoints. Also corrected a pre-existing mismatch: Orange/Red events now actually pause as the UI promised, and browser catch-up stops at the incident tick.
 
 A question here is not a claim that the corresponding feature has already been implemented.

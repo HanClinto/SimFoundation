@@ -28,9 +28,18 @@ export function createBrowserRuntime(
       );
       accumulatedTime += frameDelta * speed;
       const ticksDue = Math.floor(accumulatedTime / BASE_TICK_DURATION_MS);
-      if (ticksDue > 0) {
-        controller.advance(ticksDue);
-        accumulatedTime -= ticksDue * BASE_TICK_DURATION_MS;
+      const initialSpeed = speed;
+      for (let tick = 0; tick < ticksDue; tick += 1) {
+        if (!controller.getSnapshot().running) {
+          accumulatedTime = 0;
+          break;
+        }
+        controller.advance();
+        accumulatedTime -= BASE_TICK_DURATION_MS;
+        if (!controller.getSnapshot().running || speed !== initialSpeed) {
+          accumulatedTime = 0;
+          break;
+        }
       }
     }
 

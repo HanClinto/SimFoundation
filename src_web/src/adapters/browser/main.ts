@@ -40,6 +40,7 @@ import { createSurveillanceView } from "./surveillance-view";
 import { createContainmentTrialWindow } from "./containment-trial-view";
 import { TRIAL_LOCATION } from "../../simulation/containment-trial";
 import { createConstructionWindow } from "./construction-view";
+import { incidentResponse } from "./incident-response";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
@@ -232,7 +233,7 @@ app.innerHTML = `
         <legend>Automatic response profile</legend>
         <label><input type="checkbox" checked disabled /> Yellow events reduce speed to 1x</label>
         <label><input type="checkbox" checked disabled /> Orange events pause simulation</label>
-        <label><input type="checkbox" checked disabled /> Red events pause and sound facility alarm</label>
+        <label><input type="checkbox" checked disabled /> Red events pause simulation</label>
       </fieldset>
       <fieldset>
         <legend>Physical system</legend>
@@ -1140,14 +1141,6 @@ function render(snapshot: ControllerSnapshot): void {
     red: "RED / EMERGENCY",
   } as const;
   incidentLevel.textContent = incidentLabels[snapshot.game.incident.level];
-  if (
-    snapshot.game.incident.level !== "green" &&
-    previousIncidentLevel !== snapshot.game.incident.level
-  ) {
-    if (snapshot.game.incident.level === "yellow") setSimulationSpeed(1);
-    windowManager.open("alarm-window");
-  }
-  previousIncidentLevel = snapshot.game.incident.level;
   pauseButton.setAttribute("aria-pressed", String(!snapshot.running));
   pauseButton.setAttribute(
     "aria-label",
@@ -1185,11 +1178,23 @@ for (const speedButton of speedButtons) {
   });
 }
 
-controller.subscribe((snapshot) => {
+function presentSnapshot(snapshot: ControllerSnapshot): void {
+  const response = incidentResponse(
+    previousIncidentLevel,
+    snapshot.game.incident.level,
+  );
+  previousIncidentLevel = snapshot.game.incident.level;
+  if (response !== "none") windowManager.open("alarm-window");
+  if (response === "slow") setSimulationSpeed(1);
+  if (response === "pause" && snapshot.running) {
+    controller.setRunning(false);
+    return;
+  }
   render(snapshot);
   if (!autosaveEnabled) return;
   autosaveEnabled = saveGameState(localStorage, snapshot.game);
   if (!autosaveEnabled) updatePersistenceControls("Autosave unavailable");
-});
-render(controller.getSnapshot());
+}
+controller.subscribe(presentSnapshot);
+presentSnapshot(controller.getSnapshot());
 runtime.start();

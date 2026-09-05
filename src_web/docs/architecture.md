@@ -58,6 +58,8 @@ Pause and speed deserve separate ownership:
 - The current in-world time and alert level are simulation state.
 - Commands may be accepted while paused and remain pending until ticks resume.
 
+Browser catch-up advances one tick at a time so incident responses can stop at the exact transition. A new Yellow state reduces speed to 1x; Orange and Red transitions pause. Handling updates the previous-alert state before publishing the pause, preventing recursive responses. Manually resuming an unchanged incident is permitted, and paused wall time is not accumulated for later simulation bursts. Audible alarms remain unimplemented and are not advertised by the UI.
+
 ### Browser Adapter
 
 The browser adapter owns:
