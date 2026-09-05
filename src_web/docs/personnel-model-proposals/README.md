@@ -102,7 +102,7 @@ Use Simplified Hybrid as the current candidate, while retaining Layered Hybrid a
 1. Character state is organized by lifecycle: Immutable Identity/Traits/Biases; Stable Foundation Assignment/Skills/Equipment; Transient Needs; Effects; Derived Health and capabilities.
 2. Skill remains the dominant contributor to ordinary work; Mind↔Might and Receptive↔Resolute primarily affect preference, learning, and satisfaction.
 3. Composure is not a Bias; it is derived from Health, Stress, Fear, Threat Response, relevant training, and Effects.
-4. Actual pawn state and player knowledge remain separate; candidate Traits are revealed through evidence and assigned assessments whose methods are unlocked by research and executed with existing Skills.
+4. Actual pawn state and player knowledge remain separate; research improves automatic facility-level candidate screening, while optional targeted assessments can use assigned workers and existing Skills.
 5. One Effect instance shape uses optional activation, expiration, magnitude, and progression fields instead of separate buff/injury/memory/aura subclasses.
 6. The default dossier exposes only assessed identity, assignment, known or suspected Traits, Health summaries, activity, and urgent findings. Exact Effects, formulas, and hidden state remain in drill-down or debug views.
 
@@ -123,4 +123,4 @@ Borrow Bonds and three-category exposure scars from Proposal 3 only after relati
 11. Should Physical/Mental/Emotional health totals be stored or derived from conditions?
 12. How stale can assessments become before imperfect information feels unfair?
 13. Which continuous monitors should exist at game start?
-14. Which Trait categories should baseline intake detect before research improves personnel screening?
+14. Should improved screening run automatically, require a Director action, or reserve pawn assignments for targeted follow-up only?

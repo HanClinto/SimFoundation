@@ -493,32 +493,46 @@ An assessment protocol defines:
 
 - Research prerequisite
 - Detectable Trait categories and individual Traits
-- Relevant existing Skill: Medicine for medical and much psychological screening, Social for interviews, Security for records and behavioral investigation, or Anomaly Handling for anomalous screening
-- Required room, equipment, time, and certification
+- Whether it runs automatically at intake or requires a targeted follow-up
+- Optional relevant Skill: Medicine for medical and much psychological screening, Social for interviews, Security for records and behavioral investigation, or Anomaly Handling for anomalous screening
+- Optional room, equipment, time, and certification requirements
 - Base sensitivity and which evidence it can treat as corroboration
 
-The player assigns a qualified worker to perform the assessment. There is no separate Assessment Skill. Research unlocks better questions and instruments; skilled workers use them well; assignment consumes real labor and facility time.
+The simplest launch default is for recruitment to run the site's best automatic intake protocol when a candidate appears. The Site Director and routine administrative staff are implied actors, so this does not require a pawn job, room reservation, or repeated player order. Research unlocks broader Trait categories and raises the quality of this facility-wide screening capability.
+
+Targeted follow-up remains available when the player wants more confidence, needs a clinical opinion, or investigates contradictory evidence. Those assessments may assign a qualified worker and consume room, equipment, and time. There is no separate Assessment Skill; optional worker-assisted protocols use existing Skills. This preserves personnel work as a meaningful choice without making every administrative action a labor-scheduling task.
+
+### Research-tree boundary
+
+Proposal 5 does not require a complete Research Tree design. It requires only that completed research can unlock or improve facility capabilities, including recruitment screening. Illustrative nodes are:
+
+- Personnel Vetting: automatic screening for conspicuous Work-style, Threat-response, and Medical-constitution Traits
+- Behavioral Analysis: improved Social-temperament and Moral-disposition screening
+- Anomalous Psychometrics: first reliable screening for Anomalous-disposition Traits
+
+These names and tiers are provisional content. The model stores the protocol version used for each conclusion, so a later Research Tree can replace or expand them without changing pawn data.
 
 Detection is deterministic at completion:
 
 ```text
 detection margin = protocol sensitivity
-                 + relevant skill contribution
-                 + room and equipment modifiers
+                 + facility screening capability
+                 + optional skill, room, and equipment modifiers
                  + corroborating evidence
                  - active concealment effect modifiers
 ```
 
-Each protocol maps the resulting margin to `confirmed`, `suspected`, or `ruled-out`. Evidence is tagged observation or record data, such as unexplained violence, falsified history, repeated protocol violations, or anomalous test response. Evidence can raise confidence but never directly creates or changes a Trait. A Homicidal Trait's ordinary Trait Effect can apply concealment against Moral-disposition screening; sufficiently strong evidence, assessor Skill, or protocol sensitivity overcomes it without a separate deception subsystem.
+Each protocol maps the resulting margin to `confirmed`, `suspected`, or `ruled-out`. Evidence is tagged observation or record data, such as unexplained violence, falsified history, repeated protocol violations, or anomalous test response. Evidence can raise confidence but never directly creates or changes a Trait. A Homicidal Trait's ordinary Trait Effect can apply concealment against Moral-disposition screening; sufficiently advanced research, strong evidence, or an optional skilled follow-up can overcome it without a separate deception subsystem.
 
 Example progression:
 
-1. Basic intake reveals identity, declared history, obvious medical conditions, and conspicuous behavior.
-2. Improved personnel screening can identify or rule out common Work-style, Threat-response, Social-temperament, Medical-constitution, and Moral-disposition Traits.
-3. Anomalous psychology research unlocks protocols capable of detecting Anomalous-disposition Traits.
-4. Reassessment, corroborating incidents, or a better protocol can promote a suspicion to confirmed, overturn an old negative screen, or expose deliberate concealment.
+1. Basic automatic intake reveals identity, declared history, obvious medical conditions, and conspicuous behavior.
+2. Improved personnel screening automatically identifies or rules out more common Work-style, Threat-response, Social-temperament, Medical-constitution, and Moral-disposition Traits.
+3. Anomalous psychology research adds Anomalous-disposition Traits to automatic intake screening.
+4. New research automatically improves future candidate reports; whether it also reprocesses archived evidence is an open tuning decision.
+5. Targeted reassessment, corroborating incidents, or a better protocol can promote a suspicion to confirmed, overturn an old negative screen, or expose deliberate concealment.
 
-A hidden Homicidal Trait can therefore survive a weak interview, appear as a suspicion after records review, or be confirmed by a skilled assessor using an improved protocol. Failure to detect a Trait never changes the authoritative pawn; it changes only what the Foundation knows.
+A hidden Homicidal Trait can therefore survive basic automated screening, appear as a suspicion after improved records analysis, or be confirmed through later research, evidence, or targeted assessment. Failure to detect a Trait never changes the authoritative pawn; it changes only what the Foundation knows.
 
 ### Assessment rules
 
@@ -526,7 +540,7 @@ Every assessment stores:
 
 - Domain: physical, mental, emotional, needs, practical skills, traits, equipment, or location
 - Assessed tick
-- Assessor or instrument
+- Actor or instrument, including the facility itself for automatic intake
 - Method
 - Protocol version and satisfied research prerequisites
 - Confidence 0 through 1
@@ -841,7 +855,7 @@ A map tile is visible when covered by a powered, functioning camera or directly 
     "traits": {
       "assessmentId": "assessment-intake-17",
       "assessedTick": 1200,
-      "assessor": { "type": "person", "personId": "person-priya-shah" },
+      "assessor": { "type": "facility", "facilityId": "site-828" },
       "method": "structured-personnel-screening",
       "protocolVersion": 2,
       "researchPrerequisiteIds": ["research-personnel-screening-2"],
@@ -912,13 +926,13 @@ A map tile is visible when covered by a powered, functioning camera or directly 
 }
 ```
 
-### Assessment command
+### Optional targeted assessment command
 
 ```json
 {
   "type": "order-assessment",
   "personId": "candidate-elin-ward",
-  "protocolId": "structured-personnel-screening-v2",
+  "protocolId": "targeted-personnel-interview-v2",
   "assignedAssessorId": "person-priya-shah",
   "requestedTraitCategories": [
     "workStyle",
@@ -930,7 +944,7 @@ A map tile is visible when covered by a powered, functioning camera or directly 
 }
 ```
 
-The protocol definition, not each order, owns research, room, equipment, certification, duration, and detectable-category requirements. Anomalous-disposition is absent because this site has not yet unlocked a compatible protocol.
+Automatic intake creates an assessment record without an order. A targeted order is reserved for follow-up and references a protocol whose definition owns research, room, equipment, certification, duration, and detectable-category requirements. Anomalous-disposition is absent because this site has not yet unlocked a compatible protocol.
 
 ## Mutation Ownership
 
@@ -1114,7 +1128,7 @@ May reveal actual transient values, hidden effects, exact health, real location,
 2. Should the UI display bias values numerically, as named bands, or both?
 3. Should derived Health use a simple additive Effect total, domain-specific caps, or a worst-condition-weighted formula?
 4. How stale can assessments become before imperfect information feels unfair?
-5. Which Trait categories should baseline intake screen, and how quickly should research unlock stronger protocols?
+5. Should improved screening run automatically, require a Director action, or reserve pawn assignments for targeted follow-up only?
 6. Which physical monitors are available at game start, and what infrastructure powers them?
 7. Should official skill/certification records always be known while practical competence assessments become stale?
 8. Should rare personality-changing events add permanent Effects only, or may they explicitly replace a Trait with player-visible history?
