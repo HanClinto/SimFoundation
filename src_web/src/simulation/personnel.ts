@@ -1137,21 +1137,16 @@ export function advancePersonnel(
       ? person.defaultActivity
       : person.activity;
   const lowRestPressure = person.needs.rest < 40 ? 0.035 : 0;
-  const restorativeActivity = currentActivity.toLowerCase().includes("break");
   return {
     ...person,
     activity: currentActivity,
     stress: round(
-      clamp(
-        person.stress +
-          (restorativeActivity ? -0.04 : 0.008 + lowRestPressure) -
-          effectStressRecovery,
-      ),
+      clamp(person.stress + 0.008 + lowRestPressure - effectStressRecovery),
     ),
     fear: round(clamp(person.fear - 0.01)),
     needs: {
-      satiety: round(clamp(person.needs.satiety - 0.035)),
-      rest: round(clamp(person.needs.rest - 0.02)),
+      satiety: round(clamp(person.needs.satiety - 0.09)),
+      rest: round(clamp(person.needs.rest - 0.05)),
     },
     effects: activeEffects,
   };

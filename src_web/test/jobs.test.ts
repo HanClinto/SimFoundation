@@ -126,7 +126,7 @@ describe("site jobs", () => {
       ({ id }) => id === "person-mara-voss",
     );
     expect(settled.jobs[0]?.status).toBe("completed");
-    expect(settledMara?.activity).toBe("Reviewing SCP-9620 telemetry");
+    expect(settledMara?.activity).toBe("Available for scheduled work");
     expect(settledMara?.skills.find(({ id }) => id === "research")?.xp).toBe(8);
   });
 

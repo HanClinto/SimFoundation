@@ -15,6 +15,10 @@ import {
   setClinicalCarePolicy,
   type ClinicalCarePolicy,
 } from "../simulation/clinical";
+import {
+  setPersonnelSchedule,
+  type ScheduleBlock,
+} from "../simulation/routines";
 
 export interface ConstructionCommandResult {
   readonly code: ConstructionCode;
@@ -44,6 +48,10 @@ export interface GameController {
   orderPsychologicalAssessment(personId: string): ControllerSnapshot;
   orderMoodScreening(personId: string): ControllerSnapshot;
   setClinicalCarePolicy(policy: ClinicalCarePolicy): ControllerSnapshot;
+  setPersonnelSchedule(
+    personId: string,
+    schedule: readonly ScheduleBlock[],
+  ): ControllerSnapshot;
   setRunning(running: boolean): ControllerSnapshot;
   subscribe(listener: ControllerListener): () => void;
 }
@@ -65,6 +73,11 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+
+    setPersonnelSchedule(personId, schedule) {
+      state = setPersonnelSchedule(state, personId, schedule);
+      return publish();
+    },
 
     setClinicalCarePolicy(policy) {
       state = setClinicalCarePolicy(state, policy);

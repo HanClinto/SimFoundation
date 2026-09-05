@@ -106,7 +106,7 @@ describe("SCP-999", () => {
         completedTick: 5,
       },
     });
-    expect(emil?.stress).toBeLessThan(27);
+    expect(emil?.stress).toBeCloseTo(27.04);
     expect(emil?.effects).toContainEqual(
       expect.objectContaining({
         id: "effect-comforted-by-999",

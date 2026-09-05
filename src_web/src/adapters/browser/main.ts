@@ -34,6 +34,7 @@ import { refreshForNewDeployment } from "./deployment-version";
 import { createSiteCamera } from "./camera-view";
 import "./personnel-reference.css";
 import { createClinicalCareView } from "./clinical-care-view";
+import { createDayPlanner } from "./day-planner-view";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
@@ -119,6 +120,7 @@ app.innerHTML = `
             <img class="subsystem-icon-asset" data-window-icon src="${medicalIconUrl}" alt="" />
             <span>Occupational Health</span>
           </button>
+          <button class="subsystem-icon" type="button" data-open-window="day-planner-window"><img class="subsystem-icon-asset" data-window-icon src="${controlIconUrl}" alt="" /><span>Day Planner</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -127,12 +129,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>8 available</dd></div>
+            <div><dt>Systems</dt><dd>9 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">8 objects</p>
+        <p class="status-bar-field">9 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -296,6 +298,8 @@ app.innerHTML = `
     <div class="window-body clinical-care-body" id="clinical-care-body"></div>
     <div class="resize-grip" aria-hidden="true"></div>
   </section>
+
+  <section id="day-planner-window" class="window managed-window" aria-label="Site 828 day planner" hidden><div class="title-bar"><div class="title-bar-text">Site 828 - Day Planner</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body day-planner-body" id="day-planner-body"></div><div class="resize-grip" aria-hidden="true"></div></section>
 
   <section id="anomaly-window" class="window managed-window anomaly-window" aria-label="Site 828 anomaly registry" hidden>
     <div class="title-bar">
@@ -570,6 +574,15 @@ windowManager.register(requireElement<HTMLElement>("#clinical-care-window"), {
   minimumWidth: 320,
   minimumHeight: 220,
 });
+windowManager.register(requireElement<HTMLElement>("#day-planner-window"), {
+  id: "day-planner-window",
+  title: "Day Planner",
+  iconUrl: controlIconUrl,
+  defaultRect: { left: 220, top: 90, width: 740, height: 620 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
 windowManager.register(requireElement<HTMLElement>("#work-orders-window"), {
   id: "work-orders-window",
   title: "Work Orders",
@@ -678,6 +691,10 @@ const siteCamera = createSiteCamera(
 );
 const clinicalCareView = createClinicalCareView(
   requireElement<HTMLElement>("#clinical-care-body"),
+  controller,
+);
+const dayPlanner = createDayPlanner(
+  requireElement<HTMLElement>("#day-planner-body"),
   controller,
 );
 
@@ -927,6 +944,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
+  dayPlanner.render(snapshot);
   clinicalCareView.render(snapshot);
   siteCamera.render(snapshot);
   updatePersonnelRoster(personnelRows, snapshot.game.personnel);

@@ -29,15 +29,18 @@ export function createAssignmentView(
   let people: readonly PersonnelRecord[] = [];
   let work: readonly SiteJob[] = [];
   let selection: readonly string[] = [];
+  let otherCommitments: Readonly<Record<string, string>> = {};
 
   function render(
     personnel: readonly PersonnelRecord[],
     jobs: readonly SiteJob[],
     selectedIds: readonly string[],
+    unavailable: Readonly<Record<string, string>> = {},
   ) {
     people = personnel;
     work = jobs;
     selection = selectedIds;
+    otherCommitments = unavailable;
     const busy = (id: string) =>
       jobs.find(
         (job) =>
@@ -51,7 +54,8 @@ export function createAssignmentView(
         (sort.value === "skill"
           ? level(second) - level(first)
           : sort.value === "availability"
-            ? Number(Boolean(busy(first.id))) - Number(Boolean(busy(second.id)))
+            ? Number(Boolean(busy(first.id) || unavailable[first.id])) -
+              Number(Boolean(busy(second.id) || unavailable[second.id]))
             : 0) || first.name.localeCompare(second.name),
     );
     const rows = new Map(
@@ -92,7 +96,7 @@ export function createAssignmentView(
         ? job.assessment?.patientId === person.id
           ? "Attending appointment (patient)"
           : job.title
-        : "Available for assignment";
+        : (unavailable[person.id] ?? "Available for assignment");
       row.querySelector("[data-assignment-eligibility]")!.textContent =
         options.eligibility(person);
       if (body.children[index] !== row)
@@ -101,10 +105,14 @@ export function createAssignmentView(
     });
     for (const row of rows.values()) row.remove();
     container.querySelector("[data-assignment-count]")!.textContent =
-      `${selectedIds.length} assigned / ${personnel.filter((person) => selectedIds.includes(person.id) && !busy(person.id)).length} currently free`;
+      `${selectedIds.length} assigned / ${personnel.filter((person) => selectedIds.includes(person.id) && !busy(person.id) && !unavailable[person.id]).length} currently free`;
   }
-  search.addEventListener("input", () => render(people, work, selection));
-  sort.addEventListener("change", () => render(people, work, selection));
+  search.addEventListener("input", () =>
+    render(people, work, selection, otherCommitments),
+  );
+  sort.addEventListener("change", () =>
+    render(people, work, selection, otherCommitments),
+  );
   body.addEventListener("change", (event) => {
     const input = event.target as HTMLInputElement;
     const id = input.dataset.assignmentToggle;

@@ -9,22 +9,40 @@ import { advanceScp999 } from "./scp-999";
 import { advanceConstruction } from "./construction";
 import type { GameState } from "./state";
 import { discoverClinicalWork } from "./clinical";
+import {
+  advancePantrySupply,
+  advanceRoutines,
+  routineUnavailableIds,
+} from "./routines";
 
 export function advanceSimulation(state: GameState): GameState {
-  state = discoverClinicalWork(state);
   const tick = state.tick + 1;
+  state = advanceRoutines(
+    discoverClinicalWork({
+      ...state,
+      tick,
+      gameMinute: state.gameMinute + 1,
+      personnel: state.personnel.map((person) =>
+        advancePersonnel(person, tick),
+      ),
+    }),
+  );
   const jobResult = advanceJobs(
     state.jobs,
-    state.personnel.map((person) => advancePersonnel(person, tick)),
+    state.personnel,
     tick,
     state.world,
     state.clinicalCare.clinicianIds,
+    routineUnavailableIds(state),
   );
   const scp999Result = advanceScp999(
     state.scp999,
     jobResult.personnel,
     tick,
     jobResult.world,
+    Object.entries(state.routines.activities)
+      .filter(([, activity]) => activity.kind !== "break")
+      .map(([id]) => id),
   );
   const previousJobs = new Map(state.jobs.map((job) => [job.id, job]));
   const completedThisTick = (jobId: string) =>
@@ -106,15 +124,17 @@ export function advanceSimulation(state: GameState): GameState {
       ],
     };
   }
-  return advanceConstruction({
-    ...state,
-    tick,
-    gameMinute: state.gameMinute + 1,
-    incident,
-    jobs,
-    personnel: scp999Result.personnel,
-    scp999: scp999Result.anomaly,
-    scp9620,
-    world: scp999Result.world,
-  });
+  return advanceConstruction(
+    advancePantrySupply({
+      ...state,
+      tick,
+      gameMinute: state.gameMinute,
+      incident,
+      jobs,
+      personnel: scp999Result.personnel,
+      scp999: scp999Result.anomaly,
+      scp9620,
+      world: scp999Result.world,
+    }),
+  );
 }

@@ -14,6 +14,7 @@ import {
 } from "../../simulation/clinical";
 import { recordAge } from "./personnel-records";
 import { createAssignmentView } from "./assignment-view";
+import { routineUnavailableIds } from "../../simulation/routines";
 
 export function createClinicalCareView(
   container: HTMLElement,
@@ -136,6 +137,13 @@ export function createClinicalCareView(
       snapshot.game.personnel,
       snapshot.game.jobs,
       snapshot.game.clinicalCare.clinicianIds,
+      Object.fromEntries(
+        routineUnavailableIds(snapshot.game).map((id) => [
+          id,
+          snapshot.game.personnel.find((person) => person.id === id)
+            ?.activity ?? "Unavailable for routine work",
+        ]),
+      ),
     );
     const coverage = snapshot.game.clinicalCare.clinicianIds.length;
     container.querySelector("[data-clinical-coverage]")!.textContent =

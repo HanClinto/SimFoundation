@@ -44,12 +44,14 @@ function hasCalmEffect(person: PersonnelRecord): boolean {
 function selectTarget(
   personnel: readonly PersonnelRecord[],
   world: SiteWorld,
+  unavailableIds: readonly string[],
 ): PersonnelRecord | null {
   return (
     [...personnel]
       .filter(
         (person) =>
           person.stress >= MINIMUM_TARGET_STRESS &&
+          !unavailableIds.includes(person.id) &&
           !hasCalmEffect(person) &&
           person.currentJobId === null,
       )
@@ -87,6 +89,7 @@ export function advanceScp999(
   personnel: readonly PersonnelRecord[],
   currentTick: number,
   world: SiteWorld,
+  unavailableIds: readonly string[] = [],
 ): Scp999AdvanceResult {
   const previousTarget = personnel.find(
     ({ id }) => id === anomaly.targetPersonId,
@@ -103,7 +106,9 @@ export function advanceScp999(
       1;
   if (
     anomaly.status === "comforting" &&
-    (!nearby || previousTarget?.currentJobId !== null)
+    (!nearby ||
+      previousTarget?.currentJobId !== null ||
+      unavailableIds.includes(previousTarget?.id ?? ""))
   ) {
     return {
       anomaly: {
@@ -162,9 +167,10 @@ export function advanceScp999(
   const target =
     anomaly.status === "approaching" &&
     previousTarget?.currentJobId === null &&
-    !hasCalmEffect(previousTarget)
+    !hasCalmEffect(previousTarget) &&
+    !unavailableIds.includes(previousTarget.id)
       ? previousTarget
-      : selectTarget(personnel, world);
+      : selectTarget(personnel, world, unavailableIds);
   const targetPosition = target ? world.positions[target.id] : undefined;
   const route =
     origin && targetPosition

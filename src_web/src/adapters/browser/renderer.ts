@@ -2,6 +2,9 @@ import type { ControllerSnapshot } from "../../application/controller";
 import { tileAt, type TilePosition } from "../../simulation/world";
 import workerUrl from "./assets/site-worker.svg";
 import scp999Url from "./assets/site-999.svg";
+import bedUrl from "./assets/station-bed.svg";
+import mealUrl from "./assets/station-meal.svg";
+import breakUrl from "./assets/station-break.svg";
 import { laboratoryTiles } from "../../simulation/construction";
 
 const TILE_WIDTH = 40;
@@ -71,6 +74,7 @@ function drawTile(
 
 let worker: HTMLImageElement | null = null;
 let scp999: HTMLImageElement | null = null;
+const stationImages = new Map<string, HTMLImageElement>();
 
 export function renderSite(
   canvas: HTMLCanvasElement,
@@ -88,6 +92,16 @@ export function renderSite(
     scp999.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
     worker.src = workerUrl;
     scp999.src = scp999Url;
+    for (const [kind, url] of [
+      ["sleep", bedUrl],
+      ["meal", mealUrl],
+      ["break", breakUrl],
+    ]) {
+      const image = new Image();
+      image.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
+      image.src = url!;
+      stationImages.set(kind!, image);
+    }
   }
   const width = canvas.clientWidth;
   const height = canvas.clientHeight;
@@ -207,6 +221,18 @@ export function renderSite(
     context.fillStyle = "#38473f";
     context.fillText(label, point.x, point.y + 3);
   }
+  for (const station of snapshot.game.routines.stations) {
+    const point = projectPosition(station.position, camera, width, height);
+    const image = stationImages.get(station.kind);
+    if (image?.complete && image.naturalWidth > 0)
+      context.drawImage(
+        image,
+        point.x - 22 * camera.zoom,
+        point.y - 24 * camera.zoom,
+        44 * camera.zoom,
+        32 * camera.zoom,
+      );
+  }
   const footprints = [
     ...snapshot.game.construction.blueprints
       .filter(({ status }) => status !== "completed" && status !== "cancelled")
@@ -291,6 +317,26 @@ export function renderSite(
       context.fillRect(point.x - labelWidth / 2, point.y + 10, labelWidth, 18);
       context.fillStyle = "#24382d";
       context.fillText(label, point.x, point.y + 23);
+    }
+    const routine = snapshot.game.routines.activities[id];
+    if (routine && routine.progress > 0 && camera.zoom >= 0.7) {
+      const label =
+        routine.kind === "meal"
+          ? "Meal"
+          : routine.kind === "sleep"
+            ? "Rest"
+            : "Break";
+      context.font = "10px 'Courier New', monospace";
+      const labelWidth = context.measureText(label).width + 8;
+      context.fillStyle = "#f4f2dd";
+      context.fillRect(
+        point.x - labelWidth / 2,
+        point.y - spriteHeight - 15,
+        labelWidth,
+        14,
+      );
+      context.fillStyle = "#405949";
+      context.fillText(label, point.x, point.y - spriteHeight - 5);
     }
   }
   context.textAlign = "start";

@@ -75,6 +75,12 @@ Temporary maps must use the same headless simulation rules as the base. They are
 
 ## Personnel
 
+### Daily Routines Prototype
+
+The Day Planner edits each pawn's 24 hourly work, free-time, and sleep blocks, with day-shift, night-shift, and rest-day presets. Staff autonomously seek a meal when hungry, a bed when tired, and a break when stressed. Beds, meal seats, and break seats are physically located and exclusively reserved; travel alone does not restore needs. Ordinary schedule changes let current jobs finish, while critical hunger or exhaustion can release work reservations without erasing progress.
+
+The pantry starts with 36 meals and the store with 72 more. Logistics automatically collects and carries batches to replenish a low pantry; no food is created by restocking. Shortages and unreachable or occupied service stations are visible in Day Planner. External procurement, cooking, treatment, and richer refusal behavior remain future systems. These stations are a first functional-room slice, not a full furnishing editor.
+
 ### Occupational Health Prototype
 
 Open Occupational Health from the Site 828 facility folder to assign any staff member to medical duty and choose separate recurring intervals for physical examinations, rapid mood screeners, psychiatric evaluations, and extended anomalous behavior surveys. Routine reviews are off by default. Anomalous surveys require Anomalous Psychometrics research; a configured interval waits for that research rather than exposing hidden traits.

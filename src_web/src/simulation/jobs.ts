@@ -225,11 +225,13 @@ export function advanceJobs(
   tick: number,
   world: SiteWorld,
   clinicianIds: readonly string[] = [],
+  unavailablePersonIds: readonly string[] = [],
 ): JobAdvanceResult {
   const people = new Map(personnel.map((person) => [person.id, person]));
   const positions = { ...world.positions };
-  const busyPersonIds = new Set(
-    jobs.flatMap((job) =>
+  const busyPersonIds = new Set([
+    ...unavailablePersonIds,
+    ...jobs.flatMap((job) =>
       job.status === "in-progress" && job.assignedPersonId
         ? [
             job.assignedPersonId,
@@ -237,7 +239,7 @@ export function advanceJobs(
           ]
         : [],
     ),
-  );
+  ]);
 
   const advancedJobsById = new Map<string, SiteJob>();
   const orderedJobs = [...jobs].sort(

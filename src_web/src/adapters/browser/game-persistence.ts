@@ -719,6 +719,136 @@ function isScp9620State(value: unknown): boolean {
   );
 }
 
+function isRoutineState(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isIntegerInRange(value.pantryMeals, 0, 108) &&
+    isIntegerInRange(value.mealsConsumed, 0, 108) &&
+    isIntegerInRange(value.reserveMeals, 0, 72) &&
+    isIntegerInRange(value.nextSupplyNumber, 1, 1000) &&
+    (value.supplyOrder === null ||
+      (isRecord(value.supplyOrder) &&
+        isNonEmptyString(value.supplyOrder.jobId) &&
+        isIntegerInRange(value.supplyOrder.quantity, 1, 12) &&
+        isLiteral(value.supplyOrder.phase, ["collection", "delivery"]))) &&
+    isArrayOf(
+      value.stations,
+      (station) =>
+        isRecord(station) &&
+        isNonEmptyString(station.id) &&
+        isLiteral(station.kind, ["meal", "sleep", "break"]) &&
+        isRecord(station.position) &&
+        isIntegerInRange(station.position.x, 0, 127) &&
+        isIntegerInRange(station.position.y, 0, 127),
+      100,
+    ) &&
+    isRecord(value.schedules) &&
+    Object.values(value.schedules).every(
+      (schedule) =>
+        isArrayOf(
+          schedule,
+          (block) => isLiteral(block, ["work", "free", "sleep"]),
+          24,
+        ) && schedule.length === 24,
+    ) &&
+    isRecord(value.activities) &&
+    Object.values(value.activities).every(
+      (activity) =>
+        isRecord(activity) &&
+        isLiteral(activity.kind, ["meal", "sleep", "break"]) &&
+        isNonEmptyString(activity.stationId) &&
+        isIntegerInRange(activity.progress, 0) &&
+        isIntegerInRange(activity.startedTick, 0) &&
+        typeof activity.mealConsumed === "boolean",
+    ) &&
+    isRecord(value.blockedReasons) &&
+    Object.values(value.blockedReasons).every(isNonEmptyString)
+  );
+}
+
+function routineReferencesValid(state: GameState): boolean {
+  const ids = state.personnel.map(({ id }) => id);
+  const routines = state.routines;
+  const carried =
+    routines.supplyOrder?.phase === "delivery"
+      ? routines.supplyOrder.quantity
+      : 0;
+  if (
+    routines.pantryMeals +
+      routines.reserveMeals +
+      routines.mealsConsumed +
+      carried !==
+    108
+  )
+    return false;
+  if (routines.supplyOrder) {
+    const supplyJob = state.jobs.find(
+      ({ id }) => id === routines.supplyOrder!.jobId,
+    );
+    if (
+      !supplyJob ||
+      supplyJob.skillId !== "logistics" ||
+      supplyJob.status === "completed" ||
+      supplyJob.requiredProgress !== 1 ||
+      supplyJob.assessment
+    )
+      return false;
+    if (
+      routines.supplyOrder.phase === "delivery" &&
+      supplyJob.requiredWorkerId === null
+    )
+      return false;
+    if (
+      routines.supplyOrder.phase === "collection" &&
+      routines.reserveMeals < routines.supplyOrder.quantity
+    )
+      return false;
+  }
+  if (
+    Object.keys(routines.schedules).length !== ids.length ||
+    !ids.every((id) => routines.schedules[id] !== undefined)
+  )
+    return false;
+  if (
+    new Set(routines.stations.map(({ id }) => id)).size !==
+    routines.stations.length
+  )
+    return false;
+  if (
+    !routines.stations.every(({ position }) =>
+      isWalkable(state.world.map, position),
+    )
+  )
+    return false;
+  if (!Object.keys(routines.blockedReasons).every((id) => ids.includes(id)))
+    return false;
+  const reserved = new Set<string>();
+  return Object.entries(routines.activities).every(([id, activity]) => {
+    const person = state.personnel.find((person) => person.id === id);
+    const station = routines.stations.find(
+      ({ id }) => id === activity.stationId,
+    );
+    if (
+      !person ||
+      person.currentJobId !== null ||
+      !station ||
+      station.kind !== activity.kind ||
+      reserved.has(station.id) ||
+      activity.startedTick > state.tick
+    )
+      return false;
+    if (activity.kind !== "meal" && activity.mealConsumed) return false;
+    if (
+      activity.kind === "meal" &&
+      activity.progress > 0 &&
+      !activity.mealConsumed
+    )
+      return false;
+    reserved.add(station.id);
+    return true;
+  });
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -757,7 +887,8 @@ function isGameState(value: unknown): value is GameState {
     !isScp999State(value.scp999) ||
     !isScp9620State(value.scp9620) ||
     !isSiteWorld(value.world) ||
-    !isConstructionState(value.construction)
+    !isConstructionState(value.construction) ||
+    !isRoutineState(value.routines)
   )
     return false;
   const state = value as unknown as GameState;
@@ -770,6 +901,7 @@ function isGameState(value: unknown): value is GameState {
       state.personnel.some((person) => person.id === id),
     ) &&
     constructionReferencesValid(state) &&
+    routineReferencesValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||
       personIds.includes(state.scp999.targetPersonId)) &&

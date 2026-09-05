@@ -36,9 +36,9 @@ describe("personnel simulation", () => {
     expect(first.personnel[0]).toMatchObject({
       stress: 18.008,
       fear: 5.99,
-      needs: { satiety: 81.965, rest: 75.98 },
+      needs: { satiety: 81.91, rest: 75.95 },
     });
-    expect(first.personnel[5]?.stress).toBe(30.96);
+    expect(first.personnel[5]?.stress).toBe(31.008);
     expect(first.personnel[0]?.stress).toBeGreaterThan(18);
   });
 

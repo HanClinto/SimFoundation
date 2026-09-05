@@ -18,4 +18,8 @@ Nonblocking questions and provisional choices from the unattended development ru
 
 ## Handoff Status
 
-This document will be updated at completed checkpoints. A question here is not a claim that the corresponding feature has already been implemented.
+- Published `6d00402`: consistent original subsystem icons and pawn portrait/caption identities.
+- Completed daily-routine checkpoint: physical meals, sleep and breaks; hourly schedules; finite pantry/store logistics; Day Planner. A two-day headless scenario sustains routine needs and passes deterministic save continuation. Browser checks verified schedule edits, physical meal arrival, food consumption, and seat-contention reporting. Full validation passes 89 tests.
+- Still pending: facility observation memory/camera placement, outward expression versus hidden health, and the authored material-containment scenario. These are not implied complete by the needs-loop work.
+
+A question here is not a claim that the corresponding feature has already been implemented.

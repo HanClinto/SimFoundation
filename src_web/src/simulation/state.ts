@@ -8,8 +8,9 @@ import {
   type ConstructionState,
 } from "./construction";
 import type { ClinicalCarePolicy } from "./clinical";
+import { createRoutineState, type RoutineState } from "./routines";
 
-export const GAME_STATE_VERSION = 19;
+export const GAME_STATE_VERSION = 20;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -35,6 +36,7 @@ export interface GameState {
   readonly world: SiteWorld;
   readonly construction: ConstructionState;
   readonly clinicalCare: ClinicalCarePolicy;
+  readonly routines: RoutineState;
 }
 
 export function createInitialState(seed = 9620): GameState {
@@ -65,5 +67,6 @@ export function createInitialState(seed = 9620): GameState {
       anomalousReviewInterval: 0,
       clinicianIds: ["person-priya-shah"],
     },
+    routines: createRoutineState(personnel),
   };
 }

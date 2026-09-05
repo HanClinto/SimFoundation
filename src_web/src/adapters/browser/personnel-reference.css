@@ -359,6 +359,64 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px 16px;
 }
+
+.day-planner-body {
+  background: #f1f5eb;
+  overflow: auto;
+  padding: 12px;
+}
+.planner-toolbar {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: end;
+  margin: 10px 0;
+}
+.planner-toolbar label {
+  display: grid;
+  gap: 4px;
+}
+.planner-person {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  padding: 8px 0;
+}
+.planner-person p {
+  color: #945737;
+  margin: 5px 0;
+}
+.hour-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(70px, 1fr));
+  gap: 4px;
+  margin: 10px 0;
+}
+.hour-grid button {
+  min-width: 0;
+  height: 30px;
+  font-size: 11px;
+}
+.hour-grid button[data-block="work"] {
+  background: #d4e0e5;
+}
+.hour-grid button[data-block="free"] {
+  background: #e0e7c7;
+}
+.hour-grid button[data-block="sleep"] {
+  background: #c8cfdc;
+}
+.hour-grid button[aria-current="true"] {
+  outline: 2px solid #64806a;
+  outline-offset: -3px;
+}
+.planner-roster-scroll {
+  overflow: auto;
+}
+.planner-roster-scroll table {
+  width: 100%;
+  min-width: 500px;
+}
 .clinical-survey-policies label {
   display: flex;
   flex-direction: column;

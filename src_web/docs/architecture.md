@@ -179,6 +179,14 @@ Scoring inputs and rejection reasons must be inspectable. A pawn inspector shoul
 
 ## Psychology
 
+### Daily Routines
+
+`routines` owns hourly schedules, service stations, exclusive per-person station reservations, blocked reasons, pantry/store meal counts, and a finite supply order. Each tick updates needs, discovers clinical work, evaluates routines, then assigns and advances jobs. Routine activities restore needs only at their destination. The default work day is 08:00-18:00; sleep is 22:00-06:00. Critical hunger/exhaustion interrupts work (releasing both participants of a clinical appointment); ordinary off-duty changes allow committed work to finish. New ordinary work does not assign off-duty or active-routine personnel. Pantry hauling is preserved through personal-need interruption so carried stock cannot change owner remotely.
+
+Pantry replenishment is a two-stage logistics job: reach storage and collect, then physically deliver the same counted load. A single pending supply order and its required carrier prevent duplicate delivery. Initial meal conservation is 108 across store, pantry, consumed meals, and any carried load. Save validation checks this equation, 24-hour schedules, station references, and exclusive reservations. Stock cannot replenish indefinitely; external procurement remains unimplemented.
+
+The Day Planner is a browser-owned modeless inspector over schedules and observable activities. It never changes needs directly. The Camera Feed renders original station markers and broad activity labels. Assignment tables consider current routines and off-duty schedules as well as jobs. Needs and stress recovery no longer depend on arbitrary activity-description text.
+
 ### Clinical Work and Occupational Health
 
 Assessment commands create serializable clinical referrals instead of immediately generating reports. A clinical order identifies its patient and examination type. The job scheduler reserves both a qualified clinician assigned to medical duty and a distinct patient; both must reach the medical bay before progress begins. Patient or clinician unavailability and blocked routes delay work. Completed physical and psychological reports identify the attending clinician. Examinations change recorded knowledge, not authoritative injuries.
