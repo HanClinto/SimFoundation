@@ -97,12 +97,14 @@ Choose it if the facility's information infrastructure should matter as much as 
 
 ## Recommendation
 
-Use Simplified Hybrid as the current candidate, while retaining Layered Hybrid as the higher-detail fallback. The candidate should follow four constraints:
+Use Simplified Hybrid as the current candidate, while retaining Layered Hybrid as the higher-detail fallback. The candidate should follow six constraints:
 
-1. Skill remains the dominant contributor to ordinary work; aptitudes primarily affect learning and edge cases.
-2. Composure remains independent from Analysis/Instinct and is derived from health, current pressures, traits, training, and effects.
-3. Actual pawn state and player knowledge remain separate; ordinary UI never silently displays omniscient values.
-4. The default dossier exposes only assessed identity, assignment, health summaries, activity, and urgent findings. Exact effects, formulas, and hidden state remain in drill-down or debug views.
+1. Character state is organized by lifecycle: Immutable Identity/Traits/Biases; Stable Foundation Assignment/Skills/Equipment; Transient Needs; Effects; Derived Health and capabilities.
+2. Skill remains the dominant contributor to ordinary work; three bipolar Biases primarily affect learning and task approach.
+3. Composure remains independent from Analysis/Instinct and is derived from Health, Stress, Fear, Threat Response, relevant training, and Effects.
+4. Actual pawn state and player knowledge remain separate; ordinary UI never silently displays omniscient values.
+5. One Effect instance shape uses optional activation, expiration, magnitude, and progression fields instead of separate buff/injury/memory/aura subclasses.
+6. The default dossier exposes only assessed identity, assignment, Health summaries, activity, and urgent findings. Exact Effects, formulas, and hidden state remain in drill-down or debug views.
 
 Borrow Bonds and three-category exposure scars from Proposal 3 only after relationships and trauma repeatedly prove too shallow with memories alone.
 
@@ -115,7 +117,7 @@ Borrow Bonds and three-category exposure scars from Proposal 3 only after relati
 5. Should skill levels be 0-20, 0-100, or level plus hidden XP?
 6. Are certifications useful gating or administrative clutter?
 7. Which paranormal concepts require persistent scars beyond memories/effects?
-8. Is nine equipment slots the right launch set?
+8. Are Head, Eyes, Shirt, Feet, Left/Right Hand, and two Special slots the right launch set?
 9. Which details belong on the default ID summary versus tabs?
 10. Does the recommended model support cozy recovery after serious incidents?
 11. Should Physical/Mental/Emotional health totals be stored or derived from conditions?

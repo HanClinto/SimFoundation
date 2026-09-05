@@ -8,34 +8,32 @@ Primary inspirations: The Sims, RimWorld, RuneScape, Project Zomboid, Arkham Hor
 
 A pawn should be deep enough to develop into a distinctive veteran without requiring the player to read a full tabletop character sheet during ordinary facility work.
 
-This proposal simplifies the Layered Hybrid into eight authoritative layers:
+This proposal organizes every authoritative pawn field by how and why it changes:
 
-1. Personal identity: stable biographical facts
-2. Foundation record: mutable assignment and authorization
-3. Immutable categorical traits
-4. Three balanced aptitude biases
-5. Eight use-based skills
-6. Five transient needs and pressures
-7. Three health domains
-8. Effects, equipment, and derived capabilities
+1. **Immutable:** Identity, Traits, and Biases
+2. **Stable:** Foundation Assignment, usage-based Skills, Equipment, and Inventory
+3. **Transient:** Food, Energy, Social, Stress, and Fear
+4. **Effects:** one composable structure for conditional, equipped, spatial, injury, memory, medication, and anomalous modifiers
+5. **Derived:** hidden Health domains and task-specific capabilities calculated from the other layers
 
-A ninth layer, **player knowledge**, determines which of those facts the Site Director is currently allowed to see. The simulation knows the actual pawn state; ordinary UI receives an assessment-limited projection. Cameras, monitors, interviews, examinations, and reports update that projection.
+**Player knowledge is not another Character layer.** It belongs to a separate faction knowledge registry keyed by person ID. The simulation knows the actual pawn; the Site Director receives an assessment-limited projection. Cameras, monitors, interviews, examinations, and reports update that projection.
 
 The system favors tradeoffs over universally superior recruits. Skills provide the satisfying “number goes up” progression. Aptitude axes describe style and affinity rather than raw power. Traits create categorical behavior. Equipment and effects compose around those facts.
 
 ## Major Differences from Proposal 4
 
 - `legalName` plus optional `nickname` replaces preferred name.
-- Stable identity is separated from mutable Foundation assignment and authorization.
+- Immutable identity is separated from stable but mutable Foundation assignment and authorization.
 - Medical and moral traits are separate categories.
 - A pawn may have zero or one trait in each category; no global trait-count rule is required.
 - Five independent aptitudes are replaced with three bipolar aptitude biases.
 - Composure is not paired against Cognition. It is a derived capability influenced by traits, health, Stress, Fear, skills, and effects.
 - Transient state uses Food, Energy, Social, Stress, and Fear.
-- Health is explicitly divided into Physical, Mental, and Emotional domains.
+- Physical, Mental, and Emotional Health are derived values rather than stored resources.
+- Neck and wrist equipment slots are consolidated into two general-purpose Special slots.
 - All ordinary personnel information is subject to assessment recency, confidence, and sensor coverage.
 
-## Why Cognition and Composure Should Not Be Opposites
+## Biases and Specialization
 
 A zero-sum Analysis↔Composure axis would imply that analytical people are inherently worse under pressure and calm people inherently think less deeply. That is too reductive for the stories we want. It would also make researcher and security archetypes feel predetermined.
 
@@ -55,9 +53,34 @@ Composure remains important but is calculated from:
 
 A methodical scientist can be highly composed. An instinctive security officer can panic. The model does not force a false relationship between intellect and courage.
 
+The three axes should nevertheless produce recognizable specializations:
+
+- A laboratory specialist commonly trends toward Finesse and Analysis.
+- A tactical responder commonly trends toward Force or Finesse depending on weapon role, plus Instinct and Insulation.
+- An anomaly-sensitive researcher commonly trends toward Analysis and Attunement.
+- A containment anchor commonly trends toward Force, Resolve-producing traits, and Insulation.
+
+Tasks declare bias tags. Each matching step changes learning rate by 5%, capped at ±15% per axis. Skill remains the dominant input.
+
+```json
+{
+  "taskId": "calibrate-scp-9620-sensor",
+  "skill": "research",
+  "biasTags": [
+    { "axis": "forceFinesse", "direction": "finesse", "weight": 0.5 },
+    { "axis": "analysisInstinct", "direction": "analysis", "weight": 1 }
+  ],
+  "learningRateFormula": "baseXp * (1 + sum(axisStep * direction * weight * 0.05))"
+}
+```
+
+At Analysis 3, this task grants 15% more Research XP from that axis. At Instinct 3, it grants 15% less. A sufficiently skilled instinctive researcher still performs well; they simply learn controlled analytical work less efficiently.
+
 ## Complete Rules Taxonomy
 
-### 1. Personal identity
+### 1. Immutable
+
+#### Identity
 
 Stable during an ordinary campaign:
 
@@ -73,7 +96,30 @@ Stable during an ordinary campaign:
 
 Legal name is the administrative name. Nickname is optional and is used in informal UI when present. A legal-name change can exist as a rare administrative event, but it is not routine pawn progression.
 
-### 2. Foundation record
+#### Traits
+
+A pawn may have zero or one trait from each category. No trait means ordinary behavior for that category. Traits ordinarily do not change; rare authored events add permanent Effects rather than silently rewriting personality.
+
+The complete categories and launch traits appear below.
+
+Each Trait definition references one always-eligible Effect definition. The pawn stores the Trait ID under Immutable state and the corresponding Effect instance under Effects. Conditional trait behavior uses `activeWhen` on that ordinary Effect. There is no separate trait-modifier engine.
+
+Representative mappings cover every trait category:
+
+| Trait               | Effect behavior                                                                               |
+| ------------------- | --------------------------------------------------------------------------------------------- |
+| Methodical          | Continuous Work Quality increase and Task Start Speed decrease                                |
+| Scaredy-Cat         | Continuous Fear Gain increase and Panic Threshold decrease                                    |
+| Sociable            | Conditional Social Recovery increase while interacting; Social Drain increase while isolated  |
+| Psychically Attuned | Continuous Anomaly Detection increase and anomalous Effect magnitude increase                 |
+| High Pain Tolerance | Conditional Pain Response reduction while a painful injury Effect is active                   |
+| Homicidal           | Conditional violent-break eligibility and lower violence inhibition during severe Stress/Fear |
+
+Exact numeric balance belongs to trait definitions and testing, not the Character schema.
+
+### 2. Stable
+
+#### Foundation assignment
 
 Mutable, assignable, or earned:
 
@@ -98,11 +144,7 @@ Relationships are not part of identity or Foundation authorization. They belong 
 
 Connections can be deferred without destabilizing the core pawn model.
 
-### 3. Immutable categorical traits
-
-A pawn may have zero or one trait from each category. No trait means ordinary behavior for that category. Traits ordinarily do not change; rare authored events may add a separate permanent effect rather than silently rewriting personality.
-
-#### Work style
+#### Work-style traits
 
 - Methodical: higher quality, slower task start, lower error chance
 - Industrious: selects work quickly, dislikes idleness
@@ -110,7 +152,7 @@ A pawn may have zero or one trait from each category. No trait means ordinary be
 - Goof-Off: seeks breaks early, restores Emotional health efficiently, lower sustained-work tolerance
 - Perfectionist: repeats low-quality work, high quality ceiling, Stress from rushed orders
 
-#### Threat response
+#### Threat-response traits
 
 - Stoic: delayed panic, Fear remains internally significant
 - Scaredy-Cat: rapid Fear gain, early retreat
@@ -118,7 +160,7 @@ A pawn may have zero or one trait from each category. No trait means ordinary be
 - Vigilant: detects threats early, gains Stress during prolonged alerts
 - Freeze-Prone: low action reliability during sudden acute Fear
 
-#### Social temperament
+#### Social-temperament traits
 
 - Compassionate: effective comfort, stronger reaction to others' suffering
 - Abrasive: relationship friction, resists social manipulation
@@ -126,7 +168,7 @@ A pawn may have zero or one trait from each category. No trait means ordinary be
 - Solitary: works well alone, weak group recreation benefit
 - Charismatic: increases group confidence, attracts attention and responsibility
 
-#### Anomalous disposition
+#### Anomalous-disposition traits
 
 - Psychically Attuned: perceives subtle anomalous effects, greater exposure risk
 - Psychically Insulated: reduced psychic influence, misses subtle signals
@@ -134,7 +176,7 @@ A pawn may have zero or one trait from each category. No trait means ordinary be
 - Skeptical: resists rumor and suggestion; undeniable impossibility damages Mental health more
 - Resonant: anomalous equipment effects are stronger in both directions
 
-#### Medical constitution
+#### Medical-constitution traits
 
 - Robust: slower Physical health loss from ordinary illness and exertion
 - Sickly: greater illness risk, faster benefit from careful preventive treatment
@@ -142,7 +184,7 @@ A pawn may have zero or one trait from each category. No trait means ordinary be
 - High Pain Tolerance: functions through Pain but may conceal injury
 - Fast Healer: recovery effects progress faster
 
-#### Moral disposition
+#### Moral-disposition traits
 
 - Altruistic: prioritizes rescue, suffers from harmful orders
 - Pragmatic: lower moral-injury pressure from necessary tradeoffs
@@ -150,7 +192,7 @@ A pawn may have zero or one trait from each category. No trait means ordinary be
 - Obsessive: persists toward a focus, resists task switching
 - Homicidal: violence threshold is lower; violent break patterns become eligible; trust penalties apply when discovered
 
-### 4. Balanced aptitude biases
+#### Biases
 
 Each axis is an integer from `-3` to `+3`. Zero is balanced. Neither direction increases total character power; it changes preferred approach, learning affinity, and edge-case performance.
 
@@ -178,7 +220,7 @@ Analysis is useful for controlled research and engineering. Instinct is useful f
 
 The labels describe endpoints, not morality or competence. Both can be valuable in different protocols.
 
-### 5. Progressive skills
+#### Usage-based skills
 
 Eight core skills, each level 0 through 20 plus XP:
 
@@ -207,7 +249,32 @@ Every skill stores:
 
 Skills improve through meaningful completed activity. Aptitude bias modifies learning or alternate approaches but cannot replace the skill.
 
-### 6. Transient needs and pressures
+For the draft progression curve, `xp` is progress within the current level and resets after leveling. XP required for the next level is:
+
+$$
+	ext{XP to next level} = 100 + 50(\text{current level})^2
+$$
+
+Early levels arrive quickly; level 8 requires 3,300 XP and level 19 requires 18,150 XP. Level 20 is the launch cap. This curve is provisional balance, but the storage semantics are explicit.
+
+#### Equipment and inventory
+
+Core paper-doll slots:
+
+- Head: hats and helmets
+- Eyes: glasses, goggles, optical equipment
+- Shirt: clothing, lab coats, armor
+- Feet: shoes and boots
+- Left hand: tools, weapons, carried devices
+- Right hand: tools, weapons, carried devices
+- Special 1: amulets, rings, bracelets, monitors, shield belts, or unusual devices
+- Special 2: a second general-purpose special item
+
+Deferred slots are Face, Legs, Back, Shoulders, Arms, Belt, and dedicated Ring/Neck/Wrist slots. Special slots create an explicit opportunity cost between utility, protection, monitoring, and anomalous artifacts.
+
+Inventory initially provides six fixed portrait-oriented cells. Items do not occupy multiple cells. Capacity upgrades can add cells later without changing item shape rules.
+
+### 3. Transient: Needs and Pressures
 
 Five numbers from 0 through 100:
 
@@ -227,75 +294,32 @@ Recreation is an activity category. Examples:
 - SCP-999 play: strong Stress/Fear recovery plus memory/effect
 - Watching approved media: modest Stress recovery
 
-### 7. Health domains
+### 4. Effects
 
-Actual health has three domain totals from 0 through 100 plus named conditions:
+Effects are the only modifier mechanism. The model does not define separate runtime classes for a buff, injury, memory, threshold penalty, aura, medication, equipment bonus, or anomalous affix.
 
-#### Physical health
+Every Effect instance has:
 
-Represents bodily integrity and function.
+- Stable ID and definition ID
+- Source reference
+- Start tick
+- Optional expiration tick
+- Optional activation condition
+- Current magnitude or progress
+- Modifier list
 
-Conditions include:
+The interpretation is simple:
 
-- Sprained Ankle
-- Broken Arm
-- Laceration
-- Burn
-- Blood Loss
-- Infection
-- Radiation Exposure
-- Missing Foot
-- Chronic Pain
+- No activation condition means the Effect is continuously eligible.
+- An activation condition is re-evaluated at deterministic boundaries.
+- No expiration tick means the Effect continues until removed or recovered.
+- An expiration tick makes it temporary.
+- Definition-owned progression can change magnitude, healing, or recovery.
+- Equipment systems add/remove equipped Effects; proximity systems add/remove or activate spatial Effects.
 
-#### Mental health
+This is one data shape with optional fields, not a hierarchy of Effect subclasses.
 
-Represents cognitive coherence, memory integrity, reality testing, and neurological function.
-
-Conditions include:
-
-- Concussion
-- Memory Gap
-- Dissociation
-- Compulsive Thought Pattern
-- Cognitive Interference
-- Hallucination
-- Anomalous Suggestion
-- Possession
-
-#### Emotional health
-
-Represents medium-term affect regulation, connectedness, and recovery capacity. It is not current Mood.
-
-Conditions include:
-
-- Grief
-- Isolation
-- Burnout
-- Moral Injury
-- Emotional Numbness
-- Hopeful
-- Supported
-
-Health totals summarize domain function. Conditions explain causes and apply specific effects. Mood and Sanity are derived outputs:
-
-- Mood: immediate subjective wellbeing from needs, Emotional health, Stress, memories, and effects
-- Sanity: current coherent functioning from Mental health, Fear, Stress, anomalous exposure, and effects
-
-### 8. Unified effects
-
-Effects are the only modifier mechanism. A condition, injury, memory, aura, medication, equipment bonus, affix, or threshold reaction all uses the same structural contract.
-
-#### Effect lifetime types
-
-- Conditional: active while an expression is true
-- Timed: active until an end tick
-- Recovering: severity declines through healing/treatment
-- Permanent: no natural expiry
-- Spatial: active while inside a radius, room, zone, or facility
-- Equipped: active while an item is equipped
-- Memory: decays or changes through time and treatment
-
-#### Effect source types
+#### Effect sources
 
 - Need threshold
 - Health condition
@@ -307,20 +331,20 @@ Effects are the only modifier mechanism. A condition, injury, memory, aura, medi
 - Room or facility system
 - Anomalous state
 
-#### Complete initial modifier targets
+#### Initial modifier target families
 
 - Movement: moveSpeed, pathCost, carryCapacity
 - Work: workSpeed, workQuality, errorChance
 - Learning: xpGain, certificationGain
 - Needs: foodDrain, energyDrain, socialDrain
 - Pressure: stressGain, stressRecovery, fearGain, fearRecovery
-- Health: physicalDamage, physicalRecovery, mentalDamage, mentalRecovery, emotionalDamage, emotionalRecovery
+- Derived Health: physicalHealth, mentalHealth, emotionalHealth, domainMinimum, domainMaximum
 - Psychology: panicThreshold, breakThreshold, compliance
 - Detection: hazardDetection, anomalyDetection, deceptionDetection
 - Combat: accuracy, defense, damage, painResponse
 - Access: clearanceOverride, protocolPermission
 
-#### Examples
+#### Effect examples
 
 - Tired: conditional while `Energy < 10`; `moveSpeed -0.05`, `errorChance +0.10`
 - Sprained Ankle: recovering injury; `moveSpeed -0.05`, Physical health penalty
@@ -330,6 +354,79 @@ Effects are the only modifier mechanism. A condition, injury, memory, aura, medi
 - Witnessed Death: memory; periodic Stress and Emotional health pressure, fades or responds to counseling
 - Near SCP-999: spatial aura; Fear recovery while in range
 - Scholarly: equipment affix; Research XP bonus regardless of item base type
+
+### 5. Derived
+
+#### Health domains
+
+Health has three derived totals from 0 through 100. Each starts at 100 and active Effects apply domain damage, recovery, or caps. Health totals are not independently mutated and cannot drift away from their causes.
+
+Physical Health represents bodily integrity and function. Contributing Effects include Sprained Ankle, Broken Arm, Laceration, Burn, Blood Loss, Infection, Radiation Exposure, Missing Foot, and Chronic Pain.
+
+Mental Health represents cognitive coherence, memory integrity, reality testing, and neurological function. Contributing Effects include Concussion, Memory Gap, Dissociation, Compulsive Thought Pattern, Cognitive Interference, Hallucination, Anomalous Suggestion, and Possession.
+
+Emotional Health represents medium-term affect regulation, connectedness, and recovery capacity. It is not current Mood. Contributing Effects include Grief, Isolation, Burnout, Moral Injury, Emotional Numbness, Hopeful, and Supported.
+
+```text
+domain health = clamp(100
+                + sum(active effect domain modifiers),
+                minimum cap from active effects,
+                maximum cap from active effects)
+```
+
+The simulation can calculate exact Health, but ordinary UI reveals only assessment estimates. Effects explain causes and specific consequences. Mood and Sanity are also derived:
+
+- Mood: immediate subjective wellbeing from Needs, Emotional Health, Stress, and active Effects
+- Sanity: coherent functioning from Mental Health, Fear, Stress, anomalous exposure, and active Effects
+- Composure: ability to execute an intended action under current pressure; derived from Mental/Emotional Health, Stress, Fear, Threat Response, relevant training, and active Effects
+
+Sanity answers “is this pawn currently interpreting reality coherently?” Composure answers “can this pawn carry out the intended action under pressure?” A pawn can understand what is happening but freeze, or remain operational while suffering distorted perceptions.
+
+Draft Composure calculation:
+
+```text
+composure = clamp(50
+            + threat-response trait modifier
+            + 0.20 * (mental health - 50)
+            + 0.15 * (emotional health - 50)
+            + relevant skill support
+            - 0.25 * stress
+            - 0.40 * fear
+            + active effect modifiers,
+            0,
+            100)
+```
+
+Relevant skill support is content-defined and capped at 10 points. Security can support tactical Composure; Anomaly Handling can support containment Composure. This does not change either skill's bias affinity or XP calculation.
+
+#### General capability calculation
+
+Derived job values are calculated on demand rather than stored as an exhaustive pawn stat block.
+
+```text
+capability = skill contribution
+           + bias contribution
+           + active effect modifiers
+           + transient-state penalties
+           + derived health penalties
+```
+
+Equipment and affixes contribute through active Effects, not a separate calculation path. Examples include Carry Capacity, Move Speed, Research Speed, Work Quality, Accuracy, and Damage. Content defines the relevant skill, bias tags, and modifier targets for each task. The architecture does not need a complete capability list before those jobs exist.
+
+#### Concrete skill and bias mapping
+
+| Skill            | Common bias affinity                 | Example exceptions                                                          |
+| ---------------- | ------------------------------------ | --------------------------------------------------------------------------- |
+| Research         | Analysis, Finesse                    | Field observation can favor Instinct; psychic protocol can favor Attunement |
+| Engineering      | Analysis                             | Heavy construction favors Force; circuit calibration favors Finesse         |
+| Medicine         | Analysis, Finesse                    | Emergency triage can favor Instinct                                         |
+| Security         | Instinct                             | Breaching favors Force; marksmanship and stealth favor Finesse              |
+| Logistics        | Force, Instinct                      | Procurement planning favors Analysis                                        |
+| Administration   | Analysis                             | Crisis coordination can favor Instinct                                      |
+| Social           | Instinct                             | Formal negotiation preparation can favor Analysis                           |
+| Anomaly Handling | Attunement or Insulation by protocol | Research contact favors Attunement; containment anchoring favors Insulation |
+
+A strongly Analysis/Finesse pawn visibly leans toward laboratory work. A strongly Instinct/Force pawn visibly leans toward assault and emergency response. Skill investment and task exceptions prevent those tendencies from becoming hard classes.
 
 ## Assessment and Fog of War
 
@@ -369,6 +466,21 @@ Every assessment stores:
 
 Physical assessments are easiest and most precise. Mental assessments require trained Medicine, suitable tools, and time. Emotional assessments require Social skill, trust, privacy, and often self-report. A continuous emotional monitor should not be ordinary technology.
 
+Provisional staleness policy:
+
+| Observation method        | Fresh     | Stale behavior                             | Unavailable                         |
+| ------------------------- | --------- | ------------------------------------------ | ----------------------------------- |
+| Powered camera            | 5 minutes | Location/activity labeled last seen        | After 2 hours without corroboration |
+| Wearable physical monitor | 5 minutes | Confidence falls rapidly                   | After 30 minutes without signal     |
+| Basic physical exam       | 24 hours  | Estimate widens 2 points per day           | After 14 days                       |
+| Diagnostic physical scan  | 72 hours  | Estimate widens 1 point per day            | After 30 days                       |
+| Psychological evaluation  | 72 hours  | Estimate widens 5 points per week          | After 30 days                       |
+| Counseling interview      | 24 hours  | Emotional estimate widens 5 points per day | After 7 days                        |
+| Self-report               | 4 hours   | Label changes to unverified/stale          | After 24 hours                      |
+| Supervisor report         | 8 hours   | Activity and behavior become last reported | After 48 hours                      |
+
+New witnessed events can invalidate an assessment early. A recorded injury invalidates “no major injury”; an anomalous exposure invalidates relevant Mental-assessment confidence. These values are starting balance, not schema constraints.
+
 ### Player-visible projection
 
 The UI may show:
@@ -392,89 +504,92 @@ A map tile is visible when covered by a powered, functioning camera or directly 
 ```json
 {
   "id": "person-mara-voss",
-  "identity": {
-    "legalName": "Mara Voss",
-    "nickname": null,
-    "pronouns": "she/her",
-    "birthYear": 1992,
-    "origin": "Reno, Nevada",
-    "backgroundId": "foundation-research-fellow",
-    "appearanceSeed": 28714,
-    "recruitedTick": 0
-  },
-  "foundationRecord": {
-    "employmentStatus": "active",
-    "roleId": "researcher",
-    "clearance": 3,
-    "certificationIds": ["lab-general", "anomaly-contact-2"],
-    "workPriorities": {
-      "research": 1,
-      "engineering": 0,
-      "medicine": 3,
-      "security": 0,
-      "logistics": 4,
-      "administration": 2,
-      "social": 3,
-      "anomalyHandling": 2
+  "immutable": {
+    "identity": {
+      "legalName": "Mara Voss",
+      "nickname": null,
+      "pronouns": "she/her",
+      "birthYear": 1992,
+      "origin": "Reno, Nevada",
+      "backgroundId": "foundation-research-fellow",
+      "appearanceSeed": 28714,
+      "recruitedTick": 0
     },
-    "scheduleId": "day-research",
-    "permittedZoneIds": ["common", "research-b1", "containment-observation"],
-    "departmentId": "site-828-research",
-    "currentJobId": "job-review-telemetry-11",
-    "disciplinaryStatus": "clear",
-    "serviceHistory": [
-      { "tick": 0, "type": "assigned", "detailId": "site-828" }
-    ]
+    "traits": {
+      "workStyle": "methodical",
+      "threatResponse": null,
+      "socialTemperament": null,
+      "anomalousDisposition": "psychically-insulated",
+      "medicalConstitution": null,
+      "moralDisposition": null
+    },
+    "biases": {
+      "forceFinesse": 2,
+      "analysisInstinct": -3,
+      "attunementInsulation": 2
+    }
   },
-  "traits": {
-    "workStyle": "methodical",
-    "threatResponse": null,
-    "socialTemperament": null,
-    "anomalousDisposition": "psychically-insulated",
-    "medicalConstitution": null,
-    "moralDisposition": null
-  },
-  "aptitudeBiases": {
-    "forceFinesse": 2,
-    "analysisInstinct": -3,
-    "attunementInsulation": 2
-  },
-  "skills": {
-    "research": { "level": 8, "xp": 3120, "recentPractice": 0.62 },
-    "engineering": { "level": 1, "xp": 90, "recentPractice": 0.05 },
-    "medicine": { "level": 3, "xp": 580, "recentPractice": 0.12 },
-    "security": { "level": 1, "xp": 120, "recentPractice": 0.04 },
-    "logistics": { "level": 2, "xp": 260, "recentPractice": 0.08 },
-    "administration": { "level": 4, "xp": 910, "recentPractice": 0.31 },
-    "social": { "level": 3, "xp": 630, "recentPractice": 0.18 },
-    "anomalyHandling": { "level": 5, "xp": 1480, "recentPractice": 0.46 }
+  "stable": {
+    "foundationAssignment": {
+      "employmentStatus": "active",
+      "roleId": "researcher",
+      "clearance": 3,
+      "certificationIds": ["lab-general", "anomaly-contact-2"],
+      "workPriorities": {
+        "research": 1,
+        "engineering": 0,
+        "medicine": 3,
+        "security": 0,
+        "logistics": 4,
+        "administration": 2,
+        "social": 3,
+        "anomalyHandling": 2
+      },
+      "scheduleId": "day-research",
+      "permittedZoneIds": ["common", "research-b1", "containment-observation"],
+      "departmentId": "site-828-research",
+      "currentJobId": "job-review-telemetry-11",
+      "disciplinaryStatus": "clear",
+      "serviceHistory": [
+        { "tick": 0, "type": "assigned", "detailId": "site-828" }
+      ]
+    },
+    "skills": {
+      "research": { "level": 8, "xp": 3120, "recentPractice": 0.62 },
+      "engineering": { "level": 1, "xp": 90, "recentPractice": 0.05 },
+      "medicine": { "level": 3, "xp": 580, "recentPractice": 0.12 },
+      "security": { "level": 1, "xp": 120, "recentPractice": 0.04 },
+      "logistics": { "level": 2, "xp": 260, "recentPractice": 0.08 },
+      "administration": { "level": 4, "xp": 910, "recentPractice": 0.31 },
+      "social": { "level": 3, "xp": 630, "recentPractice": 0.18 },
+      "anomalyHandling": { "level": 5, "xp": 1480, "recentPractice": 0.46 }
+    },
+    "equipment": {
+      "head": null,
+      "eyes": null,
+      "shirt": "item-lab-coat-12",
+      "feet": "item-work-shoes-02",
+      "leftHand": null,
+      "rightHand": "item-clipboard-08",
+      "special1": "item-dosimeter-04",
+      "special2": "item-watch-03"
+    },
+    "inventory": ["item-notebook-31", "item-thermos-09", null, null, null, null]
   },
   "transient": {
-    "food": 82,
-    "energy": 76,
-    "social": 61,
-    "stress": 18,
-    "fear": 6
+    "needs": {
+      "food": 82,
+      "energy": 76,
+      "social": 61,
+      "stress": 18,
+      "fear": 6
+    }
   },
-  "health": {
-    "physical": 100,
-    "mental": 94,
-    "emotional": 78,
-    "conditionIds": []
-  },
-  "effectIds": ["effect-equipped-lab-coat", "effect-equipped-dosimeter"],
-  "equipment": {
-    "head": null,
-    "eyes": null,
-    "neck": "item-dosimeter-04",
-    "shirt": "item-lab-coat-12",
-    "feet": "item-work-shoes-02",
-    "leftHand": null,
-    "rightHand": "item-clipboard-08",
-    "leftWrist": null,
-    "rightWrist": "item-watch-03"
-  },
-  "inventory": ["item-notebook-31", "item-thermos-09", null, null, null, null]
+  "effectIds": [
+    "effect-trait-methodical",
+    "effect-equipped-lab-coat",
+    "effect-equipped-dosimeter"
+  ]
 }
 ```
 
@@ -486,15 +601,14 @@ A map tile is visible when covered by a powered, functioning camera or directly 
     "id": "effect-tired-mara",
     "definitionId": "tired",
     "source": { "type": "need-threshold", "need": "energy" },
-    "lifetime": {
-      "type": "conditional",
-      "condition": {
-        "operator": "less-than",
-        "path": "transient.energy",
-        "value": 10
-      }
+    "startedTick": 0,
+    "expiresAtTick": null,
+    "activeWhen": {
+      "operator": "less-than",
+      "path": "transient.needs.energy",
+      "value": 10
     },
-    "scope": "self",
+    "magnitude": 1,
     "modifiers": [
       { "target": "moveSpeed", "operation": "add", "value": -0.05 },
       { "target": "errorChance", "operation": "add", "value": 0.1 }
@@ -503,30 +617,81 @@ A map tile is visible when covered by a powered, functioning camera or directly 
   {
     "id": "effect-sprained-ankle-mara",
     "definitionId": "sprained-ankle",
-    "source": {
-      "type": "health-condition",
-      "conditionId": "condition-ankle-77"
+    "source": { "type": "injury", "eventId": "event-slip-77" },
+    "startedTick": 40100,
+    "expiresAtTick": null,
+    "activeWhen": null,
+    "magnitude": 0.7,
+    "progression": {
+      "rule": "recover-toward-zero",
+      "naturalRatePerDay": 0.08,
+      "treatmentRateBonus": 0.15
     },
-    "lifetime": {
-      "type": "recovering",
-      "recovery": {
-        "remaining": 0.7,
-        "naturalRatePerDay": 0.08,
-        "treatmentRateBonus": 0.15
-      }
-    },
-    "scope": "self",
-    "modifiers": [{ "target": "moveSpeed", "operation": "add", "value": -0.05 }]
+    "modifiers": [
+      { "target": "physicalHealth", "operation": "add-scaled", "value": -15 },
+      { "target": "moveSpeed", "operation": "add-scaled", "value": -0.05 }
+    ]
   },
   {
     "id": "effect-calm-999-mara",
     "definitionId": "calm-from-scp-999",
     "source": { "type": "entity", "entityId": "scp-999" },
-    "lifetime": { "type": "timed", "startedTick": 44120, "endsTick": 47720 },
-    "scope": "self",
+    "startedTick": 44120,
+    "expiresAtTick": 47720,
+    "activeWhen": null,
+    "magnitude": 1,
     "modifiers": [
       { "target": "stressRecovery", "operation": "add", "value": 0.08 },
       { "target": "fearRecovery", "operation": "multiply", "value": 1.5 }
+    ]
+  },
+  {
+    "id": "effect-near-scp-999-mara",
+    "definitionId": "scp-999-soothing-aura",
+    "source": { "type": "entity", "entityId": "scp-999" },
+    "startedTick": 0,
+    "expiresAtTick": null,
+    "activeWhen": {
+      "operator": "within-distance",
+      "subjectId": "person-mara-voss",
+      "targetId": "scp-999",
+      "distance": 4
+    },
+    "magnitude": 1,
+    "modifiers": [
+      { "target": "fearRecovery", "operation": "add", "value": 0.04 }
+    ]
+  },
+  {
+    "id": "effect-equipped-dosimeter",
+    "definitionId": "continuous-physical-monitor",
+    "source": { "type": "equipment", "itemId": "item-dosimeter-04" },
+    "startedTick": 0,
+    "expiresAtTick": null,
+    "activeWhen": {
+      "operator": "equipped",
+      "itemId": "item-dosimeter-04"
+    },
+    "magnitude": 1,
+    "modifiers": [
+      {
+        "target": "assessmentConfidence:physical",
+        "operation": "set-minimum",
+        "value": 0.9
+      }
+    ]
+  },
+  {
+    "id": "effect-trait-methodical",
+    "definitionId": "trait-methodical",
+    "source": { "type": "trait", "traitId": "methodical" },
+    "startedTick": 0,
+    "expiresAtTick": null,
+    "activeWhen": null,
+    "magnitude": 1,
+    "modifiers": [
+      { "target": "workQuality", "operation": "add", "value": 0.05 },
+      { "target": "taskStartSpeed", "operation": "add", "value": -0.03 }
     ]
   }
 ]
@@ -648,18 +813,18 @@ A map tile is visible when covered by a powered, functioning camera or directly 
 
 ## Mutation Ownership
 
-| Layer               | Changes through                                                  |
-| ------------------- | ---------------------------------------------------------------- |
-| Identity            | Recruitment or rare administrative event only                    |
-| Foundation record   | Player orders, promotion, discipline, training, assignment       |
-| Traits              | Normally immutable; rare permanent authored effects are separate |
-| Aptitude biases     | Fixed at generation; no ordinary advancement                     |
-| Skills              | Meaningful work, mentoring, courses, event rewards               |
-| Transient needs     | Time, activity, environment, rest, food, social contact          |
-| Health domains      | Conditions, treatment, recovery, anomaly effects                 |
-| Effects             | Conditions, events, equipment, auras, medication, expiry         |
-| Equipment/inventory | Transfer and equip commands                                      |
-| Player knowledge    | Camera reports, assessments, monitors, self-report, staleness    |
+| Layer                        | Changes through                                                           |
+| ---------------------------- | ------------------------------------------------------------------------- |
+| Immutable Identity           | Recruitment or rare administrative correction only                        |
+| Immutable Traits             | No ordinary changes; permanent consequences remain Effects                |
+| Immutable Biases             | Fixed at generation                                                       |
+| Stable Foundation Assignment | Player orders, promotion, discipline, training, assignment                |
+| Stable Skills                | Meaningful work, mentoring, courses, event rewards                        |
+| Stable Equipment/Inventory   | Transfer and equip commands                                               |
+| Transient Needs              | Time, activity, environment, rest, food, social contact                   |
+| Effects                      | Conditions, events, equipment, proximity, medication, progression, expiry |
+| Derived Health/Capabilities  | Recalculated from the other layers; never directly mutated                |
+| Separate Player Knowledge    | Camera reports, assessments, monitors, self-report, staleness             |
 
 ## RPG Player's Handbook Version
 
@@ -687,11 +852,11 @@ Eight skills rise from 0 to 20 through meaningful use. Repetition works until th
 
 ### How you are doing now
 
-Food, Energy, and Social are reserves. Stress and Fear are pressures. Physical, Mental, and Emotional health describe medium-term functioning and named conditions explain why.
+Food, Energy, and Social are reserves. Stress and Fear are pressures. Physical, Mental, and Emotional Health are hidden derived summaries of active Effects. Assessments reveal estimates; they do not reveal an automatically current character-sheet value.
 
 ### What is affecting you
 
-All injuries, memories, medications, auras, threshold penalties, equipment bonuses, and anomalous affixes are Effects with explicit sources and lifetimes.
+All injuries, memories, medications, auras, threshold penalties, equipment bonuses, personality consequences, and anomalous affixes use the same Effect shape. Optional activation and expiration fields determine when each Effect applies.
 
 ### What the Director knows
 
@@ -707,7 +872,7 @@ The Director sees the interaction because the room camera is powered. If Emil we
 
 ### Psychotic episode
 
-Mara has high Stress, low Energy, declining Mental health, and an unrecognized anomalous-suggestion effect. Derived break risk crosses a threshold and a psychotic episode effect activates.
+Mara has high Stress, low Energy, Effects that reduce Mental Health, and an unrecognized anomalous-suggestion Effect. Derived break risk crosses a threshold and a psychotic-episode Effect activates.
 
 A camera may reveal disorganized behavior but not the cause. The dossier shows “behavioral anomaly observed” until a psychological evaluation identifies Cognitive Interference or Hallucination. A debug inspector can show the actual triggering effects.
 
@@ -719,7 +884,7 @@ The Director knows his official skill level only as recently assessed. Routine s
 
 ### Witnessed death
 
-Lena witnesses a death. Actual Fear and Stress spike. Emotional health takes damage. A Witnessed Death memory effect applies and may fade, respond to counseling, or become Grief/Moral Injury.
+Lena witnesses a death. Actual Fear and Stress spike. A Witnessed Death memory Effect reduces derived Emotional Health and may fade, respond to counseling, or produce longer-lived Grief or Moral Injury Effects.
 
 The Director sees the event only if camera coverage or survivor reports exist. Lena's Stoic trait may conceal visible reaction. Her dossier can remain “No recent emotional assessment” while she is in serious distress.
 
@@ -733,7 +898,7 @@ The Scholarly affix can appear on any item. It increases Research XP but applies
 
 ### Injury
 
-Jon suffers a Sprained Ankle. Physical health decreases and the injury effect reduces move speed. Natural recovery progresses; treatment accelerates it. If no one sees the accident and Jon hides it, the Director may only observe slower work until an exam reveals the injury.
+Jon suffers a Sprained Ankle Effect. It reduces derived Physical Health and Move Speed. Its magnitude recovers naturally; treatment accelerates that progression. If no one sees the accident and Jon hides it, the Director may only observe slower work until an exam reveals the injury.
 
 A Missing Foot condition is permanent unless compensated by a prosthetic equipment effect.
 
@@ -751,11 +916,11 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 
 ## What This Does Well
 
-- Clear separation between stable personhood and mutable Foundation administration.
+- Clear separation between immutable personhood and stable-but-mutable Foundation administration.
 - Three memorable aptitude tradeoffs without “best-stat” recruits.
 - Keeps satisfying skill numbers and cozy use-based advancement.
 - Five transient values are easy to understand.
-- Physical/Mental/Emotional health supports injuries, trauma, and recovery without conflating them with needs.
+- Derived Physical/Mental/Emotional Health supports injuries, trauma, and recovery without duplicating mutable condition state.
 - Unified effects handle conditions, medication, memories, auras, equipment, and affixes.
 - Assessment fog turns monitoring, medicine, trust, cameras, and equipment into gameplay.
 - Hidden information creates operational uncertainty without relying on random disasters.
@@ -766,7 +931,7 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 - Bipolar axes are stylized abstractions; Force and Finesse are not truly mutually exclusive in real people.
 - Analysis↔Instinct must avoid implying intelligence versus stupidity.
 - Mixed-polarity transient values need careful UI: Food/Energy/Social high is good; Stress/Fear high is bad.
-- Three health totals plus conditions can duplicate information unless totals and conditions have explicit ownership.
+- Derived Health needs carefully chosen formulas so different Effects do not collapse into an uninformative average.
 - Unified Effects can become a dumping ground without strict definitions, stacking rules, and debug inspection.
 - Fog of war complicates every personnel view because actual state and known state must remain separate.
 - Players may find stale personnel data frustrating if assessment tools are too slow or opaque.
@@ -776,14 +941,14 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 
 ### Core
 
-- Personal identity and Foundation record split
+- Immutable Identity and stable Foundation Assignment split
 - Six trait categories, zero or one trait per category
 - Three bipolar aptitude biases
 - Eight core skills with use-based XP
 - Food, Energy, Social, Stress, Fear
-- Physical, Mental, Emotional health plus named conditions
-- Unified effect system
-- Nine equipment slots and fixed inventory
+- Derived Physical, Mental, Emotional Health
+- One Effect instance shape with optional activation, expiration, magnitude, and progression
+- Eight equipment slots and fixed inventory
 - Player knowledge with camera/assessment timestamps and confidence
 - Derived Mood, Sanity, and job capabilities
 
@@ -816,7 +981,7 @@ Show only known or recently reported fields:
 - ID: legal name, nickname, background, known traits
 - Assignment: role, clearance, certifications, schedule, priorities, zones
 - Status: known needs, health estimates, current effects, assessment recency
-- Equipment: nine portrait slots and fixed inventory
+- Equipment: eight portrait slots and fixed inventory
 - Skills: levels, XP, certifications, assessment confidence
 - Records: assessments, service history, injuries, memories that are known to the Foundation
 
@@ -827,12 +992,12 @@ May reveal actual transient values, hidden effects, exact health, real location,
 ## Open Decisions for Review
 
 1. Are the three bipolar axes fun and legible, or should Force/Finesse and Analysis/Instinct become independent aptitudes?
-2. Should Attunement use negative values and Insulation positive, or use named bands without numbers?
-3. Are Physical/Mental/Emotional health totals stored resources or derived summaries from conditions?
-4. Is Social a transient need or should relationships/effects fully replace it?
-5. How stale can assessments become before the game feels unfair?
-6. Should personnel be able to conceal symptoms deliberately?
-7. Which monitors are available at game start?
-8. Should the Director always know official skill/certification data, or can practical competence be outdated?
-9. Should rare events alter traits or add permanent effects instead?
-10. Should the dossier show numeric ranges, qualitative labels, or both?
+2. Should the UI display bias values numerically, as named bands, or both?
+3. Should derived Health use a simple additive Effect total, domain-specific caps, or a worst-condition-weighted formula?
+4. How stale can assessments become before imperfect information feels unfair?
+5. Should personnel be able to conceal symptoms deliberately, and which Traits/Skills affect that?
+6. Which physical monitors are available at game start, and what infrastructure powers them?
+7. Should official skill/certification records always be known while practical competence assessments become stale?
+8. Should rare personality-changing events add permanent Effects only, or may they explicitly replace a Trait with player-visible history?
+9. Should dossiers show numeric ranges, qualitative labels, or both?
+10. How should conflicting reports from cameras, monitors, clinicians, supervisors, and self-reports be resolved?
