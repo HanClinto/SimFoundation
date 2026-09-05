@@ -18,6 +18,7 @@ import {
   type MapPerspective,
 } from "./map-settings";
 import type { PlacementTile } from "./placement";
+import { storageTiles } from "../../simulation/storage";
 import { drawPhysicalObjects } from "./object-art";
 import { layoutPawnBubbles, drawPawnBubbles } from "./pawn-bubbles";
 import {
@@ -315,6 +316,22 @@ export function renderSite(
     }
   }
   context.textAlign = "center";
+  if (overlays.storage)
+    for (const area of snapshot.game.storage.areas) {
+      for (const position of storageTiles(area)) {
+        const point = projectPosition(position, camera, width, height);
+        context.save();
+        context.translate(point.x, point.y);
+        context.scale(camera.zoom, camera.zoom);
+        drawTile(
+          context,
+          { x: 0, y: -10 },
+          area.enabled ? "rgba(84, 169, 190, .25)" : "rgba(145, 145, 145, .25)",
+          area.serveMeals ? "#e2bd54" : "#458fa0",
+        );
+        context.restore();
+      }
+    }
   for (const room of overlays.rooms ? map.rooms : []) {
     if (camera.zoom < 0.55) continue;
     const point = projectPosition(

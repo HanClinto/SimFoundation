@@ -16,8 +16,9 @@ import {
 import { createEnvironment, type EnvironmentState } from "./environment";
 import { createObjectStore, objectBlocks, type ObjectStore } from "./objects";
 import { type ObjectOrder } from "./object-work";
+import { createStorage, type StorageState } from "./storage";
 
-export const GAME_STATE_VERSION = 26;
+export const GAME_STATE_VERSION = 27;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -47,6 +48,7 @@ export interface GameState {
   readonly environment: EnvironmentState;
   readonly objects: ObjectStore;
   readonly objectOrders: readonly ObjectOrder[];
+  readonly storage: StorageState;
 }
 
 export function createInitialState(seed = 9620): GameState {
@@ -86,6 +88,7 @@ export function createInitialState(seed = 9620): GameState {
     routines,
     objects,
     objectOrders: [],
+    storage: createStorage(),
     observations: createSiteObservations(world),
     environment: createEnvironment(),
   });

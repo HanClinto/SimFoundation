@@ -142,4 +142,21 @@ it("combines independent layers without changing pinned placement and cancels wi
   root.append(activity);
   activity.dispatchEvent(new window.Event("change", { bubbles: true }));
   expect(tooltip.hidden).toBe(true);
+  const storage = document.createElement("input");
+  storage.type = "checkbox";
+  storage.dataset.mapOverlay = "storage";
+  storage.checked = true;
+  root.append(storage);
+  storage.dispatchEvent(new window.Event("change", { bubbles: true }));
+  const objects = document.createElement("input");
+  objects.type = "checkbox";
+  objects.dataset.mapOverlay = "objects";
+  objects.checked = false;
+  root.append(objects);
+  objects.dispatchEvent(new window.Event("change", { bubbles: true }));
+  view.focus({ x: 58, y: 67 });
+  canvas.dispatchEvent(
+    new window.MouseEvent("dblclick", { clientX: 380, clientY: 210 }),
+  );
+  expect(open).toHaveBeenLastCalledWith("storage:storage-1", "world");
 });

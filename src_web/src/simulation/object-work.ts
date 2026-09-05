@@ -1,4 +1,10 @@
 import type { GameState } from "./state";
+import {
+  storageContains,
+  storageQuantity,
+  incomingQuantity,
+  refreshMealSummary,
+} from "./storage";
 import type { SiteJob } from "./jobs";
 import {
   findRoute,
@@ -16,6 +22,7 @@ import {
   pickUpObject,
   putDownObject,
   releaseObject,
+  mergeGroundStack,
   reserveStack,
   type ObjectOrientation,
   type PhysicalObject,
@@ -48,11 +55,31 @@ export function objectPlacementIssue(
   destination: TilePosition,
   orientation: ObjectOrientation,
   install = true,
+  quantity?: number,
 ): ObjectCommandCode | null {
   const object = state.objects.items.find(
     (item) => item.id === objectId && item.location.kind !== "consumed",
   );
   if (!object) return "not-found";
+  const area = state.storage.areas.find((area) =>
+    storageContains(area, destination),
+  );
+  if (area) {
+    if (install || !area.accepts.includes(object.kind)) return "occupied";
+    const alreadyHere =
+      object.location.kind === "ground" &&
+      storageContains(area, object.location.position)
+        ? object.quantity
+        : 0;
+    if (
+      storageQuantity(state, area) -
+        alreadyHere +
+        incomingQuantity(state, area, objectId) +
+        (quantity ?? object.quantity) >
+      area.capacity
+    )
+      return "occupied";
+  }
   if (
     !["north", "east", "south", "west"].includes(orientation) ||
     !Number.isInteger(destination.x) ||
@@ -62,6 +89,13 @@ export function objectPlacementIssue(
   const footprint = install
     ? objectFootprint({ ...object, orientation }, destination)
     : [destination];
+  if (
+    install &&
+    state.storage.areas.some((area) =>
+      footprint.some((position) => storageContains(area, position)),
+    )
+  )
+    return "occupied";
   if (
     footprint.some((position) => {
       const tile = tileAt(state.world.map, position);
@@ -184,6 +218,7 @@ export function orderObjectMove(
     destination,
     orientation,
     install,
+    quantity,
   );
   if (issue) return { state, code: issue };
   if (!workFace(state, object, destination, orientation, install))
@@ -233,7 +268,7 @@ export function orderObjectMove(
   };
   return {
     code: "accepted",
-    state: {
+    state: refreshMealSummary({
       ...state,
       objects: reserved.store,
       objectOrders: [
@@ -250,14 +285,14 @@ export function orderObjectMove(
         },
       ],
       jobs: [...state.jobs, job],
-    },
+    }),
   };
 }
 
 export function cancelObjectMove(state: GameState, orderId: string): GameState {
   const order = state.objectOrders.find((order) => order.id === orderId);
   if (!order || order.phase !== "pickup") return state;
-  return {
+  return refreshMealSummary({
     ...state,
     objects: releaseObject(state.objects, order.objectId, order.jobId),
     objectOrders: state.objectOrders.map((candidate) =>
@@ -271,7 +306,7 @@ export function cancelObjectMove(state: GameState, orderId: string): GameState {
         ? { ...person, currentJobId: null, activity: "Object move cancelled" }
         : person,
     ),
-  };
+  });
 }
 
 export function advanceObjectWork(state: GameState): GameState {
@@ -396,7 +431,10 @@ export function advanceObjectWork(state: GameState): GameState {
         };
       objects = placed;
       if (!order.install) {
-        objects = releaseObject(objects, object.id, job.id);
+        objects = mergeGroundStack(
+          releaseObject(objects, object.id, job.id),
+          object.id,
+        );
         return { ...order, phase: "completed", blockedReason: null };
       }
       jobs = jobs.map((candidate) =>
@@ -460,29 +498,7 @@ export function advanceObjectWork(state: GameState): GameState {
       ) &&
       !activeStations.some((candidate) => candidate.id === station.id),
   );
-  const mess = state.world.map.rooms.find((room) => room.kind === "mess")!;
-  const pantry = { x: mess.x + 2, y: mess.y + 3 };
-  const meals = objects.items.filter(
-    (item) =>
-      item.kind === "meals" &&
-      item.location.kind !== "consumed" &&
-      !item.reservedBy?.startsWith("routine-") &&
-      !(
-        item.reservedBy === state.routines.supplyOrder?.jobId &&
-        item.location.kind === "carried"
-      ),
-  );
-  const pantryMeals = meals
-    .filter(
-      (item) =>
-        item.location.kind === "ground" &&
-        sameTile(item.location.position, pantry) &&
-        !item.reservedBy,
-    )
-    .reduce((sum, item) => sum + item.quantity, 0);
-  const reserveMeals =
-    meals.reduce((sum, item) => sum + item.quantity, 0) - pantryMeals;
-  return {
+  return refreshMealSummary({
     ...state,
     objects,
     jobs,
@@ -496,9 +512,7 @@ export function advanceObjectWork(state: GameState): GameState {
     },
     routines: {
       ...state.routines,
-      pantryMeals,
-      reserveMeals,
       stations: [...activeStations, ...occupiedStations],
     },
-  };
+  });
 }

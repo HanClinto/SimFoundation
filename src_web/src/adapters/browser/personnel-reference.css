@@ -501,6 +501,31 @@
 #object-quantity {
   width: 64px;
 }
+#storage-window .field-row {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+#storage-window input[type="number"] {
+  width: 60px;
+}
+#storage-window fieldset {
+  min-width: 0;
+  margin-bottom: 8px;
+}
+#storage-area {
+  min-width: 0;
+  flex: 1;
+}
+.storage-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+#storage-name {
+  min-width: 0;
+  flex: 1;
+}
 .surface-controls fieldset {
   margin: 8px 0;
   min-width: 0;

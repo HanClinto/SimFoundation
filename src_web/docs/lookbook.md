@@ -202,6 +202,8 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 ## Current Prototype Decisions
 
+- Storage and Hauling owns floor-area designation, accepted-item checkboxes, capacity and target inputs, meal-serving policy, and active/incoming stock status. Its relocation preview uses the same map placement contract as physical objects. The Storage overlay marks administrative boundaries without hiding Objects or Activity; area selection opens the policy record. Stock moves only through worker hauling, and relocating a designation leaves old stacks in place until moved.
+
 - Furniture and supplies are selectable physical objects. The Objects and Supplies inspector owns orientation, partial-stack quantity, Move / install, Pack in place, Locate and pre-pickup cancellation. Placement reuses the map's generic request interaction. Installed objects use the existing bed/table/seat assets; packed inventory and supply stacks use count-marked crates, and carried cargo is attached to its pawn. World and Recorded perspectives retain their established distinction.
 
 - Pawn activity uses original pixel-icon bubbles at stable screen sizes: an action or intent bubble plus an outward-mood badge when awake. Action cues come from routine/job state, not default biography text. Sleeping, eating, breaks, travel, hauling, engineering, clinical work, research, security work, blocked needs, and active social contact have distinct symbols. Hover gives a plain-language label; clicking selects the pawn and double-clicking opens its record. Selected-pawn status text also exposes the labels for keyboard use.

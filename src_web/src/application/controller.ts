@@ -6,6 +6,13 @@ import {
 } from "../simulation/observations";
 import { advanceSimulation } from "../simulation/tick";
 import {
+  setStorageArea,
+  removeStorageArea,
+  storagePlacementIssue,
+  type StoragePolicy,
+  type StorageCommandCode,
+} from "../simulation/storage";
+import {
   orderObjectMove,
   cancelObjectMove,
   objectPlacementIssue,
@@ -55,11 +62,24 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  previewStorageArea(
+    policy: StoragePolicy,
+    id?: string,
+  ): StorageCommandCode | null;
+  setStorageArea(
+    policy: StoragePolicy,
+    id?: string,
+  ): { code: StorageCommandCode; snapshot: ControllerSnapshot };
+  removeStorageArea(id: string): {
+    code: StorageCommandCode;
+    snapshot: ControllerSnapshot;
+  };
   previewObjectMove(
     objectId: string,
     destination: TilePosition,
     orientation: ObjectOrientation,
     install: boolean,
+    quantity?: number,
   ): ObjectCommandCode | null;
   orderObjectMove(
     objectId: string,
@@ -120,13 +140,27 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
-    previewObjectMove(objectId, destination, orientation, install) {
+    previewStorageArea(policy, id) {
+      return storagePlacementIssue(state, policy, id);
+    },
+    setStorageArea(policy, id) {
+      const result = setStorageArea(state, policy, id);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    removeStorageArea(id) {
+      const result = removeStorageArea(state, id);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    previewObjectMove(objectId, destination, orientation, install, quantity) {
       return objectPlacementIssue(
         state,
         objectId,
         destination,
         orientation,
         install,
+        quantity,
       );
     },
     orderObjectMove(objectId, destination, orientation, install, quantity) {

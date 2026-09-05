@@ -89,6 +89,7 @@ export function createObjectsWindow(
           position,
           direction,
           install,
+          count,
         );
         return issue ? messages[issue] : null;
       },

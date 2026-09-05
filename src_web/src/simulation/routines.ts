@@ -1,11 +1,10 @@
 import type { GameState } from "./state";
 import type { PersonnelRecord } from "./personnel";
-import type { SiteJob } from "./jobs";
+import { mealCollectionPoint, refreshMealSummary } from "./storage";
 import { findRoute, sameTile, type TilePosition } from "./world";
 import {
   consumeObject,
   reserveSupply,
-  reservedObject,
   pickUpObject,
   putDownObject,
   releaseObject,
@@ -30,12 +29,6 @@ export interface RoutineState {
   readonly pantryMeals: number;
   readonly mealsConsumed: number;
   readonly reserveMeals: number;
-  readonly nextSupplyNumber: number;
-  readonly supplyOrder: {
-    readonly jobId: string;
-    readonly quantity: number;
-    readonly phase: "collection" | "delivery";
-  } | null;
   readonly stations: readonly RoutineStation[];
   readonly schedules: Readonly<Record<string, readonly ScheduleBlock[]>>;
   readonly activities: Readonly<Record<string, RoutineActivity>>;
@@ -58,8 +51,6 @@ export function createRoutineState(
     pantryMeals: 36,
     mealsConsumed: 0,
     reserveMeals: 72,
-    nextSupplyNumber: 1,
-    supplyOrder: null,
     schedules: Object.fromEntries(
       personnel.map(({ id }) => [id, [...schedule]]),
     ),
@@ -151,8 +142,7 @@ export function advanceRoutines(state: GameState): GameState {
     if (
       person.currentJobId !== null &&
       urgentNeed(person) &&
-      (person.needs.rest < 15 || pantryMeals > 0) &&
-      person.currentJobId !== state.routines.supplyOrder?.jobId
+      (person.needs.rest < 15 || pantryMeals > 0)
     ) {
       const interrupted = jobs.find(
         (job) => job.id === person.currentJobId && job.status === "in-progress",
@@ -278,12 +268,12 @@ export function advanceRoutines(state: GameState): GameState {
         : state.routines.stations.find(({ id }) => id === stationId);
     const origin = positions[id];
     if (activity.kind === "meal" && !activity.mealConsumed) {
-      const mess = state.world.map.rooms.find((room) => room.kind === "mess")!;
-      const pantry = { x: mess.x + 2, y: mess.y + 3 };
-      const pantryRoute = origin
-        ? findRoute(state.world.map, origin, pantry)
+      const pantry = origin
+        ? mealCollectionPoint({ ...state, objects }, origin)
         : null;
-      if (!pantryRoute) {
+      const pantryRoute =
+        origin && pantry ? findRoute(state.world.map, origin, pantry) : null;
+      if (!pantryRoute || !pantry) {
         blockedReasons[id] = "Pantry supplies are unreachable.";
         reserved.delete(activity.stationId);
         delete activities[id];
@@ -429,7 +419,7 @@ export function advanceRoutines(state: GameState): GameState {
       delete activities[id];
     } else activities[id] = { ...activity, progress };
   }
-  return {
+  return refreshMealSummary({
     ...state,
     objects,
     jobs,
@@ -447,132 +437,5 @@ export function advanceRoutines(state: GameState): GameState {
       activities,
       blockedReasons,
     },
-  };
-}
-
-export function advancePantrySupply(state: GameState): GameState {
-  const supply = state.routines.supplyOrder;
-  if (supply) {
-    const job = state.jobs.find(({ id }) => id === supply.jobId);
-    if (job?.status !== "completed") return state;
-    if (supply.phase === "delivery") {
-      const cargo = reservedObject(state.objects, job.id);
-      const carrier = job.assignedPersonId;
-      if (!cargo || !carrier) return state;
-      const delivered = putDownObject(
-        state.objects,
-        cargo.id,
-        job.id,
-        carrier,
-        job.workSite,
-        state.world.positions[carrier]!,
-      );
-      if (delivered === state.objects) return state;
-      return {
-        ...state,
-        objects: releaseObject(delivered, cargo.id, job.id),
-        routines: {
-          ...state.routines,
-          pantryMeals: state.routines.pantryMeals + supply.quantity,
-          supplyOrder: null,
-        },
-      };
-    }
-    const mess = state.world.map.rooms.find(({ kind }) => kind === "mess");
-    if (!mess || state.routines.reserveMeals < supply.quantity) return state;
-    const cargo = reservedObject(state.objects, job.id);
-    const carrier = job.assignedPersonId;
-    if (!cargo || !carrier) return state;
-    const picked = pickUpObject(
-      state.objects,
-      cargo.id,
-      job.id,
-      carrier,
-      state.world.positions[carrier]!,
-    );
-    if (picked === state.objects) return state;
-    return {
-      ...state,
-      objects: picked,
-      routines: {
-        ...state.routines,
-        reserveMeals: state.routines.reserveMeals - supply.quantity,
-        supplyOrder: { ...supply, phase: "delivery" },
-      },
-      jobs: state.jobs.map((entry) =>
-        entry.id === job.id
-          ? {
-              ...entry,
-              title: "Deliver pantry meals",
-              status: "in-progress",
-              progress: 0,
-              completedTick: null,
-              requiredWorkerId: job.assignedPersonId,
-              workSite: { x: mess.x + 2, y: mess.y + 3 },
-            }
-          : entry,
-      ),
-      personnel: state.personnel.map((person) =>
-        person.id === job.assignedPersonId
-          ? {
-              ...person,
-              currentJobId: job.id,
-              activity: "Carrying pantry supplies",
-            }
-          : person,
-      ),
-    };
-  }
-  if (state.routines.pantryMeals > 6 || state.routines.reserveMeals === 0)
-    return state;
-  const storage = state.world.map.rooms.find(({ kind }) => kind === "storage");
-  if (!storage) return state;
-  const jobId = `job-pantry-${state.routines.nextSupplyNumber}`;
-  const reserved = reserveSupply(
-    state.objects,
-    "meals",
-    Math.min(12, state.routines.reserveMeals),
-    { x: storage.x + 3, y: storage.y + 4 },
-    jobId,
-    true,
-  );
-  if (!reserved.objectId) return state;
-  const job: SiteJob = {
-    id: jobId,
-    title: "Collect pantry meals",
-    description:
-      "Move a counted batch of stored meals to the common-room pantry.",
-    skillId: "logistics",
-    priority: 90,
-    xpPerTick: 0,
-    preferredBiases: { mindMight: 1, receptiveResolute: 1 },
-    status: "available",
-    progress: 0,
-    requiredProgress: 1,
-    assignedPersonId: null,
-    assignmentReason: null,
-    authorizedTick: state.tick,
-    completedTick: null,
-    workSite: (() => {
-      const cargo = reservedObject(reserved.store, jobId)!;
-      return cargo.location.kind === "ground"
-        ? cargo.location.position
-        : { x: storage.x + 3, y: storage.y + 4 };
-    })(),
-    requiredWorkerId: null,
-  };
-  return {
-    ...state,
-    objects: reserved.store,
-    jobs: [...state.jobs, job],
-    routines: {
-      ...state.routines,
-      nextSupplyNumber: state.routines.nextSupplyNumber + 1,
-      supplyOrder: {
-        jobId,
-        quantity: Math.min(12, state.routines.reserveMeals),
-        phase: "collection",
-      },
-    },
-  };
+  });
 }

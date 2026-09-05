@@ -1,4 +1,5 @@
 import { observeSite } from "./observations";
+import { discoverStorageWork, refreshMealSummary } from "./storage";
 import { advanceObjectWork } from "./object-work";
 import {
   advanceExposure,
@@ -12,23 +13,21 @@ import { advanceScp999 } from "./scp-999";
 import { advanceConstruction } from "./construction";
 import type { GameState } from "./state";
 import { discoverClinicalWork } from "./clinical";
-import {
-  advancePantrySupply,
-  advanceRoutines,
-  routineUnavailableIds,
-} from "./routines";
+import { advanceRoutines, routineUnavailableIds } from "./routines";
 
 export function advanceSimulation(state: GameState): GameState {
   const tick = state.tick + 1;
   state = advanceRoutines(
-    discoverClinicalWork({
-      ...state,
-      tick,
-      gameMinute: state.gameMinute + 1,
-      personnel: state.personnel.map((person) =>
-        advancePersonnel(person, tick),
-      ),
-    }),
+    refreshMealSummary(
+      discoverClinicalWork({
+        ...state,
+        tick,
+        gameMinute: state.gameMinute + 1,
+        personnel: state.personnel.map((person) =>
+          advancePersonnel(person, tick),
+        ),
+      }),
+    ),
   );
   const jobResult = advanceJobs(
     state.jobs,
@@ -54,22 +53,24 @@ export function advanceSimulation(state: GameState): GameState {
       .filter(([, activity]) => activity.kind !== "break")
       .map(([id]) => id),
   );
-  return discoverSurfaceWork(
-    observeStructuralDamage(
-      observeSite(
-        advanceExposure(
-          advanceObjectWork(
-            advanceSurfaceWork(
-              advanceConstruction(
-                advancePantrySupply({
-                  ...state,
-                  tick,
-                  gameMinute: state.gameMinute,
-                  jobs: jobResult.jobs,
-                  personnel: scp999Result.personnel,
-                  scp999: scp999Result.anomaly,
-                  world: scp999Result.world,
-                }),
+  return refreshMealSummary(
+    discoverStorageWork(
+      discoverSurfaceWork(
+        observeStructuralDamage(
+          observeSite(
+            advanceExposure(
+              advanceObjectWork(
+                advanceSurfaceWork(
+                  advanceConstruction({
+                    ...state,
+                    tick,
+                    gameMinute: state.gameMinute,
+                    jobs: jobResult.jobs,
+                    personnel: scp999Result.personnel,
+                    scp999: scp999Result.anomaly,
+                    world: scp999Result.world,
+                  }),
+                ),
               ),
             ),
           ),

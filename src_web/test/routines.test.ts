@@ -49,16 +49,16 @@ describe("needs-driven routines", () => {
     let sawDelivery = false;
     for (let tick = 0; tick < 100; tick += 1) {
       const state = controller.advance().game;
-      const carried =
-        state.routines.supplyOrder?.phase === "delivery"
-          ? state.routines.supplyOrder.quantity
-          : 0;
+      const carried = state.objects.items
+        .filter(
+          (item) => item.kind === "meals" && item.location.kind === "carried",
+        )
+        .reduce((sum, item) => sum + item.quantity, 0);
       if (carried > 0) sawDelivery = true;
       expect(
         state.routines.pantryMeals +
           state.routines.mealsConsumed +
-          state.routines.reserveMeals +
-          carried,
+          state.routines.reserveMeals,
       ).toBe(108);
       expect(
         loadGameState({
@@ -73,7 +73,6 @@ describe("needs-driven routines", () => {
       pantryMeals: 16,
       reserveMeals: 60,
       mealsConsumed: 32,
-      supplyOrder: null,
     });
   });
   it("continues a reserved meal identically after reload", () => {

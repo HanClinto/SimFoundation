@@ -14,6 +14,11 @@ export function mapObjects(
   readonly position: TilePosition;
 }[] {
   return [
+    ...state.storage.areas.map((area) => ({
+      id: `storage:${area.id}`,
+      name: `Storage / ${area.name}`,
+      position: area.origin,
+    })),
     ...Object.entries(
       perspective === "world"
         ? Object.fromEntries(

@@ -5,6 +5,7 @@ import type {
 import type { TilePosition } from "../../simulation/world";
 import { observedSnapshot } from "./observed-view";
 import { mapObjects } from "./map-objects";
+import { storageContains } from "../../simulation/storage";
 import { layoutPawnBubbles, bubbleAt, type PawnBubble } from "./pawn-bubbles";
 import { pawnCues } from "./pawn-cues";
 import {
@@ -293,6 +294,7 @@ export function createSiteMap(
       return null;
     const object = camera.overlays?.objects
       ? mapObjects(displayed().game, camera.perspective)
+          .filter((object) => !object.id.startsWith("storage:"))
           .map((object) => {
             const projected = projectPosition(
               object.position,
@@ -315,8 +317,14 @@ export function createSiteMap(
               first.id.localeCompare(second.id),
           )[0]
       : null;
+    const storage = camera.overlays?.storage
+      ? current.game.storage.areas.find((area) =>
+          storageContains(area, position),
+        )
+      : undefined;
     return (
       object?.id ??
+      (storage ? `storage:${storage.id}` : null) ??
       `tile:${position.x},${position.y}:${camera.surfaceLayer ?? "structure"}`
     );
   }

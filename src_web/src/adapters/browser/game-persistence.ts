@@ -1,5 +1,13 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import {
+  storageContains,
+  servingMealCount,
+  storageTiles,
+  storageQuantity,
+  incomingQuantity,
+  type StorageArea,
+} from "../../simulation/storage";
+import {
   OBJECT_DEFINITIONS,
   objectBlocks,
   objectFootprint,
@@ -716,12 +724,6 @@ function isRoutineState(value: unknown): boolean {
     isIntegerInRange(value.pantryMeals, 0, 108) &&
     isIntegerInRange(value.mealsConsumed, 0, 108) &&
     isIntegerInRange(value.reserveMeals, 0, 108) &&
-    isIntegerInRange(value.nextSupplyNumber, 1, 1000) &&
-    (value.supplyOrder === null ||
-      (isRecord(value.supplyOrder) &&
-        isNonEmptyString(value.supplyOrder.jobId) &&
-        isIntegerInRange(value.supplyOrder.quantity, 1, 12) &&
-        isLiteral(value.supplyOrder.phase, ["collection", "delivery"]))) &&
     isArrayOf(
       value.stations,
       (station) =>
@@ -760,41 +762,11 @@ function isRoutineState(value: unknown): boolean {
 function routineReferencesValid(state: GameState): boolean {
   const ids = state.personnel.map(({ id }) => id);
   const routines = state.routines;
-  const carried =
-    routines.supplyOrder?.phase === "delivery"
-      ? routines.supplyOrder.quantity
-      : 0;
   if (
-    routines.pantryMeals +
-      routines.reserveMeals +
-      routines.mealsConsumed +
-      carried !==
+    routines.pantryMeals + routines.reserveMeals + routines.mealsConsumed !==
     108
   )
     return false;
-  if (routines.supplyOrder) {
-    const supplyJob = state.jobs.find(
-      ({ id }) => id === routines.supplyOrder!.jobId,
-    );
-    if (
-      !supplyJob ||
-      supplyJob.skillId !== "logistics" ||
-      supplyJob.status === "completed" ||
-      supplyJob.requiredProgress !== 1 ||
-      supplyJob.assessment
-    )
-      return false;
-    if (
-      routines.supplyOrder.phase === "delivery" &&
-      supplyJob.requiredWorkerId === null
-    )
-      return false;
-    if (
-      routines.supplyOrder.phase === "collection" &&
-      routines.reserveMeals < routines.supplyOrder.quantity
-    )
-      return false;
-  }
   if (
     Object.keys(routines.schedules).length !== ids.length ||
     !ids.every((id) => routines.schedules[id] !== undefined)
@@ -1327,19 +1299,6 @@ function objectsValid(state: GameState): boolean {
       )
         return false;
     }
-  if (state.routines.supplyOrder) {
-    const supply = state.routines.supplyOrder;
-    const cargo = reservedObject(state.objects, supply.jobId);
-    if (
-      !cargo ||
-      cargo.kind !== "meals" ||
-      cargo.quantity !== supply.quantity ||
-      (supply.phase === "delivery"
-        ? cargo.location.kind !== "carried"
-        : cargo.location.kind !== "ground")
-    )
-      return false;
-  }
   const manualMoves = new Set(state.objectOrders.map((order) => order.jobId));
   const unreserved = materials
     .filter(
@@ -1416,6 +1375,74 @@ function objectsValid(state: GameState): boolean {
   });
 }
 
+function isStorageArea(value: unknown): value is StorageArea {
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.id) &&
+    isNonEmptyString(value.name) &&
+    value.name.length <= 60 &&
+    isTilePosition(value.origin) &&
+    isIntegerInRange(value.width, 1, 8) &&
+    isIntegerInRange(value.height, 1, 8) &&
+    isIntegerInRange(value.capacity, 1, 1000) &&
+    isIntegerInRange(value.target, 0, value.capacity as number) &&
+    typeof value.enabled === "boolean" &&
+    typeof value.serveMeals === "boolean" &&
+    isArrayOf(
+      value.accepts,
+      (kind) =>
+        isNonEmptyString(kind) && Object.hasOwn(OBJECT_DEFINITIONS, kind),
+      5,
+    ) &&
+    value.accepts.length > 0 &&
+    new Set(value.accepts).size === value.accepts.length &&
+    (!value.serveMeals || value.accepts.includes("meals"))
+  );
+}
+function storageReferencesValid(state: GameState): boolean {
+  const occupied = new Set<number>();
+  if (
+    new Set(state.storage.areas.map((area) => area.id)).size !==
+    state.storage.areas.length
+  )
+    return false;
+  for (const area of state.storage.areas) {
+    if (
+      !/^storage-[1-9]\d*$/.test(area.id) ||
+      Number(area.id.slice(8)) >= state.storage.nextId
+    )
+      return false;
+    if (
+      storageQuantity(state, area) + incomingQuantity(state, area) >
+      area.capacity
+    )
+      return false;
+    for (const position of storageTiles(area)) {
+      if (tileAt(state.world.map, position) === null) return false;
+      const index = position.y * state.world.map.width + position.x;
+      if (occupied.has(index)) return false;
+      occupied.add(index);
+    }
+  }
+  if (
+    !Object.keys(state.storage.blockedReasons).every((id) =>
+      state.storage.areas.some((area) => area.id === id),
+    )
+  )
+    return false;
+  if (state.routines.pantryMeals !== servingMealCount(state)) return false;
+  return state.objectOrders.every((order) => {
+    if (["completed", "cancelled"].includes(order.phase)) return true;
+    const area = state.storage.areas.find((area) =>
+      storageContains(area, order.destination),
+    );
+    const item = state.objects.items.find((item) => item.id === order.objectId);
+    return (
+      !area || (!!item && !order.install && area.accepts.includes(item.kind))
+    );
+  });
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -1457,6 +1484,11 @@ function isGameState(value: unknown): value is GameState {
     !isRoutineState(value.routines) ||
     !isObservationState(value.observations) ||
     !isEnvironment(value.environment) ||
+    !isRecord(value.storage) ||
+    !isIntegerInRange(value.storage.nextId, 1) ||
+    !isArrayOf(value.storage.areas, isStorageArea, 32) ||
+    !isRecord(value.storage.blockedReasons) ||
+    !Object.values(value.storage.blockedReasons).every(isNonEmptyString) ||
     !isRecord(value.objects) ||
     !isIntegerInRange(value.objects.nextId, 1) ||
     !isArrayOf(value.objects.items, isPhysicalObject, 10000) ||
@@ -1504,6 +1536,7 @@ function isGameState(value: unknown): value is GameState {
     observationReferencesValid(state) &&
     environmentReferencesValid(state) &&
     objectsValid(state) &&
+    storageReferencesValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||
       personIds.includes(state.scp999.targetPersonId)) &&

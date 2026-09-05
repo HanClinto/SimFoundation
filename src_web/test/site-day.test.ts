@@ -54,15 +54,10 @@ describe("integrated site operations", () => {
         ({ stationId }) => stationId,
       );
       expect(new Set(stations).size).toBe(stations.length);
-      const carried =
-        state.routines.supplyOrder?.phase === "delivery"
-          ? state.routines.supplyOrder.quantity
-          : 0;
       expect(
         state.routines.pantryMeals +
           state.routines.reserveMeals +
-          state.routines.mealsConsumed +
-          carried,
+          state.routines.mealsConsumed,
       ).toBe(108);
       if (minute % 120 === 0) {
         const loaded = loadGameState({

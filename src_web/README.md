@@ -89,13 +89,21 @@ Beds have a two-tile footprint; one tile is the interaction position and the rem
 
 Building materials and packaged meals are real counted stacks with ground/carrier locations and exclusive work reservations. Surface replacement and annex construction reserve, pick up, deliver, and consume those objects. Pantry replenishment transports meal stacks; individual pawns collect a portion and carry it to a seat before eating. Moving stock changes subsequent collection destinations. The displayed material and meal counters are validated summaries, not additional copies of the inventory.
 
-World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **26**, requiring a fresh development session. This first object set does not add crafting, procurement, arbitrary containers, weight limits, or a universal equipment system. Cameras retain their existing specialized device/kit workflow.
+World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **27**, requiring a fresh development session. This first object set does not add crafting, procurement, arbitrary containers, weight limits, or a universal equipment system. Cameras retain their existing specialized device/kit workflow.
+
+### Storage and Hauling
+
+**Storage and Hauling** manages rectangular floor designations up to 8x8 tiles. Each area has accepted object types, capacity in item units, a total stocking target, and an enabled policy. Areas cannot overlap or cover installed furniture. Packed furniture counts as one unit; supply quantities count individually. Initial designations cover the dining pantry, material store, and meal reserve.
+
+Set a target above current stock to let staff queue ordinary pickup/carry/placement jobs. Incoming quantities reserve capacity, and hauling protects source-area targets and existing item reservations. Deliveries merge compatible unreserved stacks at the same tile without changing condition. Work moves at most twelve supply units or one packed object per trip; no stock is created. The inspector reports incoming quantities, workers, occupied footprints, unreachable routes, full storage, and unavailable source stock. Enable **Layers > Storage** for area boundaries; area names remain in map selection and the inspector without crowding room labels or pawn bubbles.
+
+**Diners collect meals here** makes unreserved meals in an enabled area available for dining. **Relocate area** moves only its designation, not its contents: workers stock the new footprint under its policy, and diners collect there. The old meal-specific hauling state machine and room-coordinate pantry assumption have been removed. Designation changes/removal are rejected while transfers or reserved stock are committed to the area. Removing a designation leaves its objects on the ground. Targets are total units across accepted types, not separate quotas per type; weights, shelves, containers, automatic excess-stock evacuation, and external procurement remain deferred.
 
 ### Daily Routines Prototype
 
 The Day Planner edits each pawn's 24 hourly work, free-time, and sleep blocks, with day-shift, night-shift, and rest-day presets. Staff autonomously seek a meal when hungry, a bed when tired, and a break when stressed. Beds, meal seats, and break seats are physically located and exclusively reserved; travel alone does not restore needs. Ordinary schedule changes let current jobs finish, while critical hunger or exhaustion can release work reservations without erasing progress.
 
-The pantry starts with 36 meals and the store with 72 more. Logistics automatically collects and carries batches to replenish a low pantry; no food is created by restocking. Shortages and unreachable or occupied service stations are visible in Day Planner. External procurement, cooking, treatment, and richer refusal behavior remain future systems. These stations are a first functional-room slice, not a full furnishing editor.
+The pantry starts with 36 meals and the meal reserve with 72 more. The default dining policy targets 24 meals with capacity 36; general storage hauling replenishes deficits. Day Planner reports meals available in serving areas, other stock (including transport), and issued portions. No food is created by restocking. Shortages and unreachable or occupied service stations are visible in Day Planner. External procurement, cooking, treatment, and richer refusal behavior remain future systems.
 
 ### Surveillance Prototype
 
@@ -113,7 +121,7 @@ Engineering can order replacement of either installed layer using the shared con
 
 The general exposure API remains available to authored scenarios and tests: bounded sources reach cardinally connected surfaces, stop at intact walls or sealed doors, and reach neighboring space after a barrier opens. The default source list is empty. The AN-001 scenario, bespoke enclosure, and dedicated window were removed from active play; its design notes remain archived in the catalog.
 
-The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 26; earlier development saves require a fresh session.
+The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 27; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 

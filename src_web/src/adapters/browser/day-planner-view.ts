@@ -98,7 +98,7 @@ export function createDayPlanner(
     )!.textContent =
       `Apply ${preset.selectedOptions[0]!.textContent} to ${person.name}`;
     container.querySelector("[data-routine-stock]")!.textContent =
-      `Pantry: ${snapshot.game.routines.pantryMeals} meals / Store: ${snapshot.game.routines.reserveMeals} / Served: ${snapshot.game.routines.mealsConsumed}${snapshot.game.routines.supplyOrder ? " / Replenishment in progress" : ""}`;
+      `Meal storage: ${snapshot.game.routines.pantryMeals} available / Other stock and transit: ${snapshot.game.routines.reserveMeals} / Issued: ${snapshot.game.routines.mealsConsumed}`;
     const portrait = container.querySelector<HTMLImageElement>(
       "[data-planner-portrait]",
     )!;

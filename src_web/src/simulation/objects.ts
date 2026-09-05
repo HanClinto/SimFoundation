@@ -333,14 +333,24 @@ export function reserveSupply(
   owner: string,
   allowOtherLocations = false,
 ): { store: ObjectStore; objectId: string | null } {
-  const stacks = store.items.filter(
+  if (!Number.isSafeInteger(quantity) || quantity <= 0)
+    return { store, objectId: null };
+  const candidates = store.items.filter(
     (item) =>
       item.kind === kind &&
+      !item.installed &&
       !item.reservedBy &&
       item.location.kind === "ground" &&
       item.location.position.x === position.x &&
       item.location.position.y === position.y,
   );
+  const condition = candidates.find(
+    (candidate) =>
+      candidates
+        .filter((item) => item.condition === candidate.condition)
+        .reduce((sum, item) => sum + item.quantity, 0) >= quantity,
+  )?.condition;
+  const stacks = candidates.filter((item) => item.condition === condition);
   const total = stacks.reduce((sum, item) => sum + item.quantity, 0);
   if (total < quantity || !stacks[0]) {
     if (allowOtherLocations) {
@@ -398,6 +408,55 @@ export function supplyAt(
         item.location.position.y === position.y,
     )
     .reduce((sum, item) => sum + item.quantity, 0);
+}
+
+export function mergeGroundStack(
+  store: ObjectStore,
+  objectId: string,
+): ObjectStore {
+  const object = store.items.find((item) => item.id === objectId);
+  if (
+    !object ||
+    object.location.kind !== "ground" ||
+    object.installed ||
+    object.reservedBy ||
+    !OBJECT_DEFINITIONS[object.kind].stackable
+  )
+    return store;
+  const position = object.location.position;
+  const compatible = store.items.filter(
+    (item) =>
+      item.id !== objectId &&
+      item.kind === object.kind &&
+      item.condition === object.condition &&
+      !item.installed &&
+      !item.reservedBy &&
+      item.location.kind === "ground" &&
+      item.location.position.x === position.x &&
+      item.location.position.y === position.y,
+  );
+  if (!compatible.length) return store;
+  const ids = new Set(compatible.map((item) => item.id));
+  return {
+    ...store,
+    items: store.items.map((item) =>
+      item.id === objectId
+        ? {
+            ...item,
+            quantity:
+              item.quantity +
+              compatible.reduce((sum, other) => sum + other.quantity, 0),
+          }
+        : ids.has(item.id)
+          ? {
+              ...item,
+              quantity: 0,
+              reservedBy: null,
+              location: { kind: "consumed" },
+            }
+          : item,
+    ),
+  };
 }
 
 export function consumeSupply(
