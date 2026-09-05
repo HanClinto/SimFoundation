@@ -873,6 +873,16 @@ textarea {
   font-weight: bold;
 }
 
+.dossier-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.dossier-actions button {
+  min-width: 0;
+}
+
 .equipment-panel {
   display: block;
 }
@@ -1025,6 +1035,345 @@ textarea {
 .compact-table th,
 .compact-table td {
   padding: 3px 5px;
+}
+
+.medical-body,
+.assessments-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.medical-summary,
+.record-heading {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px;
+  border: 2px outset #fff;
+  background: #c0c0c0;
+}
+
+.medical-summary > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.medical-summary strong {
+  color: #000080;
+  font-size: 14px;
+}
+
+.medical-summary small,
+.record-heading span {
+  color: #444;
+}
+
+.medical-summary button {
+  min-width: 132px;
+}
+
+.medical-workspace {
+  display: grid;
+  min-height: 0;
+  flex: 1 1 auto;
+  grid-template-columns: 260px minmax(190px, 1fr);
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.body-chart-pane,
+.medical-findings-pane,
+.assessment-history {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  border: 2px inset #fff;
+  background: #fff;
+}
+
+.body-chart-pane {
+  padding: 6px;
+}
+
+.body-map-toolbar {
+  display: flex;
+  height: 24px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.body-map-toolbar button {
+  min-width: 46px;
+  min-height: 20px;
+  padding: 0 6px;
+}
+
+.body-filter.selected,
+.body-region.selected {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 1px 1px #0a0a0a,
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px #808080;
+}
+
+.body-map {
+  position: relative;
+  width: 228px;
+  height: 292px;
+  margin: 4px auto 8px;
+  border: 1px solid #aaa;
+  background:
+    repeating-linear-gradient(0deg, #f4f4f4 0 1px, transparent 1px 16px),
+    repeating-linear-gradient(90deg, #f4f4f4 0 1px, transparent 1px 16px), #fff;
+}
+
+.body-region {
+  position: absolute;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  padding: 2px;
+  border: 1px solid #444;
+  background: #b9b9b9;
+  box-shadow: none;
+  color: #111;
+  font-size: 9px;
+  line-height: 1.05;
+  text-align: center;
+  text-shadow: none;
+}
+
+.body-region-head {
+  top: 8px;
+  left: 93px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+}
+
+.body-region-torso {
+  top: 54px;
+  left: 78px;
+  width: 72px;
+  height: 102px;
+}
+
+.body-region-leftArm,
+.body-region-rightArm {
+  top: 60px;
+  width: 30px;
+  height: 94px;
+}
+
+.body-region-leftArm {
+  left: 44px;
+}
+
+.body-region-rightArm {
+  right: 44px;
+}
+
+.body-region-leftHand,
+.body-region-rightHand {
+  top: 158px;
+  width: 32px;
+  height: 35px;
+}
+
+.body-region-leftHand {
+  left: 42px;
+}
+
+.body-region-rightHand {
+  right: 42px;
+}
+
+.body-region-leftLeg,
+.body-region-rightLeg {
+  top: 160px;
+  width: 34px;
+  height: 91px;
+}
+
+.body-region-leftLeg {
+  left: 78px;
+}
+
+.body-region-rightLeg {
+  right: 78px;
+}
+
+.body-region-leftFoot,
+.body-region-rightFoot {
+  top: 255px;
+  width: 42px;
+  height: 28px;
+}
+
+.body-region-leftFoot {
+  left: 70px;
+}
+
+.body-region-rightFoot {
+  right: 70px;
+}
+
+.body-region[data-assessment-state="unassessed"] {
+  border-style: dashed;
+  background: repeating-linear-gradient(135deg, #ddd 0 4px, #c5c5c5 4px 8px);
+}
+
+.body-region[data-assessment-state="clear"] {
+  background: #c7dfc7;
+}
+
+.body-region[data-assessment-state="suspected"] {
+  background: repeating-linear-gradient(135deg, #f5dfa0 0 4px, #d5bc73 4px 8px);
+}
+
+.body-region[data-assessment-state="confirmed"] {
+  color: #fff;
+  background: #9d3030;
+}
+
+.medical-legend {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 8px;
+  font-size: 10px;
+}
+
+.medical-legend span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.medical-legend i {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #444;
+}
+
+.legend-unassessed {
+  border-style: dashed !important;
+  background: #c5c5c5;
+}
+
+.legend-clear {
+  background: #c7dfc7;
+}
+
+.legend-suspected {
+  background: #d5bc73;
+}
+
+.legend-confirmed {
+  background: #9d3030;
+}
+
+.medical-findings-pane {
+  padding: 8px;
+}
+
+.medical-findings-pane h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.medical-findings {
+  display: grid;
+  gap: 6px;
+}
+
+.medical-finding {
+  display: grid;
+  gap: 3px;
+  padding: 7px;
+  border: 1px solid #888;
+  border-left-width: 5px;
+  background: #f5f5f5;
+}
+
+.medical-finding.finding-confirmed {
+  border-left-color: #9d3030;
+}
+
+.medical-finding.finding-suspected {
+  border-left-color: #b39132;
+}
+
+.medical-finding span {
+  text-transform: capitalize;
+}
+
+.medical-finding small {
+  color: #555;
+  overflow-wrap: anywhere;
+}
+
+.empty-record {
+  margin: 0;
+  padding: 10px;
+  border: 1px dashed #888;
+  color: #555;
+  background: #f5f5f5;
+}
+
+.record-heading {
+  margin-bottom: 5px;
+}
+
+.assessment-history {
+  flex: 1 1 auto;
+  padding: 7px;
+}
+
+.assessment-entry {
+  margin-bottom: 8px;
+  padding: 8px;
+  border-bottom: 1px dotted #777;
+  background: #fffef2;
+}
+
+.assessment-entry header,
+.assessment-entry dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.assessment-entry header {
+  margin-bottom: 7px;
+}
+
+.assessment-entry time {
+  color: #555;
+}
+
+.assessment-entry dl {
+  margin: 0;
+}
+
+.assessment-entry dl div {
+  padding: 2px 0;
+}
+
+.assessment-entry dd {
+  margin: 0;
+  text-align: right;
+}
+
+.assessment-entry p {
+  margin: 7px 0 0;
 }
 
 .report-paper {

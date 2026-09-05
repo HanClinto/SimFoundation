@@ -15,8 +15,14 @@ import controlIconUrl from "./assets/control.svg";
 import debugIconUrl from "./assets/debug.svg";
 import facilityIconUrl from "./assets/facility.svg";
 import folderIconUrl from "./assets/folder.svg";
+import medicalIconUrl from "./assets/medical.svg";
 import personnelIconUrl from "./assets/personnel.svg";
+import recordsIconUrl from "./assets/records.svg";
 import scpEmblemUrl from "./assets/scp-emblem.svg";
+import {
+  createPersonnelMedicalWindows,
+  updatePersonnelMedicalWindows,
+} from "./medical-view";
 import {
   createPersonnelInspectorWindows,
   updatePersonnelInspectors,
@@ -360,6 +366,10 @@ const personnelInspectors = createPersonnelInspectorWindows(
   app,
   controller.getSnapshot().game.personnel,
 );
+const personnelMedicalWindows = createPersonnelMedicalWindows(
+  app,
+  controller.getSnapshot().game.personnel,
+);
 const windowManager = createWindowManager(app);
 
 windowManager.register(requireElement<HTMLElement>("#facility-window"), {
@@ -452,6 +462,44 @@ personnelInspectors.forEach((inspector, index) => {
     minimumHeight: 32,
   });
 });
+personnelMedicalWindows.medicalCharts.forEach((chart, index) => {
+  const personName =
+    chart.querySelector<HTMLElement>(".title-bar-text")?.textContent ??
+    "Medical Chart";
+  windowManager.register(chart, {
+    id: chart.id,
+    title: personName,
+    iconUrl: medicalIconUrl,
+    defaultRect: {
+      left: 190 + index * 28,
+      top: 72 + index * 24,
+      width: 610,
+      height: 500,
+    },
+    defaultOpen: false,
+    minimumWidth: 360,
+    minimumHeight: 260,
+  });
+});
+personnelMedicalWindows.assessmentRecords.forEach((record, index) => {
+  const personName =
+    record.querySelector<HTMLElement>(".title-bar-text")?.textContent ??
+    "Assessment Record";
+  windowManager.register(record, {
+    id: record.id,
+    title: personName,
+    iconUrl: recordsIconUrl,
+    defaultRect: {
+      left: 310 + index * 24,
+      top: 118 + index * 20,
+      width: 500,
+      height: 390,
+    },
+    defaultOpen: false,
+    minimumWidth: 300,
+    minimumHeight: 220,
+  });
+});
 
 function openPersonnelInspector(personId: string): void {
   windowManager.open(`personnel-inspector-${personId}`);
@@ -499,6 +547,20 @@ taskbar.addEventListener("click", (event) => {
   );
   const windowId = launcher?.dataset.openWindow;
   if (windowId) windowManager.open(windowId);
+});
+
+app.addEventListener("click", (event) => {
+  const relatedWindowButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-open-related-window]");
+  const relatedWindowId = relatedWindowButton?.dataset.openRelatedWindow;
+  if (relatedWindowId) windowManager.open(relatedWindowId);
+
+  const assessmentButton = (event.target as Element).closest<HTMLButtonElement>(
+    "[data-assess-person-id]",
+  );
+  const personId = assessmentButton?.dataset.assessPersonId;
+  if (personId) controller.orderPhysicalAssessment(personId);
 });
 
 windowManager.subscribe((windows) => {
@@ -615,6 +677,11 @@ function render(snapshot: ControllerSnapshot): void {
   renderSite(canvas, snapshot);
   updatePersonnelRoster(personnelRows, snapshot.game.personnel);
   updatePersonnelInspectors(personnelInspectors, snapshot.game.personnel);
+  updatePersonnelMedicalWindows(
+    personnelMedicalWindows,
+    snapshot.game.personnel,
+    snapshot.game.tick,
+  );
   personnelCount.textContent = `${snapshot.game.personnel.length} assigned`;
   siteName.textContent = snapshot.game.siteName;
   tickCount.textContent = snapshot.game.tick.toLocaleString();

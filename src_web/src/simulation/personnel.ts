@@ -34,13 +34,54 @@ export interface PersonnelSkill {
   readonly level: number;
 }
 
+export type BodyRegion =
+  | "head"
+  | "torso"
+  | "leftArm"
+  | "rightArm"
+  | "leftHand"
+  | "rightHand"
+  | "leftLeg"
+  | "rightLeg"
+  | "leftFoot"
+  | "rightFoot";
+
+export interface PersonnelEffect {
+  readonly id: string;
+  readonly name: string;
+  readonly kind: "injury" | "condition";
+  readonly severity: "minor" | "moderate" | "serious";
+  readonly bodyRegions: readonly BodyRegion[];
+  readonly physicalHealthPenalty: number;
+}
+
+export interface AssessmentConclusion {
+  readonly subjectEffectId: string;
+  readonly label: string;
+  readonly status: "suspected" | "confirmed" | "ruled-out";
+  readonly confidence: number;
+  readonly bodyRegions: readonly BodyRegion[];
+}
+
+export interface PhysicalAssessment {
+  readonly id: string;
+  readonly assessedTick: number;
+  readonly assessor: string;
+  readonly method: string;
+  readonly confidence: number;
+  readonly estimate: {
+    readonly minimum: number;
+    readonly maximum: number;
+  };
+  readonly conclusions: readonly AssessmentConclusion[];
+}
+
 export interface PersonnelRecord {
   readonly id: string;
   readonly name: string;
   readonly assignment: string;
   readonly activity: string;
   readonly clearance: number;
-  readonly health: number;
   readonly resilience: number;
   readonly stress: number;
   readonly fear: number;
@@ -49,6 +90,8 @@ export interface PersonnelRecord {
   readonly skills: readonly PersonnelSkill[];
   readonly equipment: PersonnelEquipment;
   readonly inventory: readonly PersonnelItem[];
+  readonly effects: readonly PersonnelEffect[];
+  readonly physicalAssessments: readonly PhysicalAssessment[];
 }
 
 export interface DerivedMeasure {
@@ -57,6 +100,8 @@ export interface DerivedMeasure {
   readonly contributors: readonly string[];
 }
 
+const MAX_PHYSICAL_ASSESSMENTS = 50;
+
 const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
   {
     id: "person-mara-voss",
@@ -64,7 +109,6 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     assignment: "Research",
     activity: "Reviewing SCP-9620 telemetry",
     clearance: 3,
-    health: 100,
     resilience: 72,
     stress: 18,
     fear: 6,
@@ -106,6 +150,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         description: "Still warm.",
       },
     ],
+    effects: [],
+    physicalAssessments: [],
   },
   {
     id: "person-caleb-ward",
@@ -113,7 +159,6 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     assignment: "Engineering",
     activity: "Inspecting generator relays",
     clearance: 2,
-    health: 96,
     resilience: 61,
     stress: 24,
     fear: 4,
@@ -154,6 +199,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         description: "Industrial 80A fuse.",
       },
     ],
+    effects: [],
+    physicalAssessments: [],
   },
   {
     id: "person-priya-shah",
@@ -161,7 +208,6 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     assignment: "Medical",
     activity: "Restocking the infirmary",
     clearance: 2,
-    health: 100,
     resilience: 78,
     stress: 15,
     fear: 3,
@@ -194,6 +240,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         description: "Controlled medical stock.",
       },
     ],
+    effects: [],
+    physicalAssessments: [],
   },
   {
     id: "person-lena-ortiz",
@@ -201,7 +249,6 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     assignment: "Security",
     activity: "Patrolling Sector B1",
     clearance: 2,
-    health: 100,
     resilience: 84,
     stress: 21,
     fear: 2,
@@ -242,6 +289,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         description: "Two reusable restraint sets.",
       },
     ],
+    effects: [],
+    physicalAssessments: [],
   },
   {
     id: "person-jon-bell",
@@ -249,7 +298,6 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     assignment: "Facilities",
     activity: "Cleaning the west corridor",
     clearance: 1,
-    health: 91,
     resilience: 53,
     stress: 27,
     fear: 9,
@@ -286,6 +334,17 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         description: "Non-reactive general-purpose concentrate.",
       },
     ],
+    effects: [
+      {
+        id: "effect-sprained-left-ankle-jon",
+        name: "Sprained left ankle",
+        kind: "injury",
+        severity: "moderate",
+        bodyRegions: ["leftFoot"],
+        physicalHealthPenalty: 9,
+      },
+    ],
+    physicalAssessments: [],
   },
   {
     id: "person-emil-novak",
@@ -293,7 +352,6 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     assignment: "Logistics",
     activity: "Taking a scheduled break",
     clearance: 1,
-    health: 98,
     resilience: 47,
     stress: 31,
     fear: 12,
@@ -331,6 +389,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         description: "Saved for later.",
       },
     ],
+    effects: [],
+    physicalAssessments: [],
   },
 ];
 
@@ -352,6 +412,59 @@ function bandFor(score: number): DerivedMeasure["band"] {
 
 export function createStartingPersonnel(): readonly PersonnelRecord[] {
   return structuredClone(STARTING_PERSONNEL);
+}
+
+export function derivePhysicalHealth(person: PersonnelRecord): number {
+  return clamp(
+    100 -
+      person.effects.reduce(
+        (total, effect) => total + effect.physicalHealthPenalty,
+        0,
+      ),
+  );
+}
+
+export function latestPhysicalAssessment(
+  person: PersonnelRecord,
+): PhysicalAssessment | null {
+  return person.physicalAssessments.at(-1) ?? null;
+}
+
+export function assessPhysicalHealth(
+  person: PersonnelRecord,
+  assessedTick: number,
+): PersonnelRecord {
+  const physicalHealth = derivePhysicalHealth(person);
+  const assessment: PhysicalAssessment = {
+    id: `physical-${person.id}-${assessedTick}`,
+    assessedTick,
+    assessor: "Site 828 Medical",
+    method: "Basic physical examination",
+    confidence: 0.9,
+    estimate: {
+      minimum: Math.max(0, physicalHealth - 2),
+      maximum: Math.min(100, physicalHealth + 2),
+    },
+    conclusions: person.effects.map((effect) => ({
+      subjectEffectId: effect.id,
+      label: effect.name,
+      status: "confirmed",
+      confidence: 0.9,
+      bodyRegions: effect.bodyRegions,
+    })),
+  };
+
+  return {
+    ...person,
+    physicalAssessments: [
+      ...person.physicalAssessments
+        .filter(
+          ({ assessedTick: previousTick }) => previousTick !== assessedTick,
+        )
+        .slice(-(MAX_PHYSICAL_ASSESSMENTS - 1)),
+      assessment,
+    ],
+  };
 }
 
 export function advancePersonnel(person: PersonnelRecord): PersonnelRecord {
@@ -376,7 +489,7 @@ export function deriveMood(person: PersonnelRecord): DerivedMeasure {
   const physicalCondition =
     person.needs.satiety * 0.35 +
     person.needs.rest * 0.4 +
-    person.health * 0.25;
+    derivePhysicalHealth(person) * 0.25;
   const score = Math.round(
     clamp(physicalCondition - person.stress * 0.28 - person.fear * 0.12),
   );

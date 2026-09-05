@@ -201,5 +201,6 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - The taskbar clock opens Simulation Control and reflects run/pause state.
 - The SCP menu reserves save/load/settings locations without pretending those systems exist yet.
 - Foundation Library demonstrates the Encarta-like article/tree split.
-- Personnel Roster and pawn inspectors now project authoritative personnel state. Several pawn inspectors can remain open for comparison, and derived mood/sanity views explain their contributing factors. Budget remains an explicitly provisional preview until its simulation exists.
-- Personnel inspectors use a compact corporate ID/dossier header with manila-style Summary, Equipment, Skills, and Influences tabs. The default Summary emphasizes health, mood, sanity, assignment, and current activity; equipment uses fixed paper-doll slots and inventory; detailed skills and psychological contributors remain one click away.
+- Personnel Roster and pawn inspectors now project assessment-limited personnel state. Several pawn inspectors can remain open for comparison, and derived mood/sanity views explain their contributing factors. Budget remains an explicitly provisional preview until its simulation exists.
+- Personnel inspectors use a compact corporate ID/dossier header with manila-style Summary, Equipment, Skills, and Influences tabs. Summary reports Physical Health only as an assessed range and launches separate modeless Medical Chart and Assessment Record windows.
+- Medical Chart combines a selectable body-region map with a findings list. Regions visualize assessed Injury Effects rather than owning hit points; unknown, assessed-clear, suspected, and confirmed states remain visibly distinct.

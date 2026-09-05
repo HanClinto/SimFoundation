@@ -1,6 +1,7 @@
 import {
   deriveMood,
   deriveSanity,
+  latestPhysicalAssessment,
   type PersonnelRecord,
 } from "../../simulation/personnel";
 
@@ -60,17 +61,24 @@ export function createPersonnelInspectorWindows(
           </div>
         </header>
         <menu class="dossier-tabs" role="tablist" aria-label="Personnel dossier sections">
-          <button type="button" role="tab" aria-selected="true" data-dossier-tab="summary">Summary</button>
-          <button type="button" role="tab" aria-selected="false" data-dossier-tab="equipment">Equipment</button>
-          <button type="button" role="tab" aria-selected="false" data-dossier-tab="skills">Skills</button>
-          <button type="button" role="tab" aria-selected="false" data-dossier-tab="influences">Influences</button>
+          <button id="dossier-${person.id}-tab-summary" type="button" role="tab" aria-selected="true" aria-controls="dossier-${person.id}-panel-summary" data-dossier-tab="summary">Summary</button>
+          <button id="dossier-${person.id}-tab-equipment" type="button" role="tab" aria-selected="false" aria-controls="dossier-${person.id}-panel-equipment" data-dossier-tab="equipment">Equipment</button>
+          <button id="dossier-${person.id}-tab-skills" type="button" role="tab" aria-selected="false" aria-controls="dossier-${person.id}-panel-skills" data-dossier-tab="skills">Skills</button>
+          <button id="dossier-${person.id}-tab-influences" type="button" role="tab" aria-selected="false" aria-controls="dossier-${person.id}-panel-influences" data-dossier-tab="influences">Influences</button>
         </menu>
-        <section class="dossier-panel" role="tabpanel" data-dossier-panel="summary">
+        <section id="dossier-${person.id}-panel-summary" class="dossier-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-summary" aria-hidden="false" data-dossier-panel="summary">
           <div class="summary-scores">
-            <div><span>Health</span><strong data-value="health"></strong></div>
+            <div><span>Physical</span><strong data-field="physical-summary"></strong><small data-field="physical-recency"></small></div>
             <div><span>Mood</span><strong data-field="mood-score"></strong><small data-field="mood-band"></small></div>
             <div><span>Sanity</span><strong data-field="sanity-score"></strong><small data-field="sanity-band"></small></div>
           </div>
+          <fieldset>
+            <legend>Records</legend>
+            <div class="dossier-actions">
+              <button type="button" data-open-related-window="medical-chart-${person.id}">Open Medical Chart</button>
+              <button type="button" data-open-related-window="assessment-record-${person.id}">Open Assessment Record</button>
+            </div>
+          </fieldset>
           <fieldset>
             <legend>Current condition</legend>
             <dl class="compact-metrics">
@@ -86,7 +94,7 @@ export function createPersonnelInspectorWindows(
             <p><strong>Best skill:</strong> <span data-field="best-skill"></span></p>
           </fieldset>
         </section>
-        <section class="dossier-panel equipment-panel" role="tabpanel" data-dossier-panel="equipment" hidden>
+        <section id="dossier-${person.id}-panel-equipment" class="dossier-panel equipment-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-equipment" aria-hidden="true" data-dossier-panel="equipment" hidden>
           <div class="paper-doll">
             <div class="paper-doll-figure" aria-hidden="true"><span></span></div>
             ${EQUIPMENT_SLOTS.map(
@@ -99,7 +107,7 @@ export function createPersonnelInspectorWindows(
             <div class="inventory-slots" data-field="inventory"></div>
           </fieldset>
         </section>
-        <section class="dossier-panel" role="tabpanel" data-dossier-panel="skills" hidden>
+        <section id="dossier-${person.id}-panel-skills" class="dossier-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-skills" aria-hidden="true" data-dossier-panel="skills" hidden>
           <fieldset>
             <legend>Training record</legend>
             <p class="system-note">Skill levels range from 1 (novice) to 10 (expert).</p>
@@ -109,7 +117,7 @@ export function createPersonnelInspectorWindows(
             </table>
           </fieldset>
         </section>
-        <section class="dossier-panel" role="tabpanel" data-dossier-panel="influences" hidden>
+        <section id="dossier-${person.id}-panel-influences" class="dossier-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-influences" aria-hidden="true" data-dossier-panel="influences" hidden>
           <fieldset>
             <legend>Traits</legend>
             <p data-field="traits"></p>
@@ -143,6 +151,7 @@ export function createPersonnelInspectorWindows(
         "[data-dossier-panel]",
       )) {
         panel.hidden = panel.dataset.dossierPanel !== tab.dataset.dossierTab;
+        panel.setAttribute("aria-hidden", String(panel.hidden));
       }
     });
     return windowElement;
@@ -241,6 +250,7 @@ export function updatePersonnelInspectors(
       throw new Error(`Personnel inspector missing: ${person.id}`);
     const mood = deriveMood(person);
     const sanity = deriveSanity(person);
+    const physicalAssessment = latestPhysicalAssessment(person);
 
     setText(inspector, "title", `${person.name} - Personnel Inspector`);
     setText(inspector, "initials", initials(person.name));
@@ -248,6 +258,20 @@ export function updatePersonnelInspectors(
     setText(inspector, "assignment", person.assignment);
     setText(inspector, "clearance", person.clearance.toString());
     setText(inspector, "activity", person.activity);
+    setText(
+      inspector,
+      "physical-summary",
+      physicalAssessment
+        ? `${physicalAssessment.estimate.minimum}-${physicalAssessment.estimate.maximum}`
+        : "Unassessed",
+    );
+    setText(
+      inspector,
+      "physical-recency",
+      physicalAssessment
+        ? `Exam tick ${physicalAssessment.assessedTick}`
+        : "No current report",
+    );
     setText(inspector, "traits", person.traits.join(", "));
     setText(inspector, "traits-summary", person.traits.join(", "));
     const bestSkill = [...person.skills].sort(
@@ -264,7 +288,6 @@ export function updatePersonnelInspectors(
     setText(inspector, "mood-band", mood.band);
     setText(inspector, "sanity-score", `${sanity.score}%`);
     setText(inspector, "sanity-band", sanity.band);
-    setMetric(inspector, "health", person.health);
     setMetric(inspector, "satiety", person.needs.satiety);
     setMetric(inspector, "rest", person.needs.rest);
     setMetric(inspector, "stress", person.stress);

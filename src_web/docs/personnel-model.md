@@ -1154,14 +1154,29 @@ Show only known or recently reported fields:
 - Assessment age and confidence
 - Alert markers for stale or missing information
 
-### Dossier tabs
+### Personnel dossier
 
-- ID: legal name, nickname, background, known traits
+The dossier is a compact summary and launcher rather than the only home for all personnel information:
+
+- ID summary: legal name, nickname, background, known Traits
 - Assignment: role, clearance, certifications, schedule, priorities, zones
-- Status: known needs, health estimates, current effects, assessment recency
-- Equipment: eight portrait slots and fixed inventory
-- Skills: levels, XP, certifications, assessment confidence
-- Records: assessments, service history, injuries, memories that are known to the Foundation
+- Status: known needs, assessed Health ranges, assessment recency, and urgent findings
+- Equipment and Skills may remain compact dossier sections while their workflows are small
+- Commands open modeless Medical Chart and Assessment Record windows for deeper work
+
+### Medical Chart
+
+- Show a selectable body-region map beside a condition list; selecting either filters or highlights the other.
+- Body regions visualize assessed Injury Effects. They do not own separate hit-point pools.
+- Confirmed, suspected, assessed-clear, and unassessed regions use distinct words and patterns rather than color alone.
+- A blank or unassessed region never implies healthy.
+- Systemic conditions may appear in the findings list without a body region.
+
+### Assessment Record
+
+- Show newest-first assessment history with method, assessor, timestamp, confidence, estimated range, and conclusions.
+- Preserve superseded reports so changes in knowledge remain inspectable.
+- Scheduling an examination is a simulation command; opening or arranging its windows is presentation state.
 
 ### Debug view
 

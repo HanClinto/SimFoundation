@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { deriveMood, deriveSanity } from "../src/simulation/personnel";
+import {
+  assessPhysicalHealth,
+  deriveMood,
+  derivePhysicalHealth,
+  deriveSanity,
+  latestPhysicalAssessment,
+} from "../src/simulation/personnel";
 import { createInitialState } from "../src/simulation/state";
 import { advanceSimulation } from "../src/simulation/tick";
 
@@ -66,5 +72,46 @@ describe("personnel simulation", () => {
     ]);
     expect(caleb?.equipment.head?.name).toBe("Utility Hard Hat");
     expect(JSON.parse(JSON.stringify(mara))).toEqual(mara);
+  });
+
+  it("keeps a localized injury hidden until physical assessment", () => {
+    const jon = createInitialState().personnel.find(
+      ({ id }) => id === "person-jon-bell",
+    );
+    if (!jon) throw new Error("Jon Bell missing");
+
+    expect(derivePhysicalHealth(jon)).toBe(91);
+    expect(latestPhysicalAssessment(jon)).toBeNull();
+
+    const assessedJon = assessPhysicalHealth(jon, 42);
+    expect(assessedJon.effects).toEqual(jon.effects);
+    expect(latestPhysicalAssessment(assessedJon)).toMatchObject({
+      assessedTick: 42,
+      estimate: { minimum: 89, maximum: 93 },
+      conclusions: [
+        {
+          label: "Sprained left ankle",
+          status: "confirmed",
+          bodyRegions: ["leftFoot"],
+        },
+      ],
+    });
+  });
+
+  it("deduplicates same-tick examinations and retains bounded history", () => {
+    const initialJon = createInitialState().personnel.find(
+      ({ id }) => id === "person-jon-bell",
+    );
+    if (!initialJon) throw new Error("Jon Bell missing");
+
+    let jon = assessPhysicalHealth(initialJon, 0);
+    jon = assessPhysicalHealth(jon, 0);
+    for (let tick = 1; tick < 60; tick += 1) {
+      jon = assessPhysicalHealth(jon, tick);
+    }
+
+    expect(jon.physicalAssessments).toHaveLength(50);
+    expect(jon.physicalAssessments[0]?.assessedTick).toBe(10);
+    expect(jon.physicalAssessments.at(-1)?.assessedTick).toBe(59);
   });
 });

@@ -55,4 +55,21 @@ describe("game controller", () => {
     expect(() => controller.advance(0)).toThrow(RangeError);
     expect(() => controller.advance(1.5)).toThrow(RangeError);
   });
+
+  it("orders a physical assessment without changing authoritative injuries", () => {
+    const controller = createController(createInitialState());
+    const before = controller
+      .getSnapshot()
+      .game.personnel.find(({ id }) => id === "person-jon-bell");
+    const after = controller
+      .orderPhysicalAssessment("person-jon-bell")
+      .game.personnel.find(({ id }) => id === "person-jon-bell");
+
+    expect(before?.physicalAssessments).toHaveLength(0);
+    expect(after?.effects).toEqual(before?.effects);
+    expect(after?.physicalAssessments).toHaveLength(1);
+    expect(() => controller.orderPhysicalAssessment("missing-person")).toThrow(
+      "Unknown person: missing-person",
+    );
+  });
 });
