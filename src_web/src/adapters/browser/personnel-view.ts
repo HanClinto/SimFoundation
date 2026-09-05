@@ -114,7 +114,7 @@ export function createPersonnelInspectorWindows(
             <legend>Training record</legend>
             <p class="system-note">Official training record. Levels range from 1 (novice) to 10 (expert); current practical performance may differ.</p>
             <table class="data-table compact-table">
-              <thead><tr><th>Skill</th><th>Level</th></tr></thead>
+              <thead><tr><th>Skill</th><th>Level</th><th>XP</th></tr></thead>
               <tbody data-field="skills"></tbody>
             </table>
           </fieldset>
@@ -381,9 +381,11 @@ export function updatePersonnelInspectors(
         const row = document.createElement("tr");
         const name = document.createElement("td");
         const level = document.createElement("td");
+        const xp = document.createElement("td");
         name.textContent = skill.id[0]?.toUpperCase() + skill.id.slice(1);
         level.textContent = skill.level.toString();
-        row.append(name, level);
+        xp.textContent = skill.xp.toString();
+        row.append(name, level, xp);
         return row;
       }),
     );

@@ -266,6 +266,8 @@ Every skill stores:
 
 Skills improve through meaningful completed activity. Bias alignment modifies learning and satisfaction but cannot replace the skill. Official levels remain authoritative Foundation records; estimates of an outsider's practical competence belong to the separate assessment registry.
 
+The first executable work loop stores XP on each official Skill record. Authorized jobs move through proposed, available, in-progress, and completed states. Assignment ranks relevant Skill first, uses preference alignment only as a smaller suitability factor, and resolves remaining ties by stable person ID. Job progress and XP advance only on simulation ticks.
+
 For the draft progression curve, `xp` is progress within the current level and resets after leveling. XP required for the next level is:
 
 $$

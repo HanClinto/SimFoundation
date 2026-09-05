@@ -32,6 +32,7 @@ export interface PersonnelSkill {
     | "security"
     | "logistics";
   readonly level: number;
+  readonly xp: number;
 }
 
 export type BodyRegion =
@@ -173,7 +174,9 @@ export interface PersonnelRecord {
   readonly id: string;
   readonly name: string;
   readonly assignment: string;
+  readonly defaultActivity: string;
   readonly activity: string;
+  readonly currentJobId: string | null;
   readonly clearance: number;
   readonly resilience: number;
   readonly stress: number;
@@ -207,7 +210,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     id: "person-mara-voss",
     name: "Dr. Mara Voss",
     assignment: "Research",
+    defaultActivity: "Reviewing SCP-9620 telemetry",
     activity: "Reviewing SCP-9620 telemetry",
+    currentJobId: null,
     clearance: 3,
     resilience: 72,
     stress: 18,
@@ -231,9 +236,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     biases: { mindMight: -2, receptiveResolute: -1 },
     biasAssessments: [],
     skills: [
-      { id: "research", level: 8 },
-      { id: "medical", level: 3 },
-      { id: "logistics", level: 2 },
+      { id: "research", level: 8, xp: 0 },
+      { id: "medical", level: 3, xp: 0 },
+      { id: "logistics", level: 2, xp: 0 },
     ],
     equipment: {
       head: null,
@@ -274,7 +279,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     id: "person-caleb-ward",
     name: "Caleb Ward",
     assignment: "Engineering",
+    defaultActivity: "Inspecting generator relays",
     activity: "Inspecting generator relays",
+    currentJobId: null,
     clearance: 2,
     resilience: 61,
     stress: 24,
@@ -297,9 +304,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     biases: { mindMight: 2, receptiveResolute: 2 },
     biasAssessments: [],
     skills: [
-      { id: "engineering", level: 7 },
-      { id: "logistics", level: 4 },
-      { id: "security", level: 2 },
+      { id: "engineering", level: 7, xp: 0 },
+      { id: "logistics", level: 4, xp: 0 },
+      { id: "security", level: 2, xp: 0 },
     ],
     equipment: {
       head: {
@@ -339,7 +346,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     id: "person-priya-shah",
     name: "Priya Shah",
     assignment: "Medical",
+    defaultActivity: "Restocking the infirmary",
     activity: "Restocking the infirmary",
+    currentJobId: null,
     clearance: 2,
     resilience: 78,
     stress: 15,
@@ -362,9 +371,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     biases: { mindMight: 1, receptiveResolute: -2 },
     biasAssessments: [],
     skills: [
-      { id: "medical", level: 8 },
-      { id: "research", level: 4 },
-      { id: "logistics", level: 3 },
+      { id: "medical", level: 8, xp: 0 },
+      { id: "research", level: 4, xp: 0 },
+      { id: "logistics", level: 3, xp: 0 },
     ],
     equipment: {
       head: null,
@@ -396,7 +405,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     id: "person-lena-ortiz",
     name: "Lena Ortiz",
     assignment: "Security",
+    defaultActivity: "Patrolling Sector B1",
     activity: "Patrolling Sector B1",
+    currentJobId: null,
     clearance: 2,
     resilience: 84,
     stress: 21,
@@ -420,9 +431,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     biases: { mindMight: 2, receptiveResolute: 1 },
     biasAssessments: [],
     skills: [
-      { id: "security", level: 8 },
-      { id: "medical", level: 2 },
-      { id: "logistics", level: 3 },
+      { id: "security", level: 8, xp: 0 },
+      { id: "medical", level: 2, xp: 0 },
+      { id: "logistics", level: 3, xp: 0 },
     ],
     equipment: {
       head: {
@@ -480,7 +491,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     id: "person-jon-bell",
     name: "Jon Bell",
     assignment: "Facilities",
+    defaultActivity: "Cleaning the west corridor",
     activity: "Cleaning the west corridor",
+    currentJobId: null,
     clearance: 1,
     resilience: 53,
     stress: 27,
@@ -504,9 +517,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     biases: { mindMight: 1, receptiveResolute: -1 },
     biasAssessments: [],
     skills: [
-      { id: "logistics", level: 6 },
-      { id: "engineering", level: 4 },
-      { id: "security", level: 2 },
+      { id: "logistics", level: 6, xp: 0 },
+      { id: "engineering", level: 4, xp: 0 },
+      { id: "security", level: 2, xp: 0 },
     ],
     equipment: {
       head: null,
@@ -551,7 +564,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     id: "person-emil-novak",
     name: "Emil Novak",
     assignment: "Logistics",
+    defaultActivity: "Taking a scheduled break",
     activity: "Taking a scheduled break",
+    currentJobId: null,
     clearance: 1,
     resilience: 47,
     stress: 31,
@@ -584,9 +599,9 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     biases: { mindMight: 0, receptiveResolute: -2 },
     biasAssessments: [],
     skills: [
-      { id: "logistics", level: 7 },
-      { id: "engineering", level: 3 },
-      { id: "research", level: 2 },
+      { id: "logistics", level: 7, xp: 0 },
+      { id: "engineering", level: 3, xp: 0 },
+      { id: "research", level: 2, xp: 0 },
     ],
     equipment: {
       head: null,
@@ -923,10 +938,15 @@ export function assessPhysicalHealth(
 }
 
 export function advancePersonnel(person: PersonnelRecord): PersonnelRecord {
+  const currentActivity =
+    person.currentJobId === null && person.activity.startsWith("Completed:")
+      ? person.defaultActivity
+      : person.activity;
   const lowRestPressure = person.needs.rest < 40 ? 0.035 : 0;
-  const restorativeActivity = person.activity.toLowerCase().includes("break");
+  const restorativeActivity = currentActivity.toLowerCase().includes("break");
   return {
     ...person,
+    activity: currentActivity,
     stress: round(
       clamp(
         person.stress + (restorativeActivity ? -0.04 : 0.008 + lowRestPressure),

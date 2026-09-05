@@ -1,6 +1,7 @@
+import { createStartingJobs, type SiteJob } from "./jobs";
 import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 
-export const GAME_STATE_VERSION = 8;
+export const GAME_STATE_VERSION = 9;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -19,6 +20,7 @@ export interface GameState {
   readonly capabilities: {
     readonly anomalousPsychometrics: boolean;
   };
+  readonly jobs: readonly SiteJob[];
   readonly personnel: readonly PersonnelRecord[];
 }
 
@@ -36,6 +38,7 @@ export function createInitialState(seed = 9620): GameState {
     capabilities: {
       anomalousPsychometrics: false,
     },
+    jobs: createStartingJobs(),
     personnel: createStartingPersonnel(),
   };
 }

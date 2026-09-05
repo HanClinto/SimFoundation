@@ -1325,6 +1325,87 @@ textarea {
   font-family: Georgia, serif;
 }
 
+.work-orders-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.work-orders-heading {
+  display: grid;
+  flex: 0 0 auto;
+  gap: 2px;
+  padding: 6px;
+  border: 2px outset #fff;
+}
+
+.work-orders-heading span {
+  color: #444;
+}
+
+.work-orders-list {
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 6px;
+  overflow: auto;
+  border: 2px inset #fff;
+  background: #fff;
+}
+
+.work-order {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-bottom: 1px dotted #777;
+}
+
+.work-order header,
+.work-order footer,
+.work-order dl div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.work-order p,
+.work-order dl {
+  margin: 0;
+}
+
+.work-order dd {
+  margin: 0;
+  text-align: right;
+}
+
+.work-order progress {
+  width: 100%;
+}
+
+.work-order-status {
+  padding: 2px 5px;
+  border: 1px solid #777;
+  background: #e7e7e7;
+  font-weight: bold;
+}
+
+.work-order-in-progress .work-order-status {
+  color: #fff;
+  background: #000080;
+}
+
+.work-order-completed .work-order-status {
+  color: #fff;
+  background: #267348;
+}
+
+.assignment-reason {
+  padding: 5px;
+  border-left: 3px solid #808080;
+  color: #444;
+  background: #f2f2f2;
+}
+
 .report-paper h2 {
   margin: 0 0 18px;
   padding-bottom: 8px;

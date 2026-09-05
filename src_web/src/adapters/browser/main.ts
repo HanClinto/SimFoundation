@@ -19,6 +19,7 @@ import medicalIconUrl from "./assets/medical.svg";
 import personnelIconUrl from "./assets/personnel.svg";
 import recordsIconUrl from "./assets/records.svg";
 import scpEmblemUrl from "./assets/scp-emblem.svg";
+import workOrdersIconUrl from "./assets/work-orders.svg";
 import {
   createPersonnelMedicalWindows,
   updatePersonnelMedicalWindows,
@@ -32,6 +33,7 @@ import { refreshForNewDeployment } from "./deployment-version";
 import { renderSite } from "./renderer";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
+import { updateWorkOrders } from "./work-orders-view";
 
 void refreshForNewDeployment();
 
@@ -101,6 +103,10 @@ app.innerHTML = `
             <img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" />
             <span>Research Archive</span>
           </button>
+          <button class="subsystem-icon" type="button" data-open-window="work-orders-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" />
+            <span>Work Orders</span>
+          </button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -109,12 +115,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>5 available</dd></div>
+            <div><dt>Systems</dt><dd>6 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">5 objects</p>
+        <p class="status-bar-field">6 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -251,6 +257,21 @@ app.innerHTML = `
     <div class="resize-grip" aria-hidden="true"></div>
   </section>
 
+  <section id="work-orders-window" class="window managed-window work-orders-window" aria-label="Site 828 work orders" hidden>
+    <div class="title-bar">
+      <div class="title-bar-text">Site 828 - Work Orders</div>
+      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
+    </div>
+    <div class="window-body work-orders-body">
+      <header class="work-orders-heading">
+        <strong>Authorized facility work</strong>
+        <span>Assignment is automatic after authorization.</span>
+      </header>
+      <div id="work-orders-list" class="work-orders-list"></div>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
   <section id="knowledge-window" class="window managed-window knowledge-window" aria-label="Foundation knowledgebase" hidden>
     <div class="title-bar">
       <div class="title-bar-text">Foundation Library '98 - Site 828</div>
@@ -370,6 +391,7 @@ const stateVersion = requireElement<HTMLElement>("#state-version");
 const simulationSeed = requireElement<HTMLElement>("#simulation-seed");
 const personnelRows = requireElement<HTMLElement>("#personnel-rows");
 const personnelCount = requireElement<HTMLElement>("#personnel-count");
+const workOrdersList = requireElement<HTMLElement>("#work-orders-list");
 const speedButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>("[data-speed]"),
 );
@@ -439,6 +461,15 @@ windowManager.register(requireElement<HTMLElement>("#budget-window"), {
   defaultOpen: false,
   minimumWidth: 120,
   minimumHeight: 32,
+});
+windowManager.register(requireElement<HTMLElement>("#work-orders-window"), {
+  id: "work-orders-window",
+  title: "Work Orders",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 390, top: 140, width: 470, height: 390 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
 });
 windowManager.register(requireElement<HTMLElement>("#knowledge-window"), {
   id: "knowledge-window",
@@ -587,6 +618,12 @@ app.addEventListener("click", (event) => {
   ).closest<HTMLButtonElement>("[data-assess-biases-person-id]");
   const biasPersonId = biasAssessmentButton?.dataset.assessBiasesPersonId;
   if (biasPersonId) controller.orderWorkPreferenceAssessment(biasPersonId);
+
+  const authorizeJobButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-authorize-job]");
+  const jobId = authorizeJobButton?.dataset.authorizeJob;
+  if (jobId) controller.authorizeJob(jobId);
 });
 
 unlockPsychometricsButton.addEventListener("click", () => {
@@ -713,6 +750,7 @@ function render(snapshot: ControllerSnapshot): void {
     snapshot.game.tick,
     snapshot.game.capabilities.anomalousPsychometrics,
   );
+  updateWorkOrders(workOrdersList, snapshot.game.jobs, snapshot.game.personnel);
   psychometricsStatus.textContent = snapshot.game.capabilities
     .anomalousPsychometrics
     ? "AVAILABLE"

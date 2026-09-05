@@ -1,3 +1,4 @@
+import { authorizeJob } from "../simulation/jobs";
 import { advanceSimulation } from "../simulation/tick";
 import {
   analyzeAnomalousTraitEvidence,
@@ -17,6 +18,7 @@ export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 export interface GameController {
   getSnapshot(): ControllerSnapshot;
   advance(tickCount?: number): ControllerSnapshot;
+  authorizeJob(jobId: string): ControllerSnapshot;
   unlockAnomalousPsychometrics(): ControllerSnapshot;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
@@ -52,6 +54,19 @@ export function createController(initialState: GameState): GameController {
       for (let index = 0; index < tickCount; index += 1) {
         state = advanceSimulation(state);
       }
+      return publish();
+    },
+
+    authorizeJob(jobId) {
+      if (!state.jobs.some(({ id }) => id === jobId)) {
+        throw new Error(`Unknown job: ${jobId}`);
+      }
+      state = {
+        ...state,
+        jobs: state.jobs.map((job) =>
+          job.id === jobId ? authorizeJob(job, state.tick) : job,
+        ),
+      };
       return publish();
     },
 

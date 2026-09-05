@@ -196,6 +196,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 - Site 828 opens as a facility folder.
 - Camera Feed owns the isometric map window.
+- Work Orders owns proposed, available, active, and completed facility jobs. Authorization is a player decision; qualified pawn selection and progress are simulation-owned and inspectable.
 - Alarm Manager owns facility incident status and response configuration.
 - Simulation Control supports Standard and Minimal views.
 - The taskbar clock opens Simulation Control and reflects run/pause state.
@@ -206,3 +207,4 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - Medical Chart combines a selectable body-region map with a findings list. Regions visualize assessed Injury Effects rather than owning hit points; unknown, assessed-clear, suspected, and confirmed states remain visibly distinct.
 - Dossiers show only self-disclosed or assessed Trait conclusions. Behavioral evidence can appear in Assessment Record before the Trait it supports is known; research may promote that evidence to a suspicion, while targeted screening can confirm it without revealing hidden numeric parameters.
 - Work-preference Biases remain hidden until a structured evaluation reports named tendencies and bounded ranges. Exact authoritative Bias values do not appear in ordinary UI. Skill levels for active personnel are labeled as official training records; they are not presented as live measurements of current performance.
+- Work Orders show required Skill, assigned pawn, deterministic assignment rationale, progress, and completion state. Completed work updates the pawn's activity and official Skill XP without exposing hidden selection inputs.
