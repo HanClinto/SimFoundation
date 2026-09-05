@@ -365,7 +365,7 @@ textarea {
   padding: 3px 5px 1px;
 }
 
-.menu-bar button {
+.menu-bar > button {
   min-width: auto;
   padding: 2px 7px;
   border: 1px solid transparent;
@@ -373,8 +373,8 @@ textarea {
   box-shadow: none;
 }
 
-.menu-bar button:focus,
-.menu-bar button:hover {
+.menu-bar > button:focus,
+.menu-bar > button:hover {
   border-color: #fff #808080 #808080 #fff;
 }
 
@@ -425,70 +425,18 @@ textarea {
 }
 
 .compact-menu-bar {
-  display: flex;
   flex: 0 0 auto;
-  align-items: flex-start;
-  gap: 2px;
   padding: 1px 5px 0;
 }
 
-.compact-menu-bar > button,
-.window-menu > summary {
-  display: flex;
-  box-sizing: border-box;
-  min-height: 23px;
-  align-items: center;
-  min-width: auto;
-  padding: 2px 6px;
-  border: 1px solid transparent;
-  background: transparent;
-  box-shadow: none;
-  color: #111;
-  font-family: "Pixelated MS Sans Serif", Arial, sans-serif;
-  font-size: 11px;
-  list-style: none;
-  text-shadow: none;
-  cursor: default;
-}
-
-.window-menu {
-  position: relative;
-}
-
-.window-menu > summary::-webkit-details-marker {
-  display: none;
-}
-
-.window-menu[open] > summary,
-.window-menu > summary:hover,
-.compact-menu-bar > button:hover {
-  border-color: #fff #808080 #808080 #fff;
-}
-
-.popup-menu {
-  position: absolute;
-  z-index: 2;
-  top: 21px;
-  left: 0;
-  display: grid;
+.control-view-menu {
   width: 120px;
-  padding: 3px;
-  border: 2px outset #fff;
-  background: #c0c0c0;
 }
 
-.popup-menu button {
+.control-view-menu > li > button {
   display: grid;
   grid-template-columns: 14px minmax(0, 1fr);
   align-items: center;
-  min-width: 0;
-  padding: 4px 8px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: #111;
-  text-align: left;
-  text-shadow: none;
 }
 
 .menu-check {
@@ -504,11 +452,6 @@ textarea {
 
 .view-choice.selected .menu-check::before {
   content: "✓";
-}
-
-.popup-menu button:hover {
-  color: #fff;
-  background: #000080;
 }
 
 .control-body {

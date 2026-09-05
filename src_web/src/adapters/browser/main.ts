@@ -1,4 +1,5 @@
 import "98.css";
+import "./98-extensions.css";
 import "./styles.css";
 
 import {
@@ -142,16 +143,16 @@ app.innerHTML = `
         <button type="button" aria-label="Close" data-window-close></button>
       </div>
     </div>
-    <nav class="compact-menu-bar" aria-label="Simulation control menu">
-      <button type="button"><u>F</u>ile</button>
-      <details class="window-menu">
-        <summary><u>V</u>iew</summary>
-        <div class="popup-menu" role="menu">
-          <button class="view-choice" type="button" role="menuitemradio" aria-checked="true" data-control-view="standard"><span class="menu-check" aria-hidden="true"></span>Standard</button>
-          <button class="view-choice" type="button" role="menuitemradio" aria-checked="false" data-control-view="minimal"><span class="menu-check" aria-hidden="true"></span>Minimal</button>
-        </div>
-      </details>
-      <button type="button"><u>H</u>elp</button>
+    <nav class="menu-bar compact-menu-bar" role="menubar" aria-label="Simulation control menu">
+      <div class="menu-bar-item"><button type="button" role="menuitem"><u>F</u>ile</button></div>
+      <div class="menu-bar-item">
+        <button id="control-view-menu-button" type="button" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls="control-view-menu"><u>V</u>iew</button>
+        <ul id="control-view-menu" class="menu control-view-menu" role="menu">
+          <li role="none"><button class="view-choice" type="button" role="menuitemradio" aria-checked="true" data-control-view="standard"><span class="menu-check" aria-hidden="true"></span>Standard</button></li>
+          <li role="none"><button class="view-choice" type="button" role="menuitemradio" aria-checked="false" data-control-view="minimal"><span class="menu-check" aria-hidden="true"></span>Minimal</button></li>
+        </ul>
+      </div>
+      <div class="menu-bar-item"><button type="button" role="menuitem"><u>H</u>elp</button></div>
     </nav>
     <div class="window-body control-body">
       <div class="clock-display">
@@ -331,6 +332,10 @@ const incidentBadge = requireElement<HTMLElement>("#incident-badge");
 const incidentSummary = requireElement<HTMLElement>("#incident-summary");
 const runtimeStatus = requireElement<HTMLElement>("#runtime-status");
 const controlWindow = requireElement<HTMLElement>("#control-window");
+const controlViewMenu = requireElement<HTMLElement>("#control-view-menu");
+const controlViewMenuButton = requireElement<HTMLButtonElement>(
+  "#control-view-menu-button",
+);
 const startMenu = requireElement<HTMLElement>("#start-menu");
 const scpMenuButton = requireElement<HTMLButtonElement>("#scp-menu-button");
 const stateVersion = requireElement<HTMLElement>("#state-version");
@@ -466,14 +471,44 @@ scpMenuButton.addEventListener("click", () => {
 });
 
 document.addEventListener("pointerdown", (event) => {
-  if (startMenu.hidden) return;
   const target = event.target as Element;
-  if (target.closest("#start-menu, #scp-menu-button")) return;
-  startMenu.hidden = true;
-  scpMenuButton.setAttribute("aria-expanded", "false");
+  if (!startMenu.hidden && !target.closest("#start-menu, #scp-menu-button")) {
+    startMenu.hidden = true;
+    scpMenuButton.setAttribute("aria-expanded", "false");
+  }
+  if (!target.closest("#control-view-menu, #control-view-menu-button")) {
+    controlViewMenuButton.setAttribute("aria-expanded", "false");
+  }
 });
 
 const CONTROL_VIEW_KEY = "scp-site-manager.control-view.v1";
+
+function setControlViewMenuOpen(open: boolean): void {
+  controlViewMenuButton.setAttribute("aria-expanded", String(open));
+}
+
+controlViewMenuButton.addEventListener("click", () => {
+  setControlViewMenuOpen(
+    controlViewMenuButton.getAttribute("aria-expanded") !== "true",
+  );
+});
+
+controlViewMenuButton.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setControlViewMenuOpen(false);
+    return;
+  }
+  if (event.key !== "ArrowDown") return;
+  event.preventDefault();
+  setControlViewMenuOpen(true);
+  controlViewMenu.querySelector<HTMLButtonElement>("button")?.focus();
+});
+
+controlViewMenu.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  setControlViewMenuOpen(false);
+  controlViewMenuButton.focus();
+});
 
 function setControlView(view: "standard" | "minimal"): void {
   controlWindow.classList.toggle("minimal", view === "minimal");
@@ -500,7 +535,7 @@ for (const viewButton of document.querySelectorAll<HTMLButtonElement>(
   viewButton.addEventListener("click", () => {
     const view = viewButton.dataset.controlView;
     if (view === "standard" || view === "minimal") setControlView(view);
-    viewButton.closest("details")?.removeAttribute("open");
+    setControlViewMenuOpen(false);
   });
 }
 

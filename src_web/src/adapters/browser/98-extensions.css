@@ -1,0 +1,85 @@
+/* Menu-bar extension adapted from jdan/98.css pull request 167. */
+.menu-bar .menu-bar-item {
+  position: relative;
+}
+
+.menu-bar .menu-bar-item > button {
+  min-width: auto;
+  min-height: 20px;
+  padding: 0 6px;
+  outline: none;
+  box-shadow: none;
+}
+
+.menu-bar .menu-bar-item > button:active,
+.menu-bar .menu-bar-item > button:focus,
+.menu-bar .menu-bar-item > button[aria-expanded="true"] {
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 0 0 #0a0a0a,
+    inset -1px -1px #dfdfdf,
+    inset 1px 1px grey;
+  text-shadow: 0 0 #222;
+}
+
+.menu-bar .menu-bar-item > button[aria-expanded="true"] + .menu {
+  display: block;
+}
+
+ul.menu {
+  position: absolute;
+  z-index: 2;
+  display: none;
+  width: max-content;
+  min-width: 100px;
+  margin: 0;
+  padding: 2px;
+  list-style-type: none;
+  background: silver;
+  box-shadow:
+    inset -1px -1px #0a0a0a,
+    inset 1px 1px #dfdfdf,
+    inset -2px -2px grey,
+    inset 2px 2px #fff;
+}
+
+ul.menu > li:not(.divider) {
+  padding: 0;
+  cursor: default;
+}
+
+ul.menu > li > button {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 3px 20px;
+  border: 0;
+  color: #222;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  text-shadow: none;
+}
+
+ul.menu > li > button:not(:disabled):hover,
+ul.menu > li > button:not(:disabled):focus {
+  color: #fff;
+  background: var(--dialog-blue);
+  outline: none;
+}
+
+ul.menu > li > button:disabled {
+  color: var(--button-shadow);
+  text-shadow: 1px 1px var(--button-highlight);
+}
+
+ul.menu li.divider {
+  margin: 2px;
+  border-top: 1px solid grey;
+  border-bottom: 1px solid #dfdfdf;
+}
+
+ul.menu li > span {
+  float: right;
+  margin-left: 10px;
+}
