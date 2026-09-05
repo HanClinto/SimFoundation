@@ -717,6 +717,10 @@ const exposureView = createExposureWindow(
     windowManager.open("camera-window");
     siteCamera.focus(position);
   },
+  (id) => {
+    objectsView.select(id, controller.getSnapshot(), "world");
+    windowManager.open("objects-window");
+  },
 );
 windowManager.register(exposureView.element, {
   id: "exposure-window",

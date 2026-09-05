@@ -1,5 +1,9 @@
 import type { GameState } from "../../simulation/state";
-import { isActiveSurfaceOrder } from "../../simulation/environment";
+import {
+  exposurePosition,
+  isActiveSurfaceOrder,
+  type ExposureSource,
+} from "../../simulation/environment";
 import { spaceBoundary } from "../../simulation/spaces";
 import { spaceProjection } from "./space-projection";
 import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
@@ -7,6 +11,32 @@ import { sameTile } from "../../simulation/world";
 import type { TilePosition } from "../../simulation/world";
 import type { MapPerspective } from "./map-settings";
 import { OBJECT_DEFINITIONS, objectPosition } from "../../simulation/objects";
+
+export function exposureMapPosition(
+  state: GameState,
+  source: ExposureSource,
+  perspective: MapPerspective,
+): TilePosition | null {
+  if (perspective === "world") return exposurePosition(state, source);
+  if (source.objectId) {
+    const object = state.observations.objects[source.objectId]?.object;
+    return object
+      ? objectPosition(
+          object,
+          Object.fromEntries(
+            Object.entries(state.observations.entities).map(
+              ([id, observation]) => [id, observation.position],
+            ),
+          ),
+        )
+      : null;
+  }
+  return state.observations.knownTiles[
+    source.position.y * state.world.map.width + source.position.x
+  ] != null
+    ? source.position
+    : null;
+}
 
 export function mapObjects(
   state: GameState,
@@ -58,19 +88,10 @@ export function mapObjects(
           ]
         : [];
     }),
-    ...state.environment.sources
-      .filter(
-        (source) =>
-          perspective === "world" ||
-          state.observations.knownTiles[
-            source.position.y * state.world.map.width + source.position.x
-          ] != null,
-      )
-      .map((source) => ({
-        id: source.id,
-        name: source.name,
-        position: source.position,
-      })),
+    ...state.environment.sources.flatMap((source) => {
+      const position = exposureMapPosition(state, source, perspective);
+      return position ? [{ id: source.id, name: source.name, position }] : [];
+    }),
   ];
 }
 

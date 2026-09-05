@@ -9,6 +9,8 @@ import {
   objectFootprint,
   releaseObject,
   mergeGroundStack,
+  objectPosition,
+  OBJECT_DEFINITIONS,
 } from "./objects";
 import {
   MATERIALS,
@@ -226,6 +228,17 @@ export interface ExposureSource {
   readonly kind: "corrosion" | "impact";
   readonly dose: number;
   readonly enabled?: boolean;
+  readonly objectId?: string;
+}
+export function exposurePosition(
+  state: GameState,
+  source: ExposureSource,
+): TilePosition | null {
+  if (!source.objectId) return source.position;
+  const object = state.objects.items.find(
+    (item) => item.id === source.objectId,
+  );
+  return object ? objectPosition(object, state.world.positions) : null;
 }
 export type ExposureSourcePolicy = Omit<ExposureSource, "id">;
 export type ExposureCommandCode =
@@ -256,6 +269,19 @@ export function exposureSourceIssue(
   if (id && !state.environment.sources.some((source) => source.id === id))
     return "not-found";
   if (!id && state.environment.sources.length >= 32) return "limit-reached";
+  if (policy.objectId !== undefined) {
+    const object = state.objects.items.find(
+      (item) => item.id === policy.objectId,
+    );
+    if (
+      !object ||
+      OBJECT_DEFINITIONS[object.kind].stackable ||
+      object.quantity !== 1 ||
+      !objectPosition(object, state.world.positions)
+    )
+      return "invalid-source";
+    return null;
+  }
   const tile = tileAt(state.world.map, policy.position);
   const existing = state.environment.sources.find((source) => source.id === id);
   if (
@@ -287,7 +313,14 @@ export function setExposureSource(
   const source: ExposureSource = {
     ...policy,
     name: policy.name.trim(),
-    position: { ...policy.position },
+    position: {
+      ...(policy.objectId
+        ? objectPosition(
+            state.objects.items.find((item) => item.id === policy.objectId)!,
+            state.world.positions,
+          )!
+        : policy.position),
+    },
     enabled: policy.enabled ?? true,
     id: id ?? `exposure-${number}`,
   };
@@ -348,7 +381,9 @@ export function exposureTiles(
   source: ExposureSource,
 ): readonly TilePosition[] {
   if (source.enabled === false) return [];
-  const queue = [source.position];
+  const origin = exposurePosition(state, source);
+  if (!origin) return [];
+  const queue = [origin];
   const visited = new Set<string>();
   const reached: TilePosition[] = [];
   for (let cursor = 0; cursor < queue.length; cursor += 1) {
@@ -356,8 +391,7 @@ export function exposureTiles(
     const key = `${position.x},${position.y}`;
     if (
       visited.has(key) ||
-      Math.abs(position.x - source.position.x) +
-        Math.abs(position.y - source.position.y) >
+      Math.abs(position.x - origin.x) + Math.abs(position.y - origin.y) >
         source.radius ||
       tileAt(state.world.map, position) === null
     )

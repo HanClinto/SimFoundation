@@ -190,6 +190,16 @@ export function createObjectsWindow(
           ["Orientation", item.orientation],
           ["Reservation", item.reservedBy ?? "Available"],
           [
+            "Attached sources",
+            state.environment.sources
+              .filter((source) => source.objectId === item.id)
+              .map(
+                (source) =>
+                  `${source.name} / ${source.kind} / ${source.enabled === false ? "disabled" : "enabled"}`,
+              )
+              .join("; ") || "None",
+          ],
+          [
             "Work",
             order
               ? `${order.phase} / ${job?.progress ?? 0} of ${job?.requiredProgress ?? 0} / ${order.blockedReason ?? job?.assignmentReason ?? "Queued"}`

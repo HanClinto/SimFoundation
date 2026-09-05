@@ -11,7 +11,7 @@ import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
 import { exposureTiles } from "../../simulation/environment";
-import { mapObjects } from "./map-objects";
+import { exposureMapPosition, mapObjects } from "./map-objects";
 import {
   DEFAULT_MAP_OVERLAYS,
   type MapBase,
@@ -438,14 +438,19 @@ export function renderSite(
   for (const source of overlays.objects
     ? snapshot.game.environment.sources
     : []) {
+    const position = exposureMapPosition(
+      snapshot.game,
+      source,
+      recorded ? "recorded" : "world",
+    );
     if (
-      knowledge.knownTiles[source.position.y * map.width + source.position.x] !=
-      null
+      position &&
+      knowledge.knownTiles[position.y * map.width + position.x] != null
     ) {
-      const point = projectPosition(source.position, camera, width, height);
+      const point = projectPosition(position, camera, width, height);
       context.save();
       context.globalAlpha = visibleTiles.has(
-        source.position.y * map.width + source.position.x,
+        position.y * map.width + position.x,
       )
         ? 1
         : 0.45;

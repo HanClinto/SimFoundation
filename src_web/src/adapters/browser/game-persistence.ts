@@ -1052,6 +1052,7 @@ function isEnvironment(value: unknown): boolean {
         isRecord(source) &&
         isNonEmptyString(source.id) &&
         isNonEmptyString(source.name) &&
+        (source.objectId === undefined || isNonEmptyString(source.objectId)) &&
         isTilePosition(source.position) &&
         isLiteral(source.kind, ["corrosion", "impact"]) &&
         (source.enabled === undefined || typeof source.enabled === "boolean") &&
@@ -1133,7 +1134,14 @@ function environmentReferencesValid(state: GameState): boolean {
     return false;
   return (
     environment.sources.every(
-      (source) => tileAt(state.world.map, source.position) !== null,
+      (source) =>
+        tileAt(state.world.map, source.position) !== null &&
+        (source.objectId === undefined ||
+          state.objects.items.some(
+            (item) =>
+              item.id === source.objectId &&
+              !OBJECT_DEFINITIONS[item.kind].stackable,
+          )),
     ) &&
     environment.orders.every((order, index) => {
       if (

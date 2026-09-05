@@ -18,7 +18,7 @@ import { createObjectStore, objectBlocks, type ObjectStore } from "./objects";
 import { type ObjectOrder } from "./object-work";
 import { createStorage, type StorageState } from "./storage";
 
-export const GAME_STATE_VERSION = 30;
+export const GAME_STATE_VERSION = 31;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

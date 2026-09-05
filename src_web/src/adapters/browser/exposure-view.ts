@@ -4,17 +4,19 @@ import type {
 } from "../../application/controller";
 import {
   exposureTiles,
+  exposurePosition,
   type ExposureCommandCode,
   type ExposureSourcePolicy,
 } from "../../simulation/environment";
 import { surfaceAt } from "../../simulation/materials";
+import { OBJECT_DEFINITIONS } from "../../simulation/objects";
 import type { TilePosition } from "../../simulation/world";
 import type { PlacementRequest } from "./placement";
 
 const messages: Record<ExposureCommandCode, string> = {
   accepted: "Source settings saved.",
   "invalid-source":
-    "Set a name, positive intensity up to 1000, and a radius from 0 to 16.",
+    "Set a name, positive intensity up to 1000, radius 0 to 16, and a valid individual object if attached.",
   "invalid-position":
     "Choose an unobstructed tile, not an intact wall or closed door.",
   "limit-reached": "The site supports at most 32 exposure sources.",
@@ -26,6 +28,7 @@ export function createExposureWindow(
   controller: GameController,
   begin: (request: PlacementRequest) => void,
   locate: (position: TilePosition) => void,
+  openObject?: (id: string) => void,
 ) {
   const element = document.createElement("section");
   element.id = "exposure-window";
@@ -37,6 +40,17 @@ export function createExposureWindow(
   host.append(element);
   const choice = element.querySelector<HTMLSelectElement>("#exposure-source")!;
   const name = element.querySelector<HTMLInputElement>("#exposure-name")!;
+  const bindingRow = document.createElement("div");
+  bindingRow.className = "field-row";
+  bindingRow.innerHTML =
+    '<label for="exposure-object">Attachment</label><select id="exposure-object"></select>';
+  name.parentElement!.after(bindingRow);
+  const binding = bindingRow.querySelector<HTMLSelectElement>("select")!;
+  const inspectObject = document.createElement("button");
+  inspectObject.type = "button";
+  inspectObject.textContent = "Open object";
+  inspectObject.dataset.exposureObjectRecord = "";
+  element.querySelector(".dossier-actions")!.append(inspectObject);
   const kind = element.querySelector<HTMLSelectElement>("#exposure-kind")!;
   const dose = element.querySelector<HTMLInputElement>("#exposure-dose")!;
   const radius = element.querySelector<HTMLInputElement>("#exposure-radius")!;
@@ -47,8 +61,13 @@ export function createExposureWindow(
   let current = controller.getSnapshot();
   let selected: string | undefined;
   let signature = "";
+  let objectSignature = "";
   const source = () =>
     current.game.environment.sources.find((source) => source.id === selected);
+  inspectObject.addEventListener("click", () => {
+    const id = source()?.objectId;
+    if (id) openObject?.(id);
+  });
   function policy(position: TilePosition): ExposureSourcePolicy {
     return {
       name: name.value,
@@ -57,6 +76,7 @@ export function createExposureWindow(
       radius: Number(radius.value),
       enabled: enabled.checked,
       position,
+      objectId: binding.value || undefined,
     };
   }
   function choose(id?: string) {
@@ -67,10 +87,12 @@ export function createExposureWindow(
     dose.value = String(existing?.dose ?? 4);
     radius.value = String(existing?.radius ?? 4);
     enabled.checked = existing?.enabled !== false;
+    binding.value = existing?.objectId ?? "";
     feedback.textContent = "";
     render(current);
   }
   choice.addEventListener("change", () => choose(choice.value || undefined));
+  binding.addEventListener("change", () => render(current));
   element
     .querySelector("[data-exposure-new]")!
     .addEventListener("click", () => choose());
@@ -78,7 +100,11 @@ export function createExposureWindow(
     .querySelector("[data-exposure-place]")!
     .addEventListener("click", () => {
       const id = selected;
-      const origin = source()?.position ?? { x: 60, y: 54 };
+      if (binding.value) return;
+      const existing = source();
+      const origin = existing
+        ? (exposurePosition(current.game, existing) ?? existing.position)
+        : { x: 60, y: 54 };
       const draft = policy(origin);
       begin({
         label: `${draft.name} / ${draft.kind} / ${draft.dose} per minute / radius ${draft.radius}`,
@@ -112,12 +138,20 @@ export function createExposureWindow(
     .querySelector("[data-exposure-save]")!
     .addEventListener("click", () => {
       const existing = source();
-      if (!existing) return;
+      if (!existing && !binding.value) return;
       const result = controller.setExposureSource(
-        policy(existing.position),
-        existing.id,
+        policy(
+          existing
+            ? (exposurePosition(current.game, existing) ?? existing.position)
+            : { x: 60, y: 54 },
+        ),
+        existing?.id,
       );
       render(result.snapshot);
+      if (result.code === "accepted")
+        choose(
+          existing?.id ?? result.snapshot.game.environment.sources.at(-1)!.id,
+        );
       feedback.textContent = messages[result.code];
     });
   enabled.addEventListener("change", () => {
@@ -142,10 +176,36 @@ export function createExposureWindow(
     .querySelector("[data-exposure-locate]")!
     .addEventListener("click", () => {
       const existing = source();
-      if (existing) locate(existing.position);
+      const position = existing
+        ? exposurePosition(current.game, existing)
+        : null;
+      if (position) locate(position);
     });
   function render(snapshot: ControllerSnapshot) {
     current = snapshot;
+    const objects = snapshot.game.objects.items.filter(
+      (item) =>
+        !OBJECT_DEFINITIONS[item.kind].stackable &&
+        item.location.kind !== "consumed",
+    );
+    const nextObjects = JSON.stringify(
+      objects.map((item) => [item.id, item.kind]),
+    );
+    if (nextObjects !== objectSignature) {
+      const value = binding.value;
+      binding.replaceChildren(
+        new Option("Fixed map position", ""),
+        ...objects.map(
+          (item) =>
+            new Option(
+              `${OBJECT_DEFINITIONS[item.kind].name} / ${item.id}`,
+              item.id,
+            ),
+        ),
+      );
+      binding.value = value;
+      objectSignature = nextObjects;
+    }
     const next = JSON.stringify(
       snapshot.game.environment.sources.map((source) => [
         source.id,
@@ -163,6 +223,16 @@ export function createExposureWindow(
     }
     choice.value = selected ?? "";
     const existing = source();
+    const position = existing
+      ? exposurePosition(snapshot.game, existing)
+      : null;
+    const object = existing?.objectId
+      ? snapshot.game.objects.items.find(
+          (item) => item.id === existing.objectId,
+        )
+      : undefined;
+    inspectObject.disabled = !object || !openObject;
+    inspectObject.hidden = !existing?.objectId;
     const tiles = existing ? exposureTiles(snapshot.game, existing) : [];
     const barriers = tiles
       .map((position) =>
@@ -171,8 +241,31 @@ export function createExposureWindow(
       .filter((surface) => surface && surface.integrity > 0);
     const rows = existing
       ? [
-          ["Location", `${existing.position.x}, ${existing.position.y}`],
-          ["State", existing.enabled === false ? "Disabled" : "Emitting"],
+          [
+            "Location",
+            position ? `${position.x}, ${position.y}` : "Host unavailable",
+          ],
+          ["Attachment", existing.objectId ?? "Fixed map position"],
+          [
+            "Host state",
+            object
+              ? object.location.kind === "carried"
+                ? `Carried by ${snapshot.game.personnel.find((person) => object.location.kind === "carried" && person.id === object.location.personId)?.name ?? "unknown carrier"}`
+                : object.installed
+                  ? "Installed"
+                  : object.location.kind === "ground"
+                    ? "Packed / on ground"
+                    : "Unavailable"
+              : "Not attached",
+          ],
+          [
+            "State",
+            existing.enabled === false
+              ? "Disabled"
+              : position
+                ? "Emitting"
+                : "No host position",
+          ],
           [
             "Current reach",
             `${tiles.length} tiles / ${barriers.length} intact barriers`,
@@ -196,13 +289,27 @@ export function createExposureWindow(
         return row;
       }),
     );
-    for (const action of ["save", "remove", "locate"])
+    for (const action of ["remove", "locate"])
       element.querySelector<HTMLButtonElement>(
         `[data-exposure-${action}]`,
       )!.disabled = !existing;
-    element.querySelector("[data-exposure-place]")!.textContent = existing
-      ? "Relocate source"
-      : "Place source";
+    const save = element.querySelector<HTMLButtonElement>(
+      "[data-exposure-save]",
+    )!;
+    save.disabled = !existing && !binding.value;
+    save.textContent = existing ? "Apply settings" : "Bind source";
+    const place = element.querySelector<HTMLButtonElement>(
+      "[data-exposure-place]",
+    )!;
+    place.disabled = !!binding.value;
+    place.title = binding.value
+      ? "Move the attached object through Objects and Supplies."
+      : "Choose a fixed source location on the map.";
+    place.textContent = binding.value
+      ? "Attached to object"
+      : existing
+        ? "Relocate source"
+        : "Place source";
   }
   choose();
   return {
