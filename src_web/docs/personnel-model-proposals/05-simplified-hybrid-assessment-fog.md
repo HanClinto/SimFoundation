@@ -31,7 +31,7 @@ The system favors tradeoffs over universally superior recruits. Skills provide t
 - Transient state uses Food, Energy, Social, Stress, and Fear.
 - Physical, Mental, and Emotional Health are derived values rather than stored resources.
 - Neck and wrist equipment slots are consolidated into two general-purpose Special slots.
-- All ordinary personnel information is subject to assessment recency, confidence, and sensor coverage.
+- Traits, practical competence, and current condition are revealed through evidence and assessment rather than automatic omniscience.
 
 ## Biases and Specialization
 
@@ -127,7 +127,7 @@ Legal name is the administrative name. Nickname is optional and is used in infor
 
 #### Traits
 
-A pawn may have zero or one trait from each category. No trait means ordinary behavior for that category. Traits ordinarily do not change; rare authored events add permanent Effects rather than silently rewriting personality.
+A pawn may have zero or one trait from each category. No trait means ordinary behavior for that category. Traits ordinarily do not change; rare authored events add permanent Effects rather than silently rewriting personality. The authoritative pawn stores actual Traits, but a new candidate's dossier begins with only disclosed or already evidenced Traits.
 
 ##### Work-style traits
 
@@ -161,7 +161,7 @@ A pawn may have zero or one trait from each category. No trait means ordinary be
 - Skeptical: resists rumor and suggestion; undeniable impossibility damages Mental Health more
 - Resonant: anomalous equipment Effects are stronger in both directions
 
-Foundation screening may know, suspect, or fail to detect an Anomalous-disposition Trait. There is no separate Anomalous Profile attribute.
+Anomalous-disposition Traits require specialized screening unlocked by research. Until then, the Foundation may know only observed symptoms or a low-confidence suspicion. There is no separate Anomalous Profile attribute.
 
 ##### Medical-constitution traits
 
@@ -177,20 +177,20 @@ Foundation screening may know, suspect, or fail to detect an Anomalous-dispositi
 - Pragmatic: lower moral-injury pressure from necessary tradeoffs
 - Greedy: responds strongly to rewards, theft/corruption break patterns become eligible
 - Obsessive: persists toward a focus, resists task switching
-- Homicidal: violence threshold is lower; violent break patterns become eligible; trust penalties apply when discovered
+- Homicidal: violence threshold is lower; violent break patterns become eligible; the candidate may conceal it during screening; trust penalties apply when discovered
 
 Each Trait definition references one always-eligible Effect definition. Conditional trait behavior uses `activeWhen` on that ordinary Effect. There is no separate trait-modifier engine.
 
 Representative mappings cover every trait category:
 
-| Trait               | Effect behavior                                                                               |
-| ------------------- | --------------------------------------------------------------------------------------------- |
-| Methodical          | Continuous Work Quality increase and Task Start Speed decrease                                |
-| Scaredy-Cat         | Continuous Fear Gain increase and Panic Threshold decrease                                    |
-| Sociable            | Conditional Social Recovery increase while interacting; Social Drain increase while isolated  |
-| Psychically Attuned | Continuous Anomaly Detection increase and anomalous Effect magnitude increase                 |
-| High Pain Tolerance | Conditional Pain Response reduction while a painful injury Effect is active                   |
-| Homicidal           | Conditional violent-break eligibility and lower violence inhibition during severe Stress/Fear |
+| Trait               | Effect behavior                                                                                               |
+| ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| Methodical          | Continuous Work Quality increase and Task Start Speed decrease                                                |
+| Scaredy-Cat         | Continuous Fear Gain increase and Panic Threshold decrease                                                    |
+| Sociable            | Conditional Social Recovery increase while interacting; Social Drain increase while isolated                  |
+| Psychically Attuned | Continuous Anomaly Detection increase and anomalous Effect magnitude increase                                 |
+| High Pain Tolerance | Conditional Pain Response reduction while a painful injury Effect is active                                   |
+| Homicidal           | Conditional violent-break eligibility, lower violence inhibition, and Moral-disposition screening concealment |
 
 Exact numeric balance belongs to trait definitions and testing, not the Character schema.
 
@@ -268,9 +268,8 @@ Every skill stores:
 - XP toward next level
 - Recent-practice saturation for diminishing trivial grind
 - Certification dependencies
-- Assessment record: when the Foundation last verified the skill
 
-Skills improve through meaningful completed activity. Bias alignment modifies learning and satisfaction but cannot replace the skill.
+Skills improve through meaningful completed activity. Bias alignment modifies learning and satisfaction but cannot replace the skill. Official levels remain authoritative Foundation records; estimates of an outsider's practical competence belong to the separate assessment registry.
 
 For the draft progression curve, `xp` is progress within the current level and resets after leveling. XP required for the next level is:
 
@@ -307,7 +306,7 @@ Five numbers from 0 through 100:
 - Stress: higher means overloaded; restorative activity lowers it
 - Fear: higher means acute perceived danger; safety and support lower it
 
-Food, Energy, and Social are reserves where high is good. Stress and Fear are pressures where high is bad. UI must make polarity explicit through labels and color, not assume every value has the same meaning.
+Food, Energy, and Social are reserves where high is good. Stress and Fear are pressures where high is bad. Food and Energy drain with metabolism and activity; Social drains gradually while awake, with Trait and context Effects modifying the rate. UI must make polarity explicit through labels and color, not assume every value has the same meaning.
 
 Recreation is an activity category rather than a sixth transient value. Examples:
 
@@ -344,8 +343,9 @@ This is one data shape with optional fields, not a hierarchy of Effect subclasse
 
 #### Effect sources
 
+- Trait
 - Need threshold
-- Health condition
+- Health condition or injury
 - Event or memory
 - Medication or treatment
 - Equipment definition
@@ -363,7 +363,7 @@ This is one data shape with optional fields, not a hierarchy of Effect subclasse
 - Pressure: stressGain, stressRecovery, fearGain, fearRecovery
 - Derived Health: physicalHealth, mentalHealth, emotionalHealth, domainMinimum, domainMaximum
 - Psychology: panicThreshold, breakThreshold, compliance
-- Detection: hazardDetection, anomalyDetection, deceptionDetection
+- Detection: hazardDetection, anomalyDetection, deceptionDetection, assessmentConcealment by Trait category
 - Combat: accuracy, defense, damage, painResponse
 - Access: clearanceOverride, protocolPermission
 
@@ -377,6 +377,18 @@ This is one data shape with optional fields, not a hierarchy of Effect subclasse
 - Witnessed Death: memory; periodic Stress and Emotional health pressure, fades or responds to counseling
 - Near SCP-999: spatial aura; Fear recovery while in range
 - Scholarly: equipment affix; Research XP bonus regardless of item base type
+
+For example, the Homicidal Trait's ordinary Effect can include:
+
+```json
+{
+  "target": "assessmentConcealment:moralDisposition",
+  "operation": "add",
+  "value": 0.2
+}
+```
+
+This is an input to assessment resolution, not a second concealment system.
 
 ### 5. Derived
 
@@ -409,7 +421,6 @@ Draft Composure calculation:
 
 ```text
 composure = clamp(50
-            + threat-response trait modifier
             + 0.20 * (mental health - 50)
             + 0.15 * (emotional health - 50)
             + relevant skill support
@@ -420,7 +431,7 @@ composure = clamp(50
             100)
 ```
 
-Relevant skill support is content-defined and capped at 10 points. Security can support tactical Composure; Anomaly Handling can support containment Composure. This does not change either skill's bias affinity or XP calculation.
+Relevant skill support is content-defined and capped at 10 points. Security can support tactical Composure; Anomaly Handling can support containment Composure. Threat-response Traits influence Composure through their active Effect modifiers rather than a special formula path. This does not change either skill's bias affinity or XP calculation.
 
 #### General capability calculation
 
@@ -469,27 +480,63 @@ Ordinary browser snapshots should eventually contain a **player projection**, no
 - Diagnostic scan: high-confidence Physical health and hidden conditions
 - Psychological evaluation: Mental health estimate, detected cognitive conditions
 - Counseling interview: Emotional health, Stress, Fear, Social estimate
-- Personnel self-report: inexpensive but concealment and bias affect confidence
+- Personnel self-report: inexpensive but concealment Effects and contradictory evidence affect confidence
 - Wearable physical monitor: continuous Physical/Food/Energy telemetry if powered and equipped
 - Advanced neural monitor: continuous Mental telemetry; rare, invasive, and anomaly-sensitive
 - No camera/sensor: last known location and stale records only
+
+### Candidate intake and Trait discovery
+
+New candidates do not expose their authoritative Trait set to the player. Their dossier starts with self-disclosures, records, witnessed evidence, and whatever the site's current intake protocol can detect. This makes improved personnel assessment a facility capability rather than a free character-sheet reveal.
+
+An assessment protocol defines:
+
+- Research prerequisite
+- Detectable Trait categories and individual Traits
+- Relevant existing Skill: Medicine for medical and much psychological screening, Social for interviews, Security for records and behavioral investigation, or Anomaly Handling for anomalous screening
+- Required room, equipment, time, and certification
+- Base sensitivity and which evidence it can treat as corroboration
+
+The player assigns a qualified worker to perform the assessment. There is no separate Assessment Skill. Research unlocks better questions and instruments; skilled workers use them well; assignment consumes real labor and facility time.
+
+Detection is deterministic at completion:
+
+```text
+detection margin = protocol sensitivity
+                 + relevant skill contribution
+                 + room and equipment modifiers
+                 + corroborating evidence
+                 - active concealment effect modifiers
+```
+
+Each protocol maps the resulting margin to `confirmed`, `suspected`, or `ruled-out`. Evidence is tagged observation or record data, such as unexplained violence, falsified history, repeated protocol violations, or anomalous test response. Evidence can raise confidence but never directly creates or changes a Trait. A Homicidal Trait's ordinary Trait Effect can apply concealment against Moral-disposition screening; sufficiently strong evidence, assessor Skill, or protocol sensitivity overcomes it without a separate deception subsystem.
+
+Example progression:
+
+1. Basic intake reveals identity, declared history, obvious medical conditions, and conspicuous behavior.
+2. Improved personnel screening can identify or rule out common Work-style, Threat-response, Social-temperament, Medical-constitution, and Moral-disposition Traits.
+3. Anomalous psychology research unlocks protocols capable of detecting Anomalous-disposition Traits.
+4. Reassessment, corroborating incidents, or a better protocol can promote a suspicion to confirmed, overturn an old negative screen, or expose deliberate concealment.
+
+A hidden Homicidal Trait can therefore survive a weak interview, appear as a suspicion after records review, or be confirmed by a skilled assessor using an improved protocol. Failure to detect a Trait never changes the authoritative pawn; it changes only what the Foundation knows.
 
 ### Assessment rules
 
 Every assessment stores:
 
-- Domain: physical, mental, emotional, needs, skills, equipment, location
+- Domain: physical, mental, emotional, needs, practical skills, traits, equipment, or location
 - Assessed tick
 - Assessor or instrument
 - Method
+- Protocol version and satisfied research prerequisites
 - Confidence 0 through 1
-- Estimated range rather than exact value
-- Findings discovered
-- Findings ruled out
+- Optional estimated range for numeric domains
+- Conclusions, each with a subject, `suspected`, `confirmed`, or `ruled-out` status, confidence, and evidence references
 - Expiration or staleness policy
-- Disclosure status: known, suspected, concealed, unknown
 
 Physical assessments are easiest and most precise. Mental assessments require trained Medicine, suitable tools, and time. Emotional assessments require Social skill, trust, privacy, and often self-report. A continuous emotional monitor should not be ordinary technology.
+
+Trait conclusions use the same assessment record as conditions and practical competence rather than a separate disclosure system. Confirmed immutable Traits do not become stale. Suspicions can gain or lose confidence, and `ruled-out` applies only to the protocol version and evidence available at that time; it is not proof that the authoritative category is empty.
 
 Provisional staleness policy:
 
@@ -505,6 +552,8 @@ Provisional staleness policy:
 | Supervisor report         | 8 hours   | Activity and behavior become last reported | After 48 hours                      |
 
 New witnessed events can invalidate an assessment early. A recorded injury invalidates “no major injury”; an anomalous exposure invalidates relevant Mental-assessment confidence. These values are starting balance, not schema constraints.
+
+The table uses player-facing time. Persistence stores deterministic ticks, and the simulation clock performs the conversion; assessment records do not store a second wall-clock duration.
 
 ### Player-visible projection
 
@@ -610,9 +659,12 @@ A map tile is visible when covered by a powered, functioning camera or directly 
     }
   },
   "effectIds": [
+    "effect-tired-mara",
+    "effect-sprained-ankle-mara",
+    "effect-calm-999-mara",
+    "effect-near-scp-999-mara",
     "effect-trait-methodical",
-    "effect-equipped-lab-coat",
-    "effect-equipped-dosimeter"
+    "effect-mild-sleep-disruption-mara"
   ]
 }
 ```
@@ -687,22 +739,16 @@ A map tile is visible when covered by a powered, functioning camera or directly 
     ]
   },
   {
-    "id": "effect-equipped-dosimeter",
-    "definitionId": "continuous-physical-monitor",
-    "source": { "type": "equipment", "itemId": "item-dosimeter-04" },
-    "startedTick": 0,
-    "expiresAtTick": null,
-    "activeWhen": {
-      "operator": "equipped",
-      "itemId": "item-dosimeter-04"
-    },
+    "id": "effect-mild-sleep-disruption-mara",
+    "definitionId": "mild-sleep-disruption",
+    "source": { "type": "event", "eventId": "event-sleep-disruption-12" },
+    "startedTick": 39000,
+    "expiresAtTick": 53400,
+    "activeWhen": null,
     "magnitude": 1,
     "modifiers": [
-      {
-        "target": "assessmentConfidence:physical",
-        "operation": "set-minimum",
-        "value": 0.9
-      }
+      { "target": "mentalHealth", "operation": "add", "value": -4 },
+      { "target": "energyDrain", "operation": "add", "value": 0.05 }
     ]
   },
   {
@@ -726,7 +772,7 @@ A map tile is visible when covered by a powered, functioning camera or directly 
 ```json
 {
   "personId": "person-mara-voss",
-  "lastKnown": {
+  "observations": {
     "location": {
       "value": { "mapId": "site-828-b1", "x": 17, "y": 24 },
       "observedTick": 45200,
@@ -740,7 +786,7 @@ A map tile is visible when covered by a powered, functioning camera or directly 
       "confidence": 0.9
     }
   },
-  "assessments": {
+  "domainAssessments": {
     "physical": {
       "assessmentId": "assessment-physical-88",
       "assessedTick": 43800,
@@ -748,8 +794,20 @@ A map tile is visible when covered by a powered, functioning camera or directly 
       "method": "basic-physical-exam",
       "confidence": 0.86,
       "estimate": { "minimum": 92, "maximum": 100 },
-      "findings": [],
-      "ruledOut": ["infection", "major-injury"]
+      "conclusions": [
+        {
+          "subjectId": "infection",
+          "status": "ruled-out",
+          "confidence": 0.86,
+          "evidenceRefs": ["physical-exam-88"]
+        },
+        {
+          "subjectId": "major-injury",
+          "status": "ruled-out",
+          "confidence": 0.86,
+          "evidenceRefs": ["physical-exam-88"]
+        }
+      ]
     },
     "mental": {
       "assessmentId": "assessment-mental-41",
@@ -758,30 +816,56 @@ A map tile is visible when covered by a powered, functioning camera or directly 
       "method": "clinical-interview",
       "confidence": 0.68,
       "estimate": { "minimum": 78, "maximum": 96 },
-      "findings": ["mild-sleep-disruption"],
-      "ruledOut": []
+      "conclusions": [
+        {
+          "subjectId": "effect-mild-sleep-disruption-mara",
+          "status": "confirmed",
+          "confidence": 0.72,
+          "evidenceRefs": ["clinical-interview-41"]
+        }
+      ]
     },
     "emotional": null,
     "needs": {
       "assessmentId": "monitor-stream-mara",
       "assessedTick": 45200,
-      "assessor": { "type": "equipment", "itemId": "item-biometric-band-12" },
-      "method": "continuous-physical-monitor",
+      "assessor": { "type": "equipment", "itemId": "item-dosimeter-04" },
+      "method": "wearable-physical-monitor",
       "confidence": 0.94,
       "estimate": {
         "food": { "minimum": 78, "maximum": 86 },
         "energy": { "minimum": 71, "maximum": 81 }
       },
-      "findings": [],
-      "ruledOut": []
-    }
-  },
-  "disclosures": {
-    "stress": "self-reported",
-    "fear": "unknown",
+      "conclusions": []
+    },
     "traits": {
-      "methodical": "known",
-      "psychically-insulated": "suspected"
+      "assessmentId": "assessment-intake-17",
+      "assessedTick": 1200,
+      "assessor": { "type": "person", "personId": "person-priya-shah" },
+      "method": "structured-personnel-screening",
+      "protocolVersion": 2,
+      "researchPrerequisiteIds": ["research-personnel-screening-2"],
+      "confidence": 0.81,
+      "conclusions": [
+        {
+          "subjectId": "methodical",
+          "status": "confirmed",
+          "confidence": 0.88,
+          "evidenceRefs": ["interview-17", "work-sample-17"]
+        },
+        {
+          "subjectId": "psychically-insulated",
+          "status": "suspected",
+          "confidence": 0.46,
+          "evidenceRefs": ["interview-17"]
+        },
+        {
+          "subjectId": "homicidal",
+          "status": "ruled-out",
+          "confidence": 0.54,
+          "evidenceRefs": ["interview-17", "records-review-17"]
+        }
+      ]
     }
   }
 }
@@ -815,9 +899,16 @@ A map tile is visible when covered by a powered, functioning camera or directly 
     "stress": { "label": "manageable", "source": "self-report" },
     "fear": { "status": "unknown" }
   },
-  "knownEffects": ["mild-sleep-disruption"],
-  "suspectedEffects": [],
-  "unknownFieldCount": 3
+  "traits": [
+    { "traitId": "methodical", "status": "confirmed", "confidence": "high" },
+    {
+      "traitId": "psychically-insulated",
+      "status": "suspected",
+      "confidence": "low"
+    }
+  ],
+  "knownEffects": ["effect-mild-sleep-disruption-mara"],
+  "suspectedEffects": []
 }
 ```
 
@@ -826,14 +917,20 @@ A map tile is visible when covered by a powered, functioning camera or directly 
 ```json
 {
   "type": "order-assessment",
-  "personId": "person-mara-voss",
-  "assessmentType": "psychological-evaluation",
-  "assignedClinicianId": "person-priya-shah",
-  "requiredRoomType": "consultation-room",
-  "expectedDurationMinutes": 90,
-  "requestedDomains": ["mental", "emotional", "stress", "fear"]
+  "personId": "candidate-elin-ward",
+  "protocolId": "structured-personnel-screening-v2",
+  "assignedAssessorId": "person-priya-shah",
+  "requestedTraitCategories": [
+    "workStyle",
+    "threatResponse",
+    "socialTemperament",
+    "medicalConstitution",
+    "moralDisposition"
+  ]
 }
 ```
+
+The protocol definition, not each order, owns research, room, equipment, certification, duration, and detectable-category requirements. Anomalous-disposition is absent because this site has not yet unlocked a compatible protocol.
 
 ## Mutation Ownership
 
@@ -972,7 +1069,7 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 - Derived Physical, Mental, Emotional Health
 - One Effect instance shape with optional activation, expiration, magnitude, and progression
 - Eight equipment slots and fixed inventory
-- Player knowledge with camera/assessment timestamps and confidence
+- Player knowledge with camera/assessment timestamps, confidence, and Trait conclusions
 - Derived Mood, Sanity, and job capabilities
 
 ### Optional after MVP
@@ -982,7 +1079,6 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 - Permanent exposure scars
 - Deliberate trait transformation
 - Advanced neural monitoring
-- Concealment/deception during assessments
 - Prosthetics and permanent disability adaptation
 - Legal-name changes
 
@@ -1018,7 +1114,7 @@ May reveal actual transient values, hidden effects, exact health, real location,
 2. Should the UI display bias values numerically, as named bands, or both?
 3. Should derived Health use a simple additive Effect total, domain-specific caps, or a worst-condition-weighted formula?
 4. How stale can assessments become before imperfect information feels unfair?
-5. Should personnel be able to conceal symptoms deliberately, and which Traits/Skills affect that?
+5. Which Trait categories should baseline intake screen, and how quickly should research unlock stronger protocols?
 6. Which physical monitors are available at game start, and what infrastructure powers them?
 7. Should official skill/certification records always be known while practical competence assessments become stale?
 8. Should rare personality-changing events add permanent Effects only, or may they explicitly replace a Trait with player-visible history?
