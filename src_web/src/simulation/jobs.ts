@@ -53,6 +53,26 @@ export function createStartingJobs(): readonly SiteJob[] {
   ];
 }
 
+export function createTelemetryRecoveryJob(): SiteJob {
+  return {
+    id: "job-stabilize-9620-feedback",
+    title: "Stabilize SCP-9620 sensor feedback",
+    description:
+      "Isolate the oscillating relay bank and restore validated telemetry limits.",
+    skillId: "engineering",
+    priority: 90,
+    xpPerTick: 1,
+    preferredBiases: { mindMight: 1, receptiveResolute: 1 },
+    status: "proposed",
+    progress: 0,
+    requiredProgress: 56,
+    assignedPersonId: null,
+    assignmentReason: null,
+    authorizedTick: null,
+    completedTick: null,
+  };
+}
+
 export function authorizeJob(job: SiteJob, authorizedTick: number): SiteJob {
   if (job.status !== "proposed") return job;
   return { ...job, status: "available", authorizedTick };

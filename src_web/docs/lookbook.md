@@ -197,7 +197,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - Site 828 opens as a facility folder.
 - Camera Feed owns the isometric map window.
 - Work Orders owns proposed, available, active, and completed facility jobs. Authorization is a player decision; qualified pawn selection and progress are simulation-owned and inspectable.
-- Alarm Manager owns facility incident status and response configuration.
+- Alarm Manager owns live facility incident status and response configuration. Escalation opens it automatically; Yellow incidents reduce simulation speed to 1x and link directly to response Work Orders.
 - Simulation Control supports Standard and Minimal views.
 - The taskbar clock opens Simulation Control and reflects run/pause state.
 - The SCP menu reserves save/load/settings locations without pretending those systems exist yet.

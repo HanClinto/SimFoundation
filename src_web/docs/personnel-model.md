@@ -268,6 +268,8 @@ Skills improve through meaningful completed activity. Bias alignment modifies le
 
 The first executable work loop stores XP on each official Skill record. Authorized jobs move through proposed, available, in-progress, and completed states. Assignment ranks relevant Skill first, uses preference alignment only as a smaller suitability factor, and resolves remaining ties by stable person ID. Job progress and XP advance only on simulation ticks.
 
+The initial loop calibrates SCP-9620 telemetry, raises a Yellow incident when feedback exceeds validated limits, creates an Engineering recovery order, and returns the site to Green when that response completes. This establishes the minimum pattern for work causing and resolving incidents without adding a separate scripted minigame.
+
 For the draft progression curve, `xp` is progress within the current level and resets after leveling. XP required for the next level is:
 
 $$

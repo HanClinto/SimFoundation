@@ -1,7 +1,7 @@
 import { createStartingJobs, type SiteJob } from "./jobs";
 import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 
-export const GAME_STATE_VERSION = 9;
+export const GAME_STATE_VERSION = 10;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

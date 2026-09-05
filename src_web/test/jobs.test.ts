@@ -135,4 +135,38 @@ describe("site jobs", () => {
       assignmentReason: "No eligible worker is currently available.",
     });
   });
+
+  it("raises and resolves the SCP-9620 telemetry incident through work", () => {
+    const controller = createController(createInitialState(42));
+    controller.authorizeJob("job-calibrate-9620-sensors");
+
+    const incident = controller.advance(8);
+    expect(incident.game.incident).toEqual({
+      level: "yellow",
+      summary: "SCP-9620 telemetry feedback outside validated limits",
+    });
+    expect(
+      incident.game.jobs.find(({ id }) => id === "job-stabilize-9620-feedback"),
+    ).toMatchObject({ status: "proposed", skillId: "engineering" });
+
+    controller.authorizeJob("job-stabilize-9620-feedback");
+    const resolved = controller.advance(8);
+    const recovery = resolved.game.jobs.find(
+      ({ id }) => id === "job-stabilize-9620-feedback",
+    );
+    expect(recovery).toMatchObject({
+      status: "completed",
+      assignedPersonId: "person-caleb-ward",
+      progress: 56,
+    });
+    expect(resolved.game.incident).toEqual({
+      level: "green",
+      summary: "Telemetry feedback stabilized",
+    });
+    expect(
+      resolved.game.personnel
+        .find(({ id }) => id === "person-caleb-ward")
+        ?.skills.find(({ id }) => id === "engineering")?.xp,
+    ).toBe(8);
+  });
 });

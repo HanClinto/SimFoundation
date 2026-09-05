@@ -197,8 +197,9 @@ app.innerHTML = `
     <div class="window-body alarm-body">
       <div id="incident-badge" class="incident-badge incident-green">
         <span class="incident-light" aria-hidden="true"></span>
-        <span><strong>GREEN / NORMAL</strong><small id="incident-summary">Routine operations</small></span>
+        <span><strong id="incident-level">GREEN / NORMAL</strong><small id="incident-summary">Routine operations</small></span>
       </div>
+      <button type="button" data-open-related-window="work-orders-window">Open Response Work Orders</button>
       <fieldset>
         <legend>Automatic response profile</legend>
         <label><input type="checkbox" checked disabled /> Yellow events reduce speed to 1x</label>
@@ -370,6 +371,7 @@ const taskbarGameTime = requireElement<HTMLElement>("#taskbar-game-time");
 const taskbarStatus = requireElement<HTMLElement>("#taskbar-status");
 const siteName = requireElement<HTMLElement>("#site-name");
 const incidentBadge = requireElement<HTMLElement>("#incident-badge");
+const incidentLevel = requireElement<HTMLElement>("#incident-level");
 const incidentSummary = requireElement<HTMLElement>("#incident-summary");
 const runtimeStatus = requireElement<HTMLElement>("#runtime-status");
 const psychometricsStatus = requireElement<HTMLElement>(
@@ -407,6 +409,9 @@ const personnelMedicalWindows = createPersonnelMedicalWindows(
   controller.getSnapshot().game.personnel,
 );
 const windowManager = createWindowManager(app);
+let previousIncidentLevel:
+  | ControllerSnapshot["game"]["incident"]["level"]
+  | null = null;
 
 windowManager.register(requireElement<HTMLElement>("#facility-window"), {
   id: "facility-window",
@@ -740,6 +745,16 @@ function formatGameTime(totalMinutes: number): string {
   return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
 }
 
+function setSimulationSpeed(speed: SimulationSpeed): void {
+  runtime.setSpeed(speed);
+  for (const button of speedButtons) {
+    button.setAttribute(
+      "aria-pressed",
+      String(Number(button.dataset.speed) === speed),
+    );
+  }
+}
+
 function render(snapshot: ControllerSnapshot): void {
   renderSite(canvas, snapshot);
   updatePersonnelRoster(personnelRows, snapshot.game.personnel);
@@ -776,6 +791,21 @@ function render(snapshot: ControllerSnapshot): void {
   simulationSeed.textContent = snapshot.game.seed.toString();
   incidentSummary.textContent = snapshot.game.incident.summary;
   incidentBadge.className = `incident-badge incident-${snapshot.game.incident.level}`;
+  const incidentLabels = {
+    green: "GREEN / NORMAL",
+    yellow: "YELLOW / ATTENTION",
+    orange: "ORANGE / THREAT",
+    red: "RED / EMERGENCY",
+  } as const;
+  incidentLevel.textContent = incidentLabels[snapshot.game.incident.level];
+  if (
+    snapshot.game.incident.level !== "green" &&
+    previousIncidentLevel !== snapshot.game.incident.level
+  ) {
+    if (snapshot.game.incident.level === "yellow") setSimulationSpeed(1);
+    windowManager.open("alarm-window");
+  }
+  previousIncidentLevel = snapshot.game.incident.level;
   pauseButton.setAttribute("aria-pressed", String(!snapshot.running));
   pauseButton.setAttribute(
     "aria-label",
@@ -808,10 +838,7 @@ pauseButton.addEventListener("click", () => {
 for (const speedButton of speedButtons) {
   speedButton.addEventListener("click", () => {
     const speed = Number(speedButton.dataset.speed) as SimulationSpeed;
-    runtime.setSpeed(speed);
-    for (const button of speedButtons) {
-      button.setAttribute("aria-pressed", String(button === speedButton));
-    }
+    setSimulationSpeed(speed);
     render(controller.getSnapshot());
   });
 }
