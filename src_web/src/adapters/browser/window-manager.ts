@@ -95,6 +95,18 @@ function readRect(element: HTMLElement): WindowRect {
   };
 }
 
+export function synchronizeLauncherIcons(
+  launchers: Iterable<HTMLElement>,
+  windowId: string,
+  iconUrl: string,
+): void {
+  for (const launcher of launchers) {
+    if (launcher.dataset.openWindow !== windowId) continue;
+    const icon = launcher.querySelector<HTMLImageElement>("[data-window-icon]");
+    if (icon) icon.src = iconUrl;
+  }
+}
+
 export function createWindowManager(desktop: HTMLElement) {
   const windows = new Map<string, ManagedWindow>();
   const listeners = new Set<
@@ -216,6 +228,11 @@ export function createWindowManager(desktop: HTMLElement) {
       titleText.classList.add("window-title-with-icon");
       titleText.style.backgroundImage = `url("${options.iconUrl}")`;
     }
+    synchronizeLauncherIcons(
+      desktop.querySelectorAll<HTMLElement>("[data-open-window]"),
+      options.id,
+      options.iconUrl,
+    );
 
     titleBar.addEventListener("pointerdown", (event) => {
       if ((event.target as Element).closest("button")) return;

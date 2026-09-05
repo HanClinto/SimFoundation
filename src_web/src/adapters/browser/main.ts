@@ -45,15 +45,15 @@ app.innerHTML = `
       <span>Site 828</span>
     </button>
     <button class="desktop-icon" type="button" data-open-window="knowledge-window">
-      <span class="desktop-icon-image knowledge-icon" aria-hidden="true"></span>
+      <img class="desktop-icon-asset" data-window-icon src="${bookIconUrl}" alt="" />
       <span>Foundation Library</span>
     </button>
     <button class="desktop-icon" type="button" data-open-window="control-window">
-      <span class="desktop-icon-image control-icon" aria-hidden="true"></span>
+      <img class="desktop-icon-asset" data-window-icon src="${controlIconUrl}" alt="" />
       <span>Simulation Control</span>
     </button>
     <button class="desktop-icon" type="button" data-open-window="debug-window">
-      <span class="desktop-icon-image debug-icon" aria-hidden="true"></span>
+      <img class="desktop-icon-asset" data-window-icon src="${debugIconUrl}" alt="" />
       <span>System Monitor</span>
     </button>
   </div>
@@ -82,23 +82,23 @@ app.innerHTML = `
       <div class="folder-workspace">
         <div class="subsystem-grid" aria-label="Site 828 subsystems">
           <button class="subsystem-icon" type="button" data-open-window="camera-window">
-            <span class="subsystem-image camera-subsystem" aria-hidden="true"></span>
+            <img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" />
             <span>Camera Feed</span>
           </button>
           <button class="subsystem-icon" type="button" data-open-window="personnel-window">
-            <span class="subsystem-image personnel-subsystem" aria-hidden="true"></span>
+            <img class="subsystem-icon-asset" data-window-icon src="${personnelIconUrl}" alt="" />
             <span>Personnel Roster</span>
           </button>
           <button class="subsystem-icon" type="button" data-open-window="alarm-window">
-            <span class="subsystem-image alarm-subsystem" aria-hidden="true"></span>
+            <img class="subsystem-icon-asset" data-window-icon src="${alarmIconUrl}" alt="" />
             <span>Alarm Manager</span>
           </button>
           <button class="subsystem-icon" type="button" data-open-window="budget-window">
-            <span class="subsystem-image budget-subsystem" aria-hidden="true"></span>
+            <img class="subsystem-icon-asset" data-window-icon src="${budgetIconUrl}" alt="" />
             <span>Budget Report</span>
           </button>
           <button class="subsystem-icon" type="button" data-open-window="knowledge-window">
-            <span class="subsystem-image archive-subsystem" aria-hidden="true"></span>
+            <img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" />
             <span>Research Archive</span>
           </button>
         </div>
