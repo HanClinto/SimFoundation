@@ -37,8 +37,9 @@ import { createClinicalCareView } from "./clinical-care-view";
 import { createDayPlanner } from "./day-planner-view";
 import { observedSnapshot } from "./observed-view";
 import { createSurveillanceView } from "./surveillance-view";
-import { createContainmentTrialWindow } from "./containment-trial-view";
-import { TRIAL_LOCATION } from "../../simulation/containment-trial";
+import { createAnomalyReference } from "./anomaly-reference-view";
+import { AN001_POSITION } from "../../simulation/environment";
+import { MATERIALS } from "../../simulation/materials";
 import { createConstructionWindow } from "./construction-view";
 import { createEngineeringWindow } from "./engineering-view";
 import scp999IconUrl from "./assets/site-999.svg";
@@ -133,6 +134,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
           <button class="subsystem-icon" type="button" data-open-window="containment-study-window"><img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" /><span>AN-001 Study</span></button>
           <button class="subsystem-icon" type="button" data-open-window="construction-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Construction</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="engineering-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Engineering</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -141,12 +143,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>12 available</dd></div>
+            <div><dt>Systems</dt><dd>13 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">12 objects</p>
+        <p class="status-bar-field">13 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -170,11 +172,21 @@ app.innerHTML = `
       <select data-camera-entity aria-label="Focus personnel"></select>
       <button type="button" data-camera-action="inspect" disabled>Open Record</button>
       <select data-camera-mode aria-label="Map mode"><option value="inspect">Inspect</option><option value="laboratory">Plan laboratory</option><option value="camera">Place camera</option></select>
-      <select data-camera-overlay aria-label="Map overlay"><option value="normal">Standard view</option><option value="construction">Construction</option><option value="engineering">Engineering</option></select>
+      <select data-camera-overlay aria-label="Map overlay"><option value="normal">Standard view</option><option value="construction">Construction</option><option value="materials">Materials</option><option value="engineering">Condition</option></select>
+      <select data-camera-layer aria-label="Map surface layer"><option value="structure">Structures</option><option value="floor">Floors</option></select>
       <button type="button" data-camera-action="place" disabled>Authorize Annex</button>
       <button type="button" data-open-related-window="construction-window">Construction</button>
     </div>
     <div class="window-body camera-body">
+      <div class="surface-legend" data-material-legend hidden>${Object.values(
+        MATERIALS,
+      )
+        .map(
+          (material) =>
+            `<span><i style="background:${material.color}"></i>${material.name}</span>`,
+        )
+        .join("")}</div>
+      <div class="surface-legend" data-condition-legend hidden><span><i style="background:#8fcab6"></i>Serviceable</span><span><i style="background:#eac65f"></i>55% or below</span><span><i style="background:#d46056"></i>Failed</span></div>
       <div class="viewport-shell">
         <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
       </div>
@@ -352,9 +364,6 @@ app.innerHTML = `
       <div class="title-bar-text">Foundation Library '98 - Site 828</div>
       <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
     </div>
-    <nav class="menu-bar" aria-label="Knowledgebase menu">
-      <button type="button"><u>T</u>opics</button><button type="button"><u>S</u>earch</button><button type="button"><u>H</u>istory</button><button type="button"><u>H</u>elp</button>
-    </nav>
     <div class="window-body encyclopedia-body">
       <aside class="topic-tree">
         <strong>Contents</strong>
@@ -363,16 +372,13 @@ app.innerHTML = `
       <article class="encyclopedia-article">
         <p class="article-section">FOUNDATION SITES / NORTH AMERICA</p>
         <h1>Site 828</h1>
-        <div class="article-media"><span>INTERACTIVE FACILITY INDEX</span><small>5 linked systems available</small></div>
         <p>Site 828 is a provisional research and containment installation established near Jarbridge, Nevada.</p>
-        <p>Its founding mandate concerns the study and classification of <a href="#">SCP-9620</a>. Access to detailed records remains restricted.</p>
+        <p>Its founding mandate concerns the study and classification of SCP-9620. Access to detailed records remains restricted.</p>
         <fieldset class="research-capability">
           <legend>Personnel screening research</legend>
           <dl class="status-list">
             <div><dt>Anomalous Psychometrics</dt><dd id="psychometrics-status">NOT AVAILABLE</dd></div>
           </dl>
-          <button id="unlock-psychometrics" type="button">Complete Research</button>
-          <p class="system-note">Enables automatic analysis of anomalous personnel evidence and targeted follow-up screening.</p>
         </fieldset>
       </article>
     </div>
@@ -450,9 +456,6 @@ const incidentSummary = requireElement<HTMLElement>("#incident-summary");
 const runtimeStatus = requireElement<HTMLElement>("#runtime-status");
 const psychometricsStatus = requireElement<HTMLElement>(
   "#psychometrics-status",
-);
-const unlockPsychometricsButton = requireElement<HTMLButtonElement>(
-  "#unlock-psychometrics",
 );
 const controlWindow = requireElement<HTMLElement>("#control-window");
 const controlViewMenu = requireElement<HTMLElement>("#control-view-menu");
@@ -715,8 +718,13 @@ const siteCamera = createSiteCamera(
       windowManager.open("surveillance-window");
       surveillanceView.selectCamera(id);
     } else if (id.startsWith("tile:")) {
-      const [x, y] = id.slice(5).split(",").map(Number);
-      engineeringView.select({ x: x!, y: y! }, controller.getSnapshot());
+      const [coordinates, layer] = id.slice(5).split(":");
+      const [x, y] = coordinates!.split(",").map(Number);
+      engineeringView.select(
+        { x: x!, y: y! },
+        controller.getSnapshot(),
+        layer === "floor" ? "floor" : "structure",
+      );
       windowManager.open("engineering-window");
     } else openPersonnelInspector(id);
   },
@@ -725,7 +733,7 @@ const clinicalCareView = createClinicalCareView(
   requireElement<HTMLElement>("#clinical-care-body"),
   controller,
 );
-const engineeringView = createEngineeringWindow(app);
+const engineeringView = createEngineeringWindow(app, controller);
 windowManager.register(engineeringView.element, {
   id: "engineering-window",
   title: "Engineering",
@@ -752,20 +760,10 @@ const surveillanceView = createSurveillanceView(
   },
 );
 
-const containmentStudy = createContainmentTrialWindow(
-  app,
-  controller,
-  () => {
-    windowManager.open("camera-window");
-    siteCamera.focus(TRIAL_LOCATION);
-  },
-  (position) => {
-    windowManager.open("camera-window");
-    siteCamera.focus(position);
-    engineeringView.select(position, controller.getSnapshot());
-    windowManager.open("engineering-window");
-  },
-);
+const containmentStudy = createAnomalyReference(app, () => {
+  windowManager.open("camera-window");
+  siteCamera.focus(AN001_POSITION);
+});
 const constructionView = createConstructionWindow(
   app,
   controller,
@@ -894,10 +892,6 @@ app.addEventListener("click", (event) => {
     windowManager.open("camera-window");
     siteCamera.focus(locatedJob.workSite);
   }
-});
-
-unlockPsychometricsButton.addEventListener("click", () => {
-  controller.unlockAnomalousPsychometrics();
 });
 
 windowManager.subscribe((windows) => {
@@ -1044,7 +1038,6 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 
 function render(snapshot: ControllerSnapshot): void {
   snapshot = observedSnapshot(snapshot);
-  containmentStudy.render(snapshot);
   constructionView.render(snapshot);
   engineeringView.render(snapshot);
   dayPlanner.render(snapshot);
@@ -1151,12 +1144,6 @@ function render(snapshot: ControllerSnapshot): void {
     .anomalousPsychometrics
     ? "online-status"
     : "";
-  unlockPsychometricsButton.disabled =
-    snapshot.game.capabilities.anomalousPsychometrics;
-  unlockPsychometricsButton.textContent = snapshot.game.capabilities
-    .anomalousPsychometrics
-    ? "Research Complete"
-    : "Complete Research";
   personnelCount.textContent = `${snapshot.game.personnel.length} assigned`;
   siteName.textContent = snapshot.game.siteName;
   tickCount.textContent = snapshot.game.tick.toLocaleString();

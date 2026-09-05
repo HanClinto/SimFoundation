@@ -96,31 +96,18 @@ describe("game controller", () => {
     );
   });
 
-  it("unlocks anomalous evidence analysis before targeted screening", () => {
-    const controller = createController(createInitialState());
+  it("requires a scenario capability before targeted screening", () => {
+    const initial = createInitialState();
+    const controller = createController(initial);
 
     expect(() =>
       controller.orderAnomalousAssessment("person-emil-novak"),
     ).toThrow("Anomalous Psychometrics has not been unlocked");
 
-    const unlocked = controller.unlockAnomalousPsychometrics();
-    const analyzedEmil = unlocked.game.personnel.find(
-      ({ id }) => id === "person-emil-novak",
-    );
-    const analyzedMara = unlocked.game.personnel.find(
-      ({ id }) => id === "person-mara-voss",
-    );
-    expect(unlocked.game.capabilities.anomalousPsychometrics).toBe(true);
-    expect(analyzedEmil?.traitAssessments.at(-1)?.conclusions[0]?.status).toBe(
-      "suspected",
-    );
-    expect(analyzedMara?.traitAssessments).toHaveLength(0);
-
-    const unlockedAgain = controller.unlockAnomalousPsychometrics();
-    expect(
-      unlockedAgain.game.personnel.find(({ id }) => id === "person-emil-novak")
-        ?.traitAssessments,
-    ).toHaveLength(1);
+    controller.replaceState({
+      ...initial,
+      capabilities: { anomalousPsychometrics: true },
+    });
 
     controller.orderAnomalousAssessment("person-emil-novak");
     for (
@@ -144,7 +131,7 @@ describe("game controller", () => {
         .orderAnomalousAssessment("person-emil-novak")
         .game.personnel.find(({ id }) => id === "person-emil-novak")
         ?.traitAssessments,
-    ).toHaveLength(2);
+    ).toHaveLength(1);
   });
 
   it("orders a bounded work-preference evaluation", () => {

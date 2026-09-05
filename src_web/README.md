@@ -85,17 +85,19 @@ The pantry starts with 36 meals and the store with 72 more. Logistics automatica
 
 Surveillance lists installed cameras, their enabled state, and remaining installation kits. **Place camera** opens a single-tile preview in Camera Feed. Orders can be queued without current coverage, including unsurveyed locations; an engineer must reach the site, verify an interior floor, and complete installation before the camera observes anything. Known unsuitable terrain is rejected from recorded survey data; unknown or changed unsuitable terrain leaves an inspectable blocked work order. Awake personnel and active cameras provide local sight through open doors but not walls. Sleeping personnel do not observe.
 
-Click a placement preview to pin it, then use its authorization button; click another map location to reposition it. Camera and anomaly markers share selection and Open Record/double-click behavior. Cameras open their highlighted Surveillance record; AN-001 opens its study. The Engineering overlay opens remembered tile records, related work, and recorded chamber integrity. Ordinary world tiles do not yet store material-specific damage, and their inspector says so explicitly. Construction overlay enters annex blueprint placement.
+Click a placement preview to pin it, then use its authorization button; click another map location to reposition it. Cameras open their highlighted Surveillance record; AN-001 opens a read-only reference entry. Materials and Condition overlays support separate Floors and Structures views. Double-click any tile to open its recorded layers and related surface work in Engineering. Construction overlay enters annex blueprint placement.
 
 The map shows bright live coverage, dim remembered terrain, unknown areas beyond the initial survey, and labeled last-sighting markers. Unseen anomalies continue simulating, but their registry and map information remain at the last recorded observation. Camera placement and range are provisional abstractions; power, communications failures, and directional lenses remain future work.
 
 ### Physical Containment and Repair
 
-AN-001 now acts on a replaceable room wall and a sealed secondary hatch. Failure opens a real path and sight line. Secondary containment degrades after primary failure, providing limited time to respond; observed primary and secondary failures raise Orange and Red respectively. Damage and spill remain localized to this enclosure, not arbitrary facility tiles.
+Every installed floor, wall, and door has its own material and integrity. Soil is the base ground; floors and structures are independent layers. Failed walls cease blocking movement and sight but leave the floor beneath them intact. Failed flooring exposes soil. Starting rooms and newly built annexes use the same shared material catalog: concrete, steel, ceramic, and composite.
 
-In **AN-001 Study > Protocols**, choose a replacement material and optionally enable automatic maintenance at 55% observed integrity. Repairs wait until exposure ends. A finite kit is collected from Materials Store, delivered by its carrier, and fitted by engineering. Emergency packages can interrupt routine work, but preserve appointments, urgent needs, and cargo deliveries. Rebuilding waits for occupied barrier tiles to clear. Engineering view shows the last recorded integrity of each barrier; direct inspection links are available in Protocols.
+Engineering can order replacement of either installed layer using the shared construction stock. Materials are collected at the store, delivered by the same carrier, and fitted by an engineer. Rebuilding waits for occupied structure footprints to clear. Optional facility maintenance queues work for currently observed condition at 55% or below, preserving the existing material. Failed structures receive emergency priority; appointments, urgent needs, and cargo deliveries remain protected from preemption. Known doors can be opened or closed in Engineering; closing cannot trap an occupant.
 
-A useful test is concrete with passive exposure and protective isolation disabled, followed by ceramic replacement and another passive trial. The first material fails; the second survives the bounded exposure. Both failures and restoration remain in Findings. Save schema is now 23; earlier development saves require a fresh session.
+AN-001 occupies a five-by-five ceramic enclosure. Its stationary corrosive field uses the general exposure system: it reaches cardinally connected surfaces within four tiles, stops at intact walls or sealed doors, and reaches neighboring space after a barrier opens. The field is bounded, not a fluid or contamination simulation. All reached surfaces use their own material resistance; there are no primary/secondary counters or automatic whole-enclosure restoration.
+
+The scripted AN-001 Protocols/Findings workflow and the Library's instant **Complete Research** shortcut have been removed. The library and anomaly reference are documentary views. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 24; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 
@@ -178,9 +180,7 @@ Possible expedition rewards include:
 
 ### Original Containment Study
 
-**AN-001 Study** opens an illustrated investigation file for an original game anomaly, the Chalk Knot. Fit a concrete, ceramic, or composite barrier, then authorize passive contact or mechanical stimulation. Optional automatic isolation stops exposure before primary failure; leaving it disabled permits a riskier trial inside a secondary catch vessel. The material reference shows supplier resistance ratings, not foreknown anomaly compatibility.
-
-Observed trials create dated findings and supersede earlier provisional assumptions. Replacing a failed barrier consumes the study's finite allowance and requires engineering work. This is a bench-scale materials experiment, not yet a free-roaming breach or arbitrary block-building system. See [the authored catalog](docs/anomaly-catalog.md) for developer-only mechanics and explicit limitations.
+**AN-001 Study** opens an illustrated reference entry for the Chalk Knot. Its location link centers the map on the enclosure; material selection, condition, and replacement work belong to the general Engineering inspector. See [the authored catalog](docs/anomaly-catalog.md) for developer-only source parameters and limitations.
 
 ### SCP-9620
 

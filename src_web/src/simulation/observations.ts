@@ -1,5 +1,6 @@
 import PF from "pathfinding";
 import type { GameState } from "./state";
+import type { TileSurfaces } from "./materials";
 import { projectPsychology } from "./personnel";
 import type { Scp999State } from "./scp-999";
 import {
@@ -31,6 +32,7 @@ export interface EntityObservation {
   readonly blockedReason: string | null;
 }
 export interface SiteObservations {
+  readonly knownSurfaces: Readonly<Record<number, TileSurfaces>>;
   readonly knownTiles: readonly (TileKind | null)[];
   readonly tileLastSeen: readonly number[];
   readonly visibleTiles: readonly number[];
@@ -89,6 +91,11 @@ export function createSiteObservations(world: SiteWorld): SiteObservations {
     return column >= 40 && column <= 85 && row >= 40 && row <= 85 ? tile : null;
   });
   return {
+    knownSurfaces: Object.fromEntries(
+      Object.entries(world.map.surfaces).filter(
+        ([index]) => knownTiles[Number(index)] != null,
+      ),
+    ),
     knownTiles,
     tileLastSeen: knownTiles.map((tile) => (tile === null ? -1 : 0)),
     visibleTiles: [],
@@ -170,9 +177,12 @@ export function observeSite(state: GameState): GameState {
     }
   }
   const knownTiles = [...state.observations.knownTiles];
+  const knownSurfaces = { ...state.observations.knownSurfaces };
   const tileLastSeen = [...state.observations.tileLastSeen];
   for (const index of visible) {
     knownTiles[index] = map.tiles[index]!;
+    if (map.surfaces[index]) knownSurfaces[index] = map.surfaces[index]!;
+    else delete knownSurfaces[index];
     tileLastSeen[index] = state.tick;
   }
   const entities = { ...state.observations.entities };
@@ -222,6 +232,7 @@ export function observeSite(state: GameState): GameState {
     observations: {
       ...state.observations,
       knownTiles,
+      knownSurfaces,
       tileLastSeen,
       visibleTiles: [...visible].sort((first, second) => first - second),
       visibleEntityIds,

@@ -6,15 +6,16 @@ import {
 } from "../simulation/observations";
 import { advanceSimulation } from "../simulation/tick";
 import {
-  authorizeContainmentTrial,
-  isolateContainmentTrial,
-  orderTrialBarrier,
-  setTrialMaintenance,
-  type BarrierMaterial,
-  type TrialProtocol,
-  type TrialCommandCode,
-} from "../simulation/containment-trial";
-import { analyzeAnomalousTraitEvidence } from "../simulation/personnel";
+  orderSurfaceWork,
+  type SurfaceOrderCode,
+} from "../simulation/environment";
+import {
+  replaceSurface,
+  surfaceAt,
+  type MaterialId,
+  type SurfaceLayer,
+} from "../simulation/materials";
+import { observeSite } from "../simulation/observations";
 import type { GameState } from "../simulation/state";
 import {
   authorizeSiteWork,
@@ -48,19 +49,13 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
-  orderTrialBarrier(material: BarrierMaterial): {
-    readonly code: TrialCommandCode;
-    readonly snapshot: ControllerSnapshot;
-  };
-  authorizeContainmentTrial(
-    protocol: TrialProtocol,
-    autoIsolate: boolean,
-  ): { readonly code: TrialCommandCode; readonly snapshot: ControllerSnapshot };
-  isolateContainmentTrial(): ControllerSnapshot;
-  setTrialMaintenance(
-    automaticRepairs: boolean,
-    repairMaterial: BarrierMaterial,
-  ): ControllerSnapshot;
+  orderSurfaceWork(
+    position: TilePosition,
+    layer: SurfaceLayer,
+    material: MaterialId,
+  ): { code: SurfaceOrderCode; snapshot: ControllerSnapshot };
+  setAutomaticRepairs(enabled: boolean): ControllerSnapshot;
+  setDoorOpen(position: TilePosition, open: boolean): ControllerSnapshot;
   getSnapshot(): ControllerSnapshot;
   advance(tickCount?: number): ControllerSnapshot;
   replaceState(nextState: GameState): ControllerSnapshot;
@@ -69,7 +64,6 @@ export interface GameController {
   placeLaboratory(origin: TilePosition): ConstructionCommandResult;
   cancelLaboratory(blueprintId: string): ConstructionCommandResult;
   setResearchLaboratory(roomId: string): ConstructionCommandResult;
-  unlockAnomalousPsychometrics(): ControllerSnapshot;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
@@ -108,22 +102,47 @@ export function createController(initialState: GameState): GameController {
   return {
     getSnapshot,
 
-    orderTrialBarrier(material) {
-      const result = orderTrialBarrier(state, material);
+    orderSurfaceWork(position, layer, material) {
+      const result = orderSurfaceWork(state, position, layer, material);
       state = result.state;
       return { code: result.code, snapshot: publish() };
     },
-    authorizeContainmentTrial(protocol, autoIsolate) {
-      const result = authorizeContainmentTrial(state, protocol, autoIsolate);
-      state = result.state;
-      return { code: result.code, snapshot: publish() };
-    },
-    isolateContainmentTrial() {
-      state = isolateContainmentTrial(state);
+    setAutomaticRepairs(enabled) {
+      if (typeof enabled === "boolean")
+        state = {
+          ...state,
+          environment: { ...state.environment, automaticRepairs: enabled },
+        };
       return publish();
     },
-    setTrialMaintenance(automaticRepairs, repairMaterial) {
-      state = setTrialMaintenance(state, automaticRepairs, repairMaterial);
+    setDoorOpen(position, open) {
+      const door = surfaceAt(state.world.map, position, "structure");
+      const known =
+        state.observations.knownSurfaces[
+          position.y * state.world.map.width + position.x
+        ]?.structure;
+      if (
+        typeof open === "boolean" &&
+        known &&
+        door &&
+        door.integrity > 0 &&
+        ["door", "closed-door"].includes(door.kind) &&
+        (open ||
+          !Object.values(state.world.positions).some(
+            (occupant) =>
+              occupant.x === position.x && occupant.y === position.y,
+          ))
+      )
+        state = observeSite({
+          ...state,
+          world: {
+            ...state.world,
+            map: replaceSurface(state.world.map, position, "structure", {
+              ...door,
+              kind: open ? "door" : "closed-door",
+            }),
+          },
+        });
       return publish();
     },
 
@@ -212,21 +231,6 @@ export function createController(initialState: GameState): GameController {
 
     orderMoodScreening(personId) {
       state = requestAssessment(state, personId, "mood");
-      return publish();
-    },
-
-    unlockAnomalousPsychometrics() {
-      if (state.capabilities.anomalousPsychometrics) return getSnapshot();
-      state = {
-        ...state,
-        capabilities: {
-          ...state.capabilities,
-          anomalousPsychometrics: true,
-        },
-        personnel: state.personnel.map((person) =>
-          analyzeAnomalousTraitEvidence(person, state.tick),
-        ),
-      };
       return publish();
     },
 

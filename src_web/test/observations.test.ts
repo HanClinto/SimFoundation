@@ -154,6 +154,7 @@ describe("facility observations", () => {
   });
   it("blocks sight behind walls and through diagonal wall corners", () => {
     const map: SiteMap = {
+      surfaces: {},
       id: "test",
       width: 3,
       height: 3,

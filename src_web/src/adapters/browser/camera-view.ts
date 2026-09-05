@@ -57,7 +57,7 @@ export function createSiteCamera(
   overlay?.addEventListener("change", () => {
     camera = {
       ...camera,
-      overlay: overlay.value as "normal" | "construction" | "engineering",
+      overlay: overlay.value as MapCamera["overlay"],
     };
     if (overlay.value === "construction") {
       mode.value = "laboratory";
@@ -66,6 +66,16 @@ export function createSiteCamera(
       mode.value = "inspect";
       mode.dispatchEvent(new Event("change"));
     }
+  });
+  const surfaceLayer = windowElement.querySelector<HTMLSelectElement>(
+    "[data-camera-layer]",
+  );
+  surfaceLayer?.addEventListener("change", () => {
+    camera = {
+      ...camera,
+      surfaceLayer: surfaceLayer.value === "floor" ? "floor" : "structure",
+    };
+    render(snapshot);
   });
   let snapshot = observedSnapshot(controller.getSnapshot());
   entitySelect.replaceChildren(
@@ -79,6 +89,18 @@ export function createSiteCamera(
 
   function render(nextSnapshot: ControllerSnapshot) {
     snapshot = observedSnapshot(nextSnapshot);
+    const materialLegend = windowElement.querySelector<HTMLElement>(
+      "[data-material-legend]",
+    );
+    const conditionLegend = windowElement.querySelector<HTMLElement>(
+      "[data-condition-legend]",
+    );
+    if (materialLegend) materialLegend.hidden = camera.overlay !== "materials";
+    if (conditionLegend)
+      conditionLegend.hidden = camera.overlay !== "engineering";
+    if (surfaceLayer)
+      surfaceLayer.disabled =
+        camera.overlay !== "materials" && camera.overlay !== "engineering";
     if (camera.draft)
       camera = {
         ...camera,
@@ -360,7 +382,11 @@ export function createSiteCamera(
           canvas.clientHeight,
         );
         const tileId = `tile:${Math.round(position.x)},${Math.round(position.y)}`;
-        select(camera.overlay === "engineering" ? tileId : entityAt(point));
+        select(
+          camera.overlay === "engineering" || camera.overlay === "materials"
+            ? `${tileId}:${camera.surfaceLayer ?? "structure"}`
+            : entityAt(point),
+        );
       }
     }
     drag = null;
@@ -379,8 +405,8 @@ export function createSiteCamera(
       canvas.clientHeight,
     );
     const id =
-      camera.overlay === "engineering"
-        ? `tile:${Math.round(position.x)},${Math.round(position.y)}`
+      camera.overlay === "engineering" || camera.overlay === "materials"
+        ? `tile:${Math.round(position.x)},${Math.round(position.y)}:${camera.surfaceLayer ?? "structure"}`
         : entityAt(localPoint(event));
     if (id) {
       select(id);

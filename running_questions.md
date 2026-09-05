@@ -38,7 +38,7 @@ Hosted CI exposed a timeout in the intentional two-day replay: 7.6 seconds on th
 
 1. Open Day Planner and inspect the schedules and finite meal supply.
 2. Open Surveillance, disable a camera, and compare live coverage with remembered terrain and last sightings.
-3. Open AN-001 Study: review Materials, order a barrier kit, and choose a protocol after delivery and fitting. Protective isolation is enabled by default. Primary failure opens the room wall; secondary lining provides limited response time and can also fail. Enable maintenance policy or order a replacement, then inspect both barrier records and Findings. Damage remains localized to this enclosure.
+3. Open AN-001 Study for its read-only reference and Locate enclosure. Camera Feed now has Materials/Condition overlays and Floors/Structures selection. Double-click any tile for Engineering, order an individual layer replacement, or operate a known door. The old trial protocol, paired-barrier repair kit, and instant research button have been retired.
 4. Open Occupational Health's Assignments tab to compare portraits, skill, procedure eligibility, and current availability.
 
 ### Scope Notes

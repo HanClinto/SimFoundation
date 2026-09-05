@@ -1,4 +1,5 @@
 import { authorizeJob, type SiteJob } from "./jobs";
+import { surfacesForTile } from "./materials";
 import type { GameState } from "./state";
 import {
   findRoute,
@@ -379,13 +380,18 @@ export function advanceConstruction(state: GameState): GameState {
             "Final assembly awaits clearance of the wall footprint.",
         };
       const tiles = [...map.tiles];
-      for (const replacement of replacementTiles)
+      const surfaces = { ...map.surfaces };
+      for (const replacement of replacementTiles) {
         tiles[replacement.position.y * map.width + replacement.position.x] =
           replacement.tile;
+        surfaces[replacement.position.y * map.width + replacement.position.x] =
+          surfacesForTile(replacement.tile);
+      }
       const number = blueprint.id.split("-").at(-1);
       map = {
         ...map,
         tiles,
+        surfaces,
         rooms: [
           ...map.rooms,
           {

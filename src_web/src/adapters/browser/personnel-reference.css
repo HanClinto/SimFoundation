@@ -477,36 +477,42 @@
   min-width: 500px;
 }
 
-.trial-study-body {
-  display: grid;
-  grid-template-columns: 140px minmax(0, 1fr);
-  overflow: hidden;
-  container-type: inline-size;
-}
-.trial-index {
-  display: flex;
-  flex-direction: column;
+.surface-controls .field-row {
+  flex-wrap: wrap;
   gap: 6px;
-  padding: 12px 8px;
-  background: #d4dfd4;
-  border-right: 3px ridge #e3e9dd;
-  overflow: auto;
+  white-space: normal;
 }
-.trial-index strong {
-  font:
-    bold 21px Georgia,
-    serif;
-  color: #355543;
-  padding: 8px;
+#engineering-window h2 {
+  font-size: 16px;
+  line-height: 1.2;
+  margin: 0 0 8px;
 }
-.trial-index button {
-  text-align: left;
-  padding: 6px;
+.surface-controls fieldset {
+  margin: 8px 0;
   min-width: 0;
 }
-.trial-index button[aria-pressed="true"] {
-  color: #fff;
-  background: #4e7162;
+.surface-controls select {
+  max-width: 100%;
+}
+.surface-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 5px 8px;
+  background: #d8ded8;
+}
+.surface-legend[hidden] {
+  display: none;
+}
+.surface-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.surface-legend i {
+  width: 12px;
+  height: 12px;
+  border: 1px solid #3f5248;
 }
 .trial-document {
   min-width: 0;
@@ -567,26 +573,6 @@
 .trial-readings dd {
   margin: 0;
 }
-.trial-document fieldset {
-  margin: 15px 0;
-}
-.trial-document fieldset > label {
-  display: block;
-  margin-bottom: 8px;
-}
-.trial-document fieldset select {
-  max-width: 100%;
-}
-.trial-document .field-row label {
-  margin: 0;
-  margin-left: 19px;
-  display: inline-flex;
-  position: relative;
-}
-.trial-document .field-row {
-  white-space: normal;
-  align-items: center;
-}
 
 .object-identity {
   display: inline-grid;
@@ -609,39 +595,10 @@
   gap: 12px;
   padding: 6px;
 }
-.trial-work-status {
-  border-top: 1px solid #8d9f89;
-  border-bottom: 1px solid #8d9f89;
-  padding: 10px 0;
-  margin-bottom: 12px;
-}
-.trial-work-status progress {
-  width: 100%;
-}
-.trial-document .trial-work-status p {
-  font:
-    12px/1.5 Tahoma,
-    sans-serif;
-}
 .selected-record {
   outline: 2px solid #617f6c;
   outline-offset: -2px;
   background: #edf1dc;
-}
-.trial-evidence {
-  border-left: 3px solid #6e9075;
-  padding: 8px 12px;
-  margin: 12px 0;
-}
-.trial-evidence p {
-  margin: 5px 0;
-}
-.trial-evidence.superseded {
-  border-color: #b29a69;
-  color: #78816d;
-}
-.trial-evidence.superseded strong {
-  text-decoration: line-through;
 }
 @container (max-width: 480px) {
   .trial-illustration {

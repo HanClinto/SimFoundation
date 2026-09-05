@@ -1,9 +1,9 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import {
-  TRIAL_WORK_SITE,
-  TRIAL_BARRIER_LOCATION,
-  TRIAL_SECONDARY_LOCATION,
-} from "../../simulation/containment-trial";
+  MATERIALS,
+  surfaceTile,
+  type TileSurfaces,
+} from "../../simulation/materials";
 import {
   isWalkable,
   sameTile,
@@ -469,7 +469,6 @@ function isConstructionState(value: unknown): value is ConstructionState {
     isRecord(value) &&
     isIntegerInRange(value.availableMaterials, 0, 160) &&
     isNonEmptyString(value.researchLaboratoryId) &&
-    value.availableMaterials % 40 === 0 &&
     isRecord(value.stockpile) &&
     isIntegerInRange(value.stockpile.x, 0, 127) &&
     isIntegerInRange(value.stockpile.y, 0, 127) &&
@@ -513,6 +512,7 @@ function constructionReferencesValid(state: GameState): boolean {
     return false;
   if (
     construction.availableMaterials +
+      state.environment.spentMaterials +
       construction.blueprints.filter(({ status }) => status !== "cancelled")
         .length *
         40 !==
@@ -548,11 +548,19 @@ function constructionReferencesValid(state: GameState): boolean {
       const key = `${position.x},${position.y}`;
       if (footprint.has(key)) return false;
       footprint.add(key);
-      if (
-        tileAt(state.world.map, position) !==
-        (blueprint.status === "completed" ? tile : "grass")
-      )
-        return false;
+      if (blueprint.status === "completed") {
+        const cell =
+          state.world.map.surfaces[
+            position.y * state.world.map.width + position.x
+          ];
+        if (
+          !cell?.floor ||
+          (tile === "wall" && cell.structure?.kind !== "wall") ||
+          (tile === "door" &&
+            !["door", "closed-door"].includes(cell.structure?.kind ?? ""))
+        )
+          return false;
+      } else if (tileAt(state.world.map, position) !== "grass") return false;
     }
     if (
       !haul ||
@@ -1012,140 +1020,168 @@ function observationReferencesValid(state: GameState): boolean {
   );
 }
 
-function isContainmentTrial(value: unknown): boolean {
-  const material = (entry: unknown) =>
-    isLiteral(entry, ["concrete", "ceramic", "composite"]);
-  const protocol = (entry: unknown) =>
-    isLiteral(entry, ["passive", "stimulated"]);
-  const phase = (entry: unknown) =>
-    isLiteral(entry, [
-      "unprepared",
-      "installing",
-      "ready",
-      "preparing",
-      "running",
-      "breached",
-      "repairing",
-    ]);
+function isSurfaceRecord(
+  value: unknown,
+): value is Record<number, TileSurfaces> {
   return (
     isRecord(value) &&
-    value.specimenId === "AN-001" &&
-    (value.pendingMaterial === null || material(value.pendingMaterial)) &&
-    phase(value.phase) &&
-    material(value.material) &&
-    protocol(value.protocol) &&
-    isNumberInRange(value.integrity, 0, 100) &&
-    isNumberInRange(value.secondaryIntegrity, 0, 100) &&
-    (value.supplyStage === null ||
-      isLiteral(value.supplyStage, ["collecting", "delivering", "fitting"])) &&
-    typeof value.automaticRepairs === "boolean" &&
-    material(value.repairMaterial) &&
-    isNullableString(value.maintenanceReason) &&
-    isRecord(value.barrierReadings) &&
-    [value.barrierReadings.primary, value.barrierReadings.secondary].every(
-      (reading) =>
-        reading === null ||
-        (isRecord(reading) &&
-          material(reading.material) &&
-          isNumberInRange(reading.integrity, 0, 100) &&
-          isIntegerInRange(reading.observedTick, 0)),
-    ) &&
-    isIntegerInRange(value.elapsed, 0, 24) &&
-    isIntegerInRange(value.supplyCredits, 0, 24) &&
-    isIntegerInRange(value.spentCredits, 0, 24) &&
-    value.supplyCredits + value.spentCredits === 24 &&
-    isIntegerInRange(value.nextOrder, 1) &&
-    isNullableString(value.workOrderId) &&
-    isIntegerInRange(value.trialsCompleted, 0) &&
-    isIntegerInRange(value.breaches, 0, value.trialsCompleted) &&
-    typeof value.autoIsolate === "boolean" &&
-    (value.lastReading === null ||
-      (isRecord(value.lastReading) &&
-        isIntegerInRange(value.lastReading.observedTick, 0) &&
-        phase(value.lastReading.phase) &&
-        material(value.lastReading.material) &&
-        protocol(value.lastReading.protocol) &&
-        isNumberInRange(value.lastReading.integrity, 0, 100) &&
-        isIntegerInRange(value.lastReading.elapsed, 0, 24))) &&
-    isArrayOf(
-      value.evidence,
-      (entry) =>
-        isRecord(entry) &&
-        isNonEmptyString(entry.id) &&
-        isIntegerInRange(entry.recordedTick, 0) &&
-        isNonEmptyString(entry.label) &&
-        isLiteral(entry.certainty, ["observed", "provisional"]) &&
-        isNullableString(entry.supersedes),
-      50,
+    Object.entries(value).every(
+      ([key, cell]) =>
+        isIntegerInRange(Number(key), 0, 16383) &&
+        String(Number(key)) === key &&
+        isRecord(cell) &&
+        ["floor", "structure"].every((layer) => {
+          const surface = cell[layer];
+          return (
+            surface === null ||
+            (isRecord(surface) &&
+              isNonEmptyString(surface.material) &&
+              Object.hasOwn(MATERIALS, surface.material) &&
+              isNumberInRange(surface.integrity, 0, 100) &&
+              isLiteral(
+                surface.kind,
+                layer === "floor" ? ["floor"] : ["wall", "door", "closed-door"],
+              ))
+          );
+        }),
     )
   );
 }
 
-function trialReferencesValid(state: GameState): boolean {
-  const trial = state.containmentTrial;
-  const pending = ["installing", "preparing", "repairing"].includes(
-    trial.phase,
+function isTilePosition(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isIntegerInRange(value.x, 0, 127) &&
+    isIntegerInRange(value.y, 0, 127)
   );
+}
+
+function isEnvironment(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.automaticRepairs === "boolean" &&
+    isIntegerInRange(value.spentMaterials, 0, 160) &&
+    isIntegerInRange(value.nextOrder, 1) &&
+    isArrayOf(
+      value.orders,
+      (order) =>
+        isRecord(order) &&
+        isNonEmptyString(order.id) &&
+        isNonEmptyString(order.jobId) &&
+        isTilePosition(order.position) &&
+        isLiteral(order.layer, ["floor", "structure"]) &&
+        isNonEmptyString(order.material) &&
+        Object.hasOwn(MATERIALS, order.material) &&
+        isLiteral(order.phase, [
+          "collecting",
+          "delivering",
+          "fitting",
+          "completed",
+        ]) &&
+        isNullableString(order.blockedReason),
+      1000,
+    ) &&
+    isArrayOf(
+      value.sources,
+      (source) =>
+        isRecord(source) &&
+        isNonEmptyString(source.id) &&
+        isNonEmptyString(source.name) &&
+        isTilePosition(source.position) &&
+        isLiteral(source.kind, ["corrosion", "impact"]) &&
+        isNumberInRange(source.dose, 0, 1000) &&
+        isIntegerInRange(source.radius, 0, 16),
+      32,
+    )
+  );
+}
+
+function environmentReferencesValid(state: GameState): boolean {
+  const environment = state.environment;
   if (
-    ["installing", "repairing"].includes(trial.phase) !==
-    (trial.pendingMaterial !== null)
+    environment.nextOrder !== environment.orders.length + 1 ||
+    new Set(environment.orders.map((order) => order.id)).size !==
+      environment.orders.length
   )
     return false;
-  if (pending !== (trial.workOrderId !== null)) return false;
-  if ((trial.pendingMaterial !== null) !== (trial.supplyStage !== null))
-    return false;
   if (
-    Object.values(trial.barrierReadings).some(
-      (reading) => reading && reading.observedTick > state.tick,
+    environment.spentMaterials !==
+    environment.orders.reduce(
+      (sum, order) => sum + MATERIALS[order.material].cost,
+      0,
     )
   )
     return false;
   if (
-    tileAt(state.world.map, TRIAL_BARRIER_LOCATION) !==
-      (trial.integrity === 0 ? "floor" : "wall") ||
-    tileAt(state.world.map, TRIAL_SECONDARY_LOCATION) !==
-      (trial.secondaryIntegrity === 0 ? "floor" : "closed-door")
+    !isSurfaceRecord(state.world.map.surfaces) ||
+    !isSurfaceRecord(state.observations.knownSurfaces)
   )
-    return false;
-  if (trial.phase === "breached" && trial.integrity !== 0) return false;
-  if (trial.lastReading && trial.lastReading.observedTick > state.tick)
     return false;
   if (
-    new Set(trial.evidence.map(({ id }) => id)).size !==
-      trial.evidence.length ||
-    trial.evidence.some(({ recordedTick }) => recordedTick > state.tick)
+    !state.world.map.tiles.every(
+      (tile, index) =>
+        tile ===
+        (state.world.map.surfaces[index]
+          ? surfaceTile(state.world.map.surfaces[index]!)
+          : "grass"),
+    )
   )
     return false;
-  const trialJobs = state.jobs.filter(({ id }) => id.startsWith("job-trial-"));
-  if (trial.nextOrder !== trialJobs.length + 1) return false;
-  if (trial.workOrderId) {
-    const job = trialJobs.find(({ id }) => id === trial.workOrderId);
-    if (
-      job &&
-      ((trial.supplyStage === "delivering" && job.requiredWorkerId === null) ||
-        (trial.supplyStage !== "delivering" && job.requiredWorkerId !== null))
+  if (
+    !Object.entries(state.observations.knownSurfaces).every(
+      ([key, cell]) =>
+        state.observations.knownTiles[Number(key)] === surfaceTile(cell),
     )
-      return false;
-    if (
-      !job ||
-      (job.status === "completed" &&
-        !(trial.supplyStage === "fitting" && trial.maintenanceReason)) ||
-      job.skillId !==
-        (trial.phase === "preparing"
-          ? "research"
-          : trial.supplyStage === "fitting"
-            ? "engineering"
-            : "logistics") ||
-      !sameTile(
-        job.workSite,
-        trial.supplyStage === "collecting"
-          ? state.construction.stockpile
-          : TRIAL_WORK_SITE,
+  )
+    return false;
+  if (
+    new Set(environment.sources.map((source) => source.id)).size !==
+    environment.sources.length
+  )
+    return false;
+  const active = environment.orders
+    .filter((order) => order.phase !== "completed")
+    .map((order) => `${order.position.x},${order.position.y}:${order.layer}`);
+  if (
+    new Set(active).size !== active.length ||
+    state.jobs.filter((job) => job.id.startsWith("job-surface-")).length !==
+      environment.orders.length
+  )
+    return false;
+  return (
+    environment.sources.every(
+      (source) => tileAt(state.world.map, source.position) !== null,
+    ) &&
+    environment.orders.every((order, index) => {
+      if (
+        order.id !== `surface-${index + 1}` ||
+        order.jobId !== `job-${order.id}`
       )
-    )
-      return false;
-  }
-  return true;
+        return false;
+      const job = state.jobs.find((job) => job.id === order.jobId);
+      if (
+        !job ||
+        !state.world.map.surfaces[
+          order.position.y * state.world.map.width + order.position.x
+        ]?.[order.layer]
+      )
+        return false;
+      if (order.phase === "completed") return job.status === "completed";
+      if (job.status === "completed" && !order.blockedReason) return false;
+      return (
+        job.skillId ===
+          (order.phase === "fitting" ? "engineering" : "logistics") &&
+        (order.phase === "collecting"
+          ? sameTile(job.workSite, state.construction.stockpile)
+          : Math.abs(job.workSite.x - order.position.x) +
+              Math.abs(job.workSite.y - order.position.y) ===
+            1) &&
+        (order.phase === "delivering"
+          ? job.requiredWorkerId !== null
+          : job.requiredWorkerId === null)
+      );
+    })
+  );
 }
 
 function isGameState(value: unknown): value is GameState {
@@ -1189,7 +1225,7 @@ function isGameState(value: unknown): value is GameState {
     !isConstructionState(value.construction) ||
     !isRoutineState(value.routines) ||
     !isObservationState(value.observations) ||
-    !isContainmentTrial(value.containmentTrial)
+    !isEnvironment(value.environment)
   )
     return false;
   const state = value as unknown as GameState;
@@ -1204,7 +1240,7 @@ function isGameState(value: unknown): value is GameState {
     constructionReferencesValid(state) &&
     routineReferencesValid(state) &&
     observationReferencesValid(state) &&
-    trialReferencesValid(state) &&
+    environmentReferencesValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||
       personIds.includes(state.scp999.targetPersonId)) &&

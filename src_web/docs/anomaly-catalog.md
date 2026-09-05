@@ -8,21 +8,18 @@ Creator: SimFoundation project, authored with GitHub Copilot, 2026-09-05. Origin
 
 ### Gameplay Question
 
-Can the player distinguish passive material incompatibility from damage caused by an experimental stimulus, then select a material and protocol that match the intended exposure?
+Can the player inspect a spatially meaningful enclosure, distinguish floor and structural condition, and maintain compatible materials under ongoing local exposure?
 
 ### Actual Prototype Behavior
 
-- A directed-contact fixture exposes a replaceable primary wall at (70, 61). A small catch enclosure ends at a sealed composite service hatch at (70, 63). The fixture remains in the existing containment room.
-- Passive contact applies chemical degradation influenced by the barrier's chemical resistance.
-- Mechanical stimulation adds impact loading influenced by impact resistance.
-- Concrete is inexpensive and impact resistant but chemically vulnerable. Vitrified ceramic is chemically resistant but brittle under stimulation. Layered composite is more resilient against mixed loading but costs more.
-- The player can isolate manually, enable automatic isolation at 30% integrity, or deliberately permit the trial to continue to primary failure. A trial lasts at most 24 simulation minutes.
-- Preparation requires research work. Installation and repair reserve a finite kit, queue collection at Materials Store, retain the same carrier for delivery, then release engineering assembly beside the wall. A kit includes the selected primary panel and replacement secondary lining. The 24-unit allowance is separate from annex construction stock; there is no external procurement yet.
-- Zero integrity opens the affected map tile to movement and sight. Rebuilding closes the wall and seals the hatch only after assembly; an occupied footprint delays completion instead of trapping a pawn.
-- After primary failure, passive contact degrades the secondary composite lining by 0.35 integrity per minute. Its 100 integrity provides 286 minutes of response time, not permanent protection. Observed primary failure raises Orange; observed secondary failure raises Red. The specimen and any spill remain localized to this authored enclosure; there is no free-roaming AI, injury, or spreading contamination model.
-- Optional maintenance policy queues replacement when primary integrity is observed at 55% or below after exposure ends. Failed-wall packages receive priority 95. Emergency work can interrupt routine jobs while retaining progress, but cannot take staff from appointments, urgent needs, or an in-transit material delivery.
-- Reports distinguish observed barrier loss, provisional suitability, superseded assumptions, and successful bounded trials. Hidden/unobserved changes do not create findings or live readings.
+- Stationary source at (70, 58), inside a five-by-five enclosure spanning (68, 56) through (72, 60). Every installed floor and perimeter structure is an ordinary ceramic surface. The western door at (68, 58) starts sealed and can be operated from Engineering.
+- The general exposure system applies a corrosion dose of 0.2 per minute to cardinally reachable surfaces within Manhattan radius 4. Intact walls and sealed doors receive contact but block propagation. A new opening exposes further surfaces on the next tick. Corner segments become exposed only when contact can reach them.
+- Damage per surface is dose multiplied by `(10 - resistance) / 10`, rounded to hundredths. Concrete, steel, ceramic, and composite use the same catalog throughout the map. The shared API also supports impact, but AN-001 does not currently generate impact damage.
+- Failed structures stop blocking movement and sight; their floor remains independent. Failed floor finishes expose soil. No primary/secondary integrity counters or special map coordinates control damage.
+- Engineering orders replace a single installed layer, drawing from the common 160-unit construction stock. Collection, same-carrier delivery, and engineering fitting are physical jobs. Replacement does not repair neighboring tiles. Automatic maintenance uses current observed condition <=55, preserving the recorded material.
+- Recorded structural failures raise the same Orange alert anywhere in the facility. Recorded low structural integrity raises Yellow when no higher incident owns the alarm. Repair clears only the structural alert, not unrelated incidents.
+- The archive is now read-only. The earlier protocol authorization, protective-isolation checkbox, two-barrier allowance, and scripted Findings workflow were removed rather than carried into the generalized system.
 
 ### Deliberate Limitations
 
-Damage and repair currently apply to this enclosure's primary panel and sealed secondary hatch, not arbitrary world walls or doors. Each has its own observed condition; Engineering colors and maintenance discovery use those records, not hidden integrity. Surrounding structure is static. Repairs restore both barriers as one work package; independent hatch upgrades, general construction specifications, spreading hazards, and physical specimen recovery remain later extensions. A failed experiment can be rebuilt and repeated with a better material without restarting the site.
+This is a bounded contact-field approximation, not fluid transport, accumulated contamination, structural loading, fire, or a moving specimen. Soil is the implicit base layer; installed finishes and structures hold material/condition. The source remains active while simulation time runs. Inspection, access, and replacement are the available management tools; a future isolation procedure must be represented physically, not as an instant archive button. General damage and repair APIs work on any installed tile, including completed annexes.

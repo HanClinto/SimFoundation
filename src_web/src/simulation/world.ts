@@ -1,4 +1,5 @@
 import PF from "pathfinding";
+import { surfacesForTile, type TileSurfaces } from "./materials";
 
 export type TileKind = "grass" | "floor" | "wall" | "door" | "closed-door";
 
@@ -30,6 +31,7 @@ export interface SiteMap {
   readonly width: number;
   readonly height: number;
   readonly tiles: readonly TileKind[];
+  readonly surfaces: Readonly<Record<number, TileSurfaces>>;
   readonly rooms: readonly SiteRoom[];
 }
 
@@ -204,16 +206,30 @@ export function createStartingMap(): SiteMap {
     { x: 63, y: 77 },
   ])
     tiles[door.y * width + door.x] = "door";
-  for (const position of [
-    { x: 69, y: 62 },
-    { x: 71, y: 62 },
-    { x: 69, y: 63 },
-    { x: 70, y: 63 },
-    { x: 71, y: 63 },
-  ])
-    tiles[position.y * width + position.x] = "wall";
-  tiles[63 * width + 70] = "closed-door";
-  return { id: "map-site-828", width, height, tiles, rooms };
+  for (let row = 56; row <= 60; row += 1)
+    for (let column = 68; column <= 72; column += 1)
+      tiles[row * width + column] =
+        row === 56 || row === 60 || column === 68 || column === 72
+          ? "wall"
+          : "floor";
+  tiles[58 * width + 68] = "closed-door";
+  const surfaces = Object.fromEntries(
+    tiles.flatMap((tile, index) =>
+      tile === "grass" ? [] : [[index, surfacesForTile(tile)]],
+    ),
+  );
+  for (let row = 56; row <= 60; row += 1)
+    for (let column = 68; column <= 72; column += 1) {
+      const index = row * width + column;
+      const cell = surfaces[index]!;
+      surfaces[index] = {
+        floor: cell.floor ? { ...cell.floor, material: "ceramic" } : null,
+        structure: cell.structure
+          ? { ...cell.structure, material: "ceramic" }
+          : null,
+      };
+    }
+  return { id: "map-site-828", width, height, tiles, surfaces, rooms };
 }
 
 export function createStartingWorld(personIds: readonly string[]): SiteWorld {

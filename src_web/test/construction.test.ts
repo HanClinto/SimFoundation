@@ -258,7 +258,14 @@ describe("laboratory annex construction", () => {
 
   it("preserves all construction phases and material ownership through save/load", () => {
     let state = placeLaboratory(createInitialState(), { x: 59, y: 80 }).state;
+    const phases = new Set<string>();
     for (let tick = 0; tick < 160; tick += 1) {
+      const phase = state.construction.blueprints[0]!.status;
+      if (phases.has(phase) && tick % 20 !== 0) {
+        state = advanceSimulation(state);
+        continue;
+      }
+      phases.add(phase);
       let serialized = "";
       const storage = {
         getItem: () => serialized,
@@ -275,6 +282,9 @@ describe("laboratory annex construction", () => {
       expect(advanceSimulation(loaded.state)).toEqual(next);
       state = next;
     }
+    expect(phases).toEqual(
+      new Set(["reserved", "hauling", "building", "completed"]),
+    );
   });
 
   it("accepts blueprints while paused and rejects invalid commands without mutation", () => {

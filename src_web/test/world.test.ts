@@ -31,6 +31,7 @@ describe("physical site map", () => {
 
   it("rejects unreachable and out-of-map destinations", () => {
     const map: SiteMap = {
+      surfaces: {},
       id: "test",
       width: 3,
       height: 3,

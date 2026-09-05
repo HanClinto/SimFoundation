@@ -7,10 +7,7 @@ import {
 } from "../src/simulation/construction";
 import { setClinicalCarePolicy } from "../src/simulation/clinical";
 import { installCamera } from "../src/simulation/observations";
-import {
-  authorizeContainmentTrial,
-  orderTrialBarrier,
-} from "../src/simulation/containment-trial";
+import { orderSurfaceWork } from "../src/simulation/environment";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 describe("integrated site operations", () => {
@@ -28,22 +25,17 @@ describe("integrated site operations", () => {
       ],
     });
     state = placeLaboratory(state, { x: 59, y: 80 }).state;
-    state = orderTrialBarrier(state, "concrete").state;
+    state = orderSurfaceWork(
+      state,
+      { x: 61, y: 54 },
+      "structure",
+      "steel",
+    ).state;
     state = installCamera(state, { x: 56, y: 55 }).state;
-    let trialAuthorized = false;
-    let repairOrdered = false;
     let activationSeen = false;
     for (let minute = 0; minute < 1440; minute += 1) {
       for (const job of state.jobs) {
         if (job.status === "proposed") state = authorizeSiteWork(state, job.id);
-      }
-      if (state.containmentTrial.phase === "ready" && !trialAuthorized) {
-        state = authorizeContainmentTrial(state, "passive", false).state;
-        trialAuthorized = true;
-      }
-      if (state.containmentTrial.phase === "breached" && !repairOrdered) {
-        state = orderTrialBarrier(state, "ceramic").state;
-        repairOrdered = true;
       }
       state = advanceSimulation(state);
       activationSeen ||= state.scp9620.phase === "feedback-incident";
@@ -90,16 +82,7 @@ describe("integrated site operations", () => {
     expect(activationSeen).toBe(true);
     expect(state.scp9620.phase).toBe("stabilized");
     expect(state.construction.blueprints[0]?.status).toBe("completed");
-    expect(state.containmentTrial).toMatchObject({
-      material: "ceramic",
-      phase: "ready",
-      breaches: 1,
-    });
-    expect(
-      state.containmentTrial.evidence.some(
-        ({ id }) => id === "breach-concrete-passive",
-      ),
-    ).toBe(true);
+    expect(state.environment.orders[0]?.phase).toBe("completed");
     expect(
       state.personnel.every(
         (person) =>

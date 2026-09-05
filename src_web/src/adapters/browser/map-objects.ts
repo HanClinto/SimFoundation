@@ -1,11 +1,5 @@
 import type { GameState } from "../../simulation/state";
-import {
-  TRIAL_LOCATION,
-  TRIAL_BARRIER_LOCATION,
-  TRIAL_SECONDARY_LOCATION,
-  TRIAL_WORK_SITE,
-  BARRIER_MATERIALS,
-} from "../../simulation/containment-trial";
+import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { sameTile } from "../../simulation/world";
 import type { TilePosition } from "../../simulation/world";
 
@@ -25,21 +19,25 @@ export function mapObjects(state: GameState): readonly {
       name: camera.name,
       position: camera.position,
     })),
-    ...(state.containmentTrial.lastReading
-      ? [
-          {
-            id: "AN-001",
-            name: "AN-001 / The Chalk Knot",
-            position: TRIAL_LOCATION,
-          },
-        ]
-      : []),
+    ...state.environment.sources
+      .filter(
+        (source) =>
+          state.observations.knownTiles[
+            source.position.y * state.world.map.width + source.position.x
+          ] != null,
+      )
+      .map((source) => ({
+        id: source.id,
+        name: source.name,
+        position: source.position,
+      })),
   ];
 }
 
 export function engineeringRecord(
   state: GameState,
   position: TilePosition,
+  layer?: SurfaceLayer,
 ): readonly [string, string][] {
   const index = position.y * state.world.map.width + position.x;
   const known = state.observations.knownTiles[index];
@@ -65,51 +63,27 @@ export function engineeringRecord(
       position.y < room.y + room.height,
   );
   rows.push(["Room", room?.name ?? "Exterior / corridor"]);
-  const barrier = sameTile(position, TRIAL_BARRIER_LOCATION)
-    ? "primary"
-    : sameTile(position, TRIAL_SECONDARY_LOCATION)
-      ? "secondary"
-      : null;
-  if (barrier) {
-    const reading = state.containmentTrial.barrierReadings[barrier];
-    rows.push(
-      [
-        "Structure",
-        barrier === "primary"
-          ? "AN-001 replaceable primary wall"
-          : "AN-001 sealed secondary hatch",
-      ],
-      [
-        "Material",
-        reading ? BARRIER_MATERIALS[reading.material].name : "Unassessed",
-      ],
-      [
-        "Recorded integrity",
-        reading
-          ? `${reading.integrity}% / observed ${state.tick - reading.observedTick} minutes ago`
-          : "No inspection on record",
-      ],
-    );
-  } else if (
-    sameTile(position, TRIAL_LOCATION) &&
-    state.containmentTrial.lastReading
-  ) {
-    rows.push(
-      ["Barrier", state.containmentTrial.lastReading.material],
-      [
-        "Recorded integrity",
-        `${state.containmentTrial.lastReading.integrity}%`,
-      ],
-    );
-  } else
-    rows.push(
-      ["Material", "No material specification on record"],
-      ["Integrity", "Damage is not modeled for this tile"],
-    );
+  rows.push(["Ground", "Soil"]);
+  const cell = state.observations.knownSurfaces[index];
+  for (const selected of layer ? [layer] : (["floor", "structure"] as const)) {
+    const surface = cell?.[selected];
+    rows.push([
+      selected === "floor" ? "Floor" : "Structure",
+      surface
+        ? `${surface.kind} / ${MATERIALS[surface.material].name} / ${surface.integrity}%`
+        : "None installed",
+    ]);
+  }
+  const orders = state.environment.orders.filter(
+    (order) =>
+      sameTile(order.position, position) &&
+      order.phase !== "completed" &&
+      (!layer || order.layer === layer),
+  );
   const jobs = state.jobs.filter(
     (job) =>
       (sameTile(job.workSite, position) ||
-        (barrier && job.id === state.containmentTrial.workOrderId)) &&
+        orders.some((order) => order.jobId === job.id)) &&
       job.status !== "completed",
   );
   rows.push([
@@ -118,13 +92,10 @@ export function engineeringRecord(
       .map((job) => `${job.title}: ${job.assignmentReason ?? job.status}`)
       .join("; ") || "No open orders",
   ]);
-  if (barrier || sameTile(position, TRIAL_WORK_SITE))
+  for (const order of orders)
     rows.push([
-      "Maintenance",
-      state.containmentTrial.maintenanceReason ??
-        (state.containmentTrial.automaticRepairs
-          ? `Automatic / ${BARRIER_MATERIALS[state.containmentTrial.repairMaterial].name}`
-          : "Manual"),
+      "Surface order",
+      `${order.layer}: ${order.phase}${order.blockedReason ? ` / ${order.blockedReason}` : ""}`,
     ]);
   return rows;
 }

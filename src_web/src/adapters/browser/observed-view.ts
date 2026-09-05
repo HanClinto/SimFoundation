@@ -36,6 +36,7 @@ export function observedSnapshot(
         map: {
           ...snapshot.game.world.map,
           tiles: knowledge.knownTiles.map((tile) => tile ?? "grass"),
+          surfaces: knowledge.knownSurfaces,
           rooms: knowledge.knownRooms,
         },
       },

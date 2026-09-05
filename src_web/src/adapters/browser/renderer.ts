@@ -8,11 +8,7 @@ import mealUrl from "./assets/station-meal.svg";
 import breakUrl from "./assets/station-break.svg";
 import cameraUrl from "./assets/camera.svg";
 import chamberUrl from "./assets/an-001-chamber.svg";
-import {
-  TRIAL_LOCATION,
-  TRIAL_BARRIER_LOCATION,
-  TRIAL_SECONDARY_LOCATION,
-} from "../../simulation/containment-trial";
+import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
 import { mapObjects } from "./map-objects";
@@ -24,7 +20,8 @@ export interface MapCamera {
   readonly center: TilePosition;
   readonly zoom: number;
   readonly selectedId: string | null;
-  readonly overlay?: "normal" | "construction" | "engineering";
+  readonly overlay?: "normal" | "construction" | "engineering" | "materials";
+  readonly surfaceLayer?: SurfaceLayer;
   readonly draft?: {
     readonly origin: TilePosition;
     readonly valid: boolean;
@@ -185,8 +182,19 @@ export function renderSite(
         point.y > height + 40
       )
         continue;
-      const tile = knowledge.knownTiles[row * map.width + column];
-      if (tile == null) continue;
+      const recordedTile = knowledge.knownTiles[row * map.width + column];
+      if (recordedTile == null) continue;
+      const surface =
+        knowledge.knownSurfaces[row * map.width + column]?.[
+          camera.surfaceLayer ?? "structure"
+        ];
+      const tile =
+        (camera.overlay === "materials" || camera.overlay === "engineering") &&
+        camera.surfaceLayer === "floor"
+          ? surface && surface.integrity > 0
+            ? "floor"
+            : "grass"
+          : recordedTile;
       const room = map.rooms.find(
         (room) =>
           column >= room.x &&
@@ -195,25 +203,35 @@ export function renderSite(
           row < room.y + room.height,
       );
       const fill =
-        camera.overlay === "engineering"
-          ? {
-              floor: "#a5c3ba",
-              wall: "#d7b78a",
-              door: "#d8d478",
-              "closed-door": "#d8d478",
-              grass: "#6a866c",
-            }[tile]
-          : tile === "grass"
-            ? (column * 7 + row * 11) % 5 === 0
-              ? "#526e4d"
-              : "#5c7756"
-            : tile === "wall"
-              ? "#e0e3dd"
-              : tile === "door" || tile === "closed-door"
-                ? "#b69b59"
-                : room
-                  ? roomColors[room.kind]
-                  : "#e0ddd0";
+        camera.overlay === "materials"
+          ? surface
+            ? MATERIALS[surface.material].color
+            : "#657c6d"
+          : camera.overlay === "engineering" && surface
+            ? surface.integrity === 0
+              ? "#d46056"
+              : surface.integrity <= 55
+                ? "#eac65f"
+                : "#8fcab6"
+            : camera.overlay === "engineering"
+              ? {
+                  floor: "#a5c3ba",
+                  wall: "#d7b78a",
+                  door: "#d8d478",
+                  "closed-door": "#d8d478",
+                  grass: "#6a866c",
+                }[tile]
+              : tile === "grass"
+                ? (column * 7 + row * 11) % 5 === 0
+                  ? "#526e4d"
+                  : "#5c7756"
+                : tile === "wall"
+                  ? "#e0e3dd"
+                  : tile === "door" || tile === "closed-door"
+                    ? "#b69b59"
+                    : room
+                      ? roomColors[room.kind]
+                      : "#e0ddd0";
       context.save();
       context.globalAlpha = visibleTiles.has(row * map.width + column)
         ? 1
@@ -235,16 +253,25 @@ export function renderSite(
     }
   }
   if (camera.overlay === "engineering") {
-    for (const [id, position] of [
-      ["primary", TRIAL_BARRIER_LOCATION],
-      ["secondary", TRIAL_SECONDARY_LOCATION],
-    ] as const) {
-      const reading = snapshot.game.containmentTrial.barrierReadings[id];
-      if (!reading) continue;
+    for (const [key, cell] of Object.entries(knowledge.knownSurfaces)) {
+      const index = Number(key);
+      const position = {
+        x: index % map.width,
+        y: Math.floor(index / map.width),
+      };
+      if (
+        position.x < minimumX ||
+        position.x > maximumX ||
+        position.y < minimumY ||
+        position.y > maximumY
+      )
+        continue;
+      const reading = cell[camera.surfaceLayer ?? "structure"];
+      if (!reading || reading.integrity === 100) continue;
       const point = projectPosition(position, camera, width, height);
       context.save();
       context.globalAlpha =
-        reading.observedTick === snapshot.game.tick ? 1 : 0.55;
+        knowledge.tileLastSeen[index] === snapshot.game.tick ? 1 : 0.55;
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
       drawTile(
@@ -307,26 +334,29 @@ export function renderSite(
     context.restore();
   }
   const chamber = stationImages.get("chamber");
-  if (
-    snapshot.game.containmentTrial.lastReading &&
-    chamber?.complete &&
-    chamber.naturalWidth > 0
-  ) {
-    const point = projectPosition(TRIAL_LOCATION, camera, width, height);
-    context.save();
-    context.globalAlpha = visibleTiles.has(
-      TRIAL_LOCATION.y * map.width + TRIAL_LOCATION.x,
-    )
-      ? 1
-      : 0.45;
-    context.drawImage(
-      chamber,
-      point.x - 25 * camera.zoom,
-      point.y - 34 * camera.zoom,
-      50 * camera.zoom,
-      42 * camera.zoom,
-    );
-    context.restore();
+  for (const source of snapshot.game.environment.sources) {
+    if (
+      knowledge.knownTiles[source.position.y * map.width + source.position.x] !=
+        null &&
+      chamber?.complete &&
+      chamber.naturalWidth > 0
+    ) {
+      const point = projectPosition(source.position, camera, width, height);
+      context.save();
+      context.globalAlpha = visibleTiles.has(
+        source.position.y * map.width + source.position.x,
+      )
+        ? 1
+        : 0.45;
+      context.drawImage(
+        chamber,
+        point.x - 25 * camera.zoom,
+        point.y - 34 * camera.zoom,
+        50 * camera.zoom,
+        42 * camera.zoom,
+      );
+      context.restore();
+    }
   }
   const footprints = [
     ...snapshot.game.construction.blueprints
@@ -489,7 +519,7 @@ export function renderSite(
     ({ id }) => id === camera.selectedId,
   );
   const tileCoordinates = camera.selectedId?.startsWith("tile:")
-    ? camera.selectedId.slice(5).split(",").map(Number)
+    ? camera.selectedId.slice(5).split(":")[0]!.split(",").map(Number)
     : null;
   const selectedPosition =
     selectedObject?.position ??

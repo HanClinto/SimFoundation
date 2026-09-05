@@ -36,7 +36,17 @@ describe("camera placement interaction", () => {
     const controller = createController(createInitialState());
     controller.setRunning(false);
     const preview = vi.spyOn(controller, "previewLaboratory");
-    createSiteCamera(canvas, root, controller, () => {});
+    const open = vi.fn();
+    const overlay = document.createElement("select");
+    overlay.dataset.cameraOverlay = "";
+    overlay.innerHTML =
+      '<option value="normal">Standard</option><option value="materials">Materials</option>';
+    const layer = document.createElement("select");
+    layer.dataset.cameraLayer = "";
+    layer.innerHTML =
+      '<option value="structure">Structure</option><option value="floor">Floor</option>';
+    root.append(overlay, layer);
+    createSiteCamera(canvas, root, controller, open);
     const mode = root.querySelector<HTMLSelectElement>("[data-camera-mode]")!;
     mode.value = "laboratory";
     mode.dispatchEvent(new window.Event("change"));
@@ -60,5 +70,11 @@ describe("camera placement interaction", () => {
       controller.getSnapshot().game.construction.blueprints[0]?.origin,
     ).toEqual(pinned);
     expect(pinned).toEqual({ x: 63, y: 83 });
+    overlay.value = "materials";
+    overlay.dispatchEvent(new window.Event("change"));
+    layer.value = "floor";
+    layer.dispatchEvent(new window.Event("change"));
+    pointer("dblclick", 0, 0);
+    expect(open).toHaveBeenLastCalledWith("tile:63,83:floor");
   });
 });
