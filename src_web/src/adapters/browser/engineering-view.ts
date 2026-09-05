@@ -8,7 +8,7 @@ import {
   type SurfaceLayer,
 } from "../../simulation/materials";
 import { sameTile } from "../../simulation/world";
-import type { TilePosition } from "../../simulation/world";
+import type { DoorPolicy, TilePosition } from "../../simulation/world";
 import { engineeringRecord } from "./map-objects";
 import type { MapPerspective } from "./map-settings";
 
@@ -47,6 +47,12 @@ export function createEngineeringWindow(
   const doorButton = element.querySelector<HTMLButtonElement>(
     "[data-operate-door]",
   )!;
+  const doorControls = document.createElement("div");
+  doorControls.className = "field-row";
+  doorControls.innerHTML =
+    '<label for="door-policy">Door policy</label><select id="door-policy"><option value="automatic">Automatic</option><option value="held-open">Held open</option><option value="held-closed">Held closed</option></select>';
+  doorButton.parentElement!.after(doorControls);
+  const doorPolicy = doorControls.querySelector<HTMLSelectElement>("select")!;
   const automatic = element.querySelector<HTMLInputElement>(
     "#automatic-surface-repairs",
   )!;
@@ -67,6 +73,18 @@ export function createEngineeringWindow(
   let position: TilePosition | null = null;
   let perspective: MapPerspective = "recorded";
   let current = controller.getSnapshot();
+  doorPolicy.addEventListener("change", () => {
+    if (!position) return;
+    const requested = doorPolicy.value as DoorPolicy;
+    const next = controller.setDoorPolicy(position, requested);
+    render(next);
+    feedback.textContent =
+      next.game.world.map.doorPolicies?.[
+        position.y * next.game.world.map.width + position.x
+      ] === requested
+        ? "Door policy saved."
+        : "Door policy could not be applied; clear the doorway of people and objects.";
+  });
   layerSelect.addEventListener("change", () => render(current));
   materialSelect.addEventListener("change", () => render(current));
   automatic.addEventListener("change", () =>
@@ -144,6 +162,8 @@ export function createEngineeringWindow(
       !surface ||
       !["door", "closed-door"].includes(surface.kind);
     doorButton.disabled = !surface || surface.integrity === 0;
+    doorControls.hidden = doorButton.hidden;
+    doorPolicy.disabled = doorButton.disabled;
     const doorSetting = position
       ? snapshot.game.world.map.surfaces[
           position.y * snapshot.game.world.map.width + position.x
@@ -151,6 +171,11 @@ export function createEngineeringWindow(
       : null;
     doorButton.textContent =
       doorSetting === "closed-door" ? "Open door" : "Close door";
+    doorPolicy.value = position
+      ? (snapshot.game.world.map.doorPolicies?.[
+          position.y * snapshot.game.world.map.width + position.x
+        ] ?? (doorSetting === "closed-door" ? "held-closed" : "held-open"))
+      : "automatic";
     if (!position) {
       element.querySelector("[data-tile-record]")!.replaceChildren();
       return;

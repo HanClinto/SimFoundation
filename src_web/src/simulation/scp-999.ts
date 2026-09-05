@@ -3,7 +3,7 @@ import {
   type PersonnelEffect,
   type PersonnelRecord,
 } from "./personnel";
-import { findRoute, type SiteWorld } from "./world";
+import { findRoute, stepWorld, type SiteWorld } from "./world";
 import { canObserve } from "./observations";
 
 const INTERACTION_DURATION = 4;
@@ -227,9 +227,7 @@ export function advanceScp999(
         interactionEndsAtTick: null,
       },
       personnel,
-      world: step
-        ? { ...world, positions: { ...world.positions, "SCP-999": step } }
-        : world,
+      world: step ? stepWorld(world, "SCP-999", step) : world,
     };
   }
 
@@ -242,10 +240,7 @@ export function advanceScp999(
         interactionEndsAtTick: null,
       },
       personnel,
-      world: {
-        ...world,
-        positions: { ...world.positions, "SCP-999": route[0]! },
-      },
+      world: stepWorld(world, "SCP-999", route[0]!),
     };
   }
   return {

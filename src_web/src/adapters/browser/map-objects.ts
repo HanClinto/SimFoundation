@@ -124,6 +124,12 @@ export function engineeringRecord(
         : "None installed",
     ]);
   }
+  if (cell?.structure && ["door", "closed-door"].includes(cell.structure.kind))
+    rows.push([
+      "Door policy",
+      state.world.map.doorPolicies?.[index] ??
+        (cell.structure.kind === "door" ? "held-open" : "held-closed"),
+    ]);
   const orders = state.environment.orders.filter(
     (order) =>
       sameTile(order.position, position) &&

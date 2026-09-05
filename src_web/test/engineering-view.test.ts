@@ -85,4 +85,17 @@ it("orders the selected layer and operates real doors without granting research"
     .querySelector<HTMLInputElement>("#automatic-surface-repairs")!
     .click();
   expect(controller.getSnapshot().game.environment.automaticRepairs).toBe(true);
+  const policy = view.element.querySelector<HTMLSelectElement>("#door-policy")!;
+  expect(policy.value).toBe("held-closed");
+  policy.value = "automatic";
+  policy.dispatchEvent(new window.Event("change"));
+  expect(
+    controller.getSnapshot().game.world.map.doorPolicies?.[55 * 128 + 61],
+  ).toBe("automatic");
+  expect(
+    view.element.querySelector("[data-surface-feedback]")?.textContent,
+  ).toBe("Door policy saved.");
+  expect(
+    view.element.querySelector("[data-tile-record]")?.textContent,
+  ).toContain("Door policyautomatic");
 });

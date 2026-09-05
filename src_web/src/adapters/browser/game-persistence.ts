@@ -1048,6 +1048,26 @@ function isEnvironment(value: unknown): boolean {
 
 function environmentReferencesValid(state: GameState): boolean {
   const environment = state.environment;
+  const policies = state.world.map.doorPolicies;
+  if (
+    policies !== undefined &&
+    (!isRecord(policies) ||
+      !Object.entries(policies).every(([key, policy]) => {
+        const index = Number(key);
+        const surface = state.world.map.surfaces[index]?.structure;
+        return (
+          String(index) === key &&
+          isIntegerInRange(index, 0, state.world.map.tiles.length - 1) &&
+          isLiteral(policy, ["automatic", "held-open", "held-closed"]) &&
+          surface &&
+          ["door", "closed-door"].includes(surface.kind) &&
+          (surface.integrity === 0 ||
+            policy === "automatic" ||
+            surface.kind === (policy === "held-open" ? "door" : "closed-door"))
+        );
+      }))
+  )
+    return false;
   if (
     environment.nextOrder !== environment.orders.length + 1 ||
     new Set(environment.orders.map((order) => order.id)).size !==

@@ -1,4 +1,6 @@
 import { observeSite } from "./observations";
+import { closeAutomaticDoors } from "./world";
+import { objectFootprint } from "./objects";
 import { discoverStorageWork, refreshMealSummary } from "./storage";
 import { advanceObjectWork } from "./object-work";
 import {
@@ -17,6 +19,19 @@ import { advanceRoutines, routineUnavailableIds } from "./routines";
 
 export function advanceSimulation(state: GameState): GameState {
   const tick = state.tick + 1;
+  state = {
+    ...state,
+    world: closeAutomaticDoors(
+      state.world,
+      state.objects.items.flatMap((item) =>
+        item.location.kind === "ground"
+          ? item.installed
+            ? objectFootprint(item, item.location.position)
+            : [item.location.position]
+          : [],
+      ),
+    ),
+  };
   state = advanceRoutines(
     refreshMealSummary(
       discoverClinicalWork({

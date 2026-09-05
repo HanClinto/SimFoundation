@@ -6,6 +6,7 @@ import type {
 import {
   findRoute,
   sameTile,
+  stepWorld,
   tileAt,
   type SiteWorld,
   type TilePosition,
@@ -141,6 +142,14 @@ export function advanceJobs(
 ): JobAdvanceResult {
   const people = new Map(personnel.map((person) => [person.id, person]));
   const positions = { ...world.positions };
+  let map = world.map;
+  const move = (id: string, destination: TilePosition) => {
+    const next = stepWorld({ map, positions }, id, destination);
+    const opened = next.map !== map;
+    map = next.map;
+    positions[id] = next.positions[id]!;
+    return opened;
+  };
   const busyPersonIds = new Set([
     ...unavailablePersonIds,
     ...jobs.flatMap((job) =>
@@ -347,24 +356,30 @@ export function advanceJobs(
     const patientTravelling =
       patientPosition && !sameTile(patientPosition, job.workSite);
     if (patient) {
-      if (patientTravelling && patientRoute?.[0])
-        positions[patient.id] = patientRoute[0];
+      const opening =
+        patientTravelling && patientRoute?.[0]
+          ? move(patient.id, patientRoute[0])
+          : false;
       people.set(patient.id, {
         ...patient,
         currentJobId: job.id,
-        activity: patientTravelling
-          ? "Travelling to clinical appointment"
-          : "Attending clinical appointment",
+        activity: opening
+          ? "Opening door"
+          : patientTravelling
+            ? "Travelling to clinical appointment"
+            : "Attending clinical appointment",
       });
     }
     if (workerTravelling || patientTravelling) {
-      if (workerTravelling) positions[worker.id] = route[0]!;
+      const opening = workerTravelling ? move(worker.id, route[0]!) : false;
       people.set(worker.id, {
         ...worker,
         currentJobId: job.id,
-        activity: workerTravelling
-          ? `Travelling: ${job.title}`
-          : "Awaiting patient arrival",
+        activity: opening
+          ? "Opening door"
+          : workerTravelling
+            ? `Travelling: ${job.title}`
+            : "Awaiting patient arrival",
       });
       advancedJobsById.set(job.id, {
         ...job,
@@ -425,6 +440,6 @@ export function advanceJobs(
   return {
     jobs: jobs.map((job) => advancedJobsById.get(job.id) ?? job),
     personnel: [...people.values()],
-    world: { ...world, positions },
+    world: { ...world, map, positions },
   };
 }

@@ -1,7 +1,7 @@
 import type { GameState } from "./state";
 import type { PersonnelRecord } from "./personnel";
 import { mealCollectionPoint, refreshMealSummary } from "./storage";
-import { findRoute, sameTile, type TilePosition } from "./world";
+import { findRoute, sameTile, stepWorld, type TilePosition } from "./world";
 import {
   consumeObject,
   reserveSupply,
@@ -126,6 +126,14 @@ export function advanceRoutines(state: GameState): GameState {
   let objects = state.objects;
   const people = new Map(state.personnel.map((person) => [person.id, person]));
   const positions = { ...state.world.positions };
+  let map = state.world.map;
+  const move = (id: string, destination: TilePosition) => {
+    const next = stepWorld({ map, positions }, id, destination);
+    const opened = next.map !== map;
+    map = next.map;
+    positions[id] = next.positions[id]!;
+    return opened;
+  };
   const activities = { ...state.routines.activities };
   const blockedReasons: Record<string, string> = {};
   let pantryMeals = state.routines.pantryMeals;
@@ -281,10 +289,12 @@ export function advanceRoutines(state: GameState): GameState {
         continue;
       }
       if (!sameTile(origin!, pantry)) {
-        positions[id] = pantryRoute[0]!;
+        const opening = move(id, pantryRoute[0]!);
         people.set(id, {
           ...person,
-          activity: "Collecting a meal from the pantry",
+          activity: opening
+            ? "Opening door"
+            : "Collecting a meal from the pantry",
         });
         continue;
       }
@@ -349,10 +359,12 @@ export function advanceRoutines(state: GameState): GameState {
       continue;
     }
     if (!sameTile(origin!, station.position)) {
-      positions[id] = route[0]!;
+      const opening = move(id, route[0]!);
       people.set(id, {
         ...person,
-        activity: `Travelling: ${activity.kind === "meal" ? "Meal break" : activity.kind === "sleep" ? "Rest" : "Restorative break"}`,
+        activity: opening
+          ? "Opening door"
+          : `Travelling: ${activity.kind === "meal" ? "Meal break" : activity.kind === "sleep" ? "Rest" : "Restorative break"}`,
       });
       continue;
     }
@@ -424,7 +436,7 @@ export function advanceRoutines(state: GameState): GameState {
     objects,
     jobs,
     personnel: [...people.values()],
-    world: { ...state.world, positions },
+    world: { ...state.world, map, positions },
     routines: {
       ...state.routines,
       pantryMeals,

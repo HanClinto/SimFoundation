@@ -89,7 +89,7 @@ Beds have a two-tile footprint; one tile is the interaction position and the rem
 
 Building materials and packaged meals are real counted stacks with ground/carrier locations and exclusive work reservations. Surface replacement and annex construction reserve, pick up, deliver, and consume those objects. Pantry replenishment transports meal stacks; individual pawns collect a portion and carry it to a seat before eating. Moving stock changes subsequent collection destinations. The displayed material and meal counters are validated summaries, not additional copies of the inventory.
 
-World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **27**, requiring a fresh development session. This first object set does not add crafting, procurement, arbitrary containers, weight limits, or a universal equipment system. Cameras retain their existing specialized device/kit workflow.
+World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **28**, requiring a fresh development session. This first object set does not add crafting, procurement, arbitrary containers, weight limits, or a universal equipment system. Cameras retain their existing specialized device/kit workflow.
 
 ### Storage and Hauling
 
@@ -113,7 +113,15 @@ The **Layers** panel separates World/Recorded perspective, Site/Materials base m
 
 The map shows bright live coverage, dim remembered terrain, unknown areas beyond the initial survey, and labeled last-sighting markers. Unseen anomalies continue simulating, but their registry and map information remain at the last recorded observation. Camera placement and range are provisional abstractions; power, communications failures, and directional lenses remain future work.
 
-### Physical Containment and Repair
+### Doors and Passage
+
+Engineering exposes **Automatic**, **Held open**, and **Held closed** door policies. Starting doors and new annex doors are automatic: routes may pass through them, but a pawn at a closed doorway spends one movement step opening it before crossing. Work, clinical appointments, hauling, routines, and SCP-999 all use the same passage rule. Opening staff show an action bubble. Automatic doors close at the start of a tick once no pawn or ground object is on or cardinally adjacent to the doorway.
+
+Held-closed doors block route planning; a delivery can stall with its stock still reserved or carried, then resume when access is restored. Closed doors also block sight and the existing exposure propagation; an opening changes both without separate containment scripting. Material failure leaves a passable breach, and replacement restores the door with its retained policy. Closure commands refuse a doorway occupied by a pawn or object. Policies are administrative settings; Recorded physical state still reflects the last observation.
+
+Held settings are immediate godlike commands, not remote-control hardware or worker jobs. There are no access badges, powered locks, door speeds, queues, or hard pawn collision in this checkpoint. Automatic doors do not distinguish personnel from SCP-999 and are not secure barriers against it.
+
+### Surface Repair
 
 Every installed floor, wall, and door has its own material and integrity. Soil is the base ground; floors and structures are independent layers. Failed walls cease blocking movement and sight but leave the floor beneath them intact. Failed flooring exposes soil. Starting rooms and newly built annexes use the same shared material catalog: concrete, steel, ceramic, and composite.
 
@@ -121,7 +129,7 @@ Engineering can order replacement of either installed layer using the shared con
 
 The general exposure API remains available to authored scenarios and tests: bounded sources reach cardinally connected surfaces, stop at intact walls or sealed doors, and reach neighboring space after a barrier opens. The default source list is empty. The AN-001 scenario, bespoke enclosure, and dedicated window were removed from active play; its design notes remain archived in the catalog.
 
-The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 27; earlier development saves require a fresh session.
+The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 28; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 

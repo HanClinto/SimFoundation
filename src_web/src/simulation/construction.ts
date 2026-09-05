@@ -436,17 +436,23 @@ export function advanceConstruction(state: GameState): GameState {
         };
       objects = consumed;
       const surfaces = { ...map.surfaces };
+      const doorPolicies = { ...map.doorPolicies };
       for (const replacement of replacementTiles) {
         tiles[replacement.position.y * map.width + replacement.position.x] =
           replacement.tile;
         surfaces[replacement.position.y * map.width + replacement.position.x] =
           surfacesForTile(replacement.tile);
+        if (replacement.tile === "door")
+          doorPolicies[
+            replacement.position.y * map.width + replacement.position.x
+          ] = "automatic";
       }
       const number = blueprint.id.split("-").at(-1);
       map = {
         ...map,
         tiles,
         surfaces,
+        doorPolicies,
         rooms: [
           ...map.rooms,
           {

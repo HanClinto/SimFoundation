@@ -1,5 +1,6 @@
 import PF from "pathfinding";
 import {
+  replaceSurface,
   surfacesForTile,
   type MaterialId,
   type TileSurfaces,
@@ -37,7 +38,105 @@ export interface SiteMap {
   readonly tiles: readonly TileKind[];
   readonly surfaces: Readonly<Record<number, TileSurfaces>>;
   readonly objectBlocks?: readonly number[];
+  readonly doorPolicies?: Readonly<Record<number, DoorPolicy>>;
   readonly rooms: readonly SiteRoom[];
+}
+
+export type DoorPolicy = "automatic" | "held-open" | "held-closed";
+
+export function setDoorPolicy(
+  world: SiteWorld,
+  position: TilePosition,
+  policy: DoorPolicy,
+  obstructions: readonly TilePosition[] = [],
+): SiteWorld {
+  const tile = tileAt(world.map, position);
+  if (
+    !["automatic", "held-open", "held-closed"].includes(policy) ||
+    (tile !== "door" && tile !== "closed-door")
+  )
+    return world;
+  if (
+    policy === "held-closed" &&
+    [...Object.values(world.positions), ...obstructions].some((other) =>
+      sameTile(other, position),
+    )
+  )
+    return world;
+  const index = position.y * world.map.width + position.x;
+  const surface = world.map.surfaces[index]!.structure!;
+  const map =
+    policy === "automatic"
+      ? world.map
+      : replaceSurface(world.map, position, "structure", {
+          ...surface,
+          kind: policy === "held-open" ? "door" : "closed-door",
+        });
+  return {
+    ...world,
+    map: { ...map, doorPolicies: { ...map.doorPolicies, [index]: policy } },
+  };
+}
+
+export function canTraverse(map: SiteMap, position: TilePosition): boolean {
+  return (
+    isWalkable(map, position) ||
+    (tileAt(map, position) === "closed-door" &&
+      map.doorPolicies?.[position.y * map.width + position.x] === "automatic" &&
+      !map.objectBlocks?.includes(position.y * map.width + position.x))
+  );
+}
+
+export function stepWorld(
+  world: SiteWorld,
+  id: string,
+  destination: TilePosition,
+): SiteWorld {
+  const origin = world.positions[id];
+  if (
+    !origin ||
+    Math.abs(origin.x - destination.x) + Math.abs(origin.y - destination.y) !==
+      1 ||
+    !canTraverse(world.map, destination)
+  )
+    return world;
+  if (tileAt(world.map, destination) === "closed-door") {
+    const surface =
+      world.map.surfaces[destination.y * world.map.width + destination.x]!
+        .structure!;
+    return {
+      ...world,
+      map: replaceSurface(world.map, destination, "structure", {
+        ...surface,
+        kind: "door",
+      }),
+    };
+  }
+  return { ...world, positions: { ...world.positions, [id]: destination } };
+}
+
+export function closeAutomaticDoors(
+  world: SiteWorld,
+  obstructions: readonly TilePosition[] = [],
+): SiteWorld {
+  let map = world.map;
+  for (const [key, policy] of Object.entries(map.doorPolicies ?? {})) {
+    const index = Number(key);
+    if (policy !== "automatic" || map.tiles[index] !== "door") continue;
+    const position = { x: index % map.width, y: Math.floor(index / map.width) };
+    if (
+      [...Object.values(world.positions), ...obstructions].some(
+        (other) =>
+          Math.abs(other.x - position.x) + Math.abs(other.y - position.y) <= 1,
+      )
+    )
+      continue;
+    map = replaceSurface(map, position, "structure", {
+      ...map.surfaces[index]!.structure!,
+      kind: "closed-door",
+    });
+  }
+  return map === world.map ? world : { ...world, map };
 }
 
 export interface SiteWorld {
@@ -77,11 +176,11 @@ export function findRoute(
   start: TilePosition,
   target: TilePosition,
 ): readonly TilePosition[] | null {
-  if (!isWalkable(map, start) || !isWalkable(map, target)) return null;
+  if (!canTraverse(map, start) || !canTraverse(map, target)) return null;
   if (sameTile(start, target)) return [];
   const matrix = Array.from({ length: map.height }, (_, row) =>
     Array.from({ length: map.width }, (_, column) =>
-      isWalkable(map, { x: column, y: row }) ? 0 : 1,
+      canTraverse(map, { x: column, y: row }) ? 0 : 1,
     ),
   );
   const finder = new PF.AStarFinder({
@@ -250,7 +349,20 @@ export function createStartingMap(): SiteMap {
       }
     }
   }
-  return { id: "map-site-828", width, height, tiles, surfaces, rooms };
+  const doorPolicies = Object.fromEntries(
+    tiles.flatMap((tile, index) =>
+      tile === "door" ? [[index, "automatic" as const]] : [],
+    ),
+  );
+  return {
+    id: "map-site-828",
+    width,
+    height,
+    tiles,
+    surfaces,
+    rooms,
+    doorPolicies,
+  };
 }
 
 export function createStartingWorld(personIds: readonly string[]): SiteWorld {

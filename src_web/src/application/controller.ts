@@ -18,17 +18,12 @@ import {
   objectPlacementIssue,
   type ObjectCommandCode,
 } from "../simulation/object-work";
-import type { ObjectOrientation } from "../simulation/objects";
+import { objectFootprint, type ObjectOrientation } from "../simulation/objects";
 import {
   orderSurfaceWork,
   type SurfaceOrderCode,
 } from "../simulation/environment";
-import {
-  replaceSurface,
-  surfaceAt,
-  type MaterialId,
-  type SurfaceLayer,
-} from "../simulation/materials";
+import { type MaterialId, type SurfaceLayer } from "../simulation/materials";
 import { observeSite } from "../simulation/observations";
 import type { GameState } from "../simulation/state";
 import {
@@ -38,7 +33,11 @@ import {
   validateLaboratoryPlacement,
   type ConstructionCode,
 } from "../simulation/construction";
-import type { TilePosition } from "../simulation/world";
+import {
+  setDoorPolicy,
+  type DoorPolicy,
+  type TilePosition,
+} from "../simulation/world";
 import {
   requestAssessment,
   setClinicalCarePolicy,
@@ -96,6 +95,7 @@ export interface GameController {
   ): { code: SurfaceOrderCode; snapshot: ControllerSnapshot };
   setAutomaticRepairs(enabled: boolean): ControllerSnapshot;
   setDoorOpen(position: TilePosition, open: boolean): ControllerSnapshot;
+  setDoorPolicy(position: TilePosition, policy: DoorPolicy): ControllerSnapshot;
   getSnapshot(): ControllerSnapshot;
   advance(tickCount?: number): ControllerSnapshot;
   replaceState(nextState: GameState): ControllerSnapshot;
@@ -136,6 +136,24 @@ export function createController(initialState: GameState): GameController {
     const snapshot = getSnapshot();
     for (const listener of listeners) listener(snapshot);
     return snapshot;
+  }
+
+  function applyDoorPolicy(
+    position: TilePosition,
+    policy: DoorPolicy,
+  ): ControllerSnapshot {
+    const obstructions = state.objects.items.flatMap((item) =>
+      item.location.kind === "ground"
+        ? item.installed
+          ? objectFootprint(item, item.location.position)
+          : [item.location.position]
+        : [],
+    );
+    state = observeSite({
+      ...state,
+      world: setDoorPolicy(state.world, position, policy, obstructions),
+    });
+    return publish();
   }
 
   return {
@@ -194,30 +212,11 @@ export function createController(initialState: GameState): GameController {
       return publish();
     },
     setDoorOpen(position, open) {
-      const door = surfaceAt(state.world.map, position, "structure");
-      if (
-        typeof open === "boolean" &&
-        door &&
-        door.integrity > 0 &&
-        ["door", "closed-door"].includes(door.kind) &&
-        (open ||
-          !Object.values(state.world.positions).some(
-            (occupant) =>
-              occupant.x === position.x && occupant.y === position.y,
-          ))
-      )
-        state = observeSite({
-          ...state,
-          world: {
-            ...state.world,
-            map: replaceSurface(state.world.map, position, "structure", {
-              ...door,
-              kind: open ? "door" : "closed-door",
-            }),
-          },
-        });
+      if (typeof open === "boolean")
+        return applyDoorPolicy(position, open ? "held-open" : "held-closed");
       return publish();
     },
+    setDoorPolicy: applyDoorPolicy,
 
     previewCamera(position) {
       return cameraPlacementIssue(state, position);

@@ -61,7 +61,9 @@ export function pawnCues(
     (item) =>
       item.location.kind === "carried" && item.location.personId === personId,
   );
-  if (routine?.kind === "meal" && carried?.kind === "meals") {
+  if (perspective === "world" && person.activity === "Opening door") {
+    action = { icon: "tools", kind: "action", label: "Opening door" };
+  } else if (routine?.kind === "meal" && carried?.kind === "meals") {
     action = {
       icon: "meal",
       kind: "action",
