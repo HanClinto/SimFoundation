@@ -3,13 +3,9 @@ import type {
   GameController,
 } from "../../application/controller";
 import type { TilePosition } from "../../simulation/world";
-import { availableResearchLaboratories } from "../../simulation/construction";
 import { observedSnapshot } from "./observed-view";
 import { cameraMessages } from "./surveillance-view";
-import {
-  constructionMessages,
-  updateConstructionRegister,
-} from "./construction-view";
+import { constructionMessages } from "./construction-view";
 import {
   renderSite,
   projectPosition,
@@ -34,10 +30,6 @@ export function createSiteCamera(
   const entitySelect = windowElement.querySelector<HTMLSelectElement>(
     "[data-camera-entity]",
   )!;
-  const researchLaboratory = windowElement.querySelector<HTMLSelectElement>(
-    "[data-research-laboratory]",
-  )!;
-  let laboratorySignature = "";
   const status = windowElement.querySelector<HTMLElement>(
     "[data-camera-status]",
   )!;
@@ -54,13 +46,9 @@ export function createSiteCamera(
   const materials = windowElement.querySelector<HTMLElement>(
     "[data-construction-materials]",
   )!;
-  const register = windowElement.querySelector<HTMLElement>(
-    "[data-construction-register]",
-  )!;
   const placeButton = windowElement.querySelector<HTMLButtonElement>(
     '[data-camera-action="place"]',
   )!;
-  let registerSignature = "";
   let snapshot = observedSnapshot(controller.getSnapshot());
   entitySelect.replaceChildren(
     new Option("Select personnel", ""),
@@ -91,15 +79,6 @@ export function createSiteCamera(
         : `${snapshot.game.construction.availableMaterials} materials available`;
     placeButton.textContent =
       mode.value === "camera" ? "Install Camera" : "Authorize Annex";
-    const laboratories = availableResearchLaboratories(snapshot.game);
-    const nextLaboratorySignature = laboratories.map(({ id }) => id).join(",");
-    if (nextLaboratorySignature !== laboratorySignature) {
-      researchLaboratory.replaceChildren(
-        ...laboratories.map((room) => new Option(room.name, room.id)),
-      );
-      laboratorySignature = nextLaboratorySignature;
-    }
-    researchLaboratory.value = snapshot.game.construction.researchLaboratoryId;
     placeButton.disabled = !camera.draft?.valid;
     if (camera.draft) {
       if (mode.value === "camera") {
@@ -113,18 +92,6 @@ export function createSiteCamera(
           ? constructionMessages[code]
           : "Laboratory annex: 9 x 7 / 40 material units / entrance marked.";
       }
-    }
-    const signature = JSON.stringify([
-      snapshot.game.construction,
-      snapshot.game.jobs.map(({ id, status, assignmentReason }) => [
-        id,
-        status,
-        assignmentReason,
-      ]),
-    ]);
-    if (signature !== registerSignature) {
-      updateConstructionRegister(register, snapshot.game);
-      registerSignature = signature;
     }
     const selected = snapshot.game.personnel.find(
       ({ id }) => id === camera.selectedId,
@@ -192,12 +159,6 @@ export function createSiteCamera(
     }
   });
 
-  researchLaboratory.addEventListener("change", () => {
-    const result = controller.setResearchLaboratory(researchLaboratory.value);
-    feedback.textContent = constructionMessages[result.code];
-    render(result.snapshot);
-  });
-
   function focus(position: TilePosition) {
     camera = {
       ...camera,
@@ -259,21 +220,6 @@ export function createSiteCamera(
     if (action === "inspect" && camera.selectedId)
       openEntity(camera.selectedId);
     if (action === "place") placeDraft();
-    const target = (event.target as Element).closest<HTMLElement>(
-      "[data-focus-blueprint], [data-cancel-blueprint]",
-    );
-    const blueprint = snapshot.game.construction.blueprints.find(
-      ({ id }) => id === target?.dataset.focusBlueprint,
-    );
-    if (blueprint)
-      focus({ x: blueprint.origin.x + 4, y: blueprint.origin.y + 3 });
-    if (target?.dataset.cancelBlueprint) {
-      const result = controller.cancelLaboratory(
-        target.dataset.cancelBlueprint,
-      );
-      feedback.textContent = constructionMessages[result.code];
-      render(result.snapshot);
-    }
   });
 
   const localPoint = (event: MouseEvent): TilePosition => {
@@ -461,6 +407,10 @@ export function createSiteCamera(
     focus,
     planCamera: () => {
       mode.value = "camera";
+      mode.dispatchEvent(new Event("change"));
+    },
+    planLaboratory: () => {
+      mode.value = "laboratory";
       mode.dispatchEvent(new Event("change"));
     },
   };

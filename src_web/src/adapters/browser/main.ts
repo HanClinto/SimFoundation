@@ -39,6 +39,7 @@ import { observedSnapshot } from "./observed-view";
 import { createSurveillanceView } from "./surveillance-view";
 import { createContainmentTrialWindow } from "./containment-trial-view";
 import { TRIAL_LOCATION } from "../../simulation/containment-trial";
+import { createConstructionWindow } from "./construction-view";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
@@ -127,6 +128,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="day-planner-window"><img class="subsystem-icon-asset" data-window-icon src="${controlIconUrl}" alt="" /><span>Day Planner</span></button>
           <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
           <button class="subsystem-icon" type="button" data-open-window="containment-study-window"><img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" /><span>AN-001 Study</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="construction-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Construction</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -135,12 +137,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>11 available</dd></div>
+            <div><dt>Systems</dt><dd>12 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">11 objects</p>
+        <p class="status-bar-field">12 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -165,13 +167,13 @@ app.innerHTML = `
       <button type="button" data-camera-action="inspect" disabled>Open Record</button>
       <select data-camera-mode aria-label="Map mode"><option value="inspect">Inspect</option><option value="laboratory">Plan laboratory</option><option value="camera">Place camera</option></select>
       <button type="button" data-camera-action="place" disabled>Authorize Annex</button>
+      <button type="button" data-open-related-window="construction-window">Construction</button>
     </div>
     <div class="window-body camera-body">
       <div class="viewport-shell">
         <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
       </div>
       <div class="construction-feedback"><span data-construction-materials></span><span data-construction-feedback role="status"></span></div>
-      <details class="construction-register"><summary>Construction register</summary><label class="research-laboratory-choice">Research laboratory <select data-research-laboratory aria-label="Research laboratory"></select></label><div class="construction-table-scroll"><table aria-label="Laboratory annexes"><thead><tr><th>Annex</th><th>Status</th><th>Orders</th></tr></thead><tbody data-construction-register></tbody></table></div></details>
       <div class="status-bar">
         <p class="status-bar-field">OBSERVATIONS</p>
         <p class="status-bar-field" id="camera-game-time">08:00</p>
@@ -730,6 +732,27 @@ const containmentStudy = createContainmentTrialWindow(app, controller, () => {
   windowManager.open("camera-window");
   siteCamera.focus(TRIAL_LOCATION);
 });
+const constructionView = createConstructionWindow(
+  app,
+  controller,
+  () => {
+    windowManager.open("camera-window");
+    siteCamera.planLaboratory();
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+);
+windowManager.register(constructionView.element, {
+  id: "construction-window",
+  title: "Construction",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 220, top: 150, width: 590, height: 400 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
 windowManager.register(containmentStudy.element, {
   id: "containment-study-window",
   title: "AN-001 Study",
@@ -988,6 +1011,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 function render(snapshot: ControllerSnapshot): void {
   snapshot = observedSnapshot(snapshot);
   containmentStudy.render(snapshot);
+  constructionView.render(snapshot);
   dayPlanner.render(snapshot);
   surveillanceView.render(snapshot);
   clinicalCareView.render(snapshot);

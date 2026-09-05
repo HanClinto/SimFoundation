@@ -365,6 +365,25 @@
   overflow: auto;
   padding: 12px;
 }
+
+.construction-body {
+  overflow: auto;
+  padding: 12px;
+  background: #f4f6ed;
+}
+.construction-body .construction-table-scroll {
+  max-height: none;
+}
+.construction-body table {
+  width: 100%;
+}
+.construction-body td:last-child {
+  white-space: nowrap;
+}
+.construction-body td button {
+  min-width: 48px;
+  margin: 0 3px;
+}
 .planner-toolbar {
   display: flex;
   gap: 8px;

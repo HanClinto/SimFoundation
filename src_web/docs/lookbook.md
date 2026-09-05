@@ -211,6 +211,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 - Site 828 opens as a facility folder.
 - Camera Feed owns the isometric map window.
+- Construction is a separate modeless facility inspector, not a Camera Feed tab or embedded register. It owns project status, cancellation, and research-laboratory selection. Plan and Locate commands coordinate with Camera Feed, which owns the spatial preview and placement input.
 - Work Orders owns proposed, available, active, and completed facility jobs. Authorization is a player decision; qualified pawn selection and progress are simulation-owned and inspectable.
 - Anomaly Registry owns resident-anomaly and experiment protocol state. SCP-9620 reports the current authorized phase and earned observations; SCP-999 reports current supervised contact, recovery timing, and the last completed personnel interaction.
 - Alarm Manager owns live facility incident status and response configuration. Escalation opens it automatically; Yellow incidents reduce simulation speed to 1x and link directly to response Work Orders.
