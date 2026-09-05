@@ -16,11 +16,93 @@ import {
 } from "../src/adapters/browser/game-persistence";
 
 describe("laboratory annex construction", () => {
+  it("continues the expansion, experiment, and recovery loop identically after reload", () => {
+    const original = createController(createInitialState(828));
+    original.placeLaboratory({ x: 59, y: 80 });
+    original.advance(160);
+    original.setResearchLaboratory("room-blueprint-lab-1");
+    original.authorizeJob("job-calibrate-9620-sensors");
+    const saved = original.advance(3).game;
+    const loaded = loadGameState({
+      getItem: () => JSON.stringify(saved),
+      setItem: () => {},
+    });
+    if (loaded.status !== "loaded")
+      throw new Error("integration save rejected");
+    const restored = createController(loaded.state);
+    for (const jobId of [
+      "job-calibrate-9620-sensors",
+      "job-record-9620-baseline",
+      "job-run-9620-activation-trial",
+      "job-stabilize-9620-feedback",
+    ]) {
+      original.authorizeJob(jobId);
+      restored.authorizeJob(jobId);
+      for (
+        let tick = 0;
+        tick < 160 &&
+        original.getSnapshot().game.jobs.find(({ id }) => id === jobId)
+          ?.status !== "completed";
+        tick += 1
+      ) {
+        expect(restored.advance().game).toEqual(original.advance().game);
+      }
+      expect(
+        original.getSnapshot().game.jobs.find(({ id }) => id === jobId)?.status,
+      ).toBe("completed");
+      if (jobId === "job-run-9620-activation-trial")
+        expect(original.getSnapshot().game.incident.level).toBe("yellow");
+    }
+    const recovered = restored.getSnapshot().game;
+    expect(recovered.incident.level).toBe("green");
+    expect(recovered.scp9620.phase).toBe("stabilized");
+    expect(recovered.construction.availableMaterials).toBe(120);
+    expect(recovered.world.map.rooms).toHaveLength(9);
+  });
+
+  it("uses a commissioned annex for new research without moving active work", () => {
+    const controller = createController(
+      placeLaboratory(createInitialState(), { x: 59, y: 80 }).state,
+    );
+    expect(controller.setResearchLaboratory("room-blueprint-lab-1").code).toBe(
+      "not-commissioned",
+    );
+    controller.advance(160);
+    expect(controller.setResearchLaboratory("room-blueprint-lab-1").code).toBe(
+      "laboratory-selected",
+    );
+    const authorized = controller.authorizeJob("job-calibrate-9620-sensors");
+    expect(authorized.game.jobs[0]?.workSite).toEqual({ x: 63, y: 83 });
+    controller.advance();
+    controller.setResearchLaboratory("room-laboratory");
+    expect(controller.getSnapshot().game.jobs[0]?.workSite).toEqual({
+      x: 63,
+      y: 83,
+    });
+    controller.advance(20);
+    const baseline = controller
+      .authorizeJob("job-record-9620-baseline")
+      .game.jobs.find(({ id }) => id === "job-record-9620-baseline");
+    expect(baseline?.workSite).toEqual({ x: 57, y: 55 });
+    const state = controller.getSnapshot().game;
+    expect(
+      loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} })
+        .status,
+    ).toBe("loaded");
+  });
+
   it("rejects corrupt material ledgers, phases, destinations, and job ownership", () => {
     let state = placeLaboratory(createInitialState(), { x: 59, y: 80 }).state;
     while (state.construction.blueprints[0]?.status === "reserved")
       state = advanceSimulation(state);
     const broken = [
+      {
+        ...state,
+        construction: {
+          ...state.construction,
+          researchLaboratoryId: "room-blueprint-lab-1",
+        },
+      },
       {
         ...state,
         construction: { ...state.construction, availableMaterials: 160 },

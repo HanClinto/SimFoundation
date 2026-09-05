@@ -8,7 +8,7 @@ import {
   type ConstructionState,
 } from "./construction";
 
-export const GAME_STATE_VERSION = 16;
+export const GAME_STATE_VERSION = 17;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

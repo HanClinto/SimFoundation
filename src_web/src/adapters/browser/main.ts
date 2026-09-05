@@ -157,7 +157,7 @@ app.innerHTML = `
         <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
       </div>
       <div class="construction-feedback"><span data-construction-materials></span><span data-construction-feedback role="status"></span></div>
-      <details class="construction-register"><summary>Construction register</summary><div class="construction-table-scroll"><table aria-label="Laboratory annexes"><thead><tr><th>Annex</th><th>Status</th><th>Orders</th></tr></thead><tbody data-construction-register></tbody></table></div></details>
+      <details class="construction-register"><summary>Construction register</summary><label class="research-laboratory-choice">Research laboratory <select data-research-laboratory aria-label="Research laboratory"></select></label><div class="construction-table-scroll"><table aria-label="Laboratory annexes"><thead><tr><th>Annex</th><th>Status</th><th>Orders</th></tr></thead><tbody data-construction-register></tbody></table></div></details>
       <div class="status-bar">
         <p class="status-bar-field">LIVE</p>
         <p class="status-bar-field" id="camera-game-time">08:00</p>
@@ -739,6 +739,16 @@ app.addEventListener("click", (event) => {
   ).closest<HTMLButtonElement>("[data-authorize-job]");
   const jobId = authorizeJobButton?.dataset.authorizeJob;
   if (jobId) controller.authorizeJob(jobId);
+  const locateJobId = (event.target as Element).closest<HTMLElement>(
+    "[data-locate-job]",
+  )?.dataset.locateJob;
+  const locatedJob = controller
+    .getSnapshot()
+    .game.jobs.find(({ id }) => id === locateJobId);
+  if (locatedJob) {
+    windowManager.open("camera-window");
+    siteCamera.focus(locatedJob.workSite);
+  }
 });
 
 unlockPsychometricsButton.addEventListener("click", () => {
@@ -901,7 +911,12 @@ function render(snapshot: ControllerSnapshot): void {
     snapshot.game.tick,
     snapshot.game.capabilities.anomalousPsychometrics,
   );
-  updateWorkOrders(workOrdersList, snapshot.game.jobs, snapshot.game.personnel);
+  updateWorkOrders(
+    workOrdersList,
+    snapshot.game.jobs,
+    snapshot.game.personnel,
+    snapshot.game.world,
+  );
   const scp9620Labels = {
     calibration: "CALIBRATION",
     baseline: "BASELINE OBSERVATION",

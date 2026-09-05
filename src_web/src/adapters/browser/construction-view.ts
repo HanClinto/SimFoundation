@@ -2,6 +2,9 @@ import type { GameState } from "../../simulation/state";
 import type { ConstructionCode } from "../../simulation/construction";
 
 export const constructionMessages: Record<ConstructionCode, string> = {
+  "laboratory-selected":
+    "Research laboratory updated for newly authorized work.",
+  "not-commissioned": "Research requires a commissioned laboratory.",
   placed: "Annex authorized. 40 material units reserved.",
   cancelled: "Annex cancelled. Reserved materials released.",
   "out-of-bounds": "The annex footprint or entrance lies outside the region.",

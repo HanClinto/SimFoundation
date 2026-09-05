@@ -27,6 +27,8 @@ SCP-999 physically approaches available personnel before providing Calm, interru
 
 The Camera Feed's **Plan laboratory** mode previews a 9x7 annex with its entrance marked. **Authorize Annex** reserves 40 material units from an initial stock of 160. Logistics collects and delivers the kit, engineering assembles the building, and research commissions it inside the new room. The construction register locates orders, explains blocked work, and permits cancellation before materials leave storage. Placement and cancellation are available while paused. Arrow keys move a focused preview, Enter authorizes it, and Escape cancels the preview.
 
+After commissioning, select the annex as the **Research laboratory** in the construction register. Newly authorized SCP-9620 calibration and passive-baseline work uses that laboratory; active work keeps its assigned location. Activation still takes place in containment, and recovery uses the plant room. Work Orders reports locations and provides **Locate** links back to the camera.
+
 Construction currently provides one fixed annex template and abstract counted material kits, not arbitrary wall painting, furniture placement, supply replenishment, or a power network. Starting room categories are spatial designations, not fully operational systems. The physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
 
 ## Design Pillars

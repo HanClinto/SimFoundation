@@ -365,6 +365,19 @@ textarea {
   cursor: pointer;
 }
 
+.research-laboratory-choice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 5px 0;
+}
+
+.research-laboratory-choice select {
+  max-width: 100%;
+  min-width: 160px;
+}
+
 .construction-table-scroll {
   max-height: 105px;
   overflow: auto;

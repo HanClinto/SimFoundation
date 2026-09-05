@@ -92,6 +92,8 @@ Logistics first reaches the stockpile. Collection changes the same work order in
 
 The controller exposes `previewLaboratory`, `placeLaboratory`, and `cancelLaboratory`. Commands return stable codes and detached snapshots. The browser owns preview geometry, commands, and a construction register, not material accounting or completion. Save validation checks material conservation, blueprint sequence, job references, phase relationships, footprints, and carried-load ownership. Development saves do not migrate. Power, furniture, arbitrary blueprints, stack inventories, supply replenishment, and demolition remain outside this slice.
 
+`setResearchLaboratory` selects the main laboratory or a completed, commissioned annex. The saved room ID controls the work site chosen by simulation-owned `authorizeSiteWork` for new calibration and baseline orders. It never changes active jobs; activation and incident recovery retain their own physical sites. Work Orders preserves keyed DOM rows and buttons across ticks so location links and authorizations remain operable during simulation updates.
+
 SCP-9620's experiment is also authoritative state. Calibration, passive baseline observation, activation, and incident recovery are separate serializable jobs; completion records observations and proposes the next stage without authorizing it. Only activation raises the Yellow feedback incident, and recovery leaves the apparatus stabilized while its function remains unresolved.
 
 Facility and map windows are inspectors over simulation-owned map entities. Global playback and lifecycle controls live in dedicated utility windows. Raw deterministic internals such as tick number and seed are exposed only through opt-in developer inspectors.

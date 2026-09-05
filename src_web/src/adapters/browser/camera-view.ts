@@ -3,6 +3,7 @@ import type {
   GameController,
 } from "../../application/controller";
 import type { TilePosition } from "../../simulation/world";
+import { availableResearchLaboratories } from "../../simulation/construction";
 import {
   constructionMessages,
   updateConstructionRegister,
@@ -31,6 +32,10 @@ export function createSiteCamera(
   const entitySelect = windowElement.querySelector<HTMLSelectElement>(
     "[data-camera-entity]",
   )!;
+  const researchLaboratory = windowElement.querySelector<HTMLSelectElement>(
+    "[data-research-laboratory]",
+  )!;
+  let laboratorySignature = "";
   const status = windowElement.querySelector<HTMLElement>(
     "[data-camera-status]",
   )!;
@@ -75,6 +80,15 @@ export function createSiteCamera(
       };
     renderSite(canvas, snapshot, camera);
     materials.textContent = `${snapshot.game.construction.availableMaterials} materials available`;
+    const laboratories = availableResearchLaboratories(snapshot.game);
+    const nextLaboratorySignature = laboratories.map(({ id }) => id).join(",");
+    if (nextLaboratorySignature !== laboratorySignature) {
+      researchLaboratory.replaceChildren(
+        ...laboratories.map((room) => new Option(room.name, room.id)),
+      );
+      laboratorySignature = nextLaboratorySignature;
+    }
+    researchLaboratory.value = snapshot.game.construction.researchLaboratoryId;
     placeButton.disabled = !camera.draft?.valid;
     if (camera.draft) {
       const code = controller.previewLaboratory(camera.draft.origin);
@@ -136,6 +150,12 @@ export function createSiteCamera(
       feedback.textContent = "";
       render(snapshot);
     }
+  });
+
+  researchLaboratory.addEventListener("change", () => {
+    const result = controller.setResearchLaboratory(researchLaboratory.value);
+    feedback.textContent = constructionMessages[result.code];
+    render(result.snapshot);
   });
 
   function focus(position: TilePosition) {

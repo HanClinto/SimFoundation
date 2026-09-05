@@ -1,4 +1,3 @@
-import { authorizeJob } from "../simulation/jobs";
 import { advanceSimulation } from "../simulation/tick";
 import {
   analyzeAnomalousTraitEvidence,
@@ -9,9 +8,11 @@ import {
 } from "../simulation/personnel";
 import type { GameState } from "../simulation/state";
 import {
+  authorizeSiteWork,
   cancelLaboratory,
   placeLaboratory,
   validateLaboratoryPlacement,
+  setResearchLaboratory,
   type ConstructionCode,
 } from "../simulation/construction";
 import type { TilePosition } from "../simulation/world";
@@ -36,6 +37,7 @@ export interface GameController {
   previewLaboratory(origin: TilePosition): ConstructionCode | null;
   placeLaboratory(origin: TilePosition): ConstructionCommandResult;
   cancelLaboratory(blueprintId: string): ConstructionCommandResult;
+  setResearchLaboratory(roomId: string): ConstructionCommandResult;
   unlockAnomalousPsychometrics(): ControllerSnapshot;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
@@ -65,6 +67,14 @@ export function createController(initialState: GameState): GameController {
 
     previewLaboratory(origin) {
       return validateLaboratoryPlacement(state, origin);
+    },
+
+    setResearchLaboratory(roomId) {
+      const result = setResearchLaboratory(state, roomId);
+      if (result.state === state)
+        return { code: result.code, snapshot: getSnapshot() };
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
     },
 
     placeLaboratory(origin) {
@@ -101,15 +111,7 @@ export function createController(initialState: GameState): GameController {
     },
 
     authorizeJob(jobId) {
-      if (!state.jobs.some(({ id }) => id === jobId)) {
-        throw new Error(`Unknown job: ${jobId}`);
-      }
-      state = {
-        ...state,
-        jobs: state.jobs.map((job) =>
-          job.id === jobId ? authorizeJob(job, state.tick) : job,
-        ),
-      };
+      state = authorizeSiteWork(state, jobId);
       return publish();
     },
 

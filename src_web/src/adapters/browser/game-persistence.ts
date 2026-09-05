@@ -10,6 +10,7 @@ import {
   LABORATORY_WIDTH,
   laboratoryTiles,
   laboratoryWorkSite,
+  availableResearchLaboratories,
   type ConstructionState,
 } from "../../simulation/construction";
 
@@ -428,6 +429,7 @@ function isConstructionState(value: unknown): value is ConstructionState {
   return (
     isRecord(value) &&
     isIntegerInRange(value.availableMaterials, 0, 160) &&
+    isNonEmptyString(value.researchLaboratoryId) &&
     value.availableMaterials % 40 === 0 &&
     isRecord(value.stockpile) &&
     isIntegerInRange(value.stockpile.x, 0, 127) &&
@@ -459,6 +461,12 @@ function isConstructionState(value: unknown): value is ConstructionState {
 
 function constructionReferencesValid(state: GameState): boolean {
   const construction = state.construction;
+  if (
+    !availableResearchLaboratories(state).some(
+      ({ id }) => id === construction.researchLaboratoryId,
+    )
+  )
+    return false;
   if (
     !isWalkable(state.world.map, construction.stockpile) ||
     construction.nextBlueprintNumber !== construction.blueprints.length + 1
