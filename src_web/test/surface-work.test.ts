@@ -148,7 +148,7 @@ describe("general surface work", () => {
   });
   it("queues only current observed damage, deduplicates targets, and conserves finite stock", () => {
     const initial = createInitialState();
-    const position = { x: 56, y: 55 };
+    const position = { x: 61, y: 54 };
     const damaged = {
       ...initial,
       tick: 1,
@@ -158,7 +158,7 @@ describe("general surface work", () => {
         map: damageSurface(
           initial.world.map,
           position,
-          "floor",
+          "structure",
           "corrosion",
           80,
         ),
@@ -177,7 +177,7 @@ describe("general surface work", () => {
       construction: { ...damaged.construction, availableMaterials: 0 },
     };
     expect(
-      orderSurfaceWork(observeSite(empty), position, "floor", "steel").code,
+      orderSurfaceWork(observeSite(empty), position, "structure", "steel").code,
     ).toBe("insufficient-materials");
   });
   it("does not close a door or finish a wall through an occupant", () => {

@@ -43,6 +43,7 @@ import { createConstructionWindow } from "./construction-view";
 import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createStorageWindow } from "./storage-view";
+import { createExposureWindow } from "./exposure-view";
 import scp999IconUrl from "./assets/site-999.svg";
 import { incidentResponse } from "./incident-response";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
@@ -132,6 +133,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="engineering-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Engineering</span></button>
           <button class="subsystem-icon" type="button" data-open-window="objects-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Objects and Supplies</span></button>
           <button class="subsystem-icon" type="button" data-open-window="storage-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Storage and Hauling</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="exposure-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Exposure Sources</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -140,12 +142,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Residents</dt><dd>1 assigned</dd></div>
-            <div><dt>Systems</dt><dd>13 available</dd></div>
+            <div><dt>Systems</dt><dd>14 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">13 systems</p>
+        <p class="status-bar-field">14 systems</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -172,7 +174,7 @@ app.innerHTML = `
         <fieldset><legend>Perspective</legend><div class="field-row"><input id="map-world" type="radio" name="map-perspective" data-map-perspective="world" checked/><label for="map-world">World</label><input id="map-recorded" type="radio" name="map-perspective" data-map-perspective="recorded"/><label for="map-recorded">Recorded</label></div></fieldset>
         <fieldset><legend>Base map</legend><div class="field-row"><input id="map-site" type="radio" name="map-base" data-map-base="site" checked/><label for="map-site">Site</label><input id="map-materials" type="radio" name="map-base" data-map-base="materials"/><label for="map-materials">Materials</label></div></fieldset>
         <fieldset><legend>Surface</legend><div class="field-row"><input id="map-structures" type="radio" name="map-layer" data-map-layer="structure" checked/><label for="map-structures">Structures</label><input id="map-floors" type="radio" name="map-layer" data-map-layer="floor"/><label for="map-floors">Floors</label></div></fieldset>
-        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "activity", "coverage", "projects", "storage", "spaces"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "activity", "projects"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
+        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "activity", "coverage", "projects", "storage", "spaces", "exposure"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "activity", "projects"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
       </div></details>
     </div>
     <div class="window-body camera-body">
@@ -690,13 +692,8 @@ const siteCamera = createSiteMap(
         .getSnapshot()
         .game.environment.sources.find((source) => source.id === id);
       if (source) {
-        engineeringView.select(
-          source.position,
-          controller.getSnapshot(),
-          "floor",
-          perspective,
-        );
-        windowManager.open("engineering-window");
+        exposureView.select(source.id, controller.getSnapshot());
+        windowManager.open("exposure-window");
       } else openPersonnelInspector(id);
     }
   },
@@ -708,6 +705,27 @@ const clinicalCareView = createClinicalCareView(
 const engineeringView = createEngineeringWindow(app, controller, (request) => {
   windowManager.open("camera-window");
   siteCamera.beginPlacement(request);
+});
+const exposureView = createExposureWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+);
+windowManager.register(exposureView.element, {
+  id: "exposure-window",
+  title: "Exposure Sources",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 250, top: 100, width: 490, height: 520 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 280,
 });
 const storageView = createStorageWindow(
   app,
@@ -1042,6 +1060,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 
 function render(snapshot: ControllerSnapshot): void {
   storageView.render(snapshot);
+  exposureView.render(snapshot);
   objectsView.render(snapshot);
   siteCamera.render(snapshot);
   engineeringView.render(snapshot);

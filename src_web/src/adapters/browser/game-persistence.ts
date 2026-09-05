@@ -1054,6 +1054,7 @@ function isEnvironment(value: unknown): boolean {
         isNonEmptyString(source.name) &&
         isTilePosition(source.position) &&
         isLiteral(source.kind, ["corrosion", "impact"]) &&
+        (source.enabled === undefined || typeof source.enabled === "boolean") &&
         isNumberInRange(source.dose, 0, 1000) &&
         isIntegerInRange(source.radius, 0, 16),
       32,

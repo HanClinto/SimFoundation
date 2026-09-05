@@ -82,7 +82,7 @@ it("does not infer enclosure across unknown recorded terrain or connect diagonal
   expect(deriveSpaces(5, 5, Array(25).fill(null)).spaces).toEqual([]);
 });
 
-it("does not let furniture movement blockers shield floors from environmental exposure", () => {
+it("does not let furniture movement blockers shield barriers from horizontal exposure", () => {
   const initial = createInitialState();
   const tiles: TileKind[] = ["floor", "floor", "floor", "closed-door", "floor"];
   const source = {
@@ -117,8 +117,9 @@ it("does not let furniture movement blockers shield floors from environmental ex
     { x: 3, y: 0 },
   ]);
   const damaged = advanceExposure(state);
-  expect(damaged.world.map.surfaces[1]!.floor!.integrity).toBeLessThan(100);
-  expect(damaged.world.map.surfaces[2]!.floor!.integrity).toBeLessThan(100);
+  expect(damaged.world.map.surfaces[1]!.floor!.integrity).toBe(100);
+  expect(damaged.world.map.surfaces[2]!.floor!.integrity).toBe(100);
+  expect(damaged.world.map.surfaces[3]!.structure!.integrity).toBeLessThan(100);
   expect(damaged.world.map.surfaces[4]!.floor!.integrity).toBe(100);
 });
 

@@ -22,6 +22,11 @@ import { objectFootprint, type ObjectOrientation } from "../simulation/objects";
 import {
   orderSurfaceWork,
   cancelSurfaceWork,
+  setExposureSource,
+  removeExposureSource,
+  exposureSourceIssue,
+  type ExposureSourcePolicy,
+  type ExposureCommandCode,
   type SurfaceOperation,
   type SurfaceOrderCode,
 } from "../simulation/environment";
@@ -63,6 +68,15 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  previewExposureSource(
+    policy: ExposureSourcePolicy,
+    id?: string,
+  ): ExposureCommandCode | null;
+  setExposureSource(
+    policy: ExposureSourcePolicy,
+    id?: string,
+  ): { code: ExposureCommandCode; snapshot: ControllerSnapshot };
+  removeExposureSource(id: string): ControllerSnapshot;
   previewStorageArea(
     policy: StoragePolicy,
     id?: string,
@@ -168,6 +182,18 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    previewExposureSource(policy, id) {
+      return exposureSourceIssue(state, policy, id);
+    },
+    setExposureSource(policy, id) {
+      const result = setExposureSource(state, policy, id);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    removeExposureSource(id) {
+      state = removeExposureSource(state, id);
+      return publish();
+    },
     previewStorageArea(policy, id) {
       return storagePlacementIssue(state, policy, id);
     },

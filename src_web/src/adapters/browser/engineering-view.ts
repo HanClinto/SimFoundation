@@ -56,7 +56,7 @@ export function createEngineeringWindow(
     )
     .join(
       "",
-    )}</select></div><div class="dossier-actions"><button type="button" data-replace-surface>Order replacement</button><button type="button" data-operate-door hidden>Open door</button></div><p data-surface-stock></p><p role="status" data-surface-feedback></p></fieldset><fieldset><legend>Facility maintenance</legend><div class="field-row"><input type="checkbox" id="automatic-surface-repairs"/><label for="automatic-surface-repairs">Replace observed surfaces at 55% or below</label></div></fieldset>`;
+    )}</select></div><div class="dossier-actions"><button type="button" data-replace-surface>Order replacement</button><button type="button" data-operate-door hidden>Open door</button></div><p data-surface-stock></p><p role="status" data-surface-feedback></p></fieldset><fieldset><legend>Facility maintenance</legend><div class="field-row"><input type="checkbox" id="automatic-surface-repairs"/><label for="automatic-surface-repairs">Replace observed barriers at 55% or below</label></div></fieldset>`;
   element.querySelector("[data-tile-record]")!.after(controls);
   const layerSelect =
     element.querySelector<HTMLSelectElement>("#surface-layer")!;

@@ -10,6 +10,7 @@ import cameraUrl from "./assets/camera.svg";
 import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
+import { exposureTiles } from "../../simulation/environment";
 import { mapObjects } from "./map-objects";
 import {
   DEFAULT_MAP_OVERLAYS,
@@ -381,6 +382,34 @@ export function renderSite(
       }
     }
   }
+  if (overlays.exposure && !recorded) {
+    const reached = new Set(
+      snapshot.game.environment.sources.flatMap((source) =>
+        exposureTiles(snapshot.game, source).map(
+          (position) => position.y * map.width + position.x,
+        ),
+      ),
+    );
+    for (const index of reached) {
+      const position = {
+        x: index % map.width,
+        y: Math.floor(index / map.width),
+      };
+      if (
+        position.x < minimumX ||
+        position.x > maximumX ||
+        position.y < minimumY ||
+        position.y > maximumY
+      )
+        continue;
+      const point = projectPosition(position, camera, width, height);
+      context.save();
+      context.translate(point.x, point.y);
+      context.scale(camera.zoom, camera.zoom);
+      drawTile(context, { x: 0, y: -10 }, "rgba(210, 75, 62, .28)", "#e49552");
+      context.restore();
+    }
+  }
   for (const room of overlays.rooms ? map.rooms : []) {
     if (camera.zoom < 0.55) continue;
     const point = projectPosition(
@@ -422,10 +451,19 @@ export function renderSite(
         : 0.45;
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
-      drawTile(context, { x: 0, y: -10 }, "#d9b564", "#6d4b26");
+      drawTile(
+        context,
+        { x: 0, y: -10 },
+        source.enabled === false ? "#adb3b0" : "#d9b564",
+        "#6d4b26",
+      );
       context.font = "bold 10px 'Courier New', monospace";
       context.fillStyle = "#172e25";
-      context.fillText(source.kind.toUpperCase(), 0, -16);
+      context.fillText(
+        source.enabled === false ? "OFF" : source.kind.toUpperCase(),
+        0,
+        -16,
+      );
       context.restore();
     }
   }

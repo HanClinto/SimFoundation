@@ -225,6 +225,98 @@ export interface ExposureSource {
   readonly radius: number;
   readonly kind: "corrosion" | "impact";
   readonly dose: number;
+  readonly enabled?: boolean;
+}
+export type ExposureSourcePolicy = Omit<ExposureSource, "id">;
+export type ExposureCommandCode =
+  | "accepted"
+  | "invalid-source"
+  | "invalid-position"
+  | "limit-reached"
+  | "not-found";
+
+export function exposureSourceIssue(
+  state: GameState,
+  policy: ExposureSourcePolicy,
+  id?: string,
+): ExposureCommandCode | null {
+  if (
+    !policy.name.trim() ||
+    policy.name.length > 60 ||
+    !["corrosion", "impact"].includes(policy.kind) ||
+    !Number.isFinite(policy.dose) ||
+    policy.dose <= 0 ||
+    policy.dose > 1000 ||
+    !Number.isInteger(policy.radius) ||
+    policy.radius < 0 ||
+    policy.radius > 16 ||
+    (policy.enabled !== undefined && typeof policy.enabled !== "boolean")
+  )
+    return "invalid-source";
+  if (id && !state.environment.sources.some((source) => source.id === id))
+    return "not-found";
+  if (!id && state.environment.sources.length >= 32) return "limit-reached";
+  const tile = tileAt(state.world.map, policy.position);
+  const existing = state.environment.sources.find((source) => source.id === id);
+  if (
+    tile === null ||
+    ((!existing || !sameTile(existing.position, policy.position)) &&
+      (blocksSpace(tile) ||
+        state.world.map.objectBlocks?.includes(
+          policy.position.y * state.world.map.width + policy.position.x,
+        )))
+  )
+    return "invalid-position";
+  return null;
+}
+
+export function setExposureSource(
+  state: GameState,
+  policy: ExposureSourcePolicy,
+  id?: string,
+): { state: GameState; code: ExposureCommandCode } {
+  const issue = exposureSourceIssue(state, policy, id);
+  if (issue) return { state, code: issue };
+  let number = 1;
+  while (
+    state.environment.sources.some(
+      (source) => source.id === `exposure-${number}`,
+    )
+  )
+    number += 1;
+  const source: ExposureSource = {
+    ...policy,
+    name: policy.name.trim(),
+    position: { ...policy.position },
+    enabled: policy.enabled ?? true,
+    id: id ?? `exposure-${number}`,
+  };
+  return {
+    code: "accepted",
+    state: {
+      ...state,
+      environment: {
+        ...state.environment,
+        sources: id
+          ? state.environment.sources.map((existing) =>
+              existing.id === id ? source : existing,
+            )
+          : [...state.environment.sources, source],
+      },
+    },
+  };
+}
+
+export function removeExposureSource(state: GameState, id: string): GameState {
+  if (!state.environment.sources.some((source) => source.id === id))
+    return state;
+  return {
+    ...state,
+    environment: {
+      ...state.environment,
+      sources: state.environment.sources.filter((source) => source.id !== id),
+    },
+  };
 }
 export interface EnvironmentState {
   readonly automaticRepairs: boolean;
@@ -255,6 +347,7 @@ export function exposureTiles(
   state: GameState,
   source: ExposureSource,
 ): readonly TilePosition[] {
+  if (source.enabled === false) return [];
   const queue = [source.position];
   const visited = new Set<string>();
   const reached: TilePosition[] = [];
@@ -280,14 +373,7 @@ export function advanceExposure(state: GameState): GameState {
   const damage: SurfaceDamage[] = [];
   for (const source of state.environment.sources) {
     for (const position of exposureTiles(state, source)) {
-      const layer = blocksSpace(tileAt(state.world.map, position))
-        ? "structure"
-        : "floor";
-      damage.push({ position, layer, kind: source.kind, dose: source.dose });
-      if (
-        layer === "floor" &&
-        surfaceAt(state.world.map, position, "structure")
-      )
+      if (surfaceAt(state.world.map, position, "structure"))
         damage.push({
           position,
           layer: "structure",
@@ -598,7 +684,7 @@ export function discoverSurfaceWork(state: GameState): GameState {
       break;
     const index = Number(key);
     if (state.observations.tileLastSeen[index] !== state.tick) continue;
-    for (const layer of ["structure", "floor"] as const) {
+    for (const layer of ["structure"] as const) {
       if (state.environment.orders.filter(isActiveSurfaceOrder).length >= 16)
         break;
       const surface = cell[layer];
