@@ -91,7 +91,7 @@ Choose it if base management remains primary but beloved veteran pawns, expediti
 
 Does best: separates stable identity from mutable Foundation administration, creates character tradeoffs without universally superior stats, and makes cameras, monitors, medicine, trust, and personnel assessments part of facility gameplay.
 
-Feels awkward: fog of war forces every personnel screen to distinguish actual state from known state. Bipolar aptitude axes are intentionally stylized, mixed-polarity needs require careful presentation, and poor assessment pacing could frustrate players.
+Feels awkward: fog of war forces every personnel screen to distinguish actual state from known state. Bipolar preference axes are intentionally stylized, mixed-polarity needs require careful presentation, and poor assessment pacing could frustrate players.
 
 Choose it if the facility's information infrastructure should matter as much as the underlying pawn simulation.
 
@@ -100,8 +100,8 @@ Choose it if the facility's information infrastructure should matter as much as 
 Use Simplified Hybrid as the current candidate, while retaining Layered Hybrid as the higher-detail fallback. The candidate should follow six constraints:
 
 1. Character state is organized by lifecycle: Immutable Identity/Traits/Biases; Stable Foundation Assignment/Skills/Equipment; Transient Needs; Effects; Derived Health and capabilities.
-2. Skill remains the dominant contributor to ordinary work; three bipolar Biases primarily affect learning and task approach.
-3. Composure remains independent from Analysis/Instinct and is derived from Health, Stress, Fear, Threat Response, relevant training, and Effects.
+2. Skill remains the dominant contributor to ordinary work; Mind↔Might and Receptive↔Resolute primarily affect preference, learning, and satisfaction.
+3. Composure is not a Bias; it is derived from Health, Stress, Fear, Threat Response, relevant training, and Effects.
 4. Actual pawn state and player knowledge remain separate; ordinary UI never silently displays omniscient values.
 5. One Effect instance shape uses optional activation, expiration, magnitude, and progression fields instead of separate buff/injury/memory/aura subclasses.
 6. The default dossier exposes only assessed identity, assignment, Health summaries, activity, and urgent findings. Exact Effects, formulas, and hidden state remain in drill-down or debug views.
@@ -110,7 +110,7 @@ Borrow Bonds and three-category exposure scars from Proposal 3 only after relati
 
 ## Review Questions
 
-1. Are three bipolar aptitude biases fun and legible, or should they become independent aptitudes?
+1. Are Mind↔Might and Receptive↔Resolute legible as preferences rather than capability scores?
 2. Are eight core skills the correct granularity?
 3. Should Stability/Sanity ever be persistent, or remain entirely derived?
 4. Should traits be strictly immutable, or can rare story events transform them?

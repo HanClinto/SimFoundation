@@ -18,7 +18,7 @@ This proposal organizes every authoritative pawn field by how and why it changes
 
 **Player knowledge is not another Character layer.** It belongs to a separate faction knowledge registry keyed by person ID. The simulation knows the actual pawn; the Site Director receives an assessment-limited projection. Cameras, monitors, interviews, examinations, and reports update that projection.
 
-The system favors tradeoffs over universally superior recruits. Skills provide the satisfying “number goes up” progression. Aptitude axes describe style and affinity rather than raw power. Traits create categorical behavior. Equipment and effects compose around those facts.
+The system favors tradeoffs over universally superior recruits. Skills provide the satisfying “number goes up” progression. Preference Biases describe favored problem-solving styles rather than raw power. Traits create categorical behavior. Equipment and Effects compose around those facts.
 
 ## Major Differences from Proposal 4
 
@@ -26,8 +26,8 @@ The system favors tradeoffs over universally superior recruits. Skills provide t
 - Immutable identity is separated from stable but mutable Foundation assignment and authorization.
 - Medical and moral traits are separate categories.
 - A pawn may have zero or one trait in each category; no global trait-count rule is required.
-- Five independent aptitudes are replaced with three bipolar aptitude biases.
-- Composure is not paired against Cognition. It is a derived capability influenced by traits, health, Stress, Fear, skills, and effects.
+- Five independent aptitudes are replaced with two bipolar preference biases.
+- Composure is not a Bias. It is a derived capability influenced by Traits, Health, Stress, Fear, Skills, and Effects.
 - Transient state uses Food, Energy, Social, Stress, and Fear.
 - Physical, Mental, and Emotional Health are derived values rather than stored resources.
 - Neck and wrist equipment slots are consolidated into two general-purpose Special slots.
@@ -35,46 +35,75 @@ The system favors tradeoffs over universally superior recruits. Skills provide t
 
 ## Biases and Specialization
 
-A zero-sum Analysis↔Composure axis would imply that analytical people are inherently worse under pressure and calm people inherently think less deeply. That is too reductive for the stories we want. It would also make researcher and security archetypes feel predetermined.
+Biases describe **which way a pawn prefers to solve problems**, not innate intelligence, strength, courage, or maximum competence. Skills answer what the pawn can do. Biases answer what kinds of work they enjoy, select autonomously, and learn most comfortably.
 
-This proposal pairs **Analysis↔Instinct** instead:
+### Mind ↔ Might
 
-- Analysis favors preparation, explicit evidence, methodical diagnosis, and complex learning.
-- Instinct favors rapid pattern recognition, improvisation, intuitive threat response, and acting with incomplete information.
+- Mind favors planning, theory, diagnosis, documentation, negotiation, and manipulating information.
+- Might favors direct intervention, physical manipulation, practical demonstration, drilling, and changing the tangible environment.
 
-Composure remains important but is calculated from:
+This is not Intelligence versus Strength. A smart wrestler and a strong doctor remain possible. A Might-oriented doctor may enjoy emergency procedures and hands-on treatment; a Mind-oriented security officer may favor surveillance and tactical planning.
 
-- Threat-response trait
-- Mental and Emotional health
-- Current Stress and Fear
-- Security or Anomaly Handling training
-- Memories and active effects
-- Equipment, medication, and nearby support
+### Receptive ↔ Resolute
 
-A methodical scientist can be highly composed. An instinctive security officer can panic. The model does not force a false relationship between intellect and courage.
+- Receptive favors observation, experimentation, empathy, improvisation, absorbing unfamiliar information, and changing course as evidence arrives.
+- Resolute favors protocol, repetition, concentration, persistence, resisting interference, and completing a predetermined objective.
 
-The three axes should nevertheless produce recognizable specializations:
+Receptive does not mean indecisive. Resolute does not mean composed. Composure remains a derived capability calculated from Threat Response, Mental and Emotional Health, Stress, Fear, relevant Skills, and Effects.
 
-- A laboratory specialist commonly trends toward Finesse and Analysis.
-- A tactical responder commonly trends toward Force or Finesse depending on weapon role, plus Instinct and Insulation.
-- An anomaly-sensitive researcher commonly trends toward Analysis and Attunement.
-- A containment anchor commonly trends toward Force, Resolve-producing traits, and Insulation.
+### Four quadrants
 
-Tasks declare bias tags. Each matching step changes learning rate by 5%, capped at ±15% per axis. Skill remains the dominant input.
+| Quadrant          | Typical satisfying work                                                   | Example roles and activities                                                            |
+| ----------------- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Mind + Receptive  | Discover, interpret, counsel, explore uncertainty                         | Experimental scientist, investigator, counselor, unknown-anomaly analyst                |
+| Mind + Resolute   | Follow complex procedures, perform precise production, administer systems | Laboratory engineer, pharmacist, medicine crafter, protocol scientist, administrator    |
+| Might + Receptive | Adapt physically in uncertain environments                                | Medic, scout, field researcher, anomalous-weapons specialist, improvisational responder |
+| Might + Resolute  | Apply force, construct, defend, execute established plans                 | MTF operator, construction engineer, security officer, containment anchor               |
+
+These are tendencies rather than classes. Tasks can be solved through alternate approaches, and high Skill remains more important than bias alignment.
+
+### Mechanical consequences
+
+Bias match affects four things:
+
+- Autonomous job preference
+- Skill learning rate
+- Stress from prolonged mismatched work
+- Satisfaction/memory generated by meaningful completion
+
+Bias match has little or no direct effect on task capability. A Research 12 Might/Resolute pawn remains more effective at research than a Research 3 Mind/Receptive pawn.
+
+| Match                           |   XP rate | Stress from sustained work | Autonomous preference | Completion memory |
+| ------------------------------- | --------: | -------------------------: | --------------------- | ----------------- |
+| Both axes match                 |      +15% |                       -10% | Strong                | Strong positive   |
+| One axis matches, one neutral   |     +7.5% |                        -5% | Moderate              | Mild positive     |
+| Mixed or both neutral           | No change |                  No change | Neutral               | None from Bias    |
+| One axis conflicts, one neutral |     -7.5% |                        +5% | Reduced               | Mild negative     |
+| Both axes conflict              |      -15% |                       +10% | Low                   | Strong negative   |
+
+Tasks declare a preferred direction or neutrality on each axis. Pawn intensity determines whether each axis matches, conflicts, or is neutral. Meaningful completion creates a short-lived positive or negative memory Effect at the table's strength; trivial or saturated work creates none. Satisfaction is therefore an event outcome expressed through Effects, not a sixth transient meter.
 
 ```json
 {
   "taskId": "calibrate-scp-9620-sensor",
   "skill": "research",
-  "biasTags": [
-    { "axis": "forceFinesse", "direction": "finesse", "weight": 0.5 },
-    { "axis": "analysisInstinct", "direction": "analysis", "weight": 1 }
-  ],
-  "learningRateFormula": "baseXp * (1 + sum(axisStep * direction * weight * 0.05))"
+  "preferredBiases": {
+    "mindMight": "mind",
+    "receptiveResolute": "receptive"
+  },
+  "alternateApproaches": [
+    {
+      "id": "follow-established-calibration-procedure",
+      "preferredBiases": {
+        "mindMight": "mind",
+        "receptiveResolute": "resolute"
+      }
+    }
+  ]
 }
 ```
 
-At Analysis 3, this task grants 15% more Research XP from that axis. At Instinct 3, it grants 15% less. A sufficiently skilled instinctive researcher still performs well; they simply learn controlled analytical work less efficiently.
+A Mind/Receptive researcher prefers exploratory calibration. A Mind/Resolute researcher can choose the established-procedure approach instead. A Might-oriented veteran can still perform either task through Research Skill but learns somewhat more slowly and accumulates more Stress from prolonged assignment.
 
 ## Complete Rules Taxonomy
 
@@ -100,9 +129,57 @@ Legal name is the administrative name. Nickname is optional and is used in infor
 
 A pawn may have zero or one trait from each category. No trait means ordinary behavior for that category. Traits ordinarily do not change; rare authored events add permanent Effects rather than silently rewriting personality.
 
-The complete categories and launch traits appear below.
+##### Work-style traits
 
-Each Trait definition references one always-eligible Effect definition. The pawn stores the Trait ID under Immutable state and the corresponding Effect instance under Effects. Conditional trait behavior uses `activeWhen` on that ordinary Effect. There is no separate trait-modifier engine.
+- Methodical: higher quality, slower task start, lower error chance
+- Industrious: selects work quickly, dislikes idleness
+- Workaholic: works past schedule, accumulates long-shift Stress more slowly, resists stopping
+- Goof-Off: seeks breaks early, restores Emotional Health efficiently, lower sustained-work tolerance
+- Perfectionist: repeats low-quality work, high quality ceiling, Stress from rushed orders
+
+##### Threat-response traits
+
+- Stoic: delayed panic, Fear remains internally significant
+- Scaredy-Cat: rapid Fear gain, early retreat
+- Reckless: low perceived danger, accepts unsafe work
+- Vigilant: detects threats early, gains Stress during prolonged alerts
+- Freeze-Prone: low action reliability during sudden acute Fear
+
+##### Social-temperament traits
+
+- Compassionate: effective comfort, stronger reaction to others' suffering
+- Abrasive: relationship friction, resists social manipulation
+- Sociable: strong Social recovery from company, suffers isolation
+- Solitary: works well alone, weak group recreation benefit
+- Charismatic: increases group confidence, attracts attention and responsibility
+
+##### Anomalous-disposition traits
+
+- Psychically Attuned: perceives subtle anomalous effects, greater exposure risk
+- Psychically Insulated: reduced psychic influence, misses subtle signals
+- Superstitious: rituals reduce Stress; uncertain anomaly states raise Fear
+- Skeptical: resists rumor and suggestion; undeniable impossibility damages Mental Health more
+- Resonant: anomalous equipment Effects are stronger in both directions
+
+Foundation screening may know, suspect, or fail to detect an Anomalous-disposition Trait. There is no separate Anomalous Profile attribute.
+
+##### Medical-constitution traits
+
+- Robust: slower Physical Health loss from ordinary illness and exertion
+- Sickly: greater illness risk, faster benefit from careful preventive treatment
+- Low Pain Tolerance: Pain creates larger Stress and work penalties
+- High Pain Tolerance: functions through Pain but may conceal injury
+- Fast Healer: recovery Effects progress faster
+
+##### Moral-disposition traits
+
+- Altruistic: prioritizes rescue, suffers from harmful orders
+- Pragmatic: lower moral-injury pressure from necessary tradeoffs
+- Greedy: responds strongly to rewards, theft/corruption break patterns become eligible
+- Obsessive: persists toward a focus, resists task switching
+- Homicidal: violence threshold is lower; violent break patterns become eligible; trust penalties apply when discovered
+
+Each Trait definition references one always-eligible Effect definition. Conditional trait behavior uses `activeWhen` on that ordinary Effect. There is no separate trait-modifier engine.
 
 Representative mappings cover every trait category:
 
@@ -116,6 +193,28 @@ Representative mappings cover every trait category:
 | Homicidal           | Conditional violent-break eligibility and lower violence inhibition during severe Stress/Fear |
 
 Exact numeric balance belongs to trait definitions and testing, not the Character schema.
+
+#### Biases
+
+Each axis is an integer from `-3` to `+3`. Zero is balanced. Neither direction increases total character power; it changes preferred work, learning affinity, autonomous job selection, and satisfaction.
+
+##### Mind ↔ Might
+
+- `-3` Mind: planning, theory, diagnosis, documentation, negotiation, information systems
+- `0` Balanced
+- `+3` Might: direct intervention, physical manipulation, practical demonstration, drilling
+
+This is not Intelligence versus Strength. It records which problem-solving mode the pawn enjoys and gravitates toward.
+
+##### Receptive ↔ Resolute
+
+- `-3` Receptive: observation, experimentation, empathy, improvisation, adaptation
+- `0` Balanced
+- `+3` Resolute: protocol, repetition, concentration, persistence, resistance to interference
+
+This is not awareness versus courage. It records whether a pawn prefers to absorb and adapt or establish and execute a plan.
+
+Anomalous sensitivity is not a third Bias. It is represented by the Anomalous-disposition Trait category, where it can remain partially hidden until Foundation screening or later evidence establishes it.
 
 ### 2. Stable
 
@@ -144,82 +243,6 @@ Relationships are not part of identity or Foundation authorization. They belong 
 
 Connections can be deferred without destabilizing the core pawn model.
 
-#### Work-style traits
-
-- Methodical: higher quality, slower task start, lower error chance
-- Industrious: selects work quickly, dislikes idleness
-- Workaholic: works past schedule, accumulates long-shift Stress more slowly, resists stopping
-- Goof-Off: seeks breaks early, restores Emotional health efficiently, lower sustained-work tolerance
-- Perfectionist: repeats low-quality work, high quality ceiling, Stress from rushed orders
-
-#### Threat-response traits
-
-- Stoic: delayed panic, Fear remains internally significant
-- Scaredy-Cat: rapid Fear gain, early retreat
-- Reckless: low perceived danger, accepts unsafe work
-- Vigilant: detects threats early, gains Stress during prolonged alerts
-- Freeze-Prone: low action reliability during sudden acute Fear
-
-#### Social-temperament traits
-
-- Compassionate: effective comfort, stronger reaction to others' suffering
-- Abrasive: relationship friction, resists social manipulation
-- Sociable: strong Social recovery from company, suffers isolation
-- Solitary: works well alone, weak group recreation benefit
-- Charismatic: increases group confidence, attracts attention and responsibility
-
-#### Anomalous-disposition traits
-
-- Psychically Attuned: perceives subtle anomalous effects, greater exposure risk
-- Psychically Insulated: reduced psychic influence, misses subtle signals
-- Superstitious: rituals reduce Stress; uncertain anomaly states raise Fear
-- Skeptical: resists rumor and suggestion; undeniable impossibility damages Mental health more
-- Resonant: anomalous equipment effects are stronger in both directions
-
-#### Medical-constitution traits
-
-- Robust: slower Physical health loss from ordinary illness and exertion
-- Sickly: greater illness risk, faster benefit from careful preventive treatment
-- Low Pain Tolerance: Pain creates larger Stress and work penalties
-- High Pain Tolerance: functions through Pain but may conceal injury
-- Fast Healer: recovery effects progress faster
-
-#### Moral-disposition traits
-
-- Altruistic: prioritizes rescue, suffers from harmful orders
-- Pragmatic: lower moral-injury pressure from necessary tradeoffs
-- Greedy: responds strongly to rewards, theft/corruption break patterns become eligible
-- Obsessive: persists toward a focus, resists task switching
-- Homicidal: violence threshold is lower; violent break patterns become eligible; trust penalties apply when discovered
-
-#### Biases
-
-Each axis is an integer from `-3` to `+3`. Zero is balanced. Neither direction increases total character power; it changes preferred approach, learning affinity, and edge-case performance.
-
-#### Force ↔ Finesse
-
-- `-3` Force: leverage, carrying, impact, endurance, forced entry
-- `0` Balanced
-- `+3` Finesse: precision, delicate manipulation, aim, quiet movement
-
-This is not literal muscle mass versus coordination. A strong, dexterous person can exist in fiction; the axis records which approach is mechanically exceptional. Skills still dominate actual task competence.
-
-#### Analysis ↔ Instinct
-
-- `-3` Analysis: planning, documentation, diagnosis, technical learning
-- `0` Balanced
-- `+3` Instinct: improvisation, rapid reaction, pattern recognition with incomplete data
-
-Analysis is useful for controlled research and engineering. Instinct is useful for emergencies, fieldwork, and ambiguous social/anomalous situations.
-
-#### Attunement ↔ Insulation
-
-- `-3` Attunement: anomaly detection, resonance, psychic communication, stronger anomalous effects
-- `0` Balanced
-- `+3` Insulation: resistance to psychic influence, weaker anomalous perception and benefits
-
-The labels describe endpoints, not morality or competence. Both can be valuable in different protocols.
-
 #### Usage-based skills
 
 Eight core skills, each level 0 through 20 plus XP:
@@ -247,12 +270,12 @@ Every skill stores:
 - Certification dependencies
 - Assessment record: when the Foundation last verified the skill
 
-Skills improve through meaningful completed activity. Aptitude bias modifies learning or alternate approaches but cannot replace the skill.
+Skills improve through meaningful completed activity. Bias alignment modifies learning and satisfaction but cannot replace the skill.
 
 For the draft progression curve, `xp` is progress within the current level and resets after leveling. XP required for the next level is:
 
 $$
-	ext{XP to next level} = 100 + 50(\text{current level})^2
+XP_{next} = 100 + 50L^2
 $$
 
 Early levels arrive quickly; level 8 requires 3,300 XP and level 19 requires 18,150 XP. Level 20 is the launch cap. This curve is provisional balance, but the storage semantics are explicit.
@@ -284,13 +307,13 @@ Five numbers from 0 through 100:
 - Stress: higher means overloaded; restorative activity lowers it
 - Fear: higher means acute perceived danger; safety and support lower it
 
-Food, Energy, and Social are reserves where high is good. Stress and Fear are pressures where high is bad. UI must make polarity explicit through labels and color, not assume every bar has the same meaning.
+Food, Energy, and Social are reserves where high is good. Stress and Fear are pressures where high is bad. UI must make polarity explicit through labels and color, not assume every value has the same meaning.
 
-Recreation is an activity category. Examples:
+Recreation is an activity category rather than a sixth transient value. Examples:
 
 - Playing cards: Stress recovery plus Social recovery
 - Solitary reading: Stress recovery; reduced value for Sociable pawns
-- Exercise: Stress recovery plus Physical conditioning effect; Energy cost
+- Exercise: Stress recovery plus a Physical-conditioning Effect; Energy cost
 - SCP-999 play: strong Stress/Fear recovery plus memory/effect
 - Watching approved media: modest Stress recovery
 
@@ -405,7 +428,7 @@ Derived job values are calculated on demand rather than stored as an exhaustive 
 
 ```text
 capability = skill contribution
-           + bias contribution
+           + limited preference-match contribution
            + active effect modifiers
            + transient-state penalties
            + derived health penalties
@@ -413,20 +436,22 @@ capability = skill contribution
 
 Equipment and affixes contribute through active Effects, not a separate calculation path. Examples include Carry Capacity, Move Speed, Research Speed, Work Quality, Accuracy, and Damage. Content defines the relevant skill, bias tags, and modifier targets for each task. The architecture does not need a complete capability list before those jobs exist.
 
-#### Concrete skill and bias mapping
+#### Concrete skill and preference mapping
 
-| Skill            | Common bias affinity                 | Example exceptions                                                          |
-| ---------------- | ------------------------------------ | --------------------------------------------------------------------------- |
-| Research         | Analysis, Finesse                    | Field observation can favor Instinct; psychic protocol can favor Attunement |
-| Engineering      | Analysis                             | Heavy construction favors Force; circuit calibration favors Finesse         |
-| Medicine         | Analysis, Finesse                    | Emergency triage can favor Instinct                                         |
-| Security         | Instinct                             | Breaching favors Force; marksmanship and stealth favor Finesse              |
-| Logistics        | Force, Instinct                      | Procurement planning favors Analysis                                        |
-| Administration   | Analysis                             | Crisis coordination can favor Instinct                                      |
-| Social           | Instinct                             | Formal negotiation preparation can favor Analysis                           |
-| Anomaly Handling | Attunement or Insulation by protocol | Research contact favors Attunement; containment anchoring favors Insulation |
+Skills do not have one permanent quadrant. Individual tasks specify how that Skill is being used.
 
-A strongly Analysis/Finesse pawn visibly leans toward laboratory work. A strongly Instinct/Force pawn visibly leans toward assault and emergency response. Skill investment and task exceptions prevent those tendencies from becoming hard classes.
+| Skill            | Mind + Receptive            | Mind + Resolute                        | Might + Receptive                | Might + Resolute                      |
+| ---------------- | --------------------------- | -------------------------------------- | -------------------------------- | ------------------------------------- |
+| Research         | Explore unknown behavior    | Execute validated protocol             | Collect field samples            | Repeat physical test sequence         |
+| Engineering      | Diagnose novel failure      | Craft medicine or precision components | Improvise field repair           | Construct walls and heavy systems     |
+| Medicine         | Diagnose ambiguous symptoms | Compound medication                    | Emergency treatment              | Perform planned procedure             |
+| Security         | Interview and investigate   | Plan operation                         | Scout or wield unusual weapon    | Hold position or conduct assault      |
+| Logistics        | Adapt supply plan           | Audit and schedule inventory           | Scavenge and route in the field  | Haul and stage known materials        |
+| Administration   | Investigate discrepancy     | Process budgets and approvals          | Coordinate crisis response       | Enforce emergency procedure           |
+| Social           | Counsel and listen          | Negotiate formal agreement             | Calm people during active danger | Deliver orders and maintain formation |
+| Anomaly Handling | Observe unknown anomaly     | Execute containment checklist          | Conduct adaptive field contact   | Physically secure known containment   |
+
+A Mind/Receptive pawn visibly leans toward investigation and discovery. A Mind/Resolute pawn leans toward laboratory crafting, precision procedure, and administration. A Might/Receptive pawn leans toward medicine, scouting, field research, and special weapons. A Might/Resolute pawn leans toward MTF work, construction, security, and containment response. Skill investment and alternate task approaches prevent those tendencies from becoming hard classes.
 
 ## Assessment and Fog of War
 
@@ -524,9 +549,8 @@ A map tile is visible when covered by a powered, functioning camera or directly 
       "moralDisposition": null
     },
     "biases": {
-      "forceFinesse": 2,
-      "analysisInstinct": -3,
-      "attunementInsulation": 2
+      "mindMight": -2,
+      "receptiveResolute": -1
     }
   },
   "stable": {
@@ -836,19 +860,18 @@ Your legal name, optional nickname, background, and traits describe a stable per
 
 Your role, clearance, certifications, schedule, priorities, and allowed zones are assignments. They can change without changing who you are.
 
-### Your three aptitude biases
+### Your two preference biases
 
 Mark each axis from -3 to +3:
 
-- Force (-) to Finesse (+)
-- Analysis (-) to Instinct (+)
-- Attunement (-) to Insulation (+)
+- Mind (-) to Might (+)
+- Receptive (-) to Resolute (+)
 
-A balanced zero is valid. These are approaches, not power totals. Skills remain the primary measure of competence.
+A balanced zero is valid. These are preferred problem-solving approaches, not power totals. Skills remain the primary measure of competence. Anomalous sensitivity is represented by known or hidden Anomalous-disposition Traits rather than a third axis.
 
 ### What you have learned
 
-Eight skills rise from 0 to 20 through meaningful use. Repetition works until the task becomes trivial. Mentors, training, and aptitude affinity alter learning speed.
+Eight skills rise from 0 to 20 through meaningful use. Repetition works until the task becomes trivial. Mentors, training, and preference alignment alter learning speed.
 
 ### How you are doing now
 
@@ -878,7 +901,7 @@ A camera may reveal disorganized behavior but not the cause. The dossier shows �
 
 ### Cozy grind and advancement
 
-Caleb performs meaningful Engineering work. Engineering XP increases. Force helps heavy installation; Finesse helps relay calibration. His bias does not make either work impossible. Repeating trivial fuse replacement saturates recent-practice XP; difficult generator repair and mentorship remain productive.
+Caleb performs meaningful Engineering work. Engineering XP increases. A Might/Resolute preference makes heavy construction satisfying; a Mind/Resolute preference favors precision crafting and laboratory engineering; Receptive approaches favor diagnosis and improvisational repair. His preference does not make other Engineering work impossible. Repeating trivial fuse replacement saturates recent-practice XP; difficult generator repair and mentorship remain productive.
 
 The Director knows his official skill level only as recently assessed. Routine supervisor reports update broad competence; formal certification confirms hazardous-work eligibility.
 
@@ -917,7 +940,7 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 ## What This Does Well
 
 - Clear separation between immutable personhood and stable-but-mutable Foundation administration.
-- Three memorable aptitude tradeoffs without “best-stat” recruits.
+- Two memorable preference tradeoffs without “best-stat” recruits.
 - Keeps satisfying skill numbers and cozy use-based advancement.
 - Five transient values are easy to understand.
 - Derived Physical/Mental/Emotional Health supports injuries, trauma, and recovery without duplicating mutable condition state.
@@ -928,8 +951,8 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 
 ## What Is Awkward
 
-- Bipolar axes are stylized abstractions; Force and Finesse are not truly mutually exclusive in real people.
-- Analysis↔Instinct must avoid implying intelligence versus stupidity.
+- Mind↔Might is a stylized preference and must not imply intelligence versus strength or physical ability.
+- Receptive↔Resolute must avoid implying indecision versus courage; both are competent approaches.
 - Mixed-polarity transient values need careful UI: Food/Energy/Social high is good; Stress/Fear high is bad.
 - Derived Health needs carefully chosen formulas so different Effects do not collapse into an uninformative average.
 - Unified Effects can become a dumping ground without strict definitions, stacking rules, and debug inspection.
@@ -943,7 +966,7 @@ The Director chooses personnel from known records, not omniscient state. Skills 
 
 - Immutable Identity and stable Foundation Assignment split
 - Six trait categories, zero or one trait per category
-- Three bipolar aptitude biases
+- Two bipolar preference biases
 - Eight core skills with use-based XP
 - Food, Energy, Social, Stress, Fear
 - Derived Physical, Mental, Emotional Health
@@ -991,7 +1014,7 @@ May reveal actual transient values, hidden effects, exact health, real location,
 
 ## Open Decisions for Review
 
-1. Are the three bipolar axes fun and legible, or should Force/Finesse and Analysis/Instinct become independent aptitudes?
+1. Are Mind↔Might and Receptive↔Resolute clear as preferences rather than capability scores?
 2. Should the UI display bias values numerically, as named bands, or both?
 3. Should derived Health use a simple additive Effect total, domain-specific caps, or a worst-condition-weighted formula?
 4. How stale can assessments become before imperfect information feels unfair?
