@@ -49,6 +49,12 @@ export function createStorageWindow(
     )}</fieldset><div class="field-row"><input id="storage-serving" type="checkbox" checked/><label for="storage-serving">Diners collect meals here</label></div><div class="field-row"><input id="storage-enabled" type="checkbox" checked/><label for="storage-enabled">Enable stocking policy</label></div></fieldset><div class="dossier-actions"><button type="button" data-storage-place>Designate area</button><button type="button" data-storage-save>Apply policy</button><button type="button" data-storage-locate>Locate</button><button type="button" data-storage-remove>Remove designation</button></div><p role="status" data-storage-feedback></p></div><div class="resize-grip" aria-hidden="true"></div>`;
   host.append(element);
   const choice = element.querySelector<HTMLSelectElement>("#storage-area")!;
+  const emissionRow = document.createElement("div");
+  emissionRow.className = "field-row";
+  emissionRow.innerHTML =
+    '<label for="storage-emission">Emission filter</label><select id="storage-emission"><option value="any">Any objects</option><option value="none">Non-emitting only</option><option value="active">Emitting only</option></select>';
+  element.querySelector("#storage-target")!.parentElement!.after(emissionRow);
+  const emission = emissionRow.querySelector<HTMLSelectElement>("select")!;
   const feedback = element.querySelector<HTMLElement>(
     "[data-storage-feedback]",
   )!;
@@ -72,6 +78,7 @@ export function createStorageWindow(
       ].map((input) => input.dataset.storageAccept as ObjectKind),
       serveMeals: input("serving").checked,
       enabled: input("enabled").checked,
+      emission: emission.value as StoragePolicy["emission"],
     };
   }
   function choose(id?: string) {
@@ -85,6 +92,7 @@ export function createStorageWindow(
       );
     input("serving").checked = area?.serveMeals ?? true;
     input("enabled").checked = area?.enabled ?? true;
+    emission.value = area?.emission ?? "any";
     for (const checkbox of element.querySelectorAll<HTMLInputElement>(
       "[data-storage-accept]",
     ))
@@ -209,6 +217,14 @@ export function createStorageWindow(
           ],
           ["Incoming", String(incomingQuantity(snapshot.game, area))],
           ["Target", String(area.target)],
+          [
+            "Emission filter",
+            area.emission === "active"
+              ? "Emitting only"
+              : area.emission === "none"
+                ? "Non-emitting only"
+                : "Any objects",
+          ],
           ["Hauling", storageStatus(snapshot.game, area)],
         ]
       : [["Selection", "New storage designation"]];

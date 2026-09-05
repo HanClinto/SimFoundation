@@ -1427,6 +1427,8 @@ function isStorageArea(value: unknown): value is StorageArea {
     isIntegerInRange(value.height, 1, 8) &&
     isIntegerInRange(value.capacity, 1, 1000) &&
     isIntegerInRange(value.target, 0, value.capacity as number) &&
+    (value.emission === undefined ||
+      isLiteral(value.emission, ["any", "none", "active"])) &&
     typeof value.enabled === "boolean" &&
     typeof value.serveMeals === "boolean" &&
     isArrayOf(

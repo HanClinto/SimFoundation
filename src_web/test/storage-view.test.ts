@@ -18,6 +18,8 @@ it("uses shared placement to relocate policies, applies filters, and leaves stoc
     () => {},
   );
   view.select("storage-1", controller.getSnapshot());
+  view.element.querySelector<HTMLSelectElement>("#storage-emission")!.value =
+    "none";
   view.element.querySelector<HTMLInputElement>("#storage-capacity")!.value =
     "12";
   view.element.querySelector<HTMLInputElement>("#storage-target")!.value = "12";
@@ -26,6 +28,10 @@ it("uses shared placement to relocate policies, applies filters, and leaves stoc
     .click();
   expect(requests[0]!.footprint({ x: 59, y: 65 })).toHaveLength(1);
   expect(requests[0]!.confirm({ x: 59, y: 65 }).accepted).toBe(true);
+  expect(controller.getSnapshot().game.storage.areas[0]!.emission).toBe("none");
+  expect(
+    view.element.querySelector("[data-storage-record]")!.textContent,
+  ).toContain("Non-emitting only");
   expect(controller.getSnapshot().game.storage.areas[0]?.origin).toEqual({
     x: 59,
     y: 65,

@@ -20,6 +20,25 @@ export interface StorageArea {
   readonly target: number;
   readonly serveMeals: boolean;
   readonly enabled: boolean;
+  readonly emission?: "any" | "none" | "active";
+}
+export function storageAccepts(
+  state: GameState,
+  area: StorageArea,
+  item: PhysicalObject,
+): boolean {
+  if (!area.accepts.includes(item.kind)) return false;
+  const emitting = state.environment.sources.some(
+    (source) =>
+      source.objectId === item.id &&
+      source.enabled !== false &&
+      source.dose > 0,
+  );
+  return area.emission === "active"
+    ? emitting
+    : area.emission === "none"
+      ? !emitting
+      : true;
 }
 export interface StorageState {
   readonly nextId: number;
@@ -110,7 +129,7 @@ export function servingMealCount(state: GameState): number {
           (area) =>
             area.enabled &&
             area.serveMeals &&
-            area.accepts.includes("meals") &&
+            storageAccepts(state, area, item) &&
             item.location.kind === "ground" &&
             storageContains(area, item.location.position),
         ),
@@ -133,7 +152,7 @@ export function mealCollectionPoint(
             (area) =>
               area.enabled &&
               area.serveMeals &&
-              area.accepts.includes("meals") &&
+              storageAccepts(state, area, item) &&
               item.location.kind === "ground" &&
               storageContains(area, item.location.position),
           ),
@@ -233,6 +252,8 @@ export function storagePlacementIssue(
     new Set(policy.accepts).size !== policy.accepts.length ||
     policy.accepts.some((kind) => !Object.hasOwn(OBJECT_DEFINITIONS, kind)) ||
     typeof policy.enabled !== "boolean" ||
+    (policy.emission !== undefined &&
+      !["any", "none", "active"].includes(policy.emission)) ||
     typeof policy.serveMeals !== "boolean" ||
     (policy.serveMeals && !policy.accepts.includes("meals"))
   )
@@ -306,7 +327,7 @@ export function storagePlacementIssue(
     return "occupied";
   const contents = storedObjects(state, area);
   if (
-    contents.some((item) => !area.accepts.includes(item.kind)) ||
+    contents.some((item) => !storageAccepts(state, area, item)) ||
     storageQuantity(state, area) > area.capacity
   )
     return "occupied";
@@ -413,7 +434,7 @@ export function discoverStorageWork(state: GameState): GameState {
           item.location.kind === "ground" &&
           !item.installed &&
           !item.reservedBy &&
-          area.accepts.includes(item.kind) &&
+          storageAccepts(state, area, item) &&
           !storageContains(area, item.location.position),
       )
       .map((item) => {
@@ -425,11 +446,14 @@ export function discoverStorageWork(state: GameState): GameState {
             )
           : undefined;
         const surplus =
-          source?.enabled && source.accepts.includes(item.kind)
+          source?.enabled && storageAccepts(state, source, item)
             ? Math.max(
                 0,
                 storedObjects(state, source)
-                  .filter((item) => !item.reservedBy)
+                  .filter(
+                    (item) =>
+                      !item.reservedBy && storageAccepts(state, source, item),
+                  )
                   .reduce((sum, item) => sum + item.quantity, 0) -
                   source.target,
               )
@@ -482,6 +506,11 @@ export function discoverStorageWork(state: GameState): GameState {
 
 export function storageStatus(state: GameState, area: StorageArea): string {
   if (!area.enabled) return "Paused";
+  const mismatches = storedObjects(state, area).filter(
+    (item) => !storageAccepts(state, area, item),
+  );
+  if (mismatches.length)
+    return `${mismatches.length} stored object(s) outside the acceptance filter.`;
   const orders = state.objectOrders.filter(
     (order) =>
       !["completed", "cancelled"].includes(order.phase) &&
@@ -490,6 +519,11 @@ export function storageStatus(state: GameState, area: StorageArea): string {
   if (orders.length)
     return orders
       .map((order) => {
+        const item = state.objects.items.find(
+          (item) => item.id === order.objectId,
+        );
+        if (item && !storageAccepts(state, area, item))
+          return "Delivery blocked by acceptance filter; restore an accepted emission state.";
         const job = state.jobs.find((job) => job.id === order.jobId);
         const worker = state.personnel.find(
           (person) => person.id === job?.assignedPersonId,

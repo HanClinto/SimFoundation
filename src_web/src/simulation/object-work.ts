@@ -4,6 +4,7 @@ import {
   storageQuantity,
   incomingQuantity,
   refreshMealSummary,
+  storageAccepts,
 } from "./storage";
 import type { SiteJob } from "./jobs";
 import {
@@ -65,7 +66,7 @@ export function objectPlacementIssue(
     storageContains(area, destination),
   );
   if (area) {
-    if (install || !area.accepts.includes(object.kind)) return "occupied";
+    if (install || !storageAccepts(state, area, object)) return "occupied";
     const alreadyHere =
       object.location.kind === "ground" &&
       storageContains(area, object.location.position)
