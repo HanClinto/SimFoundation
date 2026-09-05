@@ -627,9 +627,6 @@ function render(snapshot: ControllerSnapshot): void {
   incidentSummary.textContent = snapshot.game.incident.summary;
   incidentBadge.className = `incident-badge incident-${snapshot.game.incident.level}`;
   pauseButton.setAttribute("aria-pressed", String(!snapshot.running));
-  pauseButton.innerHTML = snapshot.running
-    ? '<span aria-hidden="true">Ⅱ</span>'
-    : '<span aria-hidden="true">▶</span>';
   pauseButton.setAttribute(
     "aria-label",
     snapshot.running ? "Pause simulation" : "Resume simulation",
