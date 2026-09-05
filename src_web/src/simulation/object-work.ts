@@ -13,7 +13,7 @@ import {
   tileAt,
   type TilePosition,
 } from "./world";
-import { neighbors } from "./environment";
+import { isActiveSurfaceOrder, neighbors } from "./environment";
 import {
   OBJECT_DEFINITIONS,
   objectFootprint,
@@ -128,7 +128,7 @@ export function objectPlacementIssue(
   if (
     state.environment.orders.some(
       (order) =>
-        order.phase !== "completed" &&
+        isActiveSurfaceOrder(order) &&
         (order.operation ?? "replace") !== "replace" &&
         conflicts(order.position),
     )

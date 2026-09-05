@@ -1,5 +1,6 @@
 import PF from "pathfinding";
 import type { GameState } from "./state";
+import { isActiveSurfaceOrder } from "./environment";
 import { objectPosition, type PhysicalObject } from "./objects";
 import type { TileSurfaces } from "./materials";
 import { projectPsychology } from "./personnel";
@@ -343,7 +344,7 @@ export function cameraPlacementIssue(
   if (
     state.environment.orders.some(
       (order) =>
-        order.phase !== "completed" &&
+        isActiveSurfaceOrder(order) &&
         (order.operation ?? "replace") !== "replace" &&
         order.position.x === position.x &&
         order.position.y === position.y,

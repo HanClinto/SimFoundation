@@ -89,7 +89,7 @@ Beds have a two-tile footprint; one tile is the interaction position and the rem
 
 Building materials and packaged meals are real counted stacks with ground/carrier locations and exclusive work reservations. Surface replacement and annex construction reserve, pick up, deliver, and consume those objects. Pantry replenishment transports meal stacks; individual pawns collect a portion and carry it to a seat before eating. Moving stock changes subsequent collection destinations. The displayed material and meal counters are validated summaries, not additional copies of the inventory.
 
-World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **29**, requiring a fresh development session. This first object set does not add crafting, procurement, arbitrary containers, weight limits, or a universal equipment system. Cameras retain their existing specialized device/kit workflow.
+World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **30**, requiring a fresh development session. This first object set does not add crafting, procurement, arbitrary containers, weight limits, or a universal equipment system. Cameras retain their existing specialized device/kit workflow.
 
 ### Storage and Hauling
 
@@ -131,7 +131,9 @@ Engineering's **Build and remove** selector offers floor, wall, and door constru
 
 Removal requires an engineer at an adjacent work face and gives no salvage refund. Remove structures before their floor; removing a wall leaves the floor intact. People, furniture, stock, cameras, storage designations, and conflicting pending construction protect their footprints. Final fitting rechecks the target and waits for late obstructions without consuming supplies. A blocked route keeps the order inspectable in Work Orders; reopening access allows work to resume. Completed annexes can be remodeled under these same rules.
 
-This is single-tile construction, not an instant brush or a room generator. Room names/designations are unchanged by new walls. No drag painting, demolition salvage, structural support simulation, or cancellation of committed surface jobs is included; cancel the placement preview before confirmation to avoid queuing work. Save schema 29 requires a fresh development session.
+**Cancel surface work** stops an active order on the selected tile/layer. Before pickup or during fitting, unused materials are released on the ground and any assigned worker is freed. During transport, **Cancel after delivery** keeps the carrier and supplies reserved until the delivery is physically set down, then releases the stock and skips fitting. A blocked route still needs to be reopened. Cancelled orders stop reserving their target tiles and cannot refund twice. Completed work cannot be cancelled, and removal gives no salvage. Automatic maintenance may discover the same damaged surface again while its policy remains enabled.
+
+This is single-tile construction, not an instant brush or a room generator. Room names/designations are unchanged by new walls. No drag painting, demolition salvage, or structural support simulation is included. Cancel the placement preview before confirmation to avoid queuing work at all. Save schema 30 requires a fresh development session.
 
 Every installed floor, wall, and door has its own material and integrity. Soil is the base ground; floors and structures are independent layers. Failed walls cease blocking movement and sight but leave the floor beneath them intact. Failed flooring exposes soil. Starting rooms and newly built annexes use the same shared material catalog: concrete, steel, ceramic, and composite.
 
@@ -139,7 +141,7 @@ Engineering can order replacement of either installed layer using the shared con
 
 The general exposure API remains available to authored scenarios and tests: bounded sources reach cardinally connected surfaces, stop at intact walls or sealed doors, and reach neighboring space after a barrier opens. The default source list is empty. The AN-001 scenario, bespoke enclosure, and dedicated window were removed from active play; its design notes remain archived in the catalog.
 
-The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 29; earlier development saves require a fresh session.
+The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 30; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 

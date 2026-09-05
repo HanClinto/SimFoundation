@@ -7,6 +7,8 @@ import {
   putDownObject,
   consumeObject,
   objectFootprint,
+  releaseObject,
+  mergeGroundStack,
 } from "./objects";
 import {
   MATERIALS,
@@ -33,14 +35,96 @@ export interface SurfaceOrder {
   readonly layer: SurfaceLayer;
   readonly material: MaterialId;
   readonly jobId: string;
-  readonly phase: "collecting" | "delivering" | "fitting" | "completed";
+  readonly phase:
+    | "collecting"
+    | "delivering"
+    | "fitting"
+    | "completed"
+    | "cancelled";
+  readonly cancelRequested?: boolean;
   readonly blockedReason: string | null;
 }
 export type SurfaceOperation = "replace" | "floor" | "wall" | "door" | "remove";
+export function isActiveSurfaceOrder(order: SurfaceOrder): boolean {
+  return order.phase !== "completed" && order.phase !== "cancelled";
+}
 export function surfaceOrderCost(
-  order: Pick<SurfaceOrder, "material" | "operation">,
+  order: Pick<SurfaceOrder, "material" | "operation"> &
+    Partial<Pick<SurfaceOrder, "phase">>,
 ): number {
-  return order.operation === "remove" ? 0 : MATERIALS[order.material].cost;
+  return order.operation === "remove" || order.phase === "cancelled"
+    ? 0
+    : MATERIALS[order.material].cost;
+}
+
+export function cancelSurfaceWork(
+  state: GameState,
+  orderId: string,
+): GameState {
+  const order = state.environment.orders.find((order) => order.id === orderId);
+  if (!order || !isActiveSurfaceOrder(order)) return state;
+  if (order.phase === "delivering") {
+    if (order.cancelRequested) return state;
+    return {
+      ...state,
+      jobs: state.jobs.map((job) =>
+        job.id === order.jobId
+          ? {
+              ...job,
+              title: `Finish delivery before cancellation: ${order.layer} ${order.position.x},${order.position.y}`,
+            }
+          : job,
+      ),
+      environment: {
+        ...state.environment,
+        orders: state.environment.orders.map((candidate) =>
+          candidate === order
+            ? { ...candidate, cancelRequested: true }
+            : candidate,
+        ),
+      },
+    };
+  }
+  const cargo = reservedObject(state.objects, order.jobId);
+  if (
+    order.operation !== "remove" &&
+    (!cargo || cargo.location.kind !== "ground")
+  )
+    return state;
+  const cost = surfaceOrderCost(order);
+  return {
+    ...state,
+    objects: cargo
+      ? mergeGroundStack(
+          releaseObject(state.objects, cargo.id, order.jobId),
+          cargo.id,
+        )
+      : state.objects,
+    jobs: state.jobs.filter((job) => job.id !== order.jobId),
+    personnel: state.personnel.map((person) =>
+      person.currentJobId === order.jobId
+        ? { ...person, currentJobId: null, activity: "Surface work cancelled" }
+        : person,
+    ),
+    construction: {
+      ...state.construction,
+      availableMaterials: state.construction.availableMaterials + cost,
+    },
+    environment: {
+      ...state.environment,
+      spentMaterials: state.environment.spentMaterials - cost,
+      orders: state.environment.orders.map((candidate) =>
+        candidate === order
+          ? {
+              ...candidate,
+              phase: "cancelled",
+              cancelRequested: false,
+              blockedReason: null,
+            }
+          : candidate,
+      ),
+    },
+  };
 }
 
 export function surfaceChangeIssue(
@@ -243,7 +327,7 @@ export function orderSurfaceWork(
   if (
     state.environment.orders.some(
       (order) =>
-        order.phase !== "completed" &&
+        isActiveSurfaceOrder(order) &&
         sameTile(order.position, position) &&
         (order.layer === layer ||
           operation !== "replace" ||
@@ -349,7 +433,7 @@ export function advanceSurfaceWork(state: GameState): GameState {
   let jobs = [...state.jobs];
   let map = state.world.map;
   const orders = state.environment.orders.map((order): SurfaceOrder => {
-    if (order.phase === "completed") return order;
+    if (!isActiveSurfaceOrder(order)) return order;
     const job = jobs.find((job) => job.id === order.jobId)!;
     if (job.status !== "completed") return order;
     if (order.phase === "collecting") {
@@ -494,30 +578,28 @@ export function advanceSurfaceWork(state: GameState): GameState {
     });
     return { ...order, phase: "completed", blockedReason: null };
   });
-  return {
+  let result: GameState = {
     ...state,
     objects,
     jobs,
     world: { ...state.world, map },
     environment: { ...state.environment, orders },
   };
+  for (const order of orders)
+    if (order.cancelRequested && order.phase === "fitting")
+      result = cancelSurfaceWork(result, order.id);
+  return result;
 }
 
 export function discoverSurfaceWork(state: GameState): GameState {
   if (!state.environment.automaticRepairs) return state;
   for (const [key, cell] of Object.entries(state.observations.knownSurfaces)) {
-    if (
-      state.environment.orders.filter((order) => order.phase !== "completed")
-        .length >= 16
-    )
+    if (state.environment.orders.filter(isActiveSurfaceOrder).length >= 16)
       break;
     const index = Number(key);
     if (state.observations.tileLastSeen[index] !== state.tick) continue;
     for (const layer of ["structure", "floor"] as const) {
-      if (
-        state.environment.orders.filter((order) => order.phase !== "completed")
-          .length >= 16
-      )
+      if (state.environment.orders.filter(isActiveSurfaceOrder).length >= 16)
         break;
       const surface = cell[layer];
       if (surface && surface.integrity <= 55)

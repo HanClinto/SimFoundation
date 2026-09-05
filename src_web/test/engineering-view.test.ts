@@ -6,6 +6,44 @@ import { createInitialState } from "../src/simulation/state";
 import { surfaceAt } from "../src/simulation/materials";
 import type { PlacementRequest } from "../src/adapters/browser/placement";
 afterEach(() => vi.unstubAllGlobals());
+it("updates pending cancellation feedback after the carrier releases its delivery", () => {
+  const window = new JSDOM("<!doctype html><body></body>").window;
+  vi.stubGlobal("document", window.document);
+  const controller = createController(createInitialState());
+  const position = { x: 63, y: 79 };
+  controller.orderSurfaceWork(position, "floor", "steel", "floor");
+  for (
+    let tick = 0;
+    tick < 180 &&
+    controller.getSnapshot().game.environment.orders[0]!.phase !== "delivering";
+    tick += 1
+  )
+    controller.advance();
+  expect(controller.getSnapshot().game.environment.orders[0]!.phase).toBe(
+    "delivering",
+  );
+  const view = createEngineeringWindow(document.body, controller);
+  view.select(position, controller.getSnapshot(), "floor", "world");
+  const cancel = view.element.querySelector<HTMLButtonElement>(
+    "[data-cancel-surface]",
+  )!;
+  expect(cancel.textContent).toBe("Cancel after delivery");
+  cancel.click();
+  expect(
+    view.element.querySelector("[data-surface-feedback]")!.textContent,
+  ).toContain("Cancellation requested");
+  for (
+    let tick = 0;
+    tick < 180 &&
+    controller.getSnapshot().game.environment.orders[0]!.phase !== "cancelled";
+    tick += 1
+  )
+    view.render(controller.advance());
+  expect(
+    view.element.querySelector("[data-surface-feedback]")!.textContent,
+  ).toContain("Work cancelled");
+  expect(cancel.disabled).toBe(true);
+});
 it("previews single-tile building and queues work without instantly installing surfaces", () => {
   const window = new JSDOM("<!doctype html><body></body>").window;
   vi.stubGlobal("document", window.document);
@@ -33,6 +71,22 @@ it("previews single-tile building and queues work without instantly installing s
   expect(request.validate(origin, controller.getSnapshot())).toContain(
     "already pending",
   );
+  const cancel = view.element.querySelector<HTMLButtonElement>(
+    "[data-cancel-surface]",
+  )!;
+  expect(cancel.disabled).toBe(false);
+  cancel.click();
+  expect(controller.getSnapshot().game.environment.orders[0]!.phase).toBe(
+    "cancelled",
+  );
+  expect(controller.getSnapshot().game.construction.availableMaterials).toBe(
+    160,
+  );
+  expect(cancel.disabled).toBe(true);
+  expect(
+    view.element.querySelector("[data-surface-feedback]")!.textContent,
+  ).toContain("Work cancelled");
+  expect(request.validate(origin, controller.getSnapshot())).toBeNull();
 });
 it("explains an empty selection, absent layers, pending orders and insufficient stock", () => {
   const window = new JSDOM("<!doctype html><body></body>").window;

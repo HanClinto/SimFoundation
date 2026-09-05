@@ -1,4 +1,5 @@
 import type { GameState } from "../../simulation/state";
+import { isActiveSurfaceOrder } from "../../simulation/environment";
 import { spaceBoundary } from "../../simulation/spaces";
 import { spaceProjection } from "./space-projection";
 import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
@@ -150,7 +151,7 @@ export function engineeringRecord(
   const orders = state.environment.orders.filter(
     (order) =>
       sameTile(order.position, position) &&
-      order.phase !== "completed" &&
+      isActiveSurfaceOrder(order) &&
       (!layer || order.layer === layer),
   );
   const jobs = state.jobs.filter(
@@ -168,7 +169,7 @@ export function engineeringRecord(
   for (const order of orders)
     rows.push([
       "Surface order",
-      `${order.layer}: ${order.phase}${order.blockedReason ? ` / ${order.blockedReason}` : ""}`,
+      `${order.layer}: ${order.phase}${order.cancelRequested ? " / cancel after delivery" : ""}${order.blockedReason ? ` / ${order.blockedReason}` : ""}`,
     ]);
   return rows;
 }

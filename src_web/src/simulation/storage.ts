@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { isActiveSurfaceOrder } from "./environment";
 import {
   OBJECT_DEFINITIONS,
   objectFootprint,
@@ -244,7 +245,7 @@ export function storagePlacementIssue(
   if (
     state.environment.orders.some(
       (order) =>
-        order.phase !== "completed" &&
+        isActiveSurfaceOrder(order) &&
         (order.operation ?? "replace") !== "replace" &&
         storageContains(area, order.position),
     )

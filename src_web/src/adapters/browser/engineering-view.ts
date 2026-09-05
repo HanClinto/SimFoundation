@@ -12,6 +12,7 @@ import type { DoorPolicy, TilePosition } from "../../simulation/world";
 import { engineeringRecord } from "./map-objects";
 import type { MapPerspective } from "./map-settings";
 import type { PlacementRequest } from "./placement";
+import { isActiveSurfaceOrder } from "../../simulation/environment";
 import type {
   SurfaceOperation,
   SurfaceOrderCode,
@@ -64,6 +65,11 @@ export function createEngineeringWindow(
   const replace = element.querySelector<HTMLButtonElement>(
     "[data-replace-surface]",
   )!;
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.dataset.cancelSurface = "";
+  cancel.textContent = "Cancel surface work";
+  replace.after(cancel);
   const doorButton = element.querySelector<HTMLButtonElement>(
     "[data-operate-door]",
   )!;
@@ -92,6 +98,29 @@ export function createEngineeringWindow(
   let position: TilePosition | null = null;
   let perspective: MapPerspective = "recorded";
   let current = controller.getSnapshot();
+  let cancellationId: string | null = null;
+  cancel.addEventListener("click", () => {
+    const pending = current.game.environment.orders.find(
+      (order) =>
+        position &&
+        sameTile(position, order.position) &&
+        order.layer === layerSelect.value &&
+        isActiveSurfaceOrder(order),
+    );
+    if (!pending) return;
+    cancellationId = pending.id;
+    const snapshot = controller.cancelSurfaceWork(pending.id);
+    render(snapshot);
+    const result = snapshot.game.environment.orders.find(
+      (order) => order.id === pending.id,
+    )!;
+    feedback.textContent =
+      result.phase === "cancelled"
+        ? "Work cancelled. Unused supplies remain available on the ground."
+        : result.cancelRequested
+          ? "Cancellation requested. The carrier will finish delivery and release the supplies; no fitting will occur."
+          : "Cancellation could not be applied.";
+  });
   const building = document.createElement("fieldset");
   building.innerHTML =
     '<legend>Build and remove</legend><div class="field-row"><label for="surface-operation">Operation</label><select id="surface-operation"><option value="floor">Build floor</option><option value="wall">Build wall</option><option value="door">Build door</option><option value="remove-floor">Remove floor</option><option value="remove-structure">Remove structure</option></select></div><button type="button" data-place-surface>Choose work tile</button>';
@@ -198,6 +227,16 @@ export function createEngineeringWindow(
   });
   function render(snapshot: ControllerSnapshot) {
     current = snapshot;
+    if (
+      cancellationId &&
+      snapshot.game.environment.orders.some(
+        (order) => order.id === cancellationId && order.phase === "cancelled",
+      )
+    ) {
+      feedback.textContent =
+        "Work cancelled. Unused supplies remain available on the ground.";
+      cancellationId = null;
+    }
     automatic.checked = snapshot.game.environment.automaticRepairs;
     element.querySelector("[data-surface-stock]")!.textContent =
       `${snapshot.game.construction.availableMaterials} material units in store`;
@@ -215,9 +254,22 @@ export function createEngineeringWindow(
         position &&
         sameTile(order.position, position) &&
         order.layer === layer &&
-        order.phase !== "completed",
+        isActiveSurfaceOrder(order),
     );
     const cost = MATERIALS[materialSelect.value as MaterialId].cost;
+    cancel.disabled = !pending || !!pending.cancelRequested;
+    cancel.textContent = pending?.cancelRequested
+      ? "Cancellation pending"
+      : pending?.phase === "delivering"
+        ? "Cancel after delivery"
+        : "Cancel surface work";
+    cancel.title = !pending
+      ? "No active surface work on the selected layer."
+      : pending.cancelRequested
+        ? "Supplies remain reserved until the carrier finishes delivery. Restore access if the route is blocked."
+        : pending.phase === "delivering"
+          ? "Finish physical delivery, release the supplies there, and skip fitting."
+          : "Release unused supplies where they are and stop this work.";
     const reason = !position
       ? "No tile selected."
       : !surface

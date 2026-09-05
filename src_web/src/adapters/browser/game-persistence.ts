@@ -1,5 +1,8 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
-import { surfaceOrderCost } from "../../simulation/environment";
+import {
+  isActiveSurfaceOrder,
+  surfaceOrderCost,
+} from "../../simulation/environment";
 import {
   storageContains,
   servingMealCount,
@@ -1025,7 +1028,12 @@ function isEnvironment(value: unknown): boolean {
         (!["wall", "door"].includes(String(order.operation)) ||
           order.layer === "structure") &&
         (order.operation !== "remove" ||
-          ["fitting", "completed"].includes(String(order.phase))) &&
+          ["fitting", "completed", "cancelled"].includes(
+            String(order.phase),
+          )) &&
+        (order.cancelRequested === undefined ||
+          typeof order.cancelRequested === "boolean") &&
+        (order.cancelRequested !== true || order.phase === "delivering") &&
         isNonEmptyString(order.material) &&
         Object.hasOwn(MATERIALS, order.material) &&
         isLiteral(order.phase, [
@@ -1033,6 +1041,7 @@ function isEnvironment(value: unknown): boolean {
           "delivering",
           "fitting",
           "completed",
+          "cancelled",
         ]) &&
         isNullableString(order.blockedReason),
       1000,
@@ -1113,12 +1122,12 @@ function environmentReferencesValid(state: GameState): boolean {
   )
     return false;
   const active = environment.orders
-    .filter((order) => order.phase !== "completed")
+    .filter(isActiveSurfaceOrder)
     .map((order) => `${order.position.x},${order.position.y}:${order.layer}`);
   if (
     new Set(active).size !== active.length ||
     state.jobs.filter((job) => job.id.startsWith("job-surface-")).length !==
-      environment.orders.length
+      environment.orders.filter((order) => order.phase !== "cancelled").length
   )
     return false;
   return (
@@ -1132,6 +1141,12 @@ function environmentReferencesValid(state: GameState): boolean {
       )
         return false;
       const job = state.jobs.find((job) => job.id === order.jobId);
+      if (order.phase === "cancelled")
+        return (
+          !job &&
+          !order.blockedReason &&
+          !reservedObject(state.objects, order.jobId)
+        );
       if (!job) return false;
       if (order.phase === "completed") return job.status === "completed";
       if (job.status === "completed" && !order.blockedReason) return false;
@@ -1291,7 +1306,7 @@ function objectsValid(state: GameState): boolean {
       return false;
   }
   for (const order of state.environment.orders)
-    if (order.phase !== "completed" && order.operation !== "remove") {
+    if (isActiveSurfaceOrder(order) && order.operation !== "remove") {
       const cargo = reservedObject(state.objects, order.jobId);
       if (
         !cargo ||

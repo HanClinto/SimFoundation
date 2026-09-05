@@ -1,4 +1,5 @@
 import { authorizeJob, type SiteJob } from "./jobs";
+import { isActiveSurfaceOrder } from "./environment";
 import { surfacesForTile } from "./materials";
 import type { GameState } from "./state";
 import {
@@ -145,7 +146,7 @@ export function validateLaboratoryPlacement(
   if (
     state.environment.orders.some(
       (order) =>
-        order.phase !== "completed" &&
+        isActiveSurfaceOrder(order) &&
         tiles.some((tile) => sameTile(tile.position, order.position)),
     )
   )

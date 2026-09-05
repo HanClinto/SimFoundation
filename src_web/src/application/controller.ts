@@ -21,6 +21,7 @@ import {
 import { objectFootprint, type ObjectOrientation } from "../simulation/objects";
 import {
   orderSurfaceWork,
+  cancelSurfaceWork,
   type SurfaceOperation,
   type SurfaceOrderCode,
 } from "../simulation/environment";
@@ -102,6 +103,7 @@ export interface GameController {
     operation: SurfaceOperation,
   ): SurfaceOrderCode | null;
   setAutomaticRepairs(enabled: boolean): ControllerSnapshot;
+  cancelSurfaceWork(orderId: string): ControllerSnapshot;
   setDoorOpen(position: TilePosition, open: boolean): ControllerSnapshot;
   setDoorPolicy(position: TilePosition, policy: DoorPolicy): ControllerSnapshot;
   getSnapshot(): ControllerSnapshot;
@@ -233,6 +235,10 @@ export function createController(initialState: GameState): GameController {
           ...state,
           environment: { ...state.environment, automaticRepairs: enabled },
         };
+      return publish();
+    },
+    cancelSurfaceWork(orderId) {
+      state = cancelSurfaceWork(state, orderId);
       return publish();
     },
     setDoorOpen(position, open) {
