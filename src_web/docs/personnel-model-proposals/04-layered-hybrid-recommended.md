@@ -1,6 +1,6 @@
-# Proposal 4: Layered Hybrid (Recommended)
+# Proposal 4: Layered Hybrid (Detailed)
 
-Status: review draft
+Status: review draft; original recommendation retained as the higher-detail alternative
 
 Primary inspirations: RimWorld, The Sims, RuneScape, Project Zomboid, Delta Green, Castle of the Winds, modern data-oriented simulation architecture
 

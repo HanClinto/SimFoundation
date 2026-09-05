@@ -2,14 +2,15 @@
 
 Status: open for review
 
-This directory contains four complete alternatives for SCPSiteManager's pawn model. They are intentionally standalone so reviewers can comment on one model without reconstructing assumptions from chat or issue history.
+This directory contains five complete alternatives for SCPSiteManager's pawn model. They are intentionally standalone so reviewers can comment on one model without reconstructing assumptions from chat or issue history.
 
 ## Proposals
 
 1. [Skill-First Colony Simulation](01-skill-first-colony-sim.md)
 2. [Classic Attributes and Skills](02-classic-attributes-and-skills.md)
 3. [Paranormal Bonds and Breaking Points](03-paranormal-bonds-and-breaking-points.md)
-4. [Layered Hybrid (Recommended)](04-layered-hybrid-recommended.md)
+4. [Layered Hybrid (Detailed)](04-layered-hybrid-recommended.md)
+5. [Simplified Hybrid with Assessment Fog (Current Candidate)](05-simplified-hybrid-assessment-fog.md)
 
 Each proposal includes:
 
@@ -35,20 +36,22 @@ Reviewers should judge each system against the same desired play:
 8. Expedition staffing rewards specialization and preparation.
 9. Autonomous job selection can explain why one pawn was chosen.
 10. The personnel dossier can summarize the result without displaying every internal field.
+11. Cameras, monitors, reports, and assessments limit what the Director actually knows.
 
 ## Comparison
 
-| Concern                     | Skill-first | Classic attributes | Paranormal bonds | Layered hybrid |
-| --------------------------- | ----------- | ------------------ | ---------------- | -------------- |
-| Colony-job clarity          | Excellent   | Good               | Fair             | Very good      |
-| Cozy use-based grind        | Excellent   | Good               | Fair             | Excellent      |
-| Tactical/expedition support | Fair        | Excellent          | Very good        | Very good      |
-| Paranormal psychology       | Good        | Good               | Excellent        | Very good      |
-| Equipment/affix hooks       | Good        | Excellent          | Very good        | Excellent      |
-| Explainability              | Excellent   | Fair               | Fair             | Very good      |
-| Implementation cost         | Low         | High               | Very high        | Medium-high    |
-| Long-campaign recovery      | Good        | Good               | Difficult        | Good           |
-| Tabletop familiarity        | Moderate    | Excellent          | Strong niche     | Moderate       |
+| Concern                     | Skill-first | Classic attributes | Paranormal bonds | Layered hybrid | Simplified hybrid |
+| --------------------------- | ----------- | ------------------ | ---------------- | -------------- | ----------------- |
+| Colony-job clarity          | Excellent   | Good               | Fair             | Very good      | Very good         |
+| Cozy use-based grind        | Excellent   | Good               | Fair             | Excellent      | Excellent         |
+| Tactical/expedition support | Fair        | Excellent          | Very good        | Very good      | Good              |
+| Paranormal psychology       | Good        | Good               | Excellent        | Very good      | Very good         |
+| Equipment/affix hooks       | Good        | Excellent          | Very good        | Excellent      | Excellent         |
+| Explainability              | Excellent   | Fair               | Fair             | Very good      | Very good         |
+| Imperfect-information play  | Poor        | Poor               | Fair             | Fair           | Excellent         |
+| Implementation cost         | Low         | High               | Very high        | Medium-high    | High              |
+| Long-campaign recovery      | Good        | Good               | Difficult        | Good           | Good              |
+| Tabletop familiarity        | Moderate    | Excellent          | Strong niche     | Moderate       | Moderate          |
 
 ## Summary Judgment
 
@@ -84,18 +87,28 @@ Feels awkward: discipline is required to stop the layered architecture from expo
 
 Choose it if base management remains primary but beloved veteran pawns, expeditions, equipment, and anomaly stories all need substantial depth.
 
+### Simplified hybrid with assessment fog
+
+Does best: separates stable identity from mutable Foundation administration, creates character tradeoffs without universally superior stats, and makes cameras, monitors, medicine, trust, and personnel assessments part of facility gameplay.
+
+Feels awkward: fog of war forces every personnel screen to distinguish actual state from known state. Bipolar aptitude axes are intentionally stylized, mixed-polarity needs require careful presentation, and poor assessment pacing could frustrate players.
+
+Choose it if the facility's information infrastructure should matter as much as the underlying pawn simulation.
+
 ## Recommendation
 
-Adopt the Layered Hybrid with two constraints:
+Use Simplified Hybrid as the current candidate, while retaining Layered Hybrid as the higher-detail fallback. The candidate should follow four constraints:
 
 1. Skill remains the dominant contributor to ordinary work; aptitudes primarily affect learning and edge cases.
-2. The default dossier exposes only Identity, Health, Mood, Sanity, activity, and urgent conditions. Aptitudes, XP, effects, and formulas remain in drill-down views.
+2. Composure remains independent from Analysis/Instinct and is derived from health, current pressures, traits, training, and effects.
+3. Actual pawn state and player knowledge remain separate; ordinary UI never silently displays omniscient values.
+4. The default dossier exposes only assessed identity, assignment, health summaries, activity, and urgent findings. Exact effects, formulas, and hidden state remain in drill-down or debug views.
 
 Borrow Bonds and three-category exposure scars from Proposal 3 only after relationships and trauma repeatedly prove too shallow with memories alone.
 
 ## Review Questions
 
-1. Are five aptitudes worth their complexity, or should the hybrid omit them initially?
+1. Are three bipolar aptitude biases fun and legible, or should they become independent aptitudes?
 2. Are eight core skills the correct granularity?
 3. Should Stability/Sanity ever be persistent, or remain entirely derived?
 4. Should traits be strictly immutable, or can rare story events transform them?
@@ -105,3 +118,6 @@ Borrow Bonds and three-category exposure scars from Proposal 3 only after relati
 8. Is nine equipment slots the right launch set?
 9. Which details belong on the default ID summary versus tabs?
 10. Does the recommended model support cozy recovery after serious incidents?
+11. Should Physical/Mental/Emotional health totals be stored or derived from conditions?
+12. How stale can assessments become before imperfect information feels unfair?
+13. Which continuous monitors should exist at game start?
