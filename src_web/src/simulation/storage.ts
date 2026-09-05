@@ -242,6 +242,15 @@ export function storagePlacementIssue(
   const area = { ...policy, id: id ?? "preview" };
   const tiles = storageTiles(area);
   if (
+    state.environment.orders.some(
+      (order) =>
+        order.phase !== "completed" &&
+        (order.operation ?? "replace") !== "replace" &&
+        storageContains(area, order.position),
+    )
+  )
+    return "occupied";
+  if (
     tiles.some(
       (position) =>
         tileAt(state.world.map, position) !== "floor" ||

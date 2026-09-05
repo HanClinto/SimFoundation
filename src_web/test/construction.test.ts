@@ -50,6 +50,31 @@ describe("laboratory annex construction", () => {
     expect(recovered.incident.level).toBe("green");
     expect(recovered.construction.availableMaterials).toBe(120);
     expect(recovered.world.map.rooms).toHaveLength(9);
+    expect(
+      restored.orderSurfaceWork(
+        { x: 59, y: 81 },
+        "structure",
+        "steel",
+        "remove",
+      ).code,
+    ).toBe("accepted");
+    for (
+      let tick = 0;
+      tick < 180 &&
+      restored.getSnapshot().game.environment.orders.at(-1)?.phase !==
+        "completed";
+      tick += 1
+    )
+      restored.advance();
+    const remodeled = restored.getSnapshot().game;
+    expect(remodeled.environment.orders.at(-1)?.phase).toBe("completed");
+    expect(remodeled.world.map.tiles[81 * 128 + 59]).toBe("floor");
+    expect(
+      loadGameState({
+        getItem: () => JSON.stringify(remodeled),
+        setItem: () => {},
+      }).status,
+    ).toBe("loaded");
   }, 20_000);
 
   it("rejects corrupt material ledgers, phases, destinations, and job ownership", () => {

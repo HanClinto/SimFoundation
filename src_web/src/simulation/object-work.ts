@@ -126,6 +126,15 @@ export function objectPlacementIssue(
   const conflicts = (position: TilePosition) =>
     footprint.some((tile) => sameTile(tile, position));
   if (
+    state.environment.orders.some(
+      (order) =>
+        order.phase !== "completed" &&
+        (order.operation ?? "replace") !== "replace" &&
+        conflicts(order.position),
+    )
+  )
+    return "occupied";
+  if (
     state.objects.items.some(
       (item) =>
         item.id !== objectId &&

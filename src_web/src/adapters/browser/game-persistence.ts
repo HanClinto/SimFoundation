@@ -1,4 +1,5 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
+import { surfaceOrderCost } from "../../simulation/environment";
 import {
   storageContains,
   servingMealCount,
@@ -513,7 +514,7 @@ function isConstructionState(value: unknown): value is ConstructionState {
 function constructionReferencesValid(state: GameState): boolean {
   const construction = state.construction;
   if (
-    !isWalkable(state.world.map, construction.stockpile) ||
+    tileAt(state.world.map, construction.stockpile) === null ||
     construction.nextBlueprintNumber !== construction.blueprints.length + 1
   )
     return false;
@@ -551,23 +552,15 @@ function constructionReferencesValid(state: GameState): boolean {
       ({ id }) => id === blueprint.commissionJobId,
     );
     if (blueprint.status === "cancelled") return !haul && !build && !commission;
-    for (const { position, tile } of laboratoryTiles(blueprint.origin)) {
+    for (const { position } of laboratoryTiles(blueprint.origin)) {
       const key = `${position.x},${position.y}`;
       if (footprint.has(key)) return false;
       footprint.add(key);
-      if (blueprint.status === "completed") {
-        const cell =
-          state.world.map.surfaces[
-            position.y * state.world.map.width + position.x
-          ];
-        if (
-          !cell?.floor ||
-          (tile === "wall" && cell.structure?.kind !== "wall") ||
-          (tile === "door" &&
-            !["door", "closed-door"].includes(cell.structure?.kind ?? ""))
-        )
-          return false;
-      } else if (tileAt(state.world.map, position) !== "grass") return false;
+      if (
+        blueprint.status !== "completed" &&
+        tileAt(state.world.map, position) !== "grass"
+      )
+        return false;
     }
     if (
       !haul ||
@@ -1020,6 +1013,19 @@ function isEnvironment(value: unknown): boolean {
         isNonEmptyString(order.jobId) &&
         isTilePosition(order.position) &&
         isLiteral(order.layer, ["floor", "structure"]) &&
+        (order.operation === undefined ||
+          isLiteral(order.operation, [
+            "replace",
+            "floor",
+            "wall",
+            "door",
+            "remove",
+          ])) &&
+        (order.operation !== "floor" || order.layer === "floor") &&
+        (!["wall", "door"].includes(String(order.operation)) ||
+          order.layer === "structure") &&
+        (order.operation !== "remove" ||
+          ["fitting", "completed"].includes(String(order.phase))) &&
         isNonEmptyString(order.material) &&
         Object.hasOwn(MATERIALS, order.material) &&
         isLiteral(order.phase, [
@@ -1076,10 +1082,7 @@ function environmentReferencesValid(state: GameState): boolean {
     return false;
   if (
     environment.spentMaterials !==
-    environment.orders.reduce(
-      (sum, order) => sum + MATERIALS[order.material].cost,
-      0,
-    )
+    environment.orders.reduce((sum, order) => sum + surfaceOrderCost(order), 0)
   )
     return false;
   if (
@@ -1129,13 +1132,7 @@ function environmentReferencesValid(state: GameState): boolean {
       )
         return false;
       const job = state.jobs.find((job) => job.id === order.jobId);
-      if (
-        !job ||
-        !state.world.map.surfaces[
-          order.position.y * state.world.map.width + order.position.x
-        ]?.[order.layer]
-      )
-        return false;
+      if (!job) return false;
       if (order.phase === "completed") return job.status === "completed";
       if (job.status === "completed" && !order.blockedReason) return false;
       return (
@@ -1294,12 +1291,12 @@ function objectsValid(state: GameState): boolean {
       return false;
   }
   for (const order of state.environment.orders)
-    if (order.phase !== "completed") {
+    if (order.phase !== "completed" && order.operation !== "remove") {
       const cargo = reservedObject(state.objects, order.jobId);
       if (
         !cargo ||
         cargo.kind !== "materials" ||
-        cargo.quantity !== MATERIALS[order.material].cost ||
+        cargo.quantity !== surfaceOrderCost(order) ||
         (order.phase === "delivering"
           ? cargo.location.kind !== "carried"
           : cargo.location.kind !== "ground")
@@ -1331,7 +1328,7 @@ function objectsValid(state: GameState): boolean {
   const materialUsed =
     state.environment.orders
       .filter((order) => order.phase === "completed")
-      .reduce((sum, order) => sum + MATERIALS[order.material].cost, 0) +
+      .reduce((sum, order) => sum + surfaceOrderCost(order), 0) +
     state.construction.blueprints.filter(
       (blueprint) => blueprint.status === "completed",
     ).length *

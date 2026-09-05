@@ -142,6 +142,14 @@ export function validateLaboratoryPlacement(
     return "out-of-bounds";
   if (state.construction.blueprints.length >= 32) return "limit-reached";
   const tiles = laboratoryTiles(origin);
+  if (
+    state.environment.orders.some(
+      (order) =>
+        order.phase !== "completed" &&
+        tiles.some((tile) => sameTile(tile.position, order.position)),
+    )
+  )
+    return "overlap";
   const activeBlueprints = state.construction.blueprints.filter(
     ({ status }) => status !== "cancelled",
   );
@@ -179,10 +187,23 @@ export function validateLaboratoryPlacement(
     )
   )
     return "overlap";
-  if (findRoute(map, state.construction.stockpile, site) === null)
-    return "unreachable";
   if (state.construction.availableMaterials < LABORATORY_MATERIAL_COST)
     return "insufficient-materials";
+  const supply = reserveSupply(
+    state.objects,
+    "materials",
+    LABORATORY_MATERIAL_COST,
+    state.construction.stockpile,
+    "preview-annex",
+    true,
+  );
+  if (!supply.objectId) return "insufficient-materials";
+  const cargo = reservedObject(supply.store, "preview-annex")!;
+  if (
+    cargo.location.kind !== "ground" ||
+    findRoute(map, cargo.location.position, site) === null
+  )
+    return "unreachable";
   return null;
 }
 

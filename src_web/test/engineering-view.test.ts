@@ -4,7 +4,36 @@ import { createEngineeringWindow } from "../src/adapters/browser/engineering-vie
 import { createController } from "../src/application/controller";
 import { createInitialState } from "../src/simulation/state";
 import { surfaceAt } from "../src/simulation/materials";
+import type { PlacementRequest } from "../src/adapters/browser/placement";
 afterEach(() => vi.unstubAllGlobals());
+it("previews single-tile building and queues work without instantly installing surfaces", () => {
+  const window = new JSDOM("<!doctype html><body></body>").window;
+  vi.stubGlobal("document", window.document);
+  const controller = createController(createInitialState());
+  const begin = vi.fn<(request: PlacementRequest) => void>();
+  const view = createEngineeringWindow(document.body, controller, begin);
+  view.element.querySelector<HTMLSelectElement>("#surface-material")!.value =
+    "ceramic";
+  view.element
+    .querySelector<HTMLButtonElement>("[data-place-surface]")!
+    .click();
+  const request = begin.mock.calls[0]![0];
+  const origin = { x: 63, y: 79 };
+  expect(request.validate(origin, controller.getSnapshot())).toBeNull();
+  expect(controller.getSnapshot().game.environment.orders).toHaveLength(0);
+  const result = request.confirm(origin);
+  expect(result.accepted).toBe(true);
+  expect(result.snapshot.game.environment.orders[0]).toMatchObject({
+    operation: "floor",
+    material: "ceramic",
+    position: origin,
+    phase: "collecting",
+  });
+  expect(surfaceAt(result.snapshot.game.world.map, origin, "floor")).toBeNull();
+  expect(request.validate(origin, controller.getSnapshot())).toContain(
+    "already pending",
+  );
+});
 it("explains an empty selection, absent layers, pending orders and insufficient stock", () => {
   const window = new JSDOM("<!doctype html><body></body>").window;
   vi.stubGlobal("document", window.document);

@@ -89,11 +89,43 @@ export function replaceSurface(
   surface: Surface,
 ): SiteMap {
   if (!surfaceAt(map, position, layer)) return map;
+  return setSurface(map, position, layer, surface);
+}
+
+export function setSurface(
+  map: SiteMap,
+  position: TilePosition,
+  layer: SurfaceLayer,
+  surface: Surface | null,
+): SiteMap {
+  if (
+    !Number.isInteger(position.x) ||
+    !Number.isInteger(position.y) ||
+    position.x < 0 ||
+    position.y < 0 ||
+    position.x >= map.width ||
+    position.y >= map.height
+  )
+    return map;
   const index = position.y * map.width + position.x;
-  const cell = { ...map.surfaces[index]!, [layer]: surface };
+  const cell = {
+    ...(map.surfaces[index] ?? { floor: null, structure: null }),
+    [layer]: surface,
+  };
   const tiles = [...map.tiles];
   tiles[index] = surfaceTile(cell);
-  return { ...map, tiles, surfaces: { ...map.surfaces, [index]: cell } };
+  const doorPolicies = { ...map.doorPolicies };
+  if (layer === "structure") {
+    if (surface && ["door", "closed-door"].includes(surface.kind))
+      doorPolicies[index] ??= "automatic";
+    else delete doorPolicies[index];
+  }
+  return {
+    ...map,
+    tiles,
+    surfaces: { ...map.surfaces, [index]: cell },
+    doorPolicies,
+  };
 }
 
 export function damageSurface(

@@ -10,7 +10,7 @@ import {
 import {
   MATERIALS,
   damageSurfaces,
-  replaceSurface,
+  setSurface,
   surfaceAt,
   type MaterialId,
   type SurfaceLayer,
@@ -26,6 +26,7 @@ import {
 import type { SiteJob } from "./jobs";
 
 export interface SurfaceOrder {
+  readonly operation?: SurfaceOperation;
   readonly id: string;
   readonly position: TilePosition;
   readonly layer: SurfaceLayer;
@@ -33,6 +34,104 @@ export interface SurfaceOrder {
   readonly jobId: string;
   readonly phase: "collecting" | "delivering" | "fitting" | "completed";
   readonly blockedReason: string | null;
+}
+export type SurfaceOperation = "replace" | "floor" | "wall" | "door" | "remove";
+export function surfaceOrderCost(
+  order: Pick<SurfaceOrder, "material" | "operation">,
+): number {
+  return order.operation === "remove" ? 0 : MATERIALS[order.material].cost;
+}
+
+export function surfaceChangeIssue(
+  state: GameState,
+  position: TilePosition,
+  layer: SurfaceLayer,
+  operation: SurfaceOperation,
+): SurfaceOrderCode | null {
+  const surface = surfaceAt(state.world.map, position, layer);
+  if (
+    tileAt(state.world.map, position) === null ||
+    !["floor", "structure"].includes(layer) ||
+    !["replace", "floor", "wall", "door", "remove"].includes(operation)
+  )
+    return "invalid-position";
+  if (operation === "replace") return surface ? null : "unknown-surface";
+  if (operation === "remove" ? !surface : !!surface)
+    return operation === "remove" ? "unknown-surface" : "occupied";
+  if (
+    (operation === "floor" && layer !== "floor") ||
+    (["wall", "door"].includes(operation) && layer !== "structure")
+  )
+    return "invalid-position";
+  const structure = surfaceAt(state.world.map, position, "structure");
+  const floor = surfaceAt(state.world.map, position, "floor");
+  if (
+    (layer === "floor" && structure) ||
+    (layer === "structure" &&
+      operation !== "remove" &&
+      (!floor || floor.integrity <= 0))
+  )
+    return "unsupported";
+  const occupied =
+    Object.values(state.world.positions).some((other) =>
+      sameTile(other, position),
+    ) ||
+    state.objects.items.some(
+      (item) =>
+        item.location.kind === "ground" &&
+        objectFootprint(item, item.location.position).some((other) =>
+          sameTile(other, position),
+        ),
+    );
+  if (occupied) return "occupied";
+  if (
+    state.observations.cameras.some((camera) =>
+      sameTile(camera.position, position),
+    )
+  )
+    return "occupied";
+  if (
+    state.storage.areas.some(
+      (area) =>
+        position.x >= area.origin.x &&
+        position.x < area.origin.x + area.width &&
+        position.y >= area.origin.y &&
+        position.y < area.origin.y + area.height,
+    )
+  )
+    return "occupied";
+  if (
+    state.construction.blueprints.some(
+      (blueprint) =>
+        !["completed", "cancelled"].includes(blueprint.status) &&
+        position.x >= blueprint.origin.x &&
+        position.x < blueprint.origin.x + 9 &&
+        position.y >= blueprint.origin.y &&
+        position.y < blueprint.origin.y + 7,
+    )
+  )
+    return "occupied";
+  if (
+    state.objectOrders.some(
+      (order) =>
+        !["completed", "cancelled"].includes(order.phase) &&
+        (() => {
+          const item = state.objects.items.find(
+            (item) => item.id === order.objectId,
+          )!;
+          return (
+            order.install
+              ? objectFootprint(
+                  { ...item, orientation: order.orientation },
+                  order.destination,
+                )
+              : [order.destination]
+          ).some((other) => sameTile(other, position));
+        })(),
+    )
+  )
+    return "occupied";
+  return null;
 }
 export interface ExposureSource {
   readonly id: string;
@@ -124,69 +223,88 @@ export type SurfaceOrderCode =
   | "busy"
   | "insufficient-materials"
   | "unreachable"
+  | "invalid-position"
+  | "occupied"
+  | "unsupported"
   | "invalid-material";
 export function orderSurfaceWork(
   state: GameState,
   position: TilePosition,
   layer: SurfaceLayer,
   material: MaterialId,
+  operation: SurfaceOperation = "replace",
 ): { state: GameState; code: SurfaceOrderCode } {
   if (!Object.hasOwn(MATERIALS, material))
     return { state, code: "invalid-material" };
-  if (
-    (layer !== "floor" && layer !== "structure") ||
-    !surfaceAt(state.world.map, position, layer)
-  )
-    return { state, code: "unknown-surface" };
+  const issue = surfaceChangeIssue(state, position, layer, operation);
+  if (issue) return { state, code: issue };
+  if (state.environment.orders.length >= 1000) return { state, code: "busy" };
   if (
     state.environment.orders.some(
       (order) =>
         order.phase !== "completed" &&
         sameTile(order.position, position) &&
-        order.layer === layer,
+        (order.layer === layer ||
+          operation !== "replace" ||
+          (order.operation ?? "replace") !== "replace"),
     )
   )
     return { state, code: "busy" };
   const workSite = neighbors(position).find(
     (site) =>
       isWalkable(state.world.map, site) &&
-      findRoute(state.world.map, state.construction.stockpile, site) !== null,
+      Object.values(state.world.positions).some(
+        (origin) => findRoute(state.world.map, origin, site) !== null,
+      ),
   );
   if (!workSite) return { state, code: "unreachable" };
-  const cost = MATERIALS[material].cost;
+  const cost = surfaceOrderCost({ material, operation });
   if (state.construction.availableMaterials < cost)
     return { state, code: "insufficient-materials" };
   const id = `surface-${state.environment.nextOrder}`;
-  const reserved = reserveSupply(
-    state.objects,
-    "materials",
-    cost,
-    state.construction.stockpile,
-    `job-${id}`,
-    true,
-  );
-  if (!reserved.objectId) return { state, code: "insufficient-materials" };
+  const reserved =
+    operation === "remove"
+      ? { store: state.objects, objectId: null }
+      : reserveSupply(
+          state.objects,
+          "materials",
+          cost,
+          state.construction.stockpile,
+          `job-${id}`,
+          true,
+        );
+  if (operation !== "remove" && !reserved.objectId)
+    return { state, code: "insufficient-materials" };
   const recorded =
     state.observations.knownSurfaces[
       position.y * state.world.map.width + position.x
     ]?.[layer] ?? surfaceAt(state.world.map, position, layer)!;
   const job: SiteJob = {
     id: `job-${id}`,
-    title: `Collect ${MATERIALS[material].name.toLowerCase()} for ${layer} ${position.x},${position.y}`,
-    description: `Replace ${layer} at ${position.x},${position.y}; collect, deliver, then fit.`,
-    skillId: "logistics",
-    priority: recorded.integrity === 0 && layer === "structure" ? 95 : 45,
+    title:
+      operation === "remove"
+        ? `Remove ${layer} at ${position.x},${position.y}`
+        : `Collect ${MATERIALS[material].name.toLowerCase()} for ${layer} ${position.x},${position.y}`,
+    description: `${operation} ${layer} at ${position.x},${position.y}.`,
+    skillId: operation === "remove" ? "engineering" : "logistics",
+    priority:
+      operation === "replace" &&
+      recorded?.integrity === 0 &&
+      layer === "structure"
+        ? 95
+        : 45,
     xpPerTick: 1,
     preferredBiases: { mindMight: 1, receptiveResolute: 1 },
     status: "available",
     progress: 0,
-    requiredProgress: 8,
+    requiredProgress: operation === "remove" ? 24 : 8,
     assignedPersonId: null,
     requiredWorkerId: null,
     assignmentReason: null,
     authorizedTick: state.tick,
     completedTick: null,
     workSite: (() => {
+      if (operation === "remove") return workSite;
       const cargo = reservedObject(reserved.store, `job-${id}`)!;
       return cargo.location.kind === "ground"
         ? cargo.location.position
@@ -215,7 +333,8 @@ export function orderSurfaceWork(
             position,
             layer,
             material,
-            phase: "collecting",
+            operation,
+            phase: operation === "remove" ? "fitting" : "collecting",
             blockedReason: null,
           },
         ],
@@ -243,7 +362,7 @@ export function advanceSurfaceWork(state: GameState): GameState {
       const workSite = neighbors(order.position).find(
         (site) =>
           isWalkable(map, site) &&
-          findRoute(map, state.construction.stockpile, site) !== null,
+          findRoute(map, state.world.positions[carrier]!, site) !== null,
       );
       if (!workSite)
         return {
@@ -316,7 +435,26 @@ export function advanceSurfaceWork(state: GameState): GameState {
       );
       return { ...order, phase: "fitting", blockedReason: null };
     }
-    const surface = surfaceAt(map, order.position, order.layer)!;
+    const operation = order.operation ?? "replace";
+    const issue = surfaceChangeIssue(
+      { ...state, objects, world: { ...state.world, map } },
+      order.position,
+      order.layer,
+      operation,
+    );
+    if (issue)
+      return {
+        ...order,
+        blockedReason: `Fitting blocked: ${issue}. Clear or restore the target tile.`,
+      };
+    if (operation === "remove") {
+      map = setSurface(map, order.position, order.layer, null);
+      return { ...order, phase: "completed", blockedReason: null };
+    }
+    const surface =
+      operation === "replace"
+        ? surfaceAt(map, order.position, order.layer)!
+        : { kind: operation, material: order.material, integrity: 100 };
     if (
       (order.layer === "structure" &&
         surface.kind !== "door" &&
@@ -348,7 +486,7 @@ export function advanceSurfaceWork(state: GameState): GameState {
         blockedReason: "Materials must be delivered before fitting.",
       };
     objects = consumed;
-    map = replaceSurface(map, order.position, order.layer, {
+    map = setSurface(map, order.position, order.layer, {
       ...surface,
       material: order.material,
       integrity: 100,

@@ -340,6 +340,16 @@ export function cameraPlacementIssue(
     )
   )
     return "occupied";
+  if (
+    state.environment.orders.some(
+      (order) =>
+        order.phase !== "completed" &&
+        (order.operation ?? "replace") !== "replace" &&
+        order.position.x === position.x &&
+        order.position.y === position.y,
+    )
+  )
+    return "occupied";
   return state.observations.cameraKits === 0 ? "no-kits" : null;
 }
 

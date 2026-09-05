@@ -705,7 +705,10 @@ const clinicalCareView = createClinicalCareView(
   requireElement<HTMLElement>("#clinical-care-body"),
   controller,
 );
-const engineeringView = createEngineeringWindow(app, controller);
+const engineeringView = createEngineeringWindow(app, controller, (request) => {
+  windowManager.open("camera-window");
+  siteCamera.beginPlacement(request);
+});
 const storageView = createStorageWindow(
   app,
   controller,

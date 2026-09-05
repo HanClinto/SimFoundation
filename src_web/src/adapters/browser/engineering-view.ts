@@ -11,10 +11,30 @@ import { sameTile } from "../../simulation/world";
 import type { DoorPolicy, TilePosition } from "../../simulation/world";
 import { engineeringRecord } from "./map-objects";
 import type { MapPerspective } from "./map-settings";
+import type { PlacementRequest } from "./placement";
+import type {
+  SurfaceOperation,
+  SurfaceOrderCode,
+} from "../../simulation/environment";
+
+const surfaceMessages: Record<SurfaceOrderCode, string> = {
+  accepted: "Surface work ordered.",
+  "unknown-surface": "No installed layer to remove or replace.",
+  busy: "Surface work is already pending at this tile.",
+  "insufficient-materials": "Insufficient available physical materials.",
+  unreachable: "No reachable work face.",
+  "invalid-material": "Unknown material.",
+  "invalid-position": "Choose a valid map tile and matching layer.",
+  occupied:
+    "Clear people, objects, storage, and pending construction from the tile.",
+  unsupported:
+    "Structures require intact flooring; remove structures before removing their floor.",
+};
 
 export function createEngineeringWindow(
   host: HTMLElement,
   controller: GameController,
+  begin?: (request: PlacementRequest) => void,
 ) {
   const element = document.createElement("section");
   element.id = "engineering-window";
@@ -48,9 +68,8 @@ export function createEngineeringWindow(
     "[data-operate-door]",
   )!;
   const doorControls = document.createElement("div");
-  doorControls.className = "field-row";
   doorControls.innerHTML =
-    '<label for="door-policy">Door policy</label><select id="door-policy"><option value="automatic">Automatic</option><option value="held-open">Held open</option><option value="held-closed">Held closed</option></select>';
+    '<div class="field-row"><label for="door-policy">Door policy</label><select id="door-policy"><option value="automatic">Automatic</option><option value="held-open">Held open</option><option value="held-closed">Held closed</option></select></div>';
   doorButton.parentElement!.after(doorControls);
   const doorPolicy = doorControls.querySelector<HTMLSelectElement>("select")!;
   const automatic = element.querySelector<HTMLInputElement>(
@@ -73,6 +92,57 @@ export function createEngineeringWindow(
   let position: TilePosition | null = null;
   let perspective: MapPerspective = "recorded";
   let current = controller.getSnapshot();
+  const building = document.createElement("fieldset");
+  building.innerHTML =
+    '<legend>Build and remove</legend><div class="field-row"><label for="surface-operation">Operation</label><select id="surface-operation"><option value="floor">Build floor</option><option value="wall">Build wall</option><option value="door">Build door</option><option value="remove-floor">Remove floor</option><option value="remove-structure">Remove structure</option></select></div><button type="button" data-place-surface>Choose work tile</button>';
+  controls.prepend(building);
+  const place = building.querySelector<HTMLButtonElement>(
+    "[data-place-surface]",
+  )!;
+  place.disabled = !begin;
+  place.addEventListener("click", () => {
+    if (!begin) return;
+    const choice = building.querySelector<HTMLSelectElement>("select")!;
+    const operation: SurfaceOperation = choice.value.startsWith("remove-")
+      ? "remove"
+      : (choice.value as SurfaceOperation);
+    const layer: SurfaceLayer =
+      choice.value === "floor" || choice.value === "remove-floor"
+        ? "floor"
+        : "structure";
+    const material = materialSelect.value as MaterialId;
+    begin({
+      label: `${choice.selectedOptions[0]!.textContent} / ${operation === "remove" ? "no salvage" : `${MATERIALS[material].name} / ${MATERIALS[material].cost} materials`}`,
+      origin: position ?? { x: 63, y: 79 },
+      footprint: (origin) => [{ position: origin }],
+      validate: (origin) => {
+        const issue = controller.previewSurfaceWork(
+          origin,
+          layer,
+          material,
+          operation,
+        );
+        return issue ? surfaceMessages[issue] : null;
+      },
+      confirm: (origin) => {
+        const result = controller.orderSurfaceWork(
+          origin,
+          layer,
+          material,
+          operation,
+        );
+        if (result.code === "accepted") position = origin;
+        layerSelect.value = layer;
+        render(result.snapshot);
+        feedback.textContent = surfaceMessages[result.code];
+        return {
+          accepted: result.code === "accepted",
+          message: surfaceMessages[result.code],
+          snapshot: result.snapshot,
+        };
+      },
+    });
+  });
   doorPolicy.addEventListener("change", () => {
     if (!position) return;
     const requested = doorPolicy.value as DoorPolicy;
@@ -104,6 +174,11 @@ export function createEngineeringWindow(
       "insufficient-materials": "Insufficient materials in the store.",
       unreachable: "No reachable work face.",
       "invalid-material": "Unknown material.",
+      "invalid-position": "Choose a valid map tile and matching layer.",
+      occupied:
+        "Clear people, objects, storage, and pending construction from the tile.",
+      unsupported:
+        "Structures require intact flooring; remove structures before removing their floor.",
     };
     feedback.textContent = messages[result.code];
     render(result.snapshot);

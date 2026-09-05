@@ -21,6 +21,7 @@ import {
 import { objectFootprint, type ObjectOrientation } from "../simulation/objects";
 import {
   orderSurfaceWork,
+  type SurfaceOperation,
   type SurfaceOrderCode,
 } from "../simulation/environment";
 import { type MaterialId, type SurfaceLayer } from "../simulation/materials";
@@ -92,7 +93,14 @@ export interface GameController {
     position: TilePosition,
     layer: SurfaceLayer,
     material: MaterialId,
+    operation?: SurfaceOperation,
   ): { code: SurfaceOrderCode; snapshot: ControllerSnapshot };
+  previewSurfaceWork(
+    position: TilePosition,
+    layer: SurfaceLayer,
+    material: MaterialId,
+    operation: SurfaceOperation,
+  ): SurfaceOrderCode | null;
   setAutomaticRepairs(enabled: boolean): ControllerSnapshot;
   setDoorOpen(position: TilePosition, open: boolean): ControllerSnapshot;
   setDoorPolicy(position: TilePosition, policy: DoorPolicy): ControllerSnapshot;
@@ -198,8 +206,24 @@ export function createController(initialState: GameState): GameController {
       return publish();
     },
 
-    orderSurfaceWork(position, layer, material) {
-      const result = orderSurfaceWork(state, position, layer, material);
+    previewSurfaceWork(position, layer, material, operation) {
+      const result = orderSurfaceWork(
+        state,
+        position,
+        layer,
+        material,
+        operation,
+      );
+      return result.code === "accepted" ? null : result.code;
+    },
+    orderSurfaceWork(position, layer, material, operation) {
+      const result = orderSurfaceWork(
+        state,
+        position,
+        layer,
+        material,
+        operation,
+      );
       state = result.state;
       return { code: result.code, snapshot: publish() };
     },
