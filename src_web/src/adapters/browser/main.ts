@@ -8,9 +8,14 @@ import {
 } from "../../application/controller";
 import { createInitialState } from "../../simulation/state";
 import bookIconUrl from "./assets/book.svg";
+import alarmIconUrl from "./assets/alarm.svg";
+import budgetIconUrl from "./assets/budget.svg";
 import cameraIconUrl from "./assets/camera.svg";
+import controlIconUrl from "./assets/control.svg";
+import debugIconUrl from "./assets/debug.svg";
 import facilityIconUrl from "./assets/facility.svg";
 import folderIconUrl from "./assets/folder.svg";
+import personnelIconUrl from "./assets/personnel.svg";
 import scpEmblemUrl from "./assets/scp-emblem.svg";
 import {
   createPersonnelInspectorWindows,
@@ -299,12 +304,10 @@ app.innerHTML = `
     </div>
   </div>
 
-  <footer class="taskbar" aria-label="Simulation desktop taskbar">
+  <footer id="taskbar" class="taskbar" aria-label="Simulation desktop taskbar">
     <button type="button" id="scp-menu-button" class="scp-menu-button" aria-expanded="false"><img class="scp-mark" src="${scpEmblemUrl}" alt="" /><strong>SCP</strong></button>
     <div class="taskbar-divider" aria-hidden="true"></div>
-    <button type="button" class="task-button" data-open-window="facility-window"><img src="${facilityIconUrl}" alt="" />Site 828</button>
-    <button type="button" class="task-button" data-open-window="camera-window"><img src="${cameraIconUrl}" alt="" />Camera Feed</button>
-    <span class="taskbar-spacer"></span>
+    <div id="taskbar-window-list" class="taskbar-window-list" aria-label="Open windows"></div>
     <button type="button" id="taskbar-clock" class="taskbar-clock" data-open-window="control-window" aria-label="Open Simulation Control">
       <span id="taskbar-status">▶</span><time id="taskbar-game-time">08:00</time>
     </button>
@@ -336,6 +339,8 @@ const controlViewMenu = requireElement<HTMLElement>("#control-view-menu");
 const controlViewMenuButton = requireElement<HTMLButtonElement>(
   "#control-view-menu-button",
 );
+const taskbar = requireElement<HTMLElement>("#taskbar");
+const taskbarWindowList = requireElement<HTMLElement>("#taskbar-window-list");
 const startMenu = requireElement<HTMLElement>("#start-menu");
 const scpMenuButton = requireElement<HTMLButtonElement>("#scp-menu-button");
 const stateVersion = requireElement<HTMLElement>("#state-version");
@@ -356,6 +361,8 @@ const windowManager = createWindowManager(app);
 
 windowManager.register(requireElement<HTMLElement>("#facility-window"), {
   id: "facility-window",
+  title: "Site 828",
+  iconUrl: facilityIconUrl,
   defaultRect: { left: 112, top: 28, width: 590, height: 410 },
   defaultOpen: true,
   minimumWidth: 120,
@@ -363,6 +370,8 @@ windowManager.register(requireElement<HTMLElement>("#facility-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#camera-window"), {
   id: "camera-window",
+  title: "Camera Feed",
+  iconUrl: cameraIconUrl,
   defaultRect: { left: 484, top: 92, width: 760, height: 540 },
   defaultOpen: true,
   minimumWidth: 120,
@@ -370,6 +379,8 @@ windowManager.register(requireElement<HTMLElement>("#camera-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#control-window"), {
   id: "control-window",
+  title: "Simulation Control",
+  iconUrl: controlIconUrl,
   defaultRect: { left: 22, top: 612, width: 330, height: 142 },
   defaultOpen: true,
   minimumWidth: 120,
@@ -377,6 +388,8 @@ windowManager.register(requireElement<HTMLElement>("#control-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#alarm-window"), {
   id: "alarm-window",
+  title: "Alarm Manager",
+  iconUrl: alarmIconUrl,
   defaultRect: { left: 770, top: 202, width: 390, height: 440 },
   defaultOpen: false,
   minimumWidth: 120,
@@ -384,6 +397,8 @@ windowManager.register(requireElement<HTMLElement>("#alarm-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#personnel-window"), {
   id: "personnel-window",
+  title: "Personnel Roster",
+  iconUrl: personnelIconUrl,
   defaultRect: { left: 218, top: 164, width: 500, height: 330 },
   defaultOpen: false,
   minimumWidth: 120,
@@ -391,6 +406,8 @@ windowManager.register(requireElement<HTMLElement>("#personnel-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#budget-window"), {
   id: "budget-window",
+  title: "Budget Report",
+  iconUrl: budgetIconUrl,
   defaultRect: { left: 322, top: 238, width: 420, height: 330 },
   defaultOpen: false,
   minimumWidth: 120,
@@ -398,6 +415,8 @@ windowManager.register(requireElement<HTMLElement>("#budget-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#knowledge-window"), {
   id: "knowledge-window",
+  title: "Foundation Library",
+  iconUrl: bookIconUrl,
   defaultRect: { left: 264, top: 82, width: 720, height: 520 },
   defaultOpen: false,
   minimumWidth: 120,
@@ -405,6 +424,8 @@ windowManager.register(requireElement<HTMLElement>("#knowledge-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#debug-window"), {
   id: "debug-window",
+  title: "System Monitor",
+  iconUrl: debugIconUrl,
   defaultRect: { left: 840, top: 420, width: 320, height: 230 },
   defaultOpen: false,
   minimumWidth: 120,
@@ -413,6 +434,10 @@ windowManager.register(requireElement<HTMLElement>("#debug-window"), {
 personnelInspectors.forEach((inspector, index) => {
   windowManager.register(inspector, {
     id: inspector.id,
+    title:
+      inspector.querySelector<HTMLElement>(".title-bar-text")?.textContent ??
+      "Personnel Dossier",
+    iconUrl: personnelIconUrl,
     defaultRect: {
       left: 150 + index * 34,
       top: 90 + index * 28,
@@ -455,7 +480,7 @@ for (const desktopIcon of document.querySelectorAll<HTMLButtonElement>(
 }
 
 for (const directLauncher of document.querySelectorAll<HTMLButtonElement>(
-  ".taskbar [data-open-window], .start-menu [data-open-window]",
+  ".start-menu [data-open-window]",
 )) {
   directLauncher.addEventListener("click", () => {
     const windowId = directLauncher.dataset.openWindow;
@@ -464,6 +489,38 @@ for (const directLauncher of document.querySelectorAll<HTMLButtonElement>(
     scpMenuButton.setAttribute("aria-expanded", "false");
   });
 }
+
+taskbar.addEventListener("click", (event) => {
+  const launcher = (event.target as Element).closest<HTMLButtonElement>(
+    "[data-open-window]",
+  );
+  const windowId = launcher?.dataset.openWindow;
+  if (windowId) windowManager.open(windowId);
+});
+
+windowManager.subscribe((windows) => {
+  taskbarWindowList.replaceChildren(
+    ...windows
+      .filter((windowState) => windowState.open)
+      .map((windowState) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "task-button";
+        button.dataset.openWindow = windowState.id;
+        button.setAttribute("aria-pressed", String(windowState.active));
+        button.setAttribute("aria-label", `Focus ${windowState.title}`);
+
+        const icon = document.createElement("img");
+        icon.src = windowState.iconUrl;
+        icon.alt = "";
+
+        const label = document.createElement("span");
+        label.textContent = windowState.title;
+        button.append(icon, label);
+        return button;
+      }),
+  );
+});
 
 scpMenuButton.addEventListener("click", () => {
   startMenu.hidden = !startMenu.hidden;

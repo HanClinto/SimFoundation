@@ -359,6 +359,14 @@ textarea {
   white-space: nowrap;
 }
 
+.window-title-with-icon {
+  min-height: 16px;
+  padding-left: 19px;
+  background-repeat: no-repeat;
+  background-position: left center;
+  background-size: 16px 16px;
+}
+
 .menu-bar {
   display: flex;
   gap: 2px;
@@ -1194,9 +1202,10 @@ textarea {
 
 .task-button {
   display: flex;
-  width: 138px;
-  min-width: 0;
+  width: min(138px, 100%);
+  min-width: 42px;
   height: 24px;
+  flex: 0 1 138px;
   align-items: center;
   gap: 6px;
   padding: 2px 7px;
@@ -1213,9 +1222,26 @@ textarea {
   flex: 0 0 auto;
 }
 
-.taskbar-spacer {
-  min-width: 10px;
+.task-button span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.task-button[aria-pressed="true"] {
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 1px 1px #0a0a0a,
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px #808080;
+}
+
+.taskbar-window-list {
+  display: flex;
+  min-width: 0;
   flex: 1 1 auto;
+  gap: 3px;
+  overflow: hidden;
 }
 
 .taskbar-clock {

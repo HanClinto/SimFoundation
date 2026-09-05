@@ -102,6 +102,7 @@ Double-clicking or following a link opens the relevant object without closing un
 - Closing a window does not destroy its simulation object or reset its preferred geometry.
 - Desktop and folder icons use the conventional select/open rhythm; taskbar and menu commands act immediately.
 - Active and inactive title bars make focus and stacking obvious.
+- Every managed window uses the same small identifying icon in its title bar and taskbar entry. The taskbar lists open windows only; its pressed entry tracks the focused window, and closing a window removes its entry.
 - Utility windows may provide named density modes such as **Standard** and **Minimal** instead of one compromise layout. Simulation Control uses compact square media-player controls: pause, play, and progressively faster forward glyphs.
 - Global simulation time continues while modeless windows are rearranged unless paused by the player or alarm policy.
 - Raw tick counts, seeds, internal IDs, and deterministic machinery belong in developer tools, not ordinary operational views.

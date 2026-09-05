@@ -1,9 +1,19 @@
 export interface ManagedWindowOptions {
   readonly id: string;
+  readonly title: string;
+  readonly iconUrl: string;
   readonly defaultRect: WindowRect;
   readonly defaultOpen: boolean;
   readonly minimumWidth: number;
   readonly minimumHeight: number;
+}
+
+export interface ManagedWindowSnapshot {
+  readonly id: string;
+  readonly title: string;
+  readonly iconUrl: string;
+  readonly open: boolean;
+  readonly active: boolean;
 }
 
 interface WindowRect {
@@ -87,6 +97,9 @@ function readRect(element: HTMLElement): WindowRect {
 
 export function createWindowManager(desktop: HTMLElement) {
   const windows = new Map<string, ManagedWindow>();
+  const listeners = new Set<
+    (snapshot: readonly ManagedWindowSnapshot[]) => void
+  >();
   const layout = loadLayout();
   let highestZIndex = Math.max(
     10,
@@ -103,6 +116,34 @@ export function createWindowManager(desktop: HTMLElement) {
       };
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(nextLayout));
+  }
+
+  function getSnapshot(): readonly ManagedWindowSnapshot[] {
+    const visibleWindows = [...windows.values()].filter(
+      ({ element }) => !element.hidden,
+    );
+    const activeWindow = visibleWindows.reduce<ManagedWindow | undefined>(
+      (active, candidate) =>
+        !active ||
+        Number.parseInt(candidate.element.style.zIndex, 10) >
+          Number.parseInt(active.element.style.zIndex, 10)
+          ? candidate
+          : active,
+      undefined,
+    );
+
+    return [...windows.values()].map((managedWindow) => ({
+      id: managedWindow.options.id,
+      title: managedWindow.options.title,
+      iconUrl: managedWindow.options.iconUrl,
+      open: !managedWindow.element.hidden,
+      active: managedWindow === activeWindow,
+    }));
+  }
+
+  function notify(): void {
+    const snapshot = getSnapshot();
+    for (const listener of listeners) listener(snapshot);
   }
 
   function refreshFocusStyles(): void {
@@ -128,6 +169,7 @@ export function createWindowManager(desktop: HTMLElement) {
     managedWindow.element.style.zIndex = String(highestZIndex);
     refreshFocusStyles();
     saveLayout();
+    notify();
   }
 
   function applyRect(managedWindow: ManagedWindow, rect: WindowRect): void {
@@ -152,6 +194,7 @@ export function createWindowManager(desktop: HTMLElement) {
     managedWindow.element.hidden = true;
     refreshFocusStyles();
     saveLayout();
+    notify();
   }
 
   function register(element: HTMLElement, options: ManagedWindowOptions): void {
@@ -168,6 +211,11 @@ export function createWindowManager(desktop: HTMLElement) {
     if (!titleBarElement)
       throw new Error(`Window ${options.id} has no title bar`);
     const titleBar = titleBarElement;
+    const titleText = titleBar.querySelector<HTMLElement>(".title-bar-text");
+    if (titleText) {
+      titleText.classList.add("window-title-with-icon");
+      titleText.style.backgroundImage = `url("${options.iconUrl}")`;
+    }
 
     titleBar.addEventListener("pointerdown", (event) => {
       if ((event.target as Element).closest("button")) return;
@@ -206,6 +254,15 @@ export function createWindowManager(desktop: HTMLElement) {
 
     const resizeObserver = new ResizeObserver(() => saveLayout());
     resizeObserver.observe(element);
+    notify();
+  }
+
+  function subscribe(
+    listener: (snapshot: readonly ManagedWindowSnapshot[]) => void,
+  ): () => void {
+    listeners.add(listener);
+    listener(getSnapshot());
+    return () => listeners.delete(listener);
   }
 
   window.addEventListener("resize", () => {
@@ -215,5 +272,5 @@ export function createWindowManager(desktop: HTMLElement) {
     saveLayout();
   });
 
-  return { register, open, close };
+  return { register, open, close, subscribe };
 }
