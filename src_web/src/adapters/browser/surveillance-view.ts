@@ -10,7 +10,7 @@ import type { TilePosition } from "../../simulation/world";
 
 export const cameraMessages: Record<CameraPlacementCode, string> = {
   "installed-order": "Camera installation assigned to engineering.",
-  "not-visible": "Camera placement requires a currently observed location.",
+  "not-visible": "Choose a tile inside the site region.",
   "not-floor": "Camera mounting requires an interior floor tile.",
   occupied: "A camera is already registered at this location.",
   "no-kits": "No installation kits remain.",
@@ -87,5 +87,16 @@ export function createSurveillanceView(
     for (const row of rows.values()) row.remove();
   }
   render(current);
-  return { render };
+  return {
+    render,
+    selectCamera: (id: string) => {
+      for (const row of table.querySelectorAll<HTMLElement>(
+        "[data-camera-id]",
+      )) {
+        row.classList.toggle("selected-record", row.dataset.cameraId === id);
+        if (row.dataset.cameraId === id)
+          row.scrollIntoView?.({ block: "nearest" });
+      }
+    },
+  };
 }

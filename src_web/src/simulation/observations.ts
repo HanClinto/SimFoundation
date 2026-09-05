@@ -273,13 +273,15 @@ export function cameraPlacementIssue(
   if (
     !Number.isInteger(position.x) ||
     !Number.isInteger(position.y) ||
-    tileAt(state.world.map, position) === null ||
-    !state.observations.visibleTiles.includes(
-      position.y * state.world.map.width + position.x,
-    )
+    tileAt(state.world.map, position) === null
   )
     return "not-visible";
-  if (tileAt(state.world.map, position) !== "floor") return "not-floor";
+  const remembered =
+    state.observations.knownTiles[
+      position.y * state.world.map.width + position.x
+    ];
+  if (remembered !== null && remembered !== undefined && remembered !== "floor")
+    return "not-floor";
   if (
     state.observations.cameras.some(
       (camera) =>
@@ -324,7 +326,7 @@ export function installCamera(
           id: installJobId,
           title: `Install field camera ${number}`,
           description:
-            "Mount and commission a surveillance camera at the approved observed location.",
+            "Survey the requested location, then mount and commission a surveillance camera.",
           skillId: "engineering",
           priority: 50,
           xpPerTick: 1,

@@ -6,6 +6,7 @@ import type {
 import {
   findRoute,
   sameTile,
+  tileAt,
   type SiteWorld,
   type TilePosition,
 } from "./world";
@@ -410,6 +411,24 @@ export function advanceJobs(
       continue;
     }
 
+    if (
+      job.id.startsWith("job-install-camera-") &&
+      tileAt(world.map, job.workSite) !== "floor"
+    ) {
+      people.set(worker.id, {
+        ...worker,
+        currentJobId: null,
+        activity: "Camera site surveyed; interior mounting surface required",
+      });
+      advancedJobsById.set(job.id, {
+        ...job,
+        status: "available",
+        assignedPersonId: null,
+        assignmentReason:
+          "Site survey: interior floor required for camera installation.",
+      });
+      continue;
+    }
     const progress = Math.min(
       job.requiredProgress,
       job.progress + Math.max(1, skill.level),

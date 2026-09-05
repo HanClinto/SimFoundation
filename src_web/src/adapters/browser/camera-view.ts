@@ -6,6 +6,7 @@ import type { TilePosition } from "../../simulation/world";
 import { observedSnapshot } from "./observed-view";
 import { cameraMessages } from "./surveillance-view";
 import { constructionMessages } from "./construction-view";
+import { mapObjects } from "./map-objects";
 import {
   renderSite,
   projectPosition,
@@ -19,6 +20,7 @@ export function createSiteCamera(
   controller: GameController,
   openEntity: (id: string) => void,
 ) {
+  let draftPinned = false;
   let camera: MapCamera = {
     center: { x: 62.5, y: 62.5 },
     zoom: Math.max(
@@ -49,6 +51,22 @@ export function createSiteCamera(
   const placeButton = windowElement.querySelector<HTMLButtonElement>(
     '[data-camera-action="place"]',
   )!;
+  const overlay = windowElement.querySelector<HTMLSelectElement>(
+    "[data-camera-overlay]",
+  );
+  overlay?.addEventListener("change", () => {
+    camera = {
+      ...camera,
+      overlay: overlay.value as "normal" | "construction" | "engineering",
+    };
+    if (overlay.value === "construction") {
+      mode.value = "laboratory";
+      mode.dispatchEvent(new Event("change"));
+    } else {
+      mode.value = "inspect";
+      mode.dispatchEvent(new Event("change"));
+    }
+  });
   let snapshot = observedSnapshot(controller.getSnapshot());
   entitySelect.replaceChildren(
     new Option("Select personnel", ""),
@@ -56,6 +74,7 @@ export function createSiteCamera(
       (person) => new Option(person.name, person.id),
     ),
     new Option("SCP-999", "SCP-999"),
+    new Option("AN-001", "AN-001"),
   );
 
   function render(nextSnapshot: ControllerSnapshot) {
@@ -85,7 +104,7 @@ export function createSiteCamera(
         const code = controller.previewCamera(camera.draft.origin);
         feedback.textContent = code
           ? cameraMessages[code]
-          : "Observed floor location / 1 installation kit";
+          : "Camera site order / 1 installation kit / engineering survey required";
       } else {
         const code = controller.previewLaboratory(camera.draft.origin);
         feedback.textContent = code
@@ -96,13 +115,22 @@ export function createSiteCamera(
     const selected = snapshot.game.personnel.find(
       ({ id }) => id === camera.selectedId,
     );
+    const device = snapshot.game.observations.cameras.find(
+      ({ id }) => id === camera.selectedId,
+    );
     status.textContent = selected
       ? `${selected.name}: ${selected.activity}`
       : camera.selectedId === "SCP-999"
         ? snapshot.game.observations.scp999
           ? `SCP-999: ${snapshot.game.scp999.status}${snapshot.game.observations.visibleEntityIds.includes("SCP-999") ? " / Observed now" : ` / Last observed ${snapshot.game.tick - snapshot.game.observations.scp999.observedTick} minutes ago`}`
           : "SCP-999: No recorded observation"
-        : "Live coverage and remembered site records";
+        : device
+          ? `${device.name} / Open Record for installation and coverage`
+          : camera.selectedId === "AN-001"
+            ? "AN-001 / Open containment study"
+            : camera.selectedId?.startsWith("tile:")
+              ? `Engineering: ${camera.selectedId.slice(5)}`
+              : "Live coverage and remembered site records";
     zoomLabel.value = `${Math.round(camera.zoom * 100)}%`;
     inspectButton.disabled = camera.selectedId === null;
   }
@@ -135,6 +163,7 @@ export function createSiteCamera(
   }
 
   mode.addEventListener("change", () => {
+    draftPinned = false;
     camera = {
       ...camera,
       draft:
@@ -198,7 +227,9 @@ export function createSiteCamera(
 
   entitySelect.addEventListener("change", () => {
     select(entitySelect.value || null);
-    const position = snapshot.game.world.positions[entitySelect.value];
+    const position = mapObjects(snapshot.game).find(
+      ({ id }) => id === entitySelect.value,
+    )?.position;
     if (position) focus(position);
   });
   windowElement.addEventListener("click", (event) => {
@@ -228,8 +259,8 @@ export function createSiteCamera(
   };
   function entityAt(point: TilePosition): string | null {
     return (
-      Object.entries(snapshot.game.world.positions)
-        .map(([id, position]) => {
+      mapObjects(snapshot.game)
+        .map(({ id, position }) => {
           const projected = projectPosition(
             position,
             camera,
@@ -266,7 +297,10 @@ export function createSiteCamera(
   canvas.addEventListener("pointermove", (event) => {
     const point = localPoint(event);
     if (!drag) {
-      if (mode.value === "laboratory" || mode.value === "camera") {
+      if (
+        !draftPinned &&
+        (mode.value === "laboratory" || mode.value === "camera")
+      ) {
         const origin = unprojectPosition(
           point,
           camera,
@@ -302,6 +336,7 @@ export function createSiteCamera(
   canvas.addEventListener("pointerup", (event) => {
     if (drag && !drag.moved) {
       if (mode.value === "laboratory" || mode.value === "camera") {
+        draftPinned = true;
         const origin = unprojectPosition(
           localPoint(event),
           camera,
@@ -316,7 +351,17 @@ export function createSiteCamera(
           },
         };
         render(snapshot);
-      } else select(entityAt(localPoint(event)));
+      } else {
+        const point = localPoint(event);
+        const position = unprojectPosition(
+          point,
+          camera,
+          canvas.clientWidth,
+          canvas.clientHeight,
+        );
+        const tileId = `tile:${Math.round(position.x)},${Math.round(position.y)}`;
+        select(camera.overlay === "engineering" ? tileId : entityAt(point));
+      }
     }
     drag = null;
     if (canvas.hasPointerCapture(event.pointerId))
@@ -327,7 +372,16 @@ export function createSiteCamera(
   });
   canvas.addEventListener("dblclick", (event) => {
     if (mode.value === "laboratory" || mode.value === "camera") return;
-    const id = entityAt(localPoint(event));
+    const position = unprojectPosition(
+      localPoint(event),
+      camera,
+      canvas.clientWidth,
+      canvas.clientHeight,
+    );
+    const id =
+      camera.overlay === "engineering"
+        ? `tile:${Math.round(position.x)},${Math.round(position.y)}`
+        : entityAt(localPoint(event));
     if (id) {
       select(id);
       openEntity(id);
@@ -352,6 +406,7 @@ export function createSiteCamera(
     if (delta) {
       event.preventDefault();
       if (camera.draft) {
+        draftPinned = true;
         camera = {
           ...camera,
           draft: {

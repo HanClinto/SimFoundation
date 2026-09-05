@@ -202,6 +202,11 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 ## Current Prototype Decisions
 
+- Inventory, pawn identity, and anomaly identity icons use 32x32 display boxes with labels outside the icon. Larger anatomy, uniform, and chamber images are reference illustrations, not oversized identity icons.
+- Placement clicks pin the preview; hovering away to authorize does not move it. Click elsewhere to reposition. Map cameras and AN-001 use the same select/open pattern as personnel.
+- Engineering overlay exposes recorded tile data without manufacturing material or integrity values for ordinary tiles. Damage simulation remains confined to the instrumented AN-001 fixture.
+- Day Planner has directly selectable Work/Free/Sleep paint modes and drag painting. Preset application names the selected person and reports the full-day change. Hourly skill coverage counts scheduled recorded skills, not exclusive job assignment or guaranteed availability.
+
 - Occupational Health is a facility subwindow for clinical duty assignment, routine review cadence, appointment status, and chart access. Assessment buttons create referrals; they no longer immediately reveal findings. Clinical appointments require a distinct attending clinician and patient, so coverage and staff availability matter.
 
 - Personnel reference views now use original SVG equipment plates, a labeled uniform reference, and an anterior medical illustration with an accessible body-region index. Art is not copied from historical reference software. The uniform reference is not yet a composited loadout portrait.

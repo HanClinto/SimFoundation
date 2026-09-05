@@ -48,6 +48,35 @@ export function createContainmentTrialWindow(
       "",
     )}</select></label><button type="button" data-trial-fit>Fit / replace barrier</button></fieldset><fieldset><legend>Authorized exposure</legend><label>Protocol <select data-trial-protocol aria-label="Containment trial protocol"><option value="passive">Passive contact / 24 minutes</option><option value="stimulated">Mechanical stimulus / 24 minutes</option></select></label><div class="field-row"><input type="checkbox" id="trial-auto-isolate" checked/><label for="trial-auto-isolate">Isolate at 30% remaining integrity</label></div><p>Without protective isolation, exposure continues to the time limit or primary barrier failure. The secondary vessel remains in place.</p><div class="dossier-actions"><button type="button" data-trial-authorize>Authorize trial</button><button type="button" data-trial-isolate>Isolate specimen</button></div></fieldset><p data-trial-order></p><p role="status" data-trial-feedback></p></section><section data-trial-section="findings" hidden><h2>Observations &amp; Revisions</h2><div data-trial-evidence></div></section></div></div><div class="resize-grip" aria-hidden="true"></div>`;
   host.append(element);
+  const identity = document.createElement("div");
+  identity.className = "object-identity";
+  const icon = document.createElement("img");
+  icon.src = chamberUrl;
+  icon.alt = "";
+  const caption = document.createElement("span");
+  caption.textContent = "AN-001";
+  identity.append(icon, caption);
+  element.querySelector(".trial-index strong")!.replaceWith(identity);
+  const protocolSection = element.querySelector<HTMLElement>(
+    '[data-trial-section="protocol"]',
+  )!;
+  const progressPanel = document.createElement("section");
+  progressPanel.className = "trial-work-status";
+  progressPanel.setAttribute("aria-label", "Protocol status");
+  progressPanel.innerHTML =
+    '<strong data-trial-stage></strong><p data-trial-next></p><progress data-trial-progress aria-label="Active work progress" hidden></progress><p data-trial-worker></p><button type="button" data-open-related-window="work-orders-window">Open work orders</button>';
+  protocolSection.querySelector("h2")!.after(progressPanel);
+  const fit = element.querySelector<HTMLButtonElement>("[data-trial-fit]")!;
+  const authorize = element.querySelector<HTMLButtonElement>(
+    "[data-trial-authorize]",
+  )!;
+  const isolate = element.querySelector<HTMLButtonElement>(
+    "[data-trial-isolate]",
+  )!;
+  let current = controller.getSnapshot();
+  element
+    .querySelector("[data-trial-material]")!
+    .addEventListener("change", () => render(current));
   const feedback = element.querySelector<HTMLElement>("[data-trial-feedback]")!;
   element.addEventListener("click", (event) => {
     const target = event.target as Element;
@@ -91,6 +120,7 @@ export function createContainmentTrialWindow(
   });
   let evidenceSignature = "";
   function render(snapshot: ControllerSnapshot) {
+    current = snapshot;
     const trial = snapshot.game.containmentTrial;
     const reading = trial.lastReading;
     const live = snapshot.game.observations.visibleTiles.includes(
@@ -107,6 +137,71 @@ export function createContainmentTrialWindow(
     element.querySelector("[data-trial-supplies]")!.textContent =
       `Material allowance: ${trial.supplyCredits} units remaining / ${trial.spentCredits} committed`;
     const work = snapshot.game.jobs.find(({ id }) => id === trial.workOrderId);
+    const phase = work ? trial.phase : (reading?.phase ?? "unprepared");
+    const stages = {
+      unprepared: [
+        "1. Fit a barrier",
+        "Select a material below and request installation. Engineering must reach the chamber and finish the work.",
+      ],
+      installing: [
+        "1. Installation queued",
+        "Exposure becomes available after engineering completes installation.",
+      ],
+      repairing: [
+        "1. Barrier replacement",
+        "Engineering must replace the failed barrier before another trial.",
+      ],
+      preparing: [
+        "2. Research preparation",
+        "A researcher is preparing the authorized trial. Exposure starts automatically after preparation.",
+      ],
+      ready: [
+        "2. Ready for authorization",
+        "Select an exposure protocol and authorize the trial. A researcher will prepare it.",
+      ],
+      running: [
+        "3. Exposure in progress",
+        "Observe the recorded integrity. Isolate specimen stops this trial without repairing the barrier.",
+      ],
+      breached: [
+        "4. Primary barrier failed",
+        "The secondary vessel retained the specimen. Fit a replacement barrier before authorizing another trial.",
+      ],
+    } as const;
+    element.querySelector("[data-trial-stage]")!.textContent = stages[phase][0];
+    element.querySelector("[data-trial-next]")!.textContent =
+      !live && reading
+        ? `Last recorded state. Restore observation for current readings. ${stages[phase][1]}`
+        : stages[phase][1];
+    const progress = element.querySelector<HTMLProgressElement>(
+      "[data-trial-progress]",
+    )!;
+    progress.hidden = !work;
+    progress.max = work?.requiredProgress ?? 1;
+    progress.value = work?.progress ?? 0;
+    const worker = snapshot.game.personnel.find(
+      ({ id }) => id === work?.assignedPersonId,
+    );
+    element.querySelector("[data-trial-worker]")!.textContent = work
+      ? `${worker?.name ?? "Awaiting eligible staff"} / ${worker?.activity ?? work.assignmentReason ?? "Queued"} / ${work.progress} of ${work.requiredProgress}`
+      : "";
+    const material = element.querySelector<HTMLSelectElement>(
+      "[data-trial-material]",
+    )!.value as BarrierMaterial;
+    fit.disabled =
+      Boolean(work) ||
+      phase === "running" ||
+      trial.supplyCredits < BARRIER_MATERIALS[material].cost;
+    fit.title = work
+      ? "Wait for the active work package to complete"
+      : trial.supplyCredits < BARRIER_MATERIALS[material].cost
+        ? "Insufficient material allowance"
+        : "Request engineering installation";
+    authorize.disabled = Boolean(work) || phase !== "ready";
+    authorize.title = authorize.disabled
+      ? stages[phase][1]
+      : "Queue research preparation and exposure";
+    isolate.disabled = phase !== "running";
     element.querySelector("[data-trial-order]")!.textContent = work
       ? `${work.title} / ${work.assignedPersonId ? snapshot.game.personnel.find(({ id }) => id === work.assignedPersonId)?.name : (work.assignmentReason ?? "Awaiting assignment")}`
       : "No open preparation order";

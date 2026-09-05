@@ -13,6 +13,31 @@ import { observedSnapshot } from "../src/adapters/browser/observed-view";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 describe("facility observations", () => {
+  it("accepts camera orders outside current coverage but checks the actual mounting site on arrival", () => {
+    const initial = createInitialState();
+    const unobserved = {
+      ...initial,
+      observations: { ...initial.observations, visibleTiles: [] },
+    };
+    expect(installCamera(unobserved, { x: 56, y: 55 }).code).toBe(
+      "installed-order",
+    );
+    const position = { x: 80, y: 80 };
+    const knownTiles = [...initial.observations.knownTiles];
+    knownTiles[position.y * 128 + position.x] = null;
+    const queued = installCamera(
+      { ...initial, observations: { ...initial.observations, knownTiles } },
+      position,
+    );
+    expect(queued.code).toBe("installed-order");
+    const completed = createController(queued.state).advance(150).game;
+    const device = completed.observations.cameras.at(-1)!;
+    expect(cameraInstalled(completed, device)).toBe(false);
+    expect(
+      completed.jobs.find(({ id }) => id === device.installJobId)
+        ?.assignmentReason,
+    ).toContain("interior floor required");
+  });
   it("sleeping staff do not provide sight and unseen impressions remain recorded", () => {
     const initial = createInitialState();
     const beds = initial.routines.stations.filter(
@@ -123,7 +148,9 @@ describe("facility observations", () => {
       setCameraEnabled(completed, camera.id, false).observations.cameras.at(-1)
         ?.enabled,
     ).toBe(false);
-    expect(installCamera(initial, { x: 100, y: 100 }).code).toBe("not-visible");
+    expect(installCamera(initial, { x: 100, y: 100 }).code).toBe(
+      "installed-order",
+    );
   });
   it("blocks sight behind walls and through diagonal wall corners", () => {
     const map: SiteMap = {

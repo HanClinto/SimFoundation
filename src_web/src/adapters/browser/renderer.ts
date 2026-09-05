@@ -11,6 +11,7 @@ import chamberUrl from "./assets/an-001-chamber.svg";
 import { TRIAL_LOCATION } from "../../simulation/containment-trial";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
+import { mapObjects } from "./map-objects";
 
 const TILE_WIDTH = 40;
 const TILE_HEIGHT = 20;
@@ -19,6 +20,7 @@ export interface MapCamera {
   readonly center: TilePosition;
   readonly zoom: number;
   readonly selectedId: string | null;
+  readonly overlay?: "normal" | "construction" | "engineering";
   readonly draft?: {
     readonly origin: TilePosition;
     readonly valid: boolean;
@@ -189,17 +191,24 @@ export function renderSite(
           row < room.y + room.height,
       );
       const fill =
-        tile === "grass"
-          ? (column * 7 + row * 11) % 5 === 0
-            ? "#526e4d"
-            : "#5c7756"
-          : tile === "wall"
-            ? "#e0e3dd"
-            : tile === "door"
-              ? "#b69b59"
-              : room
-                ? roomColors[room.kind]
-                : "#e0ddd0";
+        camera.overlay === "engineering"
+          ? {
+              floor: "#a5c3ba",
+              wall: "#d7b78a",
+              door: "#d8d478",
+              grass: "#6a866c",
+            }[tile]
+          : tile === "grass"
+            ? (column * 7 + row * 11) % 5 === 0
+              ? "#526e4d"
+              : "#5c7756"
+            : tile === "wall"
+              ? "#e0e3dd"
+              : tile === "door"
+                ? "#b69b59"
+                : room
+                  ? roomColors[room.kind]
+                  : "#e0ddd0";
       context.save();
       context.globalAlpha = visibleTiles.has(row * map.width + column)
         ? 1
@@ -441,4 +450,32 @@ export function renderSite(
     }
   }
   context.textAlign = "start";
+  const selectedObject = mapObjects(snapshot.game).find(
+    ({ id }) => id === camera.selectedId,
+  );
+  const tileCoordinates = camera.selectedId?.startsWith("tile:")
+    ? camera.selectedId.slice(5).split(",").map(Number)
+    : null;
+  const selectedPosition =
+    selectedObject?.position ??
+    (tileCoordinates
+      ? { x: tileCoordinates[0]!, y: tileCoordinates[1]! }
+      : null);
+  if (
+    selectedPosition &&
+    !snapshot.game.personnel.some(({ id }) => id === camera.selectedId) &&
+    camera.selectedId !== "SCP-999"
+  ) {
+    const point = projectPosition(selectedPosition, camera, width, height);
+    context.save();
+    context.strokeStyle = "#fff1ad";
+    context.lineWidth = 2;
+    context.strokeRect(
+      point.x - 18 * camera.zoom,
+      point.y - 30 * camera.zoom,
+      36 * camera.zoom,
+      36 * camera.zoom,
+    );
+    context.restore();
+  }
 }

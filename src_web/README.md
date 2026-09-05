@@ -83,7 +83,9 @@ The pantry starts with 36 meals and the store with 72 more. Logistics automatica
 
 ### Surveillance Prototype
 
-Surveillance lists installed cameras, their enabled state, and remaining installation kits. **Place camera** opens a single-tile preview in Camera Feed; engineering must install the camera before it observes anything. Awake personnel and active cameras provide local sight through open doors but not walls. Sleeping personnel do not observe.
+Surveillance lists installed cameras, their enabled state, and remaining installation kits. **Place camera** opens a single-tile preview in Camera Feed. Orders can be queued without current coverage, including unsurveyed locations; an engineer must reach the site, verify an interior floor, and complete installation before the camera observes anything. Known unsuitable terrain is rejected from recorded survey data; unknown or changed unsuitable terrain leaves an inspectable blocked work order. Awake personnel and active cameras provide local sight through open doors but not walls. Sleeping personnel do not observe.
+
+Click a placement preview to pin it, then use its authorization button; click another map location to reposition it. Camera and anomaly markers share selection and Open Record/double-click behavior. Cameras open their highlighted Surveillance record; AN-001 opens its study. The Engineering overlay opens remembered tile records, related work, and recorded chamber integrity. Ordinary world tiles do not yet store material-specific damage, and their inspector says so explicitly. Construction overlay enters annex blueprint placement.
 
 The map shows bright live coverage, dim remembered terrain, unknown areas beyond the initial survey, and labeled last-sighting markers. Unseen anomalies continue simulating, but their registry and map information remain at the last recorded observation. Camera placement and range are provisional abstractions; power, communications failures, and directional lenses remain future work.
 

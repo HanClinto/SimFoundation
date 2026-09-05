@@ -16,8 +16,8 @@
 }
 .pawn-portrait {
   position: relative;
-  width: 65px;
-  height: 80px;
+  width: 40px;
+  height: 50px;
   border: 1px solid #8c9c90;
   background: #c1d0c6;
   overflow: hidden;
@@ -44,11 +44,11 @@
 }
 
 .identity-portrait img {
-  width: 65px;
-  height: 80px;
-  top: 0;
-  left: 0;
-  object-fit: cover;
+  width: 32px;
+  height: 32px;
+  top: 3px;
+  left: 3px;
+  object-fit: contain;
 }
 .pawn-identity {
   display: grid;
@@ -60,8 +60,8 @@
 }
 .pawn-identity img {
   width: 32px;
-  height: 40px;
-  object-fit: cover;
+  height: 32px;
+  object-fit: contain;
   background: #dbe5d7;
   border: 1px solid #98ac98;
 }
@@ -135,8 +135,8 @@
   padding: 0 8px 0 0;
 }
 .paper-doll {
-  grid-template-columns: 100px 140px 100px;
-  grid-template-rows: repeat(3, 108px);
+  grid-template-columns: 80px 100px 80px;
+  grid-template-rows: repeat(3, 84px);
   gap: 8px;
   min-height: 0;
   margin: 0 0 12px;
@@ -149,8 +149,8 @@
 .paper-doll-figure {
   grid-column: 2;
   grid-row: 1 / 4;
-  width: 140px;
-  height: 325px;
+  width: 100px;
+  height: 245px;
   margin: 0;
   align-self: center;
 }
@@ -159,8 +159,8 @@
   display: none;
 }
 .paper-doll-figure img {
-  width: 140px;
-  height: 300px;
+  width: 100px;
+  height: 210px;
   object-fit: contain;
 }
 .paper-doll-figure figcaption {
@@ -199,9 +199,9 @@
   min-width: 0;
 }
 .equipment-slot.item-tile {
-  width: 100px;
-  height: 108px;
-  grid-template-rows: 12px 58px minmax(26px, 1fr);
+  width: 80px;
+  height: 84px;
+  grid-template-rows: 12px 32px minmax(26px, 1fr);
 }
 .item-tile strong {
   max-width: 90px;
@@ -225,8 +225,8 @@
 }
 .item-art {
   display: block;
-  width: 62px;
-  height: 58px;
+  width: 32px;
+  height: 32px;
 }
 .item-art img {
   width: 100%;
@@ -234,13 +234,13 @@
   object-fit: contain;
 }
 .inventory-slots {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(48px, 1fr));
   gap: 7px;
 }
 .inventory-slot {
   width: 100%;
-  height: 102px;
-  grid-template-rows: 62px minmax(28px, 1fr);
+  height: 76px;
+  grid-template-rows: 32px minmax(28px, 1fr);
 }
 .inventory-slot strong {
   max-width: 100%;
@@ -429,6 +429,46 @@
   outline: 2px solid #64806a;
   outline-offset: -3px;
 }
+
+.planner-toolbar [aria-pressed="true"] {
+  outline: 2px solid #527965;
+  outline-offset: -3px;
+  background: #d8e4d4;
+}
+.hour-grid {
+  touch-action: none;
+  user-select: none;
+}
+.coverage-panel {
+  padding: 8px 0;
+  border-top: 1px solid #96a48a;
+}
+.coverage-panel summary {
+  cursor: pointer;
+}
+.coverage-panel p {
+  font-size: 11px;
+  color: #4e6150;
+}
+.coverage-scroll {
+  overflow: auto;
+}
+.coverage-table th {
+  text-transform: capitalize;
+}
+.coverage-table td {
+  text-align: center;
+  min-width: 23px;
+}
+.coverage-table [data-coverage="none"] {
+  background: #eee2d7;
+}
+.coverage-table [data-coverage="single"] {
+  background: #e6e7bf;
+}
+.coverage-table [data-coverage="multiple"] {
+  background: #bed5c1;
+}
 .planner-roster-scroll {
   overflow: auto;
 }
@@ -530,7 +570,7 @@
 .trial-document fieldset {
   margin: 15px 0;
 }
-.trial-document fieldset label {
+.trial-document fieldset > label {
   display: block;
   margin-bottom: 8px;
 }
@@ -539,9 +579,54 @@
 }
 .trial-document .field-row label {
   margin: 0;
+  margin-left: 19px;
+  display: inline-flex;
+  position: relative;
 }
 .trial-document .field-row {
   white-space: normal;
+  align-items: center;
+}
+
+.object-identity {
+  display: inline-grid;
+  justify-items: center;
+  align-content: start;
+  gap: 4px;
+  padding: 5px;
+  min-width: 64px;
+  max-width: 100px;
+  text-align: center;
+}
+.object-identity img {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+.anomaly-identities {
+  display: flex;
+  gap: 12px;
+  padding: 6px;
+}
+.trial-work-status {
+  border-top: 1px solid #8d9f89;
+  border-bottom: 1px solid #8d9f89;
+  padding: 10px 0;
+  margin-bottom: 12px;
+}
+.trial-work-status progress {
+  width: 100%;
+}
+.trial-document .trial-work-status p {
+  font:
+    12px/1.5 Tahoma,
+    sans-serif;
+}
+.selected-record {
+  outline: 2px solid #617f6c;
+  outline-offset: -2px;
+  background: #edf1dc;
 }
 .trial-evidence {
   border-left: 3px solid #6e9075;

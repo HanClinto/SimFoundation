@@ -40,6 +40,9 @@ import { createSurveillanceView } from "./surveillance-view";
 import { createContainmentTrialWindow } from "./containment-trial-view";
 import { TRIAL_LOCATION } from "../../simulation/containment-trial";
 import { createConstructionWindow } from "./construction-view";
+import { createEngineeringWindow } from "./engineering-view";
+import scp999IconUrl from "./assets/site-999.svg";
+import chamberIconUrl from "./assets/an-001-chamber.svg";
 import { incidentResponse } from "./incident-response";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
@@ -167,6 +170,7 @@ app.innerHTML = `
       <select data-camera-entity aria-label="Focus personnel"></select>
       <button type="button" data-camera-action="inspect" disabled>Open Record</button>
       <select data-camera-mode aria-label="Map mode"><option value="inspect">Inspect</option><option value="laboratory">Plan laboratory</option><option value="camera">Place camera</option></select>
+      <select data-camera-overlay aria-label="Map overlay"><option value="normal">Standard view</option><option value="construction">Construction</option><option value="engineering">Engineering</option></select>
       <button type="button" data-camera-action="place" disabled>Authorize Annex</button>
       <button type="button" data-open-related-window="construction-window">Construction</button>
     </div>
@@ -317,6 +321,7 @@ app.innerHTML = `
       <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
     </div>
     <div class="window-body alarm-body">
+      <div class="anomaly-identities"><span class="object-identity"><img src="${scp999IconUrl}" alt=""/><span>SCP-999</span></span><button type="button" class="object-identity" data-open-related-window="containment-study-window"><img src="${chamberIconUrl}" alt=""/><span>AN-001</span></button></div>
       <fieldset>
         <legend>SCP-9620 experimental protocol</legend>
         <dl class="status-list">
@@ -705,13 +710,31 @@ const siteCamera = createSiteCamera(
   controller,
   (id) => {
     if (id === "SCP-999") windowManager.open("anomaly-window");
-    else openPersonnelInspector(id);
+    else if (id === "AN-001") windowManager.open("containment-study-window");
+    else if (id.startsWith("camera-")) {
+      windowManager.open("surveillance-window");
+      surveillanceView.selectCamera(id);
+    } else if (id.startsWith("tile:")) {
+      const [x, y] = id.slice(5).split(",").map(Number);
+      engineeringView.select({ x: x!, y: y! }, controller.getSnapshot());
+      windowManager.open("engineering-window");
+    } else openPersonnelInspector(id);
   },
 );
 const clinicalCareView = createClinicalCareView(
   requireElement<HTMLElement>("#clinical-care-body"),
   controller,
 );
+const engineeringView = createEngineeringWindow(app);
+windowManager.register(engineeringView.element, {
+  id: "engineering-window",
+  title: "Engineering",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 330, top: 160, width: 470, height: 420 },
+  defaultOpen: false,
+  minimumWidth: 300,
+  minimumHeight: 220,
+});
 const dayPlanner = createDayPlanner(
   requireElement<HTMLElement>("#day-planner-body"),
   controller,
@@ -1013,6 +1036,7 @@ function render(snapshot: ControllerSnapshot): void {
   snapshot = observedSnapshot(snapshot);
   containmentStudy.render(snapshot);
   constructionView.render(snapshot);
+  engineeringView.render(snapshot);
   dayPlanner.render(snapshot);
   surveillanceView.render(snapshot);
   clinicalCareView.render(snapshot);
