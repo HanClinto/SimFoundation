@@ -191,6 +191,14 @@ The browser adapter owns 98.css windows, Canvas rendering, input translation, au
 
 Detailed module boundaries and data contracts are defined in [docs/architecture.md](docs/architecture.md).
 
+### Deployment cache policy
+
+Vite emits content-hashed JavaScript and CSS filenames, so source assets are immutable across deployments and do not need hand-authored query parameters. Each production build also emits `version.json` containing the first 12 characters of `GITHUB_SHA` or the current local commit.
+
+The browser requests that manifest with `cache: no-store` and a timestamp query. If its version differs from the version compiled into the running application, the browser navigates to the same page with `?v=<version>`. This creates a fresh HTML cache key; the refreshed HTML then points to Vite's new content-hashed assets. Development mode skips the deployment check.
+
+`npm run build` finishes by verifying that the manifest exists, its version is embedded in the compiled application, and `index.html` references hashed JavaScript and CSS. This is the Vite equivalent of VibeFarmer's module-query cache busting without rewriting an already hashed module graph.
+
 ## First Playable Definition of Done
 
 The first vertical slice is complete when a player can:

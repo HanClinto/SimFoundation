@@ -22,9 +22,12 @@ import {
   updatePersonnelInspectors,
   updatePersonnelRoster,
 } from "./personnel-view";
+import { refreshForNewDeployment } from "./deployment-version";
 import { renderSite } from "./renderer";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
+
+void refreshForNewDeployment();
 
 const app = document.querySelector<HTMLElement>("#app");
 if (!app) throw new Error("Application root was not found");

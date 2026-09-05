@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/verify-deployment-build.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
@@ -20,6 +20,7 @@
     "98.css": "0.1.21"
   },
   "devDependencies": {
+    "@types/node": "^22.20.1",
     "esbuild": "^0.28.2",
     "prettier": "3.6.2",
     "typescript": "7.0.2",
