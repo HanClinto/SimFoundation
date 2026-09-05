@@ -140,4 +140,28 @@ describe("game controller", () => {
         ?.biasAssessments,
     ).toHaveLength(1);
   });
+
+  it("orders a bounded psychological evaluation", () => {
+    const controller = createController(createInitialState());
+    const assessed =
+      controller.orderPsychologicalAssessment("person-mara-voss");
+    const mara = assessed.game.personnel.find(
+      ({ id }) => id === "person-mara-voss",
+    );
+
+    expect(mara?.psychologicalAssessments).toHaveLength(1);
+    expect(mara?.psychologicalAssessments[0]).toMatchObject({
+      moodEstimate: { minimum: 73, maximum: 83 },
+      sanityEstimate: { minimum: 93, maximum: 100 },
+    });
+    expect(
+      controller
+        .orderPsychologicalAssessment("person-mara-voss")
+        .game.personnel.find(({ id }) => id === "person-mara-voss")
+        ?.psychologicalAssessments,
+    ).toHaveLength(1);
+    expect(() =>
+      controller.orderPsychologicalAssessment("missing-person"),
+    ).toThrow("Unknown person: missing-person");
+  });
 });

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   assessPhysicalHealth,
+  assessPsychologicalState,
   deriveMood,
   derivePhysicalHealth,
   deriveSanity,
@@ -11,6 +12,7 @@ import {
   projectTraits,
   assessWorkPreferences,
   projectBiases,
+  projectPsychology,
 } from "../src/simulation/personnel";
 import { createInitialState } from "../src/simulation/state";
 import { advanceSimulation } from "../src/simulation/tick";
@@ -64,6 +66,40 @@ describe("personnel simulation", () => {
         "No acute fear response",
       ],
     });
+  });
+
+  it("projects coarse appearances until psychology is assessed", () => {
+    const person = createInitialState().personnel[0];
+    if (!person) throw new Error("starting person missing");
+
+    expect(projectPsychology(person)).toEqual({
+      moodAppearance: "Appears content",
+      sanityAppearance: "Appears lucid",
+      assessment: null,
+    });
+
+    const assessed = assessPsychologicalState(person, 12);
+    expect(projectPsychology(assessed).assessment).toMatchObject({
+      assessedTick: 12,
+      confidence: 0.8,
+      moodEstimate: { minimum: 73, maximum: 83 },
+      sanityEstimate: { minimum: 93, maximum: 100 },
+      moodContributors: [
+        "Recently fed",
+        "Adequately rested",
+        "Manageable workload",
+      ],
+    });
+
+    const changed = { ...assessed, stress: 100 };
+    expect(projectPsychology(changed).moodAppearance).toBe("Appears tense");
+    expect(projectPsychology(changed).assessment?.moodEstimate).toEqual({
+      minimum: 73,
+      maximum: 83,
+    });
+    expect(
+      assessPsychologicalState(changed, 20).psychologicalAssessments,
+    ).toHaveLength(1);
   });
 
   it("serializes fixed equipment slots and carried inventory", () => {

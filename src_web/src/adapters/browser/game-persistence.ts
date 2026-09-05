@@ -183,6 +183,26 @@ function isPhysicalAssessment(value: unknown): boolean {
   );
 }
 
+function isPsychologicalAssessment(value: unknown): boolean {
+  const isEstimate = (estimate: unknown) =>
+    isRecord(estimate) &&
+    isNumberInRange(estimate.minimum, 0, 100) &&
+    isNumberInRange(estimate.maximum, estimate.minimum, 100);
+  return (
+    isRecord(value) &&
+    isNonEmptyString(value.id) &&
+    isIntegerInRange(value.assessedTick, 0) &&
+    isIntegerInRange(value.recordedOrder, 0) &&
+    isNonEmptyString(value.assessor) &&
+    isNonEmptyString(value.method) &&
+    isNumberInRange(value.confidence, 0, 1) &&
+    isEstimate(value.moodEstimate) &&
+    isEstimate(value.sanityEstimate) &&
+    isArrayOf(value.moodContributors, isNonEmptyString) &&
+    isArrayOf(value.sanityContributors, isNonEmptyString)
+  );
+}
+
 function isPersonnelTrait(value: unknown): boolean {
   if (
     !isRecord(value) ||
@@ -301,7 +321,8 @@ function isPersonnelRecord(value: unknown): boolean {
     isArrayOf(value.inventory, isPersonnelItem) &&
     isArrayOf(value.effects, isPersonnelEffect) &&
     isArrayOf(value.physicalObservations, isPhysicalObservation) &&
-    isArrayOf(value.physicalAssessments, isPhysicalAssessment, 50)
+    isArrayOf(value.physicalAssessments, isPhysicalAssessment, 50) &&
+    isArrayOf(value.psychologicalAssessments, isPsychologicalAssessment, 50)
   );
 }
 

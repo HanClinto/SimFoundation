@@ -607,6 +607,10 @@ The table uses player-facing time. Persistence stores deterministic ticks, and t
 
 ### Player-visible projection
 
+Fog of war is global, not a special case for hidden Traits. Ordinary UI may consume authoritative state only through an observation or assessment projection. The presence of a value in the simulation record never makes it player-visible by itself; exact current values and hidden causal contributors are debug-only unless a named sensor, record, or assessment supports them.
+
+Mood and Sanity receive coarse live appearance labels from observable behavior, such as `Appears content`, `Appears tense`, `Appears coherent`, or `Appears unsettled`. A structured psychological evaluation stores bounded Mood and Sanity estimates, confidence, timestamp, and the contributors supported at evaluation time. The stored report does not change when authoritative state changes and becomes stale under the ordinary assessment rules.
+
 The UI may show:
 
 - `Physical 80-90, assessed 3h ago`

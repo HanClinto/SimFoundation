@@ -1,9 +1,9 @@
 import {
-  deriveMood,
-  deriveSanity,
   latestPhysicalAssessment,
   projectBiases,
+  projectPsychology,
   projectTraits,
+  type PersonnelItem,
   type PersonnelRecord,
 } from "../../simulation/personnel";
 
@@ -24,6 +24,48 @@ function compactMetricMarkup(label: string, field: string): string {
       <dd data-value="${field}">0</dd>
     </div>
   `;
+}
+
+function itemKind(item: PersonnelItem | null): string {
+  if (!item) return "empty";
+  const id = item.id;
+  if (/helmet|hardhat/.test(id)) return "headgear";
+  if (/coat|coveralls|scrubs|vest|jacket/.test(id)) return "clothing";
+  if (/tablet|scanner|multimeter|radio|dosimeter/.test(id)) return "device";
+  if (/medkit|sedative/.test(id)) return "medical";
+  if (/notebook|manifest/.test(id)) return "document";
+  if (/coffee|snack/.test(id)) return "food";
+  if (/mop|baton/.test(id)) return "tool";
+  if (/toolbelt|keys|restraints/.test(id)) return "utility";
+  return "supply";
+}
+
+function itemTileMarkup(slot: string, label: string): string {
+  return `<div class="item-tile equipment-slot equipment-${slot} empty" data-equipment-tile="${slot}">
+    <span class="item-slot-label">${label}</span>
+    <span class="item-icon" data-item-kind="empty" aria-hidden="true"><span class="item-glyph"></span></span>
+    <strong data-equipment-slot="${slot}">Empty</strong>
+  </div>`;
+}
+
+function createItemTile(item: PersonnelItem | null): HTMLElement {
+  const tile = document.createElement("div");
+  tile.className = "item-tile inventory-slot";
+  tile.classList.toggle("empty", item === null);
+  tile.title = item?.description ?? "Empty inventory slot";
+
+  const icon = document.createElement("span");
+  icon.className = "item-icon";
+  icon.dataset.itemKind = itemKind(item);
+  icon.setAttribute("aria-hidden", "true");
+  const glyph = document.createElement("span");
+  glyph.className = "item-glyph";
+  icon.append(glyph);
+
+  const caption = document.createElement("strong");
+  caption.textContent = item?.name ?? "Empty";
+  tile.append(icon, caption);
+  return tile;
 }
 
 const EQUIPMENT_SLOTS = [
@@ -99,9 +141,8 @@ export function createPersonnelInspectorWindows(
         <section id="dossier-${person.id}-panel-equipment" class="dossier-panel equipment-panel" role="tabpanel" aria-labelledby="dossier-${person.id}-tab-equipment" aria-hidden="true" data-dossier-panel="equipment" hidden>
           <div class="paper-doll">
             <div class="paper-doll-figure" aria-hidden="true"><span></span></div>
-            ${EQUIPMENT_SLOTS.map(
-              ([slot, label]) =>
-                `<div class="equipment-slot equipment-${slot}"><span>${label}</span><strong data-equipment-slot="${slot}">Empty</strong></div>`,
+            ${EQUIPMENT_SLOTS.map(([slot, label]) =>
+              itemTileMarkup(slot, label),
             ).join("")}
           </div>
           <fieldset>
@@ -236,14 +277,13 @@ export function updatePersonnelRoster(
       `[data-person-id="${person.id}"]`,
     );
     if (!row) throw new Error(`Personnel row missing: ${person.id}`);
-    const mood = deriveMood(person);
-    const sanity = deriveSanity(person);
+    const psychology = projectPsychology(person);
     for (const [cell, value] of [
       ["name", person.name],
       ["assignment", person.assignment],
       ["activity", person.activity],
-      ["mood", `${mood.score}% ${mood.band}`],
-      ["sanity", `${sanity.score}% ${sanity.band}`],
+      ["mood", psychology.moodAppearance],
+      ["sanity", psychology.sanityAppearance],
     ] as const) {
       const target = row.querySelector<HTMLElement>(`[data-cell="${cell}"]`);
       if (!target) throw new Error(`Personnel roster cell missing: ${cell}`);
@@ -255,6 +295,7 @@ export function updatePersonnelRoster(
 export function updatePersonnelInspectors(
   windows: readonly HTMLElement[],
   personnel: readonly PersonnelRecord[],
+  currentTick = 0,
 ): void {
   for (const person of personnel) {
     const inspector = windows.find(
@@ -262,8 +303,8 @@ export function updatePersonnelInspectors(
     );
     if (!inspector)
       throw new Error(`Personnel inspector missing: ${person.id}`);
-    const mood = deriveMood(person);
-    const sanity = deriveSanity(person);
+    const psychology = projectPsychology(person);
+    const psychologicalAssessment = psychology.assessment;
     const physicalAssessment = latestPhysicalAssessment(person);
     const projectedBiases = projectBiases(person);
     const projectedTraits = projectTraits(person);
@@ -331,16 +372,46 @@ export function updatePersonnelInspectors(
         ? `${bestSkill.id[0]?.toUpperCase()}${bestSkill.id.slice(1)} ${bestSkill.level}`
         : "None",
     );
-    setText(inspector, "mood-score", `${mood.score}%`);
-    setText(inspector, "mood-band", mood.band);
-    setText(inspector, "sanity-score", `${sanity.score}%`);
-    setText(inspector, "sanity-band", sanity.band);
+    const assessmentAge = psychologicalAssessment
+      ? currentTick - psychologicalAssessment.assessedTick
+      : null;
+    const assessmentLabel = psychologicalAssessment
+      ? `${assessmentAge !== null && assessmentAge >= 30 ? "Stale" : "Assessed"} / tick ${psychologicalAssessment.assessedTick}`
+      : "Observed only / unassessed";
+    setText(
+      inspector,
+      "mood-score",
+      psychologicalAssessment
+        ? `${psychologicalAssessment.moodEstimate.minimum}-${psychologicalAssessment.moodEstimate.maximum}`
+        : psychology.moodAppearance,
+    );
+    setText(inspector, "mood-band", assessmentLabel);
+    setText(
+      inspector,
+      "sanity-score",
+      psychologicalAssessment
+        ? `${psychologicalAssessment.sanityEstimate.minimum}-${psychologicalAssessment.sanityEstimate.maximum}`
+        : psychology.sanityAppearance,
+    );
+    setText(inspector, "sanity-band", assessmentLabel);
     setMetric(inspector, "satiety", person.needs.satiety);
     setMetric(inspector, "rest", person.needs.rest);
     setMetric(inspector, "stress", person.stress);
     setMetric(inspector, "fear", person.fear);
-    setContributors(inspector, "mood-contributors", mood.contributors);
-    setContributors(inspector, "sanity-contributors", sanity.contributors);
+    setContributors(
+      inspector,
+      "mood-contributors",
+      psychologicalAssessment?.moodContributors ?? [
+        "Requires psychological assessment",
+      ],
+    );
+    setContributors(
+      inspector,
+      "sanity-contributors",
+      psychologicalAssessment?.sanityContributors ?? [
+        "Requires psychological assessment",
+      ],
+    );
     setContributors(
       inspector,
       "effects",
@@ -362,7 +433,14 @@ export function updatePersonnelInspectors(
       const item = person.equipment[slot];
       slotElement.textContent = item?.name ?? "Empty";
       slotElement.title = item?.description ?? "No item equipped";
-      slotElement.classList.toggle("empty", item === null);
+      const tile = inspector.querySelector<HTMLElement>(
+        `[data-equipment-tile="${slot}"]`,
+      );
+      const icon = tile?.querySelector<HTMLElement>("[data-item-kind]");
+      if (!tile || !icon)
+        throw new Error(`Personnel equipment tile missing: ${slot}`);
+      tile.classList.toggle("empty", item === null);
+      icon.dataset.itemKind = itemKind(item);
     }
 
     const inventory = inspector.querySelector<HTMLElement>(
@@ -376,16 +454,7 @@ export function updatePersonnelInspectors(
         () => null,
       ),
     ];
-    inventory.replaceChildren(
-      ...inventoryEntries.map((item) => {
-        const slot = document.createElement("div");
-        slot.className = "inventory-slot";
-        slot.textContent = item?.name ?? "Empty";
-        slot.title = item?.description ?? "Empty inventory slot";
-        slot.classList.toggle("empty", item === null);
-        return slot;
-      }),
-    );
+    inventory.replaceChildren(...inventoryEntries.map(createItemTile));
 
     const skills = inspector.querySelector<HTMLElement>(
       '[data-field="skills"]',

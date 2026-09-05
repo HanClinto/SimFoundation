@@ -1,6 +1,7 @@
 import {
   latestBiasAssessment,
   latestPhysicalAssessment,
+  latestPsychologicalAssessment,
   projectTraits,
   type BodyRegion,
   type PersonnelRecord,
@@ -93,6 +94,7 @@ function assessmentRecordMarkup(person: PersonnelRecord): string {
     <header class="record-heading">
       <div><strong>Assessment history</strong><span>Newest first</span></div>
       <div class="record-actions">
+        <button type="button" data-assess-psychology-person-id="${person.id}">Evaluate Mood &amp; Sanity</button>
         <button type="button" data-assess-biases-person-id="${person.id}">Evaluate Work Preferences</button>
         <button type="button" data-assess-traits-person-id="${person.id}" disabled>Run Anomalous Screening</button>
       </div>
@@ -457,12 +459,52 @@ function updateAssessmentRecord(
       entry,
     };
   });
+  const psychologicalAssessmentEntries = person.psychologicalAssessments.map(
+    (assessment) => {
+      const entry = document.createElement("article");
+      entry.className = "assessment-entry psychological-assessment-entry";
+      const header = document.createElement("header");
+      header.append(
+        textElement("strong", assessment.method),
+        textElement(
+          "time",
+          `Tick ${assessment.assessedTick} / ${assessmentAge(currentTick, assessment.assessedTick)}`,
+        ),
+      );
+      const details = document.createElement("dl");
+      for (const [term, estimate] of [
+        ["Mood", assessment.moodEstimate],
+        ["Sanity", assessment.sanityEstimate],
+      ] as const) {
+        const row = document.createElement("div");
+        row.append(
+          textElement("dt", term),
+          textElement("dd", `${estimate.minimum}-${estimate.maximum}`),
+        );
+        details.append(row);
+      }
+      entry.append(
+        header,
+        details,
+        textElement(
+          "p",
+          `${Math.round(assessment.confidence * 100)}% confidence / ${assessment.assessor}`,
+        ),
+      );
+      return {
+        tick: assessment.assessedTick,
+        sequence: assessment.recordedOrder,
+        entry,
+      };
+    },
+  );
   const recordEntries = [
     ...assessmentEntries,
     ...observationEntries,
     ...traitEvidenceEntries,
     ...traitAssessmentEntries,
     ...biasAssessmentEntries,
+    ...psychologicalAssessmentEntries,
   ]
     .sort(
       (first, second) =>
@@ -551,6 +593,20 @@ export function updatePersonnelMedicalWindows(
       biasAssessmentButton.title = assessmentCurrent
         ? "Work-preference evaluation is current"
         : "Run a structured work-preference evaluation";
+    }
+    const psychologicalAssessmentButton =
+      record.querySelector<HTMLButtonElement>(
+        "[data-assess-psychology-person-id]",
+      );
+    if (psychologicalAssessmentButton) {
+      const latestAssessment = latestPsychologicalAssessment(person);
+      const assessmentCurrent =
+        latestAssessment !== null &&
+        currentTick - latestAssessment.assessedTick < 30;
+      psychologicalAssessmentButton.disabled = assessmentCurrent;
+      psychologicalAssessmentButton.textContent = assessmentCurrent
+        ? "Psychological Evaluation Current"
+        : "Evaluate Mood & Sanity";
     }
   }
 }

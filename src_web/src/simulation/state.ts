@@ -3,7 +3,7 @@ import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 import { createScp999State, type Scp999State } from "./scp-999";
 import { createScp9620State, type Scp9620State } from "./scp-9620";
 
-export const GAME_STATE_VERSION = 12;
+export const GAME_STATE_VERSION = 13;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

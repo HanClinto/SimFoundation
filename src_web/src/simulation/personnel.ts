@@ -89,6 +89,31 @@ export interface PhysicalAssessment {
   readonly conclusions: readonly AssessmentConclusion[];
 }
 
+export interface PsychologicalAssessment {
+  readonly id: string;
+  readonly assessedTick: number;
+  readonly recordedOrder: number;
+  readonly assessor: string;
+  readonly method: string;
+  readonly confidence: number;
+  readonly moodEstimate: {
+    readonly minimum: number;
+    readonly maximum: number;
+  };
+  readonly sanityEstimate: {
+    readonly minimum: number;
+    readonly maximum: number;
+  };
+  readonly moodContributors: readonly string[];
+  readonly sanityContributors: readonly string[];
+}
+
+export interface PsychologicalProjection {
+  readonly moodAppearance: string;
+  readonly sanityAppearance: string;
+  readonly assessment: PsychologicalAssessment | null;
+}
+
 export type TraitTag =
   | "work"
   | "threat-response"
@@ -195,6 +220,7 @@ export interface PersonnelRecord {
   readonly effects: readonly PersonnelEffect[];
   readonly physicalObservations: readonly PhysicalObservation[];
   readonly physicalAssessments: readonly PhysicalAssessment[];
+  readonly psychologicalAssessments: readonly PsychologicalAssessment[];
 }
 
 export interface DerivedMeasure {
@@ -204,6 +230,7 @@ export interface DerivedMeasure {
 }
 
 const MAX_PHYSICAL_ASSESSMENTS = 50;
+const MAX_PSYCHOLOGICAL_ASSESSMENTS = 50;
 const MAX_TRAIT_ASSESSMENTS = 50;
 const MAX_BIAS_ASSESSMENTS = 20;
 
@@ -276,6 +303,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     effects: [],
     physicalObservations: [],
     physicalAssessments: [],
+    psychologicalAssessments: [],
   },
   {
     id: "person-caleb-ward",
@@ -343,6 +371,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     effects: [],
     physicalObservations: [],
     physicalAssessments: [],
+    psychologicalAssessments: [],
   },
   {
     id: "person-priya-shah",
@@ -402,6 +431,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     effects: [],
     physicalObservations: [],
     physicalAssessments: [],
+    psychologicalAssessments: [],
   },
   {
     id: "person-lena-ortiz",
@@ -490,6 +520,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
       },
     ],
     physicalAssessments: [],
+    psychologicalAssessments: [],
   },
   {
     id: "person-jon-bell",
@@ -565,6 +596,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     ],
     physicalObservations: [],
     physicalAssessments: [],
+    psychologicalAssessments: [],
   },
   {
     id: "person-emil-novak",
@@ -639,6 +671,7 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
     effects: [],
     physicalObservations: [],
     physicalAssessments: [],
+    psychologicalAssessments: [],
   },
 ];
 
@@ -688,6 +721,9 @@ function nextRecordOrder(person: PersonnelRecord): number {
       0,
       ...person.physicalObservations.map(({ recordedOrder }) => recordedOrder),
       ...person.physicalAssessments.map(({ recordedOrder }) => recordedOrder),
+      ...person.psychologicalAssessments.map(
+        ({ recordedOrder }) => recordedOrder,
+      ),
       ...person.traitEvidence.map(({ recordedOrder }) => recordedOrder),
       ...person.traitAssessments.map(({ recordedOrder }) => recordedOrder),
       ...person.biasAssessments.map(({ recordedOrder }) => recordedOrder),
@@ -945,6 +981,84 @@ export function assessPhysicalHealth(
         .slice(-(MAX_PHYSICAL_ASSESSMENTS - 1)),
       assessment,
     ],
+  };
+}
+
+export function latestPsychologicalAssessment(
+  person: PersonnelRecord,
+): PsychologicalAssessment | null {
+  return person.psychologicalAssessments.at(-1) ?? null;
+}
+
+function psychologicalEstimate(score: number): {
+  readonly minimum: number;
+  readonly maximum: number;
+} {
+  return {
+    minimum: Math.max(0, Math.round(score) - 5),
+    maximum: Math.min(100, Math.round(score) + 5),
+  };
+}
+
+export function assessPsychologicalState(
+  person: PersonnelRecord,
+  assessedTick: number,
+): PersonnelRecord {
+  const previousAssessment = latestPsychologicalAssessment(person);
+  if (
+    previousAssessment &&
+    assessedTick - previousAssessment.assessedTick < 30
+  ) {
+    return person;
+  }
+  const mood = deriveMood(person);
+  const sanity = deriveSanity(person);
+  const assessment: PsychologicalAssessment = {
+    id: `psychological-${person.id}-${assessedTick}`,
+    assessedTick,
+    recordedOrder: nextRecordOrder(person),
+    assessor: "Site 828 Medical",
+    method: "Structured psychological evaluation",
+    confidence: 0.8,
+    moodEstimate: psychologicalEstimate(mood.score),
+    sanityEstimate: psychologicalEstimate(sanity.score),
+    moodContributors: mood.contributors,
+    sanityContributors: sanity.contributors,
+  };
+  return {
+    ...person,
+    psychologicalAssessments: [
+      ...person.psychologicalAssessments.slice(
+        -(MAX_PSYCHOLOGICAL_ASSESSMENTS - 1),
+      ),
+      assessment,
+    ],
+  };
+}
+
+export function projectPsychology(
+  person: PersonnelRecord,
+): PsychologicalProjection {
+  const mood = deriveMood(person);
+  const sanity = deriveSanity(person);
+  const moodAppearance = {
+    critical: "Appears deeply distressed",
+    poor: "Appears unhappy",
+    strained: "Appears tense",
+    stable: "Appears content",
+    strong: "Appears upbeat",
+  }[mood.band];
+  const sanityAppearance = {
+    critical: "Appears disconnected",
+    poor: "Appears disoriented",
+    strained: "Appears unsettled",
+    stable: "Appears coherent",
+    strong: "Appears lucid",
+  }[sanity.band];
+  return {
+    moodAppearance,
+    sanityAppearance,
+    assessment: latestPsychologicalAssessment(person),
   };
 }
 

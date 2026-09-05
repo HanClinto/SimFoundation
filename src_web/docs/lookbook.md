@@ -143,6 +143,8 @@ The institution and its personnel have different voices. Forms, alerts, protocol
 
 ### Knowledge language
 
+**Global fog-of-war rule:** ordinary interfaces show only facts justified by observation, records, sensors, or assessments. Never render an authoritative simulation value merely because it exists in the snapshot. Exact values and causal contributors belong in debug tools unless a named player-facing source supports them.
+
 Use epistemic labels consistently. These words are gameplay states, not decorative flavor:
 
 - **Confirmed:** supported strongly enough for operational use
@@ -203,8 +205,9 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - The taskbar clock opens Simulation Control and reflects run/pause state.
 - The SCP menu provides explicit Save Site and Load Site commands backed by the same local record used for autosave. Settings remains visibly unavailable until implemented.
 - Foundation Library demonstrates the Encarta-like article/tree split and now hosts facility-level research capabilities such as Anomalous Psychometrics.
-- Personnel Roster and pawn inspectors now project assessment-limited personnel state. Several pawn inspectors can remain open for comparison, and derived mood/sanity views explain their contributing factors. Budget remains an explicitly provisional preview until its simulation exists.
+- Personnel Roster and pawn inspectors project assessment-limited personnel state. Mood and Sanity appear as coarse behavioral impressions until a psychological evaluation records bounded estimates and frozen contributors; old evaluations remain timestamped rather than silently tracking current truth. Several pawn inspectors can remain open for comparison. Budget remains an explicitly provisional preview until its simulation exists.
 - Personnel inspectors use a compact corporate ID/dossier header with manila-style Summary, Equipment, Skills, and Influences tabs. Summary reports Physical Health only as an assessed range and launches separate modeless Medical Chart and Assessment Record windows.
+- Equipment and carried inventory use the same fixed portrait-oriented icon tile: a recessed pictogram field, short caption, and item-description tooltip. Empty equipment and inventory cells retain the same geometry so changing loadout never shifts the dossier.
 - Medical Chart combines a selectable body-region map with a findings list. Regions visualize assessed Injury Effects rather than owning hit points; unknown, assessed-clear, suspected, and confirmed states remain visibly distinct.
 - Dossiers show only self-disclosed or assessed Trait conclusions. Behavioral evidence can appear in Assessment Record before the Trait it supports is known; research may promote that evidence to a suspicion, while targeted screening can confirm it without revealing hidden numeric parameters.
 - Work-preference Biases remain hidden until a structured evaluation reports named tendencies and bounded ranges. Exact authoritative Bias values do not appear in ordinary UI. Skill levels for active personnel are labeled as official training records; they are not presented as live measurements of current performance.

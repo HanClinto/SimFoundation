@@ -709,6 +709,15 @@ app.addEventListener("click", (event) => {
   const biasPersonId = biasAssessmentButton?.dataset.assessBiasesPersonId;
   if (biasPersonId) controller.orderWorkPreferenceAssessment(biasPersonId);
 
+  const psychologyAssessmentButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-assess-psychology-person-id]");
+  const psychologyPersonId =
+    psychologyAssessmentButton?.dataset.assessPsychologyPersonId;
+  if (psychologyPersonId) {
+    controller.orderPsychologicalAssessment(psychologyPersonId);
+  }
+
   const authorizeJobButton = (
     event.target as Element
   ).closest<HTMLButtonElement>("[data-authorize-job]");
@@ -865,7 +874,11 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 function render(snapshot: ControllerSnapshot): void {
   renderSite(canvas, snapshot);
   updatePersonnelRoster(personnelRows, snapshot.game.personnel);
-  updatePersonnelInspectors(personnelInspectors, snapshot.game.personnel);
+  updatePersonnelInspectors(
+    personnelInspectors,
+    snapshot.game.personnel,
+    snapshot.game.tick,
+  );
   updatePersonnelMedicalWindows(
     personnelMedicalWindows,
     snapshot.game.personnel,

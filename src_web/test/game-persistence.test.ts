@@ -130,6 +130,19 @@ describe("game persistence", () => {
     expect(
       loadGameState(memoryStorage(JSON.stringify(brokenProtocol))).status,
     ).toBe("invalid");
+
+    const brokenPsychology = {
+      ...state,
+      personnel: [
+        {
+          ...firstPerson,
+          psychologicalAssessments: [{ moodEstimate: "certain" }],
+        },
+      ],
+    };
+    expect(
+      loadGameState(memoryStorage(JSON.stringify(brokenPsychology))).status,
+    ).toBe("invalid");
   });
 
   it("continues deterministically after load and another save cycle", () => {
