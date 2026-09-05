@@ -7,6 +7,7 @@ import {
 import { advanceSimulation } from "../src/simulation/tick";
 import { createController } from "../src/application/controller";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { consumeSupply } from "../src/simulation/objects";
 
 describe("needs-driven routines", () => {
   it("sustains two days of autonomous routines and preserves a deterministic continuation", () => {
@@ -43,6 +44,7 @@ describe("needs-driven routines", () => {
     const controller = createController({
       ...initial,
       routines: { ...initial.routines, pantryMeals: 4, mealsConsumed: 32 },
+      objects: consumeSupply(initial.objects, "meals", 32, { x: 58, y: 67 }),
     });
     let sawDelivery = false;
     for (let tick = 0; tick < 100; tick += 1) {

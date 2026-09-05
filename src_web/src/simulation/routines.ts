@@ -2,6 +2,14 @@ import type { GameState } from "./state";
 import type { PersonnelRecord } from "./personnel";
 import type { SiteJob } from "./jobs";
 import { findRoute, sameTile, type TilePosition } from "./world";
+import {
+  consumeObject,
+  reserveSupply,
+  reservedObject,
+  pickUpObject,
+  putDownObject,
+  releaseObject,
+} from "./objects";
 
 export type ScheduleBlock = "work" | "free" | "sleep";
 export type RoutineKind = "meal" | "sleep" | "break";
@@ -16,6 +24,7 @@ export interface RoutineActivity {
   readonly progress: number;
   readonly startedTick: number;
   readonly mealConsumed: boolean;
+  readonly mealObjectId?: string | null;
 }
 export interface RoutineState {
   readonly pantryMeals: number;
@@ -123,6 +132,7 @@ export function routineUnavailableIds(state: GameState): readonly string[] {
 }
 
 export function advanceRoutines(state: GameState): GameState {
+  let objects = state.objects;
   const people = new Map(state.personnel.map((person) => [person.id, person]));
   const positions = { ...state.world.positions };
   const activities = { ...state.routines.activities };
@@ -217,7 +227,17 @@ export function advanceRoutines(state: GameState): GameState {
       }
       const origin = positions[id];
       const candidates = state.routines.stations
-        .filter((station) => station.kind === kind && !reserved.has(station.id))
+        .filter((station) => {
+          const object = state.objects.items.find(
+            (item) => item.id === station.id,
+          );
+          return (
+            station.kind === kind &&
+            !reserved.has(station.id) &&
+            (!object ||
+              (object.installed && object.condition > 0 && !object.reservedBy))
+          );
+        })
         .map((station) => ({
           station,
           route: origin
@@ -248,13 +268,90 @@ export function advanceRoutines(state: GameState): GameState {
       reserved.add(chosen.station.id);
     }
     const stationId = activity.stationId;
-    const station = state.routines.stations.find(({ id }) => id === stationId);
+    const furniture = state.objects.items.find((item) => item.id === stationId);
+    const station =
+      furniture &&
+      (!furniture.installed ||
+        furniture.condition === 0 ||
+        furniture.location.kind !== "ground")
+        ? undefined
+        : state.routines.stations.find(({ id }) => id === stationId);
     const origin = positions[id];
+    if (activity.kind === "meal" && !activity.mealConsumed) {
+      const mess = state.world.map.rooms.find((room) => room.kind === "mess")!;
+      const pantry = { x: mess.x + 2, y: mess.y + 3 };
+      const pantryRoute = origin
+        ? findRoute(state.world.map, origin, pantry)
+        : null;
+      if (!pantryRoute) {
+        blockedReasons[id] = "Pantry supplies are unreachable.";
+        reserved.delete(activity.stationId);
+        delete activities[id];
+        people.set(id, { ...person, activity: blockedReasons[id] });
+        continue;
+      }
+      if (!sameTile(origin!, pantry)) {
+        positions[id] = pantryRoute[0]!;
+        people.set(id, {
+          ...person,
+          activity: "Collecting a meal from the pantry",
+        });
+        continue;
+      }
+      const owner = `routine-${id}`;
+      const portion = reserveSupply(objects, "meals", 1, pantry, owner);
+      if (!portion.objectId) {
+        blockedReasons[id] = "No physical meal supplies at the pantry.";
+        reserved.delete(activity.stationId);
+        delete activities[id];
+        people.set(id, { ...person, activity: blockedReasons[id] });
+        continue;
+      }
+      const picked = pickUpObject(
+        portion.store,
+        portion.objectId,
+        owner,
+        id,
+        pantry,
+      );
+      if (picked === portion.store) {
+        objects = releaseObject(portion.store, portion.objectId, owner);
+        blockedReasons[id] = "Set down carried cargo before collecting a meal.";
+        reserved.delete(activity.stationId);
+        delete activities[id];
+        people.set(id, { ...person, activity: blockedReasons[id] });
+        continue;
+      }
+      objects = picked;
+      pantryMeals -= 1;
+      mealsConsumed += 1;
+      activity = {
+        ...activity,
+        mealConsumed: true,
+        mealObjectId: portion.objectId,
+      };
+      activities[id] = activity;
+    }
     const route =
       station && origin
         ? findRoute(state.world.map, origin, station.position)
         : null;
     if (!station || route === null) {
+      if (activity.mealObjectId && origin) {
+        objects = releaseObject(
+          putDownObject(
+            objects,
+            activity.mealObjectId,
+            `routine-${id}`,
+            id,
+            origin,
+            origin,
+          ),
+          activity.mealObjectId,
+          `routine-${id}`,
+        );
+        mealsConsumed -= 1;
+      }
       blockedReasons[id] = "Routine destination is no longer reachable.";
       reserved.delete(activity.stationId);
       delete activities[id];
@@ -269,17 +366,25 @@ export function advanceRoutines(state: GameState): GameState {
       });
       continue;
     }
-    if (activity.kind === "meal" && !activity.mealConsumed) {
-      if (pantryMeals === 0) {
-        blockedReasons[id] = "No meals available in the pantry.";
-        reserved.delete(activity.stationId);
-        delete activities[id];
-        people.set(id, { ...person, activity: "Waiting for pantry supplies" });
-        continue;
-      }
-      pantryMeals -= 1;
-      mealsConsumed += 1;
-      activity = { ...activity, mealConsumed: true };
+    if (activity.mealObjectId) {
+      const owner = `routine-${id}`;
+      objects = putDownObject(
+        objects,
+        activity.mealObjectId,
+        owner,
+        id,
+        station.position,
+        origin!,
+      );
+      const consumed = consumeObject(
+        objects,
+        activity.mealObjectId,
+        owner,
+        station.position,
+      );
+      if (consumed === objects) continue;
+      objects = consumed;
+      activity = { ...activity, mealObjectId: null };
     }
     const progress = activity.progress + 1;
     const needs = {
@@ -326,6 +431,7 @@ export function advanceRoutines(state: GameState): GameState {
   }
   return {
     ...state,
+    objects,
     jobs,
     personnel: [...people.values()],
     world: { ...state.world, positions },
@@ -333,6 +439,11 @@ export function advanceRoutines(state: GameState): GameState {
       ...state.routines,
       pantryMeals,
       mealsConsumed,
+      reserveMeals:
+        state.routines.reserveMeals +
+        (state.routines.mealsConsumed - mealsConsumed > 0
+          ? state.routines.mealsConsumed - mealsConsumed
+          : 0),
       activities,
       blockedReasons,
     },
@@ -344,19 +455,45 @@ export function advancePantrySupply(state: GameState): GameState {
   if (supply) {
     const job = state.jobs.find(({ id }) => id === supply.jobId);
     if (job?.status !== "completed") return state;
-    if (supply.phase === "delivery")
+    if (supply.phase === "delivery") {
+      const cargo = reservedObject(state.objects, job.id);
+      const carrier = job.assignedPersonId;
+      if (!cargo || !carrier) return state;
+      const delivered = putDownObject(
+        state.objects,
+        cargo.id,
+        job.id,
+        carrier,
+        job.workSite,
+        state.world.positions[carrier]!,
+      );
+      if (delivered === state.objects) return state;
       return {
         ...state,
+        objects: releaseObject(delivered, cargo.id, job.id),
         routines: {
           ...state.routines,
           pantryMeals: state.routines.pantryMeals + supply.quantity,
           supplyOrder: null,
         },
       };
+    }
     const mess = state.world.map.rooms.find(({ kind }) => kind === "mess");
     if (!mess || state.routines.reserveMeals < supply.quantity) return state;
+    const cargo = reservedObject(state.objects, job.id);
+    const carrier = job.assignedPersonId;
+    if (!cargo || !carrier) return state;
+    const picked = pickUpObject(
+      state.objects,
+      cargo.id,
+      job.id,
+      carrier,
+      state.world.positions[carrier]!,
+    );
+    if (picked === state.objects) return state;
     return {
       ...state,
+      objects: picked,
       routines: {
         ...state.routines,
         reserveMeals: state.routines.reserveMeals - supply.quantity,
@@ -391,6 +528,15 @@ export function advancePantrySupply(state: GameState): GameState {
   const storage = state.world.map.rooms.find(({ kind }) => kind === "storage");
   if (!storage) return state;
   const jobId = `job-pantry-${state.routines.nextSupplyNumber}`;
+  const reserved = reserveSupply(
+    state.objects,
+    "meals",
+    Math.min(12, state.routines.reserveMeals),
+    { x: storage.x + 3, y: storage.y + 4 },
+    jobId,
+    true,
+  );
+  if (!reserved.objectId) return state;
   const job: SiteJob = {
     id: jobId,
     title: "Collect pantry meals",
@@ -407,11 +553,17 @@ export function advancePantrySupply(state: GameState): GameState {
     assignmentReason: null,
     authorizedTick: state.tick,
     completedTick: null,
-    workSite: { x: storage.x + 3, y: storage.y + 4 },
+    workSite: (() => {
+      const cargo = reservedObject(reserved.store, jobId)!;
+      return cargo.location.kind === "ground"
+        ? cargo.location.position
+        : { x: storage.x + 3, y: storage.y + 4 };
+    })(),
     requiredWorkerId: null,
   };
   return {
     ...state,
+    objects: reserved.store,
     jobs: [...state.jobs, job],
     routines: {
       ...state.routines,

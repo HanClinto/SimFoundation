@@ -137,6 +137,7 @@ export function advanceJobs(
   world: SiteWorld,
   clinicianIds: readonly string[] = [],
   unavailablePersonIds: readonly string[] = [],
+  cargoOwners: Readonly<Record<string, string>> = {},
 ): JobAdvanceResult {
   const people = new Map(personnel.map((person) => [person.id, person]));
   const positions = { ...world.positions };
@@ -166,6 +167,12 @@ export function advanceJobs(
     }
 
     let assignedPersonId = job.assignedPersonId;
+    const unavailableForJob = new Set([
+      ...busyPersonIds,
+      ...Object.entries(cargoOwners)
+        .filter(([, owner]) => owner !== job.id)
+        .map(([id]) => id),
+    ]);
     let assignmentReason = job.assignmentReason;
     const patient = job.assessment
       ? people.get(job.assessment.patientId)
@@ -173,7 +180,7 @@ export function advanceJobs(
     if (
       job.assessment &&
       !assignedPersonId &&
-      (!patient || busyPersonIds.has(patient.id))
+      (!patient || unavailableForJob.has(patient.id))
     ) {
       advancedJobsById.set(job.id, {
         ...job,
@@ -185,7 +192,7 @@ export function advanceJobs(
       let selected = selectWorker(
         job,
         [...people.values()],
-        busyPersonIds,
+        unavailableForJob,
         world,
         clinicianIds,
       );
@@ -198,6 +205,7 @@ export function advanceJobs(
             candidate.requiredWorkerId === null &&
             candidate.assignedPersonId &&
             !unavailablePersonIds.includes(candidate.assignedPersonId) &&
+            !cargoOwners[candidate.assignedPersonId] &&
             !advancedJobsById.has(candidate.id),
         );
         const interruptibleIds = new Set(
@@ -206,7 +214,9 @@ export function advanceJobs(
         selected = selectWorker(
           job,
           [...people.values()],
-          new Set([...busyPersonIds].filter((id) => !interruptibleIds.has(id))),
+          new Set(
+            [...unavailableForJob].filter((id) => !interruptibleIds.has(id)),
+          ),
           world,
           clinicianIds,
         );
@@ -231,7 +241,7 @@ export function advanceJobs(
       if (!selected) {
         const hasWorker = personnel.some(
           (person) =>
-            !busyPersonIds.has(person.id) &&
+            !unavailableForJob.has(person.id) &&
             (!job.assessment ||
               (clinicianIds.includes(person.id) &&
                 person.id !== job.assessment.patientId &&

@@ -35,7 +35,7 @@ The **Construction** window owns the annex register. **Plan annex** requests a 9
 
 Surveillance requests device placement through the same map interaction. The map owns positioning and cancellation, not object-specific validation or resource rules. Work Orders reports physical locations and provides **Locate** links. The research-laboratory selector and scripted experiment task ladder have been removed.
 
-Construction currently provides one fixed annex template and abstract counted material kits, not arbitrary wall painting, furniture placement, supply replenishment, or a power network. Starting room categories are spatial designations, not fully operational systems. The physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
+Construction currently provides one fixed annex template and uses physical counted material stacks. Furniture placement and stock relocation use the shared Objects and Supplies system; arbitrary wall painting, external procurement, and a power network remain future work. Starting room categories are spatial designations, not fully operational systems. The physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
 
 ## Design Pillars
 
@@ -81,6 +81,16 @@ Temporary maps must use the same headless simulation rules as the base. They are
 
 ## Personnel
 
+### Physical Objects and Supplies
+
+**Objects and Supplies** lists installed furniture, packed spares, and supply stacks. Select an object on the map or in the inspector, choose its orientation (and a quantity for stacks), then **Move / install** to start the shared placement preview. Confirming queues physical pickup, same-carrier transport, and installation. **Pack in place** dismantles furniture into a reusable packed object; it does not delete it or generate materials. Cancellation is available before pickup. One spare bed, meal seat, and break seat are initially stored alongside the existing furniture.
+
+Beds have a two-tile footprint; one tile is the interaction position and the remainder blocks walking. Installed, intact furniture supplies routine-use positions. A relocation waits for its current user to finish and prevents new reservations. Carried or packed furniture cannot restore needs. Destination conflicts and blocked paths leave inspectable work orders; assembly waits for occupants to clear.
+
+Building materials and packaged meals are real counted stacks with ground/carrier locations and exclusive work reservations. Surface replacement and annex construction reserve, pick up, deliver, and consume those objects. Pantry replenishment transports meal stacks; individual pawns collect a portion and carry it to a seat before eating. Moving stock changes subsequent collection destinations. The displayed material and meal counters are validated summaries, not additional copies of the inventory.
+
+World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **26**, requiring a fresh development session. This first object set does not add crafting, procurement, arbitrary containers, weight limits, or a universal equipment system. Cameras retain their existing specialized device/kit workflow.
+
 ### Daily Routines Prototype
 
 The Day Planner edits each pawn's 24 hourly work, free-time, and sleep blocks, with day-shift, night-shift, and rest-day presets. Staff autonomously seek a meal when hungry, a bed when tired, and a break when stressed. Beds, meal seats, and break seats are physically located and exclusively reserved; travel alone does not restore needs. Ordinary schedule changes let current jobs finish, while critical hunger or exhaustion can release work reservations without erasing progress.
@@ -103,7 +113,7 @@ Engineering can order replacement of either installed layer using the shared con
 
 The general exposure API remains available to authored scenarios and tests: bounded sources reach cardinally connected surfaces, stop at intact walls or sealed doors, and reach neighboring space after a barrier opens. The default source list is empty. The AN-001 scenario, bespoke enclosure, and dedicated window were removed from active play; its design notes remain archived in the catalog.
 
-The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 25; earlier development saves require a fresh session.
+The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 26; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 

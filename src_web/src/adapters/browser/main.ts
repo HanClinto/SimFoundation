@@ -41,6 +41,7 @@ import { createSurveillanceView } from "./surveillance-view";
 import { MATERIALS } from "../../simulation/materials";
 import { createConstructionWindow } from "./construction-view";
 import { createEngineeringWindow } from "./engineering-view";
+import { createObjectsWindow } from "./objects-view";
 import scp999IconUrl from "./assets/site-999.svg";
 import { incidentResponse } from "./incident-response";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
@@ -128,6 +129,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
           <button class="subsystem-icon" type="button" data-open-window="construction-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Construction</span></button>
           <button class="subsystem-icon" type="button" data-open-window="engineering-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Engineering</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="objects-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Objects and Supplies</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -136,12 +138,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Residents</dt><dd>1 assigned</dd></div>
-            <div><dt>Systems</dt><dd>11 available</dd></div>
+            <div><dt>Systems</dt><dd>12 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">11 objects</p>
+        <p class="status-bar-field">12 systems</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -660,7 +662,10 @@ const siteCamera = createSiteMap(
   controller,
   (id, perspective) => {
     if (id === "SCP-999") windowManager.open("anomaly-window");
-    else if (id.startsWith("camera-")) {
+    else if (id.startsWith("object:")) {
+      objectsView.select(id.slice(7), controller.getSnapshot(), perspective);
+      windowManager.open("objects-window");
+    } else if (id.startsWith("camera-")) {
       windowManager.open("surveillance-window");
       surveillanceView.selectCamera(id);
     } else if (id.startsWith("tile:")) {
@@ -694,6 +699,27 @@ const clinicalCareView = createClinicalCareView(
   controller,
 );
 const engineeringView = createEngineeringWindow(app, controller);
+const objectsView = createObjectsWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+);
+windowManager.register(objectsView.element, {
+  id: "objects-window",
+  title: "Objects and Supplies",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 280, top: 120, width: 530, height: 550 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 260,
+});
 windowManager.register(engineeringView.element, {
   id: "engineering-window",
   title: "Engineering",
@@ -984,6 +1010,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
+  objectsView.render(snapshot);
   siteCamera.render(snapshot);
   engineeringView.render(snapshot);
   snapshot = observedSnapshot(snapshot);

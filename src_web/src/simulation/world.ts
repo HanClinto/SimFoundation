@@ -36,6 +36,7 @@ export interface SiteMap {
   readonly height: number;
   readonly tiles: readonly TileKind[];
   readonly surfaces: Readonly<Record<number, TileSurfaces>>;
+  readonly objectBlocks?: readonly number[];
   readonly rooms: readonly SiteRoom[];
 }
 
@@ -59,7 +60,12 @@ export function tileAt(map: SiteMap, position: TilePosition): TileKind | null {
 
 export function isWalkable(map: SiteMap, position: TilePosition): boolean {
   const tile = tileAt(map, position);
-  return tile !== null && tile !== "wall" && tile !== "closed-door";
+  return (
+    tile !== null &&
+    tile !== "wall" &&
+    tile !== "closed-door" &&
+    !map.objectBlocks?.includes(position.y * map.width + position.x)
+  );
 }
 
 export function sameTile(first: TilePosition, second: TilePosition): boolean {

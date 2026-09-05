@@ -487,6 +487,20 @@
   line-height: 1.2;
   margin: 0 0 8px;
 }
+#objects-window .field-row {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+#objects-window select {
+  max-width: 100%;
+}
+#object-choice {
+  flex: 1;
+  min-width: 0;
+}
+#object-quantity {
+  width: 64px;
+}
 .surface-controls fieldset {
   margin: 8px 0;
   min-width: 0;

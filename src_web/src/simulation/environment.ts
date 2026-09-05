@@ -1,5 +1,13 @@
 import type { GameState } from "./state";
 import {
+  reserveSupply,
+  reservedObject,
+  pickUpObject,
+  putDownObject,
+  consumeObject,
+  objectFootprint,
+} from "./objects";
+import {
   MATERIALS,
   damageSurfaces,
   replaceSurface,
@@ -149,6 +157,15 @@ export function orderSurfaceWork(
   if (state.construction.availableMaterials < cost)
     return { state, code: "insufficient-materials" };
   const id = `surface-${state.environment.nextOrder}`;
+  const reserved = reserveSupply(
+    state.objects,
+    "materials",
+    cost,
+    state.construction.stockpile,
+    `job-${id}`,
+    true,
+  );
+  if (!reserved.objectId) return { state, code: "insufficient-materials" };
   const recorded =
     state.observations.knownSurfaces[
       position.y * state.world.map.width + position.x
@@ -169,12 +186,18 @@ export function orderSurfaceWork(
     assignmentReason: null,
     authorizedTick: state.tick,
     completedTick: null,
-    workSite: state.construction.stockpile,
+    workSite: (() => {
+      const cargo = reservedObject(reserved.store, `job-${id}`)!;
+      return cargo.location.kind === "ground"
+        ? cargo.location.position
+        : state.construction.stockpile;
+    })(),
   };
   return {
     code: "accepted",
     state: {
       ...state,
+      objects: reserved.store,
       jobs: [...state.jobs, job],
       construction: {
         ...state.construction,
@@ -202,6 +225,7 @@ export function orderSurfaceWork(
 }
 
 export function advanceSurfaceWork(state: GameState): GameState {
+  let objects = state.objects;
   let jobs = [...state.jobs];
   let map = state.world.map;
   const orders = state.environment.orders.map((order): SurfaceOrder => {
@@ -209,6 +233,13 @@ export function advanceSurfaceWork(state: GameState): GameState {
     const job = jobs.find((job) => job.id === order.jobId)!;
     if (job.status !== "completed") return order;
     if (order.phase === "collecting") {
+      const cargo = reservedObject(objects, job.id);
+      const carrier = job.assignedPersonId;
+      if (!cargo || !carrier)
+        return {
+          ...order,
+          blockedReason: "Waiting for physical materials and a carrier.",
+        };
       const workSite = neighbors(order.position).find(
         (site) =>
           isWalkable(map, site) &&
@@ -219,6 +250,16 @@ export function advanceSurfaceWork(state: GameState): GameState {
           ...order,
           blockedReason: "No accessible work face for delivery.",
         };
+      const picked = pickUpObject(
+        objects,
+        cargo.id,
+        job.id,
+        carrier,
+        state.world.positions[carrier]!,
+      );
+      if (picked === objects)
+        return { ...order, blockedReason: "Materials pickup blocked." };
+      objects = picked;
       jobs = jobs.map((candidate) =>
         candidate.id === job.id
           ? {
@@ -236,6 +277,27 @@ export function advanceSurfaceWork(state: GameState): GameState {
       return { ...order, phase: "delivering", blockedReason: null };
     }
     if (order.phase === "delivering") {
+      const cargo = reservedObject(objects, job.id);
+      const carrier = job.assignedPersonId;
+      if (!cargo || !carrier)
+        return {
+          ...order,
+          blockedReason: "Waiting for the materials carrier.",
+        };
+      const delivered = putDownObject(
+        objects,
+        cargo.id,
+        job.id,
+        carrier,
+        job.workSite,
+        state.world.positions[carrier]!,
+      );
+      if (delivered === objects)
+        return {
+          ...order,
+          blockedReason: "Materials must reach the work site.",
+        };
+      objects = delivered;
       jobs = jobs.map((candidate) =>
         candidate.id === job.id
           ? {
@@ -256,17 +318,36 @@ export function advanceSurfaceWork(state: GameState): GameState {
     }
     const surface = surfaceAt(map, order.position, order.layer)!;
     if (
-      order.layer === "structure" &&
-      surface.kind !== "door" &&
-      Object.values(state.world.positions).some((position) =>
-        sameTile(position, order.position),
-      )
+      (order.layer === "structure" &&
+        surface.kind !== "door" &&
+        Object.values(state.world.positions).some((position) =>
+          sameTile(position, order.position),
+        )) ||
+      (order.layer === "structure" &&
+        surface.kind !== "door" &&
+        objects.items.some(
+          (item) =>
+            item.location.kind === "ground" &&
+            objectFootprint(item, item.location.position).some((position) =>
+              sameTile(position, order.position),
+            ),
+        ))
     )
       return {
         ...order,
         blockedReason:
           "Final assembly awaits clearance of the structure footprint.",
       };
+    const cargo = reservedObject(objects, job.id);
+    if (!cargo)
+      return { ...order, blockedReason: "Delivered materials missing." };
+    const consumed = consumeObject(objects, cargo.id, job.id, job.workSite);
+    if (consumed === objects)
+      return {
+        ...order,
+        blockedReason: "Materials must be delivered before fitting.",
+      };
+    objects = consumed;
     map = replaceSurface(map, order.position, order.layer, {
       ...surface,
       material: order.material,
@@ -276,6 +357,7 @@ export function advanceSurfaceWork(state: GameState): GameState {
   });
   return {
     ...state,
+    objects,
     jobs,
     world: { ...state.world, map },
     environment: { ...state.environment, orders },

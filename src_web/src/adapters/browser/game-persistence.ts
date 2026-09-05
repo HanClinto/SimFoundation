@@ -1,5 +1,12 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import {
+  OBJECT_DEFINITIONS,
+  objectBlocks,
+  objectFootprint,
+  reservedObject,
+  type PhysicalObject,
+} from "../../simulation/objects";
+import {
   MATERIALS,
   surfaceTile,
   type TileSurfaces,
@@ -561,7 +568,12 @@ function constructionReferencesValid(state: GameState): boolean {
       !sameTile(
         haul.workSite,
         blueprint.status === "reserved"
-          ? construction.stockpile
+          ? (() => {
+              const cargo = reservedObject(state.objects, blueprint.haulJobId);
+              return cargo?.location.kind === "ground"
+                ? cargo.location.position
+                : construction.stockpile;
+            })()
           : laboratoryWorkSite(blueprint.origin),
       )
     )
@@ -703,7 +715,7 @@ function isRoutineState(value: unknown): boolean {
     isRecord(value) &&
     isIntegerInRange(value.pantryMeals, 0, 108) &&
     isIntegerInRange(value.mealsConsumed, 0, 108) &&
-    isIntegerInRange(value.reserveMeals, 0, 72) &&
+    isIntegerInRange(value.reserveMeals, 0, 108) &&
     isIntegerInRange(value.nextSupplyNumber, 1, 1000) &&
     (value.supplyOrder === null ||
       (isRecord(value.supplyOrder) &&
@@ -1138,7 +1150,13 @@ function environmentReferencesValid(state: GameState): boolean {
         job.skillId ===
           (order.phase === "fitting" ? "engineering" : "logistics") &&
         (order.phase === "collecting"
-          ? sameTile(job.workSite, state.construction.stockpile)
+          ? (() => {
+              const cargo = reservedObject(state.objects, job.id);
+              return (
+                cargo?.location.kind === "ground" &&
+                sameTile(job.workSite, cargo.location.position)
+              );
+            })()
           : Math.abs(job.workSite.x - order.position.x) +
               Math.abs(job.workSite.y - order.position.y) ===
             1) &&
@@ -1148,6 +1166,254 @@ function environmentReferencesValid(state: GameState): boolean {
       );
     })
   );
+}
+
+function isPhysicalObject(value: unknown): value is PhysicalObject {
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.id) ||
+    !isNonEmptyString(value.kind) ||
+    !Object.hasOwn(OBJECT_DEFINITIONS, value.kind) ||
+    !isIntegerInRange(value.quantity, 0, 1000) ||
+    !isNumberInRange(value.condition, 0, 100) ||
+    typeof value.installed !== "boolean" ||
+    !isLiteral(value.orientation, ["north", "east", "south", "west"]) ||
+    !isNullableString(value.reservedBy) ||
+    !isRecord(value.location)
+  )
+    return false;
+  if (value.location.kind === "consumed")
+    return (
+      value.quantity === 0 && !value.installed && value.reservedBy === null
+    );
+  if (
+    value.quantity === 0 ||
+    (!OBJECT_DEFINITIONS[value.kind as keyof typeof OBJECT_DEFINITIONS]
+      .stackable &&
+      value.quantity !== 1)
+  )
+    return false;
+  return value.location.kind === "ground"
+    ? isTilePosition(value.location.position)
+    : value.location.kind === "carried" &&
+        isNonEmptyString(value.location.personId) &&
+        !value.installed &&
+        value.reservedBy !== null;
+}
+
+function objectsValid(state: GameState): boolean {
+  const items = state.objects.items;
+  if (new Set(items.map((item) => item.id)).size !== items.length) return false;
+  if (
+    items.some(
+      (item) =>
+        /^object-\d+$/.test(item.id) &&
+        Number(item.id.slice(7)) >= state.objects.nextId,
+    )
+  )
+    return false;
+  const carried = items.filter((item) => item.location.kind === "carried");
+  if (
+    new Set(
+      carried.map((item) =>
+        item.location.kind === "carried" ? item.location.personId : "",
+      ),
+    ).size !== carried.length
+  )
+    return false;
+  for (const item of items) {
+    const routineCarrier = item.reservedBy?.startsWith("routine-")
+      ? item.reservedBy.slice(8)
+      : null;
+    if (
+      routineCarrier &&
+      state.routines.activities[routineCarrier]?.mealObjectId !== item.id
+    )
+      return false;
+    if (
+      item.reservedBy &&
+      !routineCarrier &&
+      !state.jobs.some((job) => job.id === item.reservedBy)
+    )
+      return false;
+    if (item.location.kind === "carried") {
+      const carrierId = item.location.personId;
+      const job = state.jobs.find((job) => job.id === item.reservedBy);
+      if (
+        !state.personnel.some((person) => person.id === carrierId) ||
+        (routineCarrier
+          ? routineCarrier !== carrierId
+          : job?.requiredWorkerId !== carrierId)
+      )
+        return false;
+    }
+    if (item.location.kind === "ground") {
+      if (tileAt(state.world.map, item.location.position) === null)
+        return false;
+      if (
+        item.installed &&
+        (OBJECT_DEFINITIONS[item.kind].stackable ||
+          objectFootprint(item, item.location.position).some(
+            (position) =>
+              !["grass", "floor", "door"].includes(
+                tileAt(state.world.map, position) ?? "",
+              ),
+          ))
+      )
+        return false;
+    }
+  }
+  if (
+    JSON.stringify(objectBlocks(state.objects, state.world.map.width)) !==
+    JSON.stringify(state.world.map.objectBlocks ?? [])
+  )
+    return false;
+  const materials = items.filter((item) => item.kind === "materials");
+  const occupied = new Set<number>();
+  for (const item of items)
+    if (item.installed && item.location.kind === "ground")
+      for (const position of objectFootprint(item, item.location.position)) {
+        const index = position.y * state.world.map.width + position.x;
+        if (occupied.has(index)) return false;
+        occupied.add(index);
+      }
+  for (const [personId, activity] of Object.entries(
+    state.routines.activities,
+  )) {
+    const furniture = items.find((item) => item.id === activity.stationId);
+    if (
+      !furniture?.installed ||
+      furniture.location.kind !== "ground" ||
+      OBJECT_DEFINITIONS[furniture.kind].activity !== activity.kind
+    )
+      return false;
+    if (
+      activity.mealObjectId &&
+      !items.some(
+        (item) =>
+          item.id === activity.mealObjectId &&
+          item.kind === "meals" &&
+          item.quantity === 1 &&
+          item.location.kind === "carried" &&
+          item.location.personId === personId &&
+          item.reservedBy === `routine-${personId}`,
+      )
+    )
+      return false;
+  }
+  for (const order of state.environment.orders)
+    if (order.phase !== "completed") {
+      const cargo = reservedObject(state.objects, order.jobId);
+      if (
+        !cargo ||
+        cargo.kind !== "materials" ||
+        cargo.quantity !== MATERIALS[order.material].cost ||
+        (order.phase === "delivering"
+          ? cargo.location.kind !== "carried"
+          : cargo.location.kind !== "ground")
+      )
+        return false;
+    }
+  for (const blueprint of state.construction.blueprints)
+    if (!["completed", "cancelled"].includes(blueprint.status)) {
+      const cargo = reservedObject(state.objects, blueprint.haulJobId);
+      if (
+        !cargo ||
+        cargo.kind !== "materials" ||
+        cargo.quantity !== 40 ||
+        (blueprint.status === "hauling"
+          ? cargo.location.kind !== "carried"
+          : cargo.location.kind !== "ground")
+      )
+        return false;
+    }
+  if (state.routines.supplyOrder) {
+    const supply = state.routines.supplyOrder;
+    const cargo = reservedObject(state.objects, supply.jobId);
+    if (
+      !cargo ||
+      cargo.kind !== "meals" ||
+      cargo.quantity !== supply.quantity ||
+      (supply.phase === "delivery"
+        ? cargo.location.kind !== "carried"
+        : cargo.location.kind !== "ground")
+    )
+      return false;
+  }
+  const manualMoves = new Set(state.objectOrders.map((order) => order.jobId));
+  const unreserved = materials
+    .filter(
+      (item) =>
+        item.location.kind !== "consumed" &&
+        (!item.reservedBy || manualMoves.has(item.reservedBy)),
+    )
+    .reduce((sum, item) => sum + item.quantity, 0);
+  if (unreserved !== state.construction.availableMaterials) return false;
+  const materialUsed =
+    state.environment.orders
+      .filter((order) => order.phase === "completed")
+      .reduce((sum, order) => sum + MATERIALS[order.material].cost, 0) +
+    state.construction.blueprints.filter(
+      (blueprint) => blueprint.status === "completed",
+    ).length *
+      40;
+  if (
+    materials.reduce((sum, item) => sum + item.quantity, 0) + materialUsed !==
+    160
+  )
+    return false;
+  const carriedMeals = items
+    .filter(
+      (item) =>
+        item.kind === "meals" &&
+        item.location.kind === "carried" &&
+        item.reservedBy?.startsWith("routine-"),
+    )
+    .reduce((sum, item) => sum + item.quantity, 0);
+  if (
+    items
+      .filter((item) => item.kind === "meals")
+      .reduce((sum, item) => sum + item.quantity, 0) +
+      state.routines.mealsConsumed -
+      carriedMeals !==
+    108
+  )
+    return false;
+  if (
+    new Set(
+      state.objectOrders
+        .filter((order) => !["completed", "cancelled"].includes(order.phase))
+        .map((order) => order.objectId),
+    ).size !==
+    state.objectOrders.filter(
+      (order) => !["completed", "cancelled"].includes(order.phase),
+    ).length
+  )
+    return false;
+  return state.objectOrders.every((order, index) => {
+    if (
+      order.id !== `object-order-${index + 1}` ||
+      order.jobId !== `job-${order.id}`
+    )
+      return false;
+    const item = items.find((item) => item.id === order.objectId);
+    const job = state.jobs.find((job) => job.id === order.jobId);
+    if (!item) return false;
+    if (order.phase === "cancelled") return !job;
+    if (!job) return false;
+    if (order.phase === "completed") return job.status === "completed";
+    if (
+      item.reservedBy !== job.id ||
+      job.skillId !== (order.phase === "install" ? "engineering" : "logistics")
+    )
+      return false;
+    if (order.phase === "carry")
+      return (
+        item.location.kind === "carried" &&
+        job.requiredWorkerId === item.location.personId
+      );
+    return item.location.kind === "ground";
+  });
 }
 
 function isGameState(value: unknown): value is GameState {
@@ -1190,7 +1456,38 @@ function isGameState(value: unknown): value is GameState {
     !isConstructionState(value.construction) ||
     !isRoutineState(value.routines) ||
     !isObservationState(value.observations) ||
-    !isEnvironment(value.environment)
+    !isEnvironment(value.environment) ||
+    !isRecord(value.objects) ||
+    !isIntegerInRange(value.objects.nextId, 1) ||
+    !isArrayOf(value.objects.items, isPhysicalObject, 10000) ||
+    !isArrayOf(
+      value.objectOrders,
+      (order) =>
+        isRecord(order) &&
+        isNonEmptyString(order.id) &&
+        isNonEmptyString(order.objectId) &&
+        isNonEmptyString(order.jobId) &&
+        isTilePosition(order.destination) &&
+        isLiteral(order.orientation, ["north", "east", "south", "west"]) &&
+        typeof order.install === "boolean" &&
+        isLiteral(order.phase, [
+          "pickup",
+          "carry",
+          "install",
+          "completed",
+          "cancelled",
+        ]) &&
+        isNullableString(order.blockedReason),
+      1000,
+    ) ||
+    !isRecord(value.observations) ||
+    !isRecord(value.observations.objects) ||
+    !Object.values(value.observations.objects).every(
+      (observation) =>
+        isRecord(observation) &&
+        isPhysicalObject(observation.object) &&
+        isIntegerInRange(observation.observedTick, 0, value.tick as number),
+    )
   )
     return false;
   const state = value as unknown as GameState;
@@ -1206,6 +1503,7 @@ function isGameState(value: unknown): value is GameState {
     routineReferencesValid(state) &&
     observationReferencesValid(state) &&
     environmentReferencesValid(state) &&
+    objectsValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||
       personIds.includes(state.scp999.targetPersonId)) &&

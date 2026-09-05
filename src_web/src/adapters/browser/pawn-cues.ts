@@ -1,4 +1,5 @@
 import type { GameState } from "../../simulation/state";
+import { OBJECT_DEFINITIONS } from "../../simulation/objects";
 import { projectPsychology } from "../../simulation/personnel";
 import { scheduleAt } from "../../simulation/routines";
 import { sameTile } from "../../simulation/world";
@@ -56,7 +57,17 @@ export function pawnCues(
       ? state.routines.blockedReasons[personId]
       : state.observations.entities[personId]?.blockedReason;
   let action: PawnCue;
-  if (routine) {
+  const carried = state.objects.items.find(
+    (item) =>
+      item.location.kind === "carried" && item.location.personId === personId,
+  );
+  if (routine?.kind === "meal" && carried?.kind === "meals") {
+    action = {
+      icon: "meal",
+      kind: "action",
+      label: "Carrying a meal to a seat",
+    };
+  } else if (routine) {
     const arrived = station && sameTile(position, station.position);
     const labels = {
       meal: "Eating",
@@ -91,7 +102,7 @@ export function pawnCues(
         : icons[job.skillId],
       kind: "action",
       label: travelling
-        ? `${job.requiredWorkerId === personId ? "Carrying materials" : "Travelling"}: ${job.title}`
+        ? `${carried ? `Carrying ${OBJECT_DEFINITIONS[carried.kind].name.toLowerCase()}` : job.requiredWorkerId === personId ? "Carrying materials" : "Travelling"}: ${job.title}`
         : job.assessment?.patientId === personId
           ? "Attending clinical appointment"
           : `Working: ${job.title}`,

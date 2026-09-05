@@ -1,11 +1,11 @@
 import PF from "pathfinding";
 import type { GameState } from "./state";
+import { objectPosition, type PhysicalObject } from "./objects";
 import type { TileSurfaces } from "./materials";
 import { projectPsychology } from "./personnel";
 import type { Scp999State } from "./scp-999";
 import {
   tileAt,
-  isWalkable,
   type SiteMap,
   type SiteRoom,
   type SiteWorld,
@@ -32,6 +32,12 @@ export interface EntityObservation {
   readonly blockedReason: string | null;
 }
 export interface SiteObservations {
+  readonly objects: Readonly<
+    Record<
+      string,
+      { readonly object: PhysicalObject; readonly observedTick: number }
+    >
+  >;
   readonly knownSurfaces: Readonly<Record<number, TileSurfaces>>;
   readonly knownTiles: readonly (TileKind | null)[];
   readonly tileLastSeen: readonly number[];
@@ -74,11 +80,18 @@ export function canObserve(
     if (
       x !== previousX &&
       y !== previousY &&
-      (!isWalkable(map, { x: x!, y: previousY! }) ||
-        !isWalkable(map, { x: previousX!, y: y! }))
+      (["wall", "closed-door"].includes(
+        tileAt(map, { x: x!, y: previousY! }) ?? "",
+      ) ||
+        ["wall", "closed-door"].includes(
+          tileAt(map, { x: previousX!, y: y! }) ?? "",
+        ))
     )
       return false;
-    if (index < ray.length - 1 && !isWalkable(map, { x: x!, y: y! }))
+    if (
+      index < ray.length - 1 &&
+      ["wall", "closed-door"].includes(tileAt(map, { x: x!, y: y! }) ?? "")
+    )
       return false;
   }
   return true;
@@ -96,6 +109,7 @@ export function createSiteObservations(world: SiteWorld): SiteObservations {
         ([index]) => knownTiles[Number(index)] != null,
       ),
     ),
+    objects: {},
     knownTiles,
     tileLastSeen: knownTiles.map((tile) => (tile === null ? -1 : 0)),
     visibleTiles: [],
@@ -186,6 +200,30 @@ export function observeSite(state: GameState): GameState {
     tileLastSeen[index] = state.tick;
   }
   const entities = { ...state.observations.entities };
+  const objects = { ...state.observations.objects };
+  for (const [id, observation] of Object.entries(objects)) {
+    const position = objectPosition(observation.object, state.world.positions);
+    const current = state.objects.items.find((item) => item.id === id);
+    const currentPosition = current
+      ? objectPosition(current, state.world.positions)
+      : null;
+    if (
+      position &&
+      visible.has(position.y * map.width + position.x) &&
+      (!currentPosition ||
+        currentPosition.x !== position.x ||
+        currentPosition.y !== position.y)
+    )
+      delete objects[id];
+  }
+  for (const object of state.objects.items) {
+    const position = objectPosition(object, state.world.positions);
+    if (position && visible.has(position.y * map.width + position.x))
+      objects[object.id] = {
+        object: structuredClone(object),
+        observedTick: state.tick,
+      };
+  }
   const visibleEntityIds: string[] = [];
   for (const [id, position] of Object.entries(state.world.positions).sort(
     ([first], [second]) => first.localeCompare(second),
@@ -231,6 +269,7 @@ export function observeSite(state: GameState): GameState {
     ...state,
     observations: {
       ...state.observations,
+      objects,
       knownTiles,
       knownSurfaces,
       tileLastSeen,

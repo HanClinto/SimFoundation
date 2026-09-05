@@ -1,4 +1,5 @@
 import { observeSite } from "./observations";
+import { advanceObjectWork } from "./object-work";
 import {
   advanceExposure,
   advanceSurfaceWork,
@@ -36,6 +37,13 @@ export function advanceSimulation(state: GameState): GameState {
     state.world,
     state.clinicalCare.clinicianIds,
     routineUnavailableIds(state),
+    Object.fromEntries(
+      state.objects.items.flatMap((item) =>
+        item.location.kind === "carried" && item.reservedBy
+          ? [[item.location.personId, item.reservedBy]]
+          : [],
+      ),
+    ),
   );
   const scp999Result = advanceScp999(
     state.scp999,
@@ -50,17 +58,19 @@ export function advanceSimulation(state: GameState): GameState {
     observeStructuralDamage(
       observeSite(
         advanceExposure(
-          advanceSurfaceWork(
-            advanceConstruction(
-              advancePantrySupply({
-                ...state,
-                tick,
-                gameMinute: state.gameMinute,
-                jobs: jobResult.jobs,
-                personnel: scp999Result.personnel,
-                scp999: scp999Result.anomaly,
-                world: scp999Result.world,
-              }),
+          advanceObjectWork(
+            advanceSurfaceWork(
+              advanceConstruction(
+                advancePantrySupply({
+                  ...state,
+                  tick,
+                  gameMinute: state.gameMinute,
+                  jobs: jobResult.jobs,
+                  personnel: scp999Result.personnel,
+                  scp999: scp999Result.anomaly,
+                  world: scp999Result.world,
+                }),
+              ),
             ),
           ),
         ),

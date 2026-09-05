@@ -6,6 +6,13 @@ import {
 } from "../simulation/observations";
 import { advanceSimulation } from "../simulation/tick";
 import {
+  orderObjectMove,
+  cancelObjectMove,
+  objectPlacementIssue,
+  type ObjectCommandCode,
+} from "../simulation/object-work";
+import type { ObjectOrientation } from "../simulation/objects";
+import {
   orderSurfaceWork,
   type SurfaceOrderCode,
 } from "../simulation/environment";
@@ -48,6 +55,20 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  previewObjectMove(
+    objectId: string,
+    destination: TilePosition,
+    orientation: ObjectOrientation,
+    install: boolean,
+  ): ObjectCommandCode | null;
+  orderObjectMove(
+    objectId: string,
+    destination: TilePosition,
+    orientation: ObjectOrientation,
+    install: boolean,
+    quantity?: number,
+  ): { code: ObjectCommandCode; snapshot: ControllerSnapshot };
+  cancelObjectMove(orderId: string): ControllerSnapshot;
   orderSurfaceWork(
     position: TilePosition,
     layer: SurfaceLayer,
@@ -99,6 +120,31 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    previewObjectMove(objectId, destination, orientation, install) {
+      return objectPlacementIssue(
+        state,
+        objectId,
+        destination,
+        orientation,
+        install,
+      );
+    },
+    orderObjectMove(objectId, destination, orientation, install, quantity) {
+      const result = orderObjectMove(
+        state,
+        objectId,
+        destination,
+        orientation,
+        install,
+        quantity,
+      );
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    cancelObjectMove(orderId) {
+      state = cancelObjectMove(state, orderId);
+      return publish();
+    },
 
     orderSurfaceWork(position, layer, material) {
       const result = orderSurfaceWork(state, position, layer, material);

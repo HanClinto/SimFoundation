@@ -3,6 +3,7 @@ import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { sameTile } from "../../simulation/world";
 import type { TilePosition } from "../../simulation/world";
 import type { MapPerspective } from "./map-settings";
+import { OBJECT_DEFINITIONS, objectPosition } from "../../simulation/objects";
 
 export function mapObjects(
   state: GameState,
@@ -32,6 +33,23 @@ export function mapObjects(
       name: camera.name,
       position: camera.position,
     })),
+    ...(perspective === "world"
+      ? state.objects.items
+      : Object.values(state.observations.objects).map(
+          (observation) => observation.object,
+        )
+    ).flatMap((item) => {
+      const position = objectPosition(item, state.world.positions);
+      return position
+        ? [
+            {
+              id: `object:${item.id}`,
+              name: `${OBJECT_DEFINITIONS[item.kind].name} / ${item.id}${item.quantity > 1 ? ` (${item.quantity})` : ""}`,
+              position,
+            },
+          ]
+        : [];
+    }),
     ...state.environment.sources
       .filter(
         (source) =>

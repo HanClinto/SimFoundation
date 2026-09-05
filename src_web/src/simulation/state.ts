@@ -14,8 +14,10 @@ import {
   type SiteObservations,
 } from "./observations";
 import { createEnvironment, type EnvironmentState } from "./environment";
+import { createObjectStore, objectBlocks, type ObjectStore } from "./objects";
+import { type ObjectOrder } from "./object-work";
 
-export const GAME_STATE_VERSION = 25;
+export const GAME_STATE_VERSION = 26;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -43,11 +45,19 @@ export interface GameState {
   readonly routines: RoutineState;
   readonly observations: SiteObservations;
   readonly environment: EnvironmentState;
+  readonly objects: ObjectStore;
+  readonly objectOrders: readonly ObjectOrder[];
 }
 
 export function createInitialState(seed = 9620): GameState {
   const personnel = createStartingPersonnel();
   const world = createStartingWorld(personnel.map(({ id }) => id));
+  const routines = createRoutineState(personnel);
+  const objects = createObjectStore(routines.stations);
+  const furnishedWorld = {
+    ...world,
+    map: { ...world.map, objectBlocks: objectBlocks(objects, world.map.width) },
+  };
   return observeSite({
     version: GAME_STATE_VERSION,
     seed,
@@ -64,7 +74,7 @@ export function createInitialState(seed = 9620): GameState {
     jobs: [],
     personnel,
     scp999: createScp999State(),
-    world,
+    world: furnishedWorld,
     construction: createConstructionState(),
     clinicalCare: {
       reviewInterval: 0,
@@ -73,7 +83,9 @@ export function createInitialState(seed = 9620): GameState {
       anomalousReviewInterval: 0,
       clinicianIds: ["person-priya-shah"],
     },
-    routines: createRoutineState(personnel),
+    routines,
+    objects,
+    objectOrders: [],
     observations: createSiteObservations(world),
     environment: createEnvironment(),
   });

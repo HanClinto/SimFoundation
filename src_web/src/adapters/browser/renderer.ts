@@ -18,6 +18,7 @@ import {
   type MapPerspective,
 } from "./map-settings";
 import type { PlacementTile } from "./placement";
+import { drawPhysicalObjects } from "./object-art";
 import { layoutPawnBubbles, drawPawnBubbles } from "./pawn-bubbles";
 import {
   MATERIAL_ART,
@@ -330,33 +331,15 @@ export function renderSite(
     context.fillStyle = "#38473f";
     context.fillText(label, point.x, point.y + 3);
   }
-  for (const station of overlays.objects
-    ? snapshot.game.routines.stations
-    : []) {
-    if (
-      knowledge.knownTiles[
-        station.position.y * map.width + station.position.x
-      ] == null
-    )
-      continue;
-    context.save();
-    context.globalAlpha = visibleTiles.has(
-      station.position.y * map.width + station.position.x,
-    )
-      ? 1
-      : 0.45;
-    const point = projectPosition(station.position, camera, width, height);
-    const image = stationImages.get(station.kind);
-    if (image?.complete && image.naturalWidth > 0)
-      context.drawImage(
-        image,
-        point.x - 22 * camera.zoom,
-        point.y - 24 * camera.zoom,
-        44 * camera.zoom,
-        32 * camera.zoom,
-      );
-    context.restore();
-  }
+  if (overlays.objects)
+    drawPhysicalObjects(
+      context,
+      snapshot.game,
+      camera.zoom,
+      recorded,
+      (position) => projectPosition(position, camera, width, height),
+      stationImages,
+    );
   for (const source of overlays.objects
     ? snapshot.game.environment.sources
     : []) {
@@ -499,6 +482,28 @@ export function renderSite(
       );
       context.stroke();
       context.restore();
+    }
+    if (live) {
+      const cargo = snapshot.game.objects.items.find(
+        (item) =>
+          item.location.kind === "carried" && item.location.personId === id,
+      );
+      if (cargo) {
+        context.fillStyle = cargo.kind === "meals" ? "#e2c677" : "#91afbc";
+        context.strokeStyle = "#294e3e";
+        context.fillRect(
+          point.x + 5 * camera.zoom,
+          point.y - 15 * camera.zoom,
+          12,
+          10,
+        );
+        context.strokeRect(
+          point.x + 5 * camera.zoom,
+          point.y - 15 * camera.zoom,
+          12,
+          10,
+        );
+      }
     }
     if (selected) {
       const label =

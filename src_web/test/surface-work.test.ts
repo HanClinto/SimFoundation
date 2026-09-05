@@ -26,6 +26,13 @@ describe("general surface work", () => {
     const carrier = initial.personnel[0]!;
     const state = {
       ...queued,
+      world: {
+        ...queued.world,
+        positions: {
+          ...queued.world.positions,
+          [carrier.id]: queued.construction.stockpile,
+        },
+      },
       personnel: queued.personnel.map((person) =>
         person.id === carrier.id
           ? { ...person, currentJobId: "another-order" }

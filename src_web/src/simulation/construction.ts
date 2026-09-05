@@ -2,6 +2,15 @@ import { authorizeJob, type SiteJob } from "./jobs";
 import { surfacesForTile } from "./materials";
 import type { GameState } from "./state";
 import {
+  reserveSupply,
+  reservedObject,
+  releaseObject,
+  pickUpObject,
+  putDownObject,
+  consumeObject,
+  objectFootprint,
+} from "./objects";
+import {
   findRoute,
   sameTile,
   tileAt,
@@ -65,6 +74,14 @@ export function authorizeSiteWork(state: GameState, jobId: string): GameState {
   const job = state.jobs.find(({ id }) => id === jobId);
   if (!job) throw new Error(`Unknown job: ${jobId}`);
   if (job.status !== "proposed") return state;
+  const objectOrder = state.objectOrders.find((order) => order.jobId === jobId);
+  if (
+    objectOrder &&
+    Object.values(state.routines.activities).some(
+      (activity) => activity.stationId === objectOrder.objectId,
+    )
+  )
+    return state;
   return {
     ...state,
     jobs: state.jobs.map((entry) =>
@@ -141,6 +158,13 @@ export function validateLaboratoryPlacement(
   if (
     Object.values(state.world.positions).some((position) =>
       tiles.some((tile) => sameTile(position, tile.position)),
+    ) ||
+    state.objects.items.some(
+      (item) =>
+        item.location.kind === "ground" &&
+        objectFootprint(item, item.location.position).some((position) =>
+          tiles.some((tile) => sameTile(tile.position, position)),
+        ),
     )
   )
     return "occupied";
@@ -197,6 +221,15 @@ export function placeLaboratory(
   const code = validateLaboratoryPlacement(state, origin);
   if (code) return { code, state };
   const number = state.construction.nextBlueprintNumber;
+  const reserved = reserveSupply(
+    state.objects,
+    "materials",
+    LABORATORY_MATERIAL_COST,
+    state.construction.stockpile,
+    `job-haul-lab-${number}`,
+    true,
+  );
+  if (!reserved.objectId) return { code: "insufficient-materials", state };
   const blueprint: LaboratoryBlueprint = {
     id: `blueprint-lab-${number}`,
     origin: { ...origin },
@@ -210,6 +243,7 @@ export function placeLaboratory(
     code: "placed",
     state: {
       ...state,
+      objects: reserved.store,
       construction: {
         ...state.construction,
         availableMaterials:
@@ -223,7 +257,12 @@ export function placeLaboratory(
           blueprint.haulJobId,
           `Collect annex ${number} materials`,
           "logistics",
-          state.construction.stockpile,
+          (() => {
+            const cargo = reservedObject(reserved.store, blueprint.haulJobId)!;
+            return cargo.location.kind === "ground"
+              ? cargo.location.position
+              : state.construction.stockpile;
+          })(),
           state.tick,
           1,
         ),
@@ -242,10 +281,14 @@ export function cancelLaboratory(
   if (!blueprint) return { code: "not-found", state };
   if (blueprint.status !== "reserved")
     return { code: "already-started", state };
+  const cargo = reservedObject(state.objects, blueprint.haulJobId);
   return {
     code: "cancelled",
     state: {
       ...state,
+      objects: cargo
+        ? releaseObject(state.objects, cargo.id, blueprint.haulJobId)
+        : state.objects,
       construction: {
         ...state.construction,
         availableMaterials:
@@ -265,6 +308,7 @@ export function cancelLaboratory(
 }
 
 export function advanceConstruction(state: GameState): GameState {
+  let objects = state.objects;
   let jobs = [...state.jobs];
   let personnel = [...state.personnel];
   let map = state.world.map;
@@ -272,6 +316,23 @@ export function advanceConstruction(state: GameState): GameState {
     (blueprint): LaboratoryBlueprint => {
       const haulJob = jobs.find(({ id }) => id === blueprint.haulJobId);
       if (blueprint.status === "reserved" && haulJob?.status === "completed") {
+        const cargo = reservedObject(objects, haulJob.id);
+        const carrier = haulJob.assignedPersonId;
+        if (!cargo || !carrier)
+          return {
+            ...blueprint,
+            blockedReason: "Waiting for physical materials and a carrier.",
+          };
+        const picked = pickUpObject(
+          objects,
+          cargo.id,
+          haulJob.id,
+          carrier,
+          state.world.positions[carrier]!,
+        );
+        if (picked === objects)
+          return { ...blueprint, blockedReason: "Materials pickup blocked." };
+        objects = picked;
         jobs = jobs.map((job) =>
           job.id === haulJob.id
             ? {
@@ -297,6 +358,27 @@ export function advanceConstruction(state: GameState): GameState {
         return { ...blueprint, status: "hauling" };
       }
       if (blueprint.status === "hauling" && haulJob?.status === "completed") {
+        const cargo = reservedObject(objects, haulJob.id);
+        const carrier = haulJob.assignedPersonId;
+        if (!cargo || !carrier)
+          return {
+            ...blueprint,
+            blockedReason: "Waiting for materials carrier.",
+          };
+        const delivered = putDownObject(
+          objects,
+          cargo.id,
+          haulJob.id,
+          carrier,
+          haulJob.workSite,
+          state.world.positions[carrier]!,
+        );
+        if (delivered === objects)
+          return {
+            ...blueprint,
+            blockedReason: "Materials must reach the annex.",
+          };
+        objects = delivered;
         jobs.push(
           constructionJob(
             blueprint.buildJobId,
@@ -320,9 +402,16 @@ export function advanceConstruction(state: GameState): GameState {
         replacementTiles.some(
           ({ position, tile }) =>
             tile === "wall" &&
-            Object.values(state.world.positions).some((occupant) =>
-              sameTile(position, occupant),
-            ),
+            (state.objects.items.some(
+              (item) =>
+                item.location.kind === "ground" &&
+                objectFootprint(item, item.location.position).some((tile) =>
+                  sameTile(tile, position),
+                ),
+            ) ||
+              Object.values(state.world.positions).some((occupant) =>
+                sameTile(position, occupant),
+              )),
         )
       )
         return {
@@ -331,6 +420,21 @@ export function advanceConstruction(state: GameState): GameState {
             "Final assembly awaits clearance of the wall footprint.",
         };
       const tiles = [...map.tiles];
+      const cargo = reservedObject(objects, blueprint.haulJobId);
+      if (!cargo)
+        return { ...blueprint, blockedReason: "Delivered materials missing." };
+      const consumed = consumeObject(
+        objects,
+        cargo.id,
+        blueprint.haulJobId,
+        laboratoryWorkSite(blueprint.origin),
+      );
+      if (consumed === objects)
+        return {
+          ...blueprint,
+          blockedReason: "Materials must reach the annex.",
+        };
+      objects = consumed;
       const surfaces = { ...map.surfaces };
       for (const replacement of replacementTiles) {
         tiles[replacement.position.y * map.width + replacement.position.x] =
@@ -370,6 +474,7 @@ export function advanceConstruction(state: GameState): GameState {
   );
   return {
     ...state,
+    objects,
     jobs,
     personnel,
     world: { ...state.world, map },
