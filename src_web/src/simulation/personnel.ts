@@ -50,10 +50,12 @@ export type BodyRegion =
 export interface PersonnelEffect {
   readonly id: string;
   readonly name: string;
-  readonly kind: "injury" | "condition";
+  readonly kind: "injury" | "condition" | "memory";
   readonly severity: "minor" | "moderate" | "serious";
   readonly bodyRegions: readonly BodyRegion[];
   readonly physicalHealthPenalty: number;
+  readonly stressRecoveryPerTick: number;
+  readonly expiresAtTick: number | null;
 }
 
 export interface AssessmentConclusion {
@@ -473,6 +475,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         severity: "serious",
         bodyRegions: ["rightArm"],
         physicalHealthPenalty: 14,
+        stressRecoveryPerTick: 0,
+        expiresAtTick: null,
       },
     ],
     physicalObservations: [
@@ -555,6 +559,8 @@ const STARTING_PERSONNEL: readonly PersonnelRecord[] = [
         severity: "moderate",
         bodyRegions: ["leftFoot"],
         physicalHealthPenalty: 9,
+        stressRecoveryPerTick: 0,
+        expiresAtTick: null,
       },
     ],
     physicalObservations: [],
@@ -915,13 +921,18 @@ export function assessPhysicalHealth(
       minimum: Math.max(0, physicalHealth - 2),
       maximum: Math.min(100, physicalHealth + 2),
     },
-    conclusions: person.effects.map((effect) => ({
-      subjectEffectId: effect.id,
-      label: effect.name,
-      status: "confirmed",
-      confidence: 0.9,
-      bodyRegions: effect.bodyRegions,
-    })),
+    conclusions: person.effects
+      .filter(
+        (effect) =>
+          effect.kind === "injury" || effect.physicalHealthPenalty > 0,
+      )
+      .map((effect) => ({
+        subjectEffectId: effect.id,
+        label: effect.name,
+        status: "confirmed",
+        confidence: 0.9,
+        bodyRegions: effect.bodyRegions,
+      })),
   };
 
   return {
@@ -937,7 +948,18 @@ export function assessPhysicalHealth(
   };
 }
 
-export function advancePersonnel(person: PersonnelRecord): PersonnelRecord {
+export function advancePersonnel(
+  person: PersonnelRecord,
+  currentTick: number,
+): PersonnelRecord {
+  const activeEffects = person.effects.filter(
+    ({ expiresAtTick }) =>
+      expiresAtTick === null || expiresAtTick > currentTick,
+  );
+  const effectStressRecovery = activeEffects.reduce(
+    (total, effect) => total + effect.stressRecoveryPerTick,
+    0,
+  );
   const currentActivity =
     person.currentJobId === null && person.activity.startsWith("Completed:")
       ? person.defaultActivity
@@ -949,7 +971,9 @@ export function advancePersonnel(person: PersonnelRecord): PersonnelRecord {
     activity: currentActivity,
     stress: round(
       clamp(
-        person.stress + (restorativeActivity ? -0.04 : 0.008 + lowRestPressure),
+        person.stress +
+          (restorativeActivity ? -0.04 : 0.008 + lowRestPressure) -
+          effectStressRecovery,
       ),
     ),
     fear: round(clamp(person.fear - 0.01)),
@@ -957,6 +981,7 @@ export function advancePersonnel(person: PersonnelRecord): PersonnelRecord {
       satiety: round(clamp(person.needs.satiety - 0.035)),
       rest: round(clamp(person.needs.rest - 0.02)),
     },
+    effects: activeEffects,
   };
 }
 

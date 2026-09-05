@@ -1,14 +1,16 @@
 import { advanceJobs, createTelemetryRecoveryJob } from "./jobs";
 import { advancePersonnel } from "./personnel";
+import { advanceScp999 } from "./scp-999";
 import type { GameState } from "./state";
 
 export function advanceSimulation(state: GameState): GameState {
   const tick = state.tick + 1;
   const jobResult = advanceJobs(
     state.jobs,
-    state.personnel.map(advancePersonnel),
+    state.personnel.map((person) => advancePersonnel(person, tick)),
     tick,
   );
+  const scp999Result = advanceScp999(state.scp999, jobResult.personnel, tick);
   const previousJobs = new Map(state.jobs.map((job) => [job.id, job]));
   const calibrationCompleted = jobResult.jobs.some(
     (job) =>
@@ -41,6 +43,7 @@ export function advanceSimulation(state: GameState): GameState {
     gameMinute: state.gameMinute + 1,
     incident,
     jobs,
-    personnel: jobResult.personnel,
+    personnel: scp999Result.personnel,
+    scp999: scp999Result.anomaly,
   };
 }

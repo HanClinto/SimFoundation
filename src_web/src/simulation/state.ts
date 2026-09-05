@@ -1,7 +1,8 @@
 import { createStartingJobs, type SiteJob } from "./jobs";
 import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
+import { createScp999State, type Scp999State } from "./scp-999";
 
-export const GAME_STATE_VERSION = 10;
+export const GAME_STATE_VERSION = 11;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -22,6 +23,7 @@ export interface GameState {
   };
   readonly jobs: readonly SiteJob[];
   readonly personnel: readonly PersonnelRecord[];
+  readonly scp999: Scp999State;
 }
 
 export function createInitialState(seed = 9620): GameState {
@@ -40,5 +42,6 @@ export function createInitialState(seed = 9620): GameState {
     },
     jobs: createStartingJobs(),
     personnel: createStartingPersonnel(),
+    scp999: createScp999State(),
   };
 }

@@ -68,7 +68,7 @@ describe("game persistence", () => {
     expect(saveGameState(unavailable, createInitialState())).toBe(false);
   });
 
-  it("rejects corrupted nested jobs and personnel", () => {
+  it("rejects corrupted nested jobs, personnel, Effects, and anomalies", () => {
     const state = createInitialState();
     const brokenJob = {
       ...state,
@@ -86,6 +86,38 @@ describe("game persistence", () => {
     };
     expect(
       loadGameState(memoryStorage(JSON.stringify(brokenPersonnel))).status,
+    ).toBe("invalid");
+
+    const brokenEffect = {
+      ...state,
+      personnel: [
+        {
+          ...firstPerson,
+          effects: [
+            {
+              id: "bad-effect",
+              name: "Bad effect",
+              kind: "memory",
+              severity: "minor",
+              bodyRegions: [],
+              physicalHealthPenalty: 0,
+              stressRecoveryPerTick: 1,
+              expiresAtTick: "later",
+            },
+          ],
+        },
+      ],
+    };
+    expect(
+      loadGameState(memoryStorage(JSON.stringify(brokenEffect))).status,
+    ).toBe("invalid");
+
+    const brokenAnomaly = {
+      ...state,
+      scp999: { ...state.scp999, status: "escaped" },
+    };
+    expect(
+      loadGameState(memoryStorage(JSON.stringify(brokenAnomaly))).status,
     ).toBe("invalid");
   });
 

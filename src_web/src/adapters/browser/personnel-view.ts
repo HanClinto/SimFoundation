@@ -125,6 +125,10 @@ export function createPersonnelInspectorWindows(
             <p data-field="traits"></p>
           </fieldset>
           <fieldset>
+            <legend>Active Effects</legend>
+            <ul data-field="effects"></ul>
+          </fieldset>
+          <fieldset>
             <legend>Work preferences</legend>
             <dl class="preference-summary">
               <div><dt>Mind / Might</dt><dd data-field="bias-mind-might">Unassessed</dd></div>
@@ -337,6 +341,17 @@ export function updatePersonnelInspectors(
     setMetric(inspector, "fear", person.fear);
     setContributors(inspector, "mood-contributors", mood.contributors);
     setContributors(inspector, "sanity-contributors", sanity.contributors);
+    setContributors(
+      inspector,
+      "effects",
+      person.effects.length > 0
+        ? person.effects.map((effect) =>
+            effect.expiresAtTick === null
+              ? effect.name
+              : `${effect.name} / expires tick ${effect.expiresAtTick}`,
+          )
+        : ["No active Effects"],
+    );
 
     for (const [slot] of EQUIPMENT_SLOTS) {
       const slotElement = inspector.querySelector<HTMLElement>(

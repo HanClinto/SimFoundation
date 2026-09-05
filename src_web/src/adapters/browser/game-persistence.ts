@@ -133,11 +133,14 @@ function isPersonnelEffect(value: unknown): boolean {
     isRecord(value) &&
     isNonEmptyString(value.id) &&
     isNonEmptyString(value.name) &&
-    isLiteral(value.kind, ["injury", "condition"] as const) &&
+    isLiteral(value.kind, ["injury", "condition", "memory"] as const) &&
     isLiteral(value.severity, ["minor", "moderate", "serious"] as const) &&
     isBodyRegions(value.bodyRegions) &&
     isFiniteNumber(value.physicalHealthPenalty) &&
-    value.physicalHealthPenalty >= 0
+    value.physicalHealthPenalty >= 0 &&
+    isFiniteNumber(value.stressRecoveryPerTick) &&
+    value.stressRecoveryPerTick >= 0 &&
+    isNullableTick(value.expiresAtTick)
   );
 }
 
@@ -330,6 +333,21 @@ function isSiteJob(value: unknown): boolean {
   );
 }
 
+function isScp999State(value: unknown): boolean {
+  if (!isRecord(value) || value.id !== "SCP-999") return false;
+  if (!isLiteral(value.status, ["wandering", "comforting", "resting"] as const))
+    return false;
+  if (!isNullableString(value.targetPersonId)) return false;
+  if (!isNullableTick(value.interactionEndsAtTick)) return false;
+  if (!isIntegerInRange(value.nextAvailableTick, 0)) return false;
+  if (value.lastInteraction === null) return true;
+  return (
+    isRecord(value.lastInteraction) &&
+    isNonEmptyString(value.lastInteraction.personId) &&
+    isIntegerInRange(value.lastInteraction.completedTick, 0)
+  );
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -347,7 +365,8 @@ function isGameState(value: unknown): value is GameState {
     return false;
   return (
     isArrayOf(value.jobs, isSiteJob) &&
-    isArrayOf(value.personnel, isPersonnelRecord)
+    isArrayOf(value.personnel, isPersonnelRecord) &&
+    isScp999State(value.scp999)
   );
 }
 

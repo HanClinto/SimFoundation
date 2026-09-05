@@ -109,6 +109,10 @@ app.innerHTML = `
             <img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" />
             <span>Work Orders</span>
           </button>
+          <button class="subsystem-icon" type="button" data-open-window="anomaly-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${recordsIconUrl}" alt="" />
+            <span>Anomaly Registry</span>
+          </button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -117,12 +121,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>6 available</dd></div>
+            <div><dt>Systems</dt><dd>7 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">6 objects</p>
+        <p class="status-bar-field">7 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -275,6 +279,30 @@ app.innerHTML = `
     <div class="resize-grip" aria-hidden="true"></div>
   </section>
 
+  <section id="anomaly-window" class="window managed-window anomaly-window" aria-label="Site 828 anomaly registry" hidden>
+    <div class="title-bar">
+      <div class="title-bar-text">Anomaly Registry - SCP-999</div>
+      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
+    </div>
+    <div class="window-body alarm-body">
+      <fieldset>
+        <legend>Resident anomaly status</legend>
+        <dl class="status-list">
+          <div><dt>Designation</dt><dd>SCP-999</dd></div>
+          <div><dt>Protocol state</dt><dd id="scp-999-status">ROAMING</dd></div>
+          <div><dt>Current contact</dt><dd id="scp-999-target">None</dd></div>
+          <div><dt>Next review</dt><dd id="scp-999-timing">Available</dd></div>
+        </dl>
+      </fieldset>
+      <fieldset>
+        <legend>Last recorded interaction</legend>
+        <p id="scp-999-last-interaction">No interaction recorded.</p>
+      </fieldset>
+      <p class="system-note">Approved roaming protocol. SCP-999 may initiate supervised contact with personnel exhibiting elevated stress.</p>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
   <section id="knowledge-window" class="window managed-window knowledge-window" aria-label="Foundation knowledgebase" hidden>
     <div class="title-bar">
       <div class="title-bar-text">Foundation Library '98 - Site 828</div>
@@ -399,6 +427,12 @@ const simulationSeed = requireElement<HTMLElement>("#simulation-seed");
 const personnelRows = requireElement<HTMLElement>("#personnel-rows");
 const personnelCount = requireElement<HTMLElement>("#personnel-count");
 const workOrdersList = requireElement<HTMLElement>("#work-orders-list");
+const scp999Status = requireElement<HTMLElement>("#scp-999-status");
+const scp999Target = requireElement<HTMLElement>("#scp-999-target");
+const scp999Timing = requireElement<HTMLElement>("#scp-999-timing");
+const scp999LastInteraction = requireElement<HTMLElement>(
+  "#scp-999-last-interaction",
+);
 const speedButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>("[data-speed]"),
 );
@@ -503,6 +537,15 @@ windowManager.register(requireElement<HTMLElement>("#work-orders-window"), {
   title: "Work Orders",
   iconUrl: workOrdersIconUrl,
   defaultRect: { left: 390, top: 140, width: 470, height: 390 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
+windowManager.register(requireElement<HTMLElement>("#anomaly-window"), {
+  id: "anomaly-window",
+  title: "Anomaly Registry",
+  iconUrl: recordsIconUrl,
+  defaultRect: { left: 736, top: 116, width: 400, height: 330 },
   defaultOpen: false,
   minimumWidth: 320,
   minimumHeight: 220,
@@ -819,6 +862,39 @@ function render(snapshot: ControllerSnapshot): void {
     snapshot.game.capabilities.anomalousPsychometrics,
   );
   updateWorkOrders(workOrdersList, snapshot.game.jobs, snapshot.game.personnel);
+  const scp999TargetPerson = snapshot.game.personnel.find(
+    ({ id }) => id === snapshot.game.scp999.targetPersonId,
+  );
+  const scp999LastPerson = snapshot.game.personnel.find(
+    ({ id }) => id === snapshot.game.scp999.lastInteraction?.personId,
+  );
+  const scp999Labels = {
+    wandering: "ROAMING",
+    comforting: "CONTACT IN PROGRESS",
+    resting: "RECOVERY PERIOD",
+  } as const;
+  scp999Status.textContent = scp999Labels[snapshot.game.scp999.status];
+  scp999Target.textContent = scp999TargetPerson?.name ?? "None";
+  const scp999Minutes =
+    snapshot.game.scp999.status === "comforting"
+      ? Math.max(
+          0,
+          (snapshot.game.scp999.interactionEndsAtTick ?? snapshot.game.tick) -
+            snapshot.game.tick,
+        )
+      : Math.max(
+          0,
+          snapshot.game.scp999.nextAvailableTick - snapshot.game.tick,
+        );
+  scp999Timing.textContent =
+    snapshot.game.scp999.status === "comforting"
+      ? `${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"} remaining`
+      : snapshot.game.scp999.status === "resting"
+        ? `Available in ${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"}`
+        : "Available";
+  scp999LastInteraction.textContent = snapshot.game.scp999.lastInteraction
+    ? `${scp999LastPerson?.name ?? "Unknown personnel"} / completed tick ${snapshot.game.scp999.lastInteraction.completedTick}`
+    : "No interaction recorded.";
   psychometricsStatus.textContent = snapshot.game.capabilities
     .anomalousPsychometrics
     ? "AVAILABLE"

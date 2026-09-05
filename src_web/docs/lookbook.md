@@ -197,6 +197,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - Site 828 opens as a facility folder.
 - Camera Feed owns the isometric map window.
 - Work Orders owns proposed, available, active, and completed facility jobs. Authorization is a player decision; qualified pawn selection and progress are simulation-owned and inspectable.
+- Anomaly Registry owns resident-anomaly protocol state. Its first live record, SCP-999, reports current supervised contact, recovery timing, and the last completed personnel interaction.
 - Alarm Manager owns live facility incident status and response configuration. Escalation opens it automatically; Yellow incidents reduce simulation speed to 1x and link directly to response Work Orders.
 - Simulation Control supports Standard and Minimal views.
 - The taskbar clock opens Simulation Control and reflects run/pause state.
@@ -208,3 +209,4 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - Dossiers show only self-disclosed or assessed Trait conclusions. Behavioral evidence can appear in Assessment Record before the Trait it supports is known; research may promote that evidence to a suspicion, while targeted screening can confirm it without revealing hidden numeric parameters.
 - Work-preference Biases remain hidden until a structured evaluation reports named tendencies and bounded ranges. Exact authoritative Bias values do not appear in ordinary UI. Skill levels for active personnel are labeled as official training records; they are not presented as live measurements of current performance.
 - Work Orders show required Skill, assigned pawn, deterministic assignment rationale, progress, and completion state. Completed work updates the pawn's activity and official Skill XP without exposing hidden selection inputs.
+- Personnel Influences show active Effects and their expiration ticks. SCP-999 contact produces a visible timed memory Effect rather than an unexplained direct mood bonus.
