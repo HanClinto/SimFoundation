@@ -112,6 +112,74 @@ Routine operation should feel competent, tactile, and slightly cozy: a collectio
 
 Humor may emerge from bureaucratic language confronting impossible events. Avoid parodying the interface so heavily that the facility stops feeling functional.
 
+### Editorial voice
+
+The Foundation writes as though anomalous events are real, classifiable workplace conditions. Its voice is precise, restrained, procedural, and emotionally controlled. It does not wink at the player, explain the joke, or describe itself as sinister.
+
+Three rules govern institutional copy:
+
+1. The Foundation never tries to be funny.
+2. Horror is described as an operational exception, medical finding, compliance issue, or maintenance concern.
+3. The more alarming the event, the calmer and more specific the language becomes.
+
+Cold does not mean vague. Reports identify what happened, when it happened, how confident the Foundation is, and what action is required. Bureaucratic phrasing may reveal institutional detachment, but it must not hide information the player needs to make a decision.
+
+The institution and its personnel have different voices. Forms, alerts, protocols, and official reports remain controlled. Personal notes, interviews, memories, and dialogue may be frightened, compassionate, irritated, or funny. This contrast preserves the game's cozy human center without making the Foundation itself conversational.
+
+### Writing by surface
+
+| Surface            | Voice                                              | Typical content                                                |
+| ------------------ | -------------------------------------------------- | -------------------------------------------------------------- |
+| Buttons and menus  | Short, literal commands                            | `Schedule Evaluation`, `Open Medical Chart`, `Restrict Access` |
+| Status bars        | Factual state plus time or scope                   | `Signal lost — last contact 14 minutes ago`                    |
+| Alerts             | Consequence first, action second                   | `Containment pressure rising. Engineering response requested.` |
+| Personnel dossiers | Administrative and evidence-aware                  | Assignment, clearance, confirmed and suspected findings        |
+| Medical records    | Clinical, person-specific, non-sensational         | Injury location, confidence, treatment, prognosis              |
+| Incident reports   | Chronological and dispassionate                    | Observations, damage, casualties, unresolved causes            |
+| Research records   | Cautious and revision-friendly                     | Hypothesis, evidence, protocol change, confidence              |
+| Foundation Library | Formal reference prose with controlled uncertainty | Established facts, disputed interpretations, redacted context  |
+| Personal records   | Individual voice rather than house style           | Interviews, messages, memories, complaints                     |
+
+### Knowledge language
+
+Use epistemic labels consistently. These words are gameplay states, not decorative flavor:
+
+- **Confirmed:** supported strongly enough for operational use
+- **Suspected:** evidence exists, but the conclusion remains uncertain
+- **Ruled out:** not supported by the named assessment and its evidence; later evidence may overturn it
+- **Unassessed:** no suitable evaluation has been completed
+- **Unknown:** the Foundation lacks current information
+- **Stale:** once-useful information is too old to treat as current
+- **Last observed:** a timestamped fact that makes no claim about the present
+
+Never use a healthy-looking blank state to mean unknown. Prefer `No current assessment` over `Normal`, and `No finding reported` over `None` when the underlying state may be hidden.
+
+### Humor and horror
+
+Humor should come from understatement, procedural mismatch, and institutional priorities. It should not come from jokes about injured personnel, meme references, genre-aware dialogue, or deliberately incompetent controls.
+
+Good examples:
+
+- `No actionable abnormality detected.`
+- `Candidate history contains statistically unusual survivorship.`
+- `Probability distortion suspected. Continue routine observation.`
+- `Telemetry unavailable. Last acceptable reading: 14 minutes ago.`
+- `Employee medically cleared. Contaminated footwear retained for analysis.`
+- `Containment exposure remains within revised personnel guidelines.`
+
+Avoid exaggerated redaction, constant classification codes, ominous all-caps warnings, and jargon in every sentence. One dry line beside an otherwise useful report is stronger than making every label a punchline.
+
+### Copy hierarchy
+
+Operational text should follow this order:
+
+1. State the observable fact.
+2. State confidence, source, or timestamp when uncertainty matters.
+3. State the consequence or required action.
+4. Add restrained institutional context only if it changes interpretation.
+
+For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. Medical review recommended.` This is clearer and more unsettling than either a generic `WARNING` or a paragraph of atmospheric prose.
+
 ## Anti-Goals
 
 - Mobile-first or responsive dashboard layouts
