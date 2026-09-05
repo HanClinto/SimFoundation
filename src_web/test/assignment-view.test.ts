@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createAssignmentView } from "../src/adapters/browser/assignment-view";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "./fixtures/work-state";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("reusable assignment table", () => {

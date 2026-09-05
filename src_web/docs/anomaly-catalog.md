@@ -4,6 +4,8 @@ Internal designations identify original game content and do not claim to be SCP 
 
 ## AN-001: The Chalk Knot
 
+Status: deferred scenario. Its runtime spawn, bespoke enclosure, and dedicated archive window were removed in the simulation-foundation culling pass. The notes below retain the last scenario design for potential reuse; they do not describe the default playable site. The general exposure/material APIs remain implemented and covered by scenario-independent tests.
+
 Creator: SimFoundation project, authored with GitHub Copilot, 2026-09-05. Original fiction and mechanics; no source article. Project content and its original illustration are released under CC BY-SA 3.0, consistent with the SCP setting. Artwork: `src/adapters/browser/assets/an-001-chamber.svg`.
 
 ### Gameplay Question

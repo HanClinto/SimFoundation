@@ -32,13 +32,11 @@ describe("integrated site operations", () => {
       "steel",
     ).state;
     state = installCamera(state, { x: 56, y: 55 }).state;
-    let activationSeen = false;
     for (let minute = 0; minute < 1440; minute += 1) {
       for (const job of state.jobs) {
         if (job.status === "proposed") state = authorizeSiteWork(state, job.id);
       }
       state = advanceSimulation(state);
-      activationSeen ||= state.scp9620.phase === "feedback-incident";
       const occupied = new Set<string>();
       for (const job of state.jobs.filter(
         ({ status }) => status === "in-progress",
@@ -79,8 +77,6 @@ describe("integrated site operations", () => {
         );
       }
     }
-    expect(activationSeen).toBe(true);
-    expect(state.scp9620.phase).toBe("stabilized");
     expect(state.construction.blueprints[0]?.status).toBe("completed");
     expect(state.environment.orders[0]?.phase).toBe("completed");
     expect(

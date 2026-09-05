@@ -1,7 +1,6 @@
-import { createStartingJobs, type SiteJob } from "./jobs";
+import type { SiteJob } from "./jobs";
 import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 import { createScp999State, type Scp999State } from "./scp-999";
-import { createScp9620State, type Scp9620State } from "./scp-9620";
 import { createStartingWorld, type SiteWorld } from "./world";
 import {
   createConstructionState,
@@ -16,7 +15,7 @@ import {
 } from "./observations";
 import { createEnvironment, type EnvironmentState } from "./environment";
 
-export const GAME_STATE_VERSION = 24;
+export const GAME_STATE_VERSION = 25;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -38,7 +37,6 @@ export interface GameState {
   readonly jobs: readonly SiteJob[];
   readonly personnel: readonly PersonnelRecord[];
   readonly scp999: Scp999State;
-  readonly scp9620: Scp9620State;
   readonly world: SiteWorld;
   readonly construction: ConstructionState;
   readonly clinicalCare: ClinicalCarePolicy;
@@ -63,10 +61,9 @@ export function createInitialState(seed = 9620): GameState {
     capabilities: {
       anomalousPsychometrics: false,
     },
-    jobs: createStartingJobs(),
+    jobs: [],
     personnel,
     scp999: createScp999State(),
-    scp9620: createScp9620State(),
     world,
     construction: createConstructionState(),
     clinicalCare: {

@@ -7,11 +7,17 @@ import bedUrl from "./assets/station-bed.svg";
 import mealUrl from "./assets/station-meal.svg";
 import breakUrl from "./assets/station-break.svg";
 import cameraUrl from "./assets/camera.svg";
-import chamberUrl from "./assets/an-001-chamber.svg";
 import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
 import { mapObjects } from "./map-objects";
+import {
+  DEFAULT_MAP_OVERLAYS,
+  type MapBase,
+  type MapOverlay,
+  type MapPerspective,
+} from "./map-settings";
+import type { PlacementTile } from "./placement";
 
 const TILE_WIDTH = 40;
 const TILE_HEIGHT = 20;
@@ -20,12 +26,13 @@ export interface MapCamera {
   readonly center: TilePosition;
   readonly zoom: number;
   readonly selectedId: string | null;
-  readonly overlay?: "normal" | "construction" | "engineering" | "materials";
+  readonly perspective?: MapPerspective;
+  readonly base?: MapBase;
+  readonly overlays?: Readonly<Record<MapOverlay, boolean>>;
   readonly surfaceLayer?: SurfaceLayer;
   readonly draft?: {
-    readonly origin: TilePosition;
+    readonly tiles: readonly PlacementTile[];
     readonly valid: boolean;
-    readonly kind?: "laboratory" | "camera";
   } | null;
 }
 
@@ -94,7 +101,9 @@ export function renderSite(
     selectedId: null,
   },
 ): void {
-  snapshot = observedSnapshot(snapshot);
+  const recorded = camera.perspective === "recorded";
+  const overlays = camera.overlays ?? DEFAULT_MAP_OVERLAYS;
+  if (recorded) snapshot = observedSnapshot(snapshot);
   if (!worker || !scp999) {
     worker = new Image();
     scp999 = new Image();
@@ -107,7 +116,6 @@ export function renderSite(
       ["meal", mealUrl],
       ["break", breakUrl],
       ["camera", cameraUrl],
-      ["chamber", chamberUrl],
     ]) {
       const image = new Image();
       image.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
@@ -132,8 +140,18 @@ export function renderSite(
   context.fillStyle = "#26382f";
   context.fillRect(0, 0, width, height);
   const { map, positions } = snapshot.game.world;
-  const knowledge = snapshot.game.observations;
-  const visibleTiles = new Set(knowledge.visibleTiles);
+  const knowledge = recorded
+    ? snapshot.game.observations
+    : {
+        ...snapshot.game.observations,
+        knownTiles: map.tiles,
+        knownSurfaces: map.surfaces,
+      };
+  const visibleTiles = new Set(
+    recorded || overlays.coverage
+      ? knowledge.visibleTiles
+      : map.tiles.map((_, index) => index),
+  );
   const visibleEntities = new Set(knowledge.visibleEntityIds);
   const corners = [
     { x: -60, y: -60 },
@@ -189,7 +207,6 @@ export function renderSite(
           camera.surfaceLayer ?? "structure"
         ];
       const tile =
-        (camera.overlay === "materials" || camera.overlay === "engineering") &&
         camera.surfaceLayer === "floor"
           ? surface && surface.integrity > 0
             ? "floor"
@@ -203,39 +220,27 @@ export function renderSite(
           row < room.y + room.height,
       );
       const fill =
-        camera.overlay === "materials"
+        camera.base === "materials"
           ? surface
             ? MATERIALS[surface.material].color
             : "#657c6d"
-          : camera.overlay === "engineering" && surface
-            ? surface.integrity === 0
-              ? "#d46056"
-              : surface.integrity <= 55
-                ? "#eac65f"
-                : "#8fcab6"
-            : camera.overlay === "engineering"
-              ? {
-                  floor: "#a5c3ba",
-                  wall: "#d7b78a",
-                  door: "#d8d478",
-                  "closed-door": "#d8d478",
-                  grass: "#6a866c",
-                }[tile]
-              : tile === "grass"
-                ? (column * 7 + row * 11) % 5 === 0
-                  ? "#526e4d"
-                  : "#5c7756"
-                : tile === "wall"
-                  ? "#e0e3dd"
-                  : tile === "door" || tile === "closed-door"
-                    ? "#b69b59"
-                    : room
-                      ? roomColors[room.kind]
-                      : "#e0ddd0";
+          : tile === "grass"
+            ? (column * 7 + row * 11) % 5 === 0
+              ? "#526e4d"
+              : "#5c7756"
+            : tile === "wall"
+              ? "#e0e3dd"
+              : tile === "door" || tile === "closed-door"
+                ? "#b69b59"
+                : room
+                  ? roomColors[room.kind]
+                  : "#e0ddd0";
       context.save();
-      context.globalAlpha = visibleTiles.has(row * map.width + column)
-        ? 1
-        : 0.48;
+      context.globalAlpha =
+        (!recorded && !overlays.coverage) ||
+        visibleTiles.has(row * map.width + column)
+          ? 1
+          : 0.48;
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
       if (tile === "wall" || tile === "closed-door") {
@@ -252,7 +257,7 @@ export function renderSite(
       context.restore();
     }
   }
-  if (camera.overlay === "engineering") {
+  if (overlays.condition) {
     for (const [key, cell] of Object.entries(knowledge.knownSurfaces)) {
       const index = Number(key);
       const position = {
@@ -271,19 +276,19 @@ export function renderSite(
       const point = projectPosition(position, camera, width, height);
       context.save();
       context.globalAlpha =
-        knowledge.tileLastSeen[index] === snapshot.game.tick ? 1 : 0.55;
+        !recorded || knowledge.tileLastSeen[index] === snapshot.game.tick
+          ? 1
+          : 0.55;
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
-      drawTile(
-        context,
-        { x: 0, y: -20 },
+      context.strokeStyle =
         reading.integrity === 0
           ? "#d46056"
           : reading.integrity <= 55
             ? "#eac65f"
-            : "#8fcab6",
-        "#26382f",
-      );
+            : "#8fcab6";
+      context.lineWidth = 3;
+      context.strokeRect(-16, -18, 32, 18);
       context.font = "bold 11px 'Courier New', monospace";
       context.textAlign = "center";
       context.fillStyle = "#152b26";
@@ -292,7 +297,7 @@ export function renderSite(
     }
   }
   context.textAlign = "center";
-  for (const room of map.rooms) {
+  for (const room of overlays.rooms ? map.rooms : []) {
     if (camera.zoom < 0.55) continue;
     const point = projectPosition(
       { x: room.x + room.width / 2 - 0.5, y: room.y + room.height / 2 - 0.5 },
@@ -308,7 +313,9 @@ export function renderSite(
     context.fillStyle = "#38473f";
     context.fillText(label, point.x, point.y + 3);
   }
-  for (const station of snapshot.game.routines.stations) {
+  for (const station of overlays.objects
+    ? snapshot.game.routines.stations
+    : []) {
     if (
       knowledge.knownTiles[
         station.position.y * map.width + station.position.x
@@ -333,13 +340,12 @@ export function renderSite(
       );
     context.restore();
   }
-  const chamber = stationImages.get("chamber");
-  for (const source of snapshot.game.environment.sources) {
+  for (const source of overlays.objects
+    ? snapshot.game.environment.sources
+    : []) {
     if (
       knowledge.knownTiles[source.position.y * map.width + source.position.x] !=
-        null &&
-      chamber?.complete &&
-      chamber.naturalWidth > 0
+      null
     ) {
       const point = projectPosition(source.position, camera, width, height);
       context.save();
@@ -348,28 +354,30 @@ export function renderSite(
       )
         ? 1
         : 0.45;
-      context.drawImage(
-        chamber,
-        point.x - 25 * camera.zoom,
-        point.y - 34 * camera.zoom,
-        50 * camera.zoom,
-        42 * camera.zoom,
-      );
+      context.translate(point.x, point.y);
+      context.scale(camera.zoom, camera.zoom);
+      drawTile(context, { x: 0, y: -10 }, "#d9b564", "#6d4b26");
+      context.font = "bold 10px 'Courier New', monospace";
+      context.fillStyle = "#172e25";
+      context.fillText(source.kind.toUpperCase(), 0, -16);
       context.restore();
     }
   }
   const footprints = [
-    ...snapshot.game.construction.blueprints
+    ...(overlays.projects ? snapshot.game.construction.blueprints : [])
       .filter(({ status }) => status !== "completed" && status !== "cancelled")
       .map((blueprint) => ({
-        origin: blueprint.origin,
+        tiles: laboratoryTiles(blueprint.origin).map((tile) => ({
+          position: tile.position,
+          entrance: tile.tile === "door",
+        })),
         fill: "rgba(125, 208, 223, .38)",
         stroke: "#c0f5ff",
       })),
-    ...(camera.draft && camera.draft.kind !== "camera"
+    ...(camera.draft
       ? [
           {
-            origin: camera.draft.origin,
+            tiles: camera.draft.tiles,
             fill: camera.draft.valid
               ? "rgba(161, 237, 140, .45)"
               : "rgba(250, 140, 130, .45)",
@@ -379,7 +387,7 @@ export function renderSite(
       : []),
   ];
   for (const footprint of footprints) {
-    for (const { position, tile } of laboratoryTiles(footprint.origin)) {
+    for (const { position, entrance } of footprint.tiles) {
       const point = projectPosition(position, camera, width, height);
       context.save();
       context.translate(point.x, point.y);
@@ -388,26 +396,17 @@ export function renderSite(
         context,
         { x: 0, y: -10 },
         footprint.fill,
-        tile === "door" ? "#fff4a4" : footprint.stroke,
+        entrance ? "#fff4a4" : footprint.stroke,
       );
       context.restore();
     }
   }
-  if (camera.draft?.kind === "camera") {
-    const point = projectPosition(camera.draft.origin, camera, width, height);
-    context.save();
-    context.translate(point.x, point.y);
-    context.scale(camera.zoom, camera.zoom);
-    drawTile(
-      context,
-      { x: 0, y: -10 },
-      camera.draft.valid ? "#a1d4bd" : "#cc8a77",
-      "#f5edcf",
-    );
-    context.restore();
-  }
   const cameraImage = stationImages.get("camera");
-  if (cameraImage?.complete && cameraImage.naturalWidth > 0) {
+  if (
+    overlays.objects &&
+    cameraImage?.complete &&
+    cameraImage.naturalWidth > 0
+  ) {
     for (const device of knowledge.cameras) {
       const point = projectPosition(device.position, camera, width, height);
       context.save();
@@ -423,7 +422,9 @@ export function renderSite(
       context.restore();
     }
   }
-  for (const [id, position] of Object.entries(positions).sort(
+  for (const [id, position] of Object.entries(
+    overlays.objects ? positions : {},
+  ).sort(
     ([firstId, first], [secondId, second]) =>
       first.x + first.y - second.x - second.y ||
       firstId.localeCompare(secondId),
@@ -437,7 +438,7 @@ export function renderSite(
     )
       continue;
     const selected = id === camera.selectedId;
-    const live = visibleEntities.has(id);
+    const live = !recorded || visibleEntities.has(id);
     if (selected) {
       context.strokeStyle = "#ffe477";
       context.lineWidth = 2;
@@ -515,7 +516,7 @@ export function renderSite(
     }
   }
   context.textAlign = "start";
-  const selectedObject = mapObjects(snapshot.game).find(
+  const selectedObject = mapObjects(snapshot.game, camera.perspective).find(
     ({ id }) => id === camera.selectedId,
   );
   const tileCoordinates = camera.selectedId?.startsWith("tile:")

@@ -20,21 +20,21 @@ it("orders the selected layer and operates real doors without granting research"
     layer: "floor",
     material: "steel",
   });
-  view.select({ x: 68, y: 58 }, controller.getSnapshot(), "structure");
+  view.select({ x: 61, y: 55 }, controller.getSnapshot(), "structure");
   view.element.querySelector<HTMLButtonElement>("[data-operate-door]")!.click();
   expect(
     surfaceAt(
       controller.getSnapshot().game.world.map,
-      { x: 68, y: 58 },
+      { x: 61, y: 55 },
       "structure",
     )?.kind,
-  ).toBe("door");
+  ).toBe("closed-door");
   expect(view.element.querySelector("[data-operate-door]")?.textContent).toBe(
-    "Close door",
+    "Open door",
   );
   expect(
     view.element.querySelector("[data-surface-feedback]")?.textContent,
-  ).toBe("Door control set to open.");
+  ).toBe("Door control set to closed.");
   expect(
     controller.getSnapshot().game.capabilities.anomalousPsychometrics,
   ).toBe(false);

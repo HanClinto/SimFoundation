@@ -22,7 +22,6 @@ import {
   cancelLaboratory,
   placeLaboratory,
   validateLaboratoryPlacement,
-  setResearchLaboratory,
   type ConstructionCode,
 } from "../simulation/construction";
 import type { TilePosition } from "../simulation/world";
@@ -63,7 +62,6 @@ export interface GameController {
   previewLaboratory(origin: TilePosition): ConstructionCode | null;
   placeLaboratory(origin: TilePosition): ConstructionCommandResult;
   cancelLaboratory(blueprintId: string): ConstructionCommandResult;
-  setResearchLaboratory(roomId: string): ConstructionCommandResult;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
@@ -117,13 +115,8 @@ export function createController(initialState: GameState): GameController {
     },
     setDoorOpen(position, open) {
       const door = surfaceAt(state.world.map, position, "structure");
-      const known =
-        state.observations.knownSurfaces[
-          position.y * state.world.map.width + position.x
-        ]?.structure;
       if (
         typeof open === "boolean" &&
-        known &&
         door &&
         door.integrity > 0 &&
         ["door", "closed-door"].includes(door.kind) &&
@@ -171,14 +164,6 @@ export function createController(initialState: GameState): GameController {
 
     previewLaboratory(origin) {
       return validateLaboratoryPlacement(state, origin);
-    },
-
-    setResearchLaboratory(roomId) {
-      const result = setResearchLaboratory(state, roomId);
-      if (result.state === state)
-        return { code: result.code, snapshot: getSnapshot() };
-      state = result.state;
-      return { code: result.code, snapshot: publish() };
     },
 
     placeLaboratory(origin) {

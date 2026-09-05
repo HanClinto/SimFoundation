@@ -41,23 +41,13 @@ export interface EnvironmentState {
   readonly orders: readonly SurfaceOrder[];
   readonly sources: readonly ExposureSource[];
 }
-export const AN001_POSITION: TilePosition = { x: 70, y: 58 };
 export function createEnvironment(): EnvironmentState {
   return {
     automaticRepairs: false,
     spentMaterials: 0,
     nextOrder: 1,
     orders: [],
-    sources: [
-      {
-        id: "AN-001",
-        name: "AN-001 / The Chalk Knot",
-        position: AN001_POSITION,
-        radius: 4,
-        kind: "corrosion",
-        dose: 0.2,
-      },
-    ],
+    sources: [],
   };
 }
 export function neighbors(position: TilePosition): readonly TilePosition[] {
@@ -137,10 +127,7 @@ export function orderSurfaceWork(
     return { state, code: "invalid-material" };
   if (
     (layer !== "floor" && layer !== "structure") ||
-    !surfaceAt(state.world.map, position, layer) ||
-    !state.observations.knownSurfaces[
-      position.y * state.world.map.width + position.x
-    ]?.[layer]
+    !surfaceAt(state.world.map, position, layer)
   )
     return { state, code: "unknown-surface" };
   if (
@@ -165,7 +152,7 @@ export function orderSurfaceWork(
   const recorded =
     state.observations.knownSurfaces[
       position.y * state.world.map.width + position.x
-    ]![layer]!;
+    ]?.[layer] ?? surfaceAt(state.world.map, position, layer)!;
   const job: SiteJob = {
     id: `job-${id}`,
     title: `Collect ${MATERIALS[material].name.toLowerCase()} for ${layer} ${position.x},${position.y}`,
@@ -360,13 +347,10 @@ export function observeStructuralDamage(state: GameState): GameState {
   if (ownIncident)
     return {
       ...state,
-      incident:
-        state.scp9620.phase === "feedback-incident"
-          ? {
-              level: "yellow",
-              summary: "SCP-9620 telemetry feedback outside validated limits",
-            }
-          : { level: "green", summary: "Recorded structural damage repaired" },
+      incident: {
+        level: "green",
+        summary: "Recorded structural damage repaired",
+      },
     };
   return state;
 }

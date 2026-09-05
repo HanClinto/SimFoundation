@@ -38,7 +38,7 @@ Hosted CI exposed a timeout in the intentional two-day replay: 7.6 seconds on th
 
 1. Open Day Planner and inspect the schedules and finite meal supply.
 2. Open Surveillance, disable a camera, and compare live coverage with remembered terrain and last sightings.
-3. Open AN-001 Study for its read-only reference and Locate enclosure. Camera Feed now has Materials/Condition overlays and Floors/Structures selection. Double-click any tile for Engineering, order an individual layer replacement, or operate a known door. The old trial protocol, paired-barrier repair kit, and instant research button have been retired.
+3. Open Camera Feed > Layers. Choose World or Recorded perspective, Site or Materials base, Floors or Structures, and independent overlays. Double-click a tile for Engineering. Placement starts from Construction or Surveillance and uses a temporary Confirm/Cancel bar. The default site has no staged research jobs or AN-001 scenario; budget and alarm-hardware placeholders were culled.
 4. Open Occupational Health's Assignments tab to compare portraits, skill, procedure eligibility, and current availability.
 
 ### Scope Notes

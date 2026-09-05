@@ -2,14 +2,27 @@ import type { GameState } from "../../simulation/state";
 import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { sameTile } from "../../simulation/world";
 import type { TilePosition } from "../../simulation/world";
+import type { MapPerspective } from "./map-settings";
 
-export function mapObjects(state: GameState): readonly {
+export function mapObjects(
+  state: GameState,
+  perspective: MapPerspective = "recorded",
+): readonly {
   readonly id: string;
   readonly name: string;
   readonly position: TilePosition;
 }[] {
   return [
-    ...Object.entries(state.observations.entities).map(([id, sighting]) => ({
+    ...Object.entries(
+      perspective === "world"
+        ? Object.fromEntries(
+            Object.entries(state.world.positions).map(([id, position]) => [
+              id,
+              { position },
+            ]),
+          )
+        : state.observations.entities,
+    ).map(([id, sighting]) => ({
       id,
       position: sighting.position,
       name: state.personnel.find((person) => person.id === id)?.name ?? id,
@@ -22,6 +35,7 @@ export function mapObjects(state: GameState): readonly {
     ...state.environment.sources
       .filter(
         (source) =>
+          perspective === "world" ||
           state.observations.knownTiles[
             source.position.y * state.world.map.width + source.position.x
           ] != null,
@@ -38,24 +52,34 @@ export function engineeringRecord(
   state: GameState,
   position: TilePosition,
   layer?: SurfaceLayer,
+  perspective: MapPerspective = "recorded",
 ): readonly [string, string][] {
   const index = position.y * state.world.map.width + position.x;
-  const known = state.observations.knownTiles[index];
+  const known =
+    perspective === "world"
+      ? state.world.map.tiles[index]
+      : state.observations.knownTiles[index];
   const visible = state.observations.visibleTiles.includes(index);
   const rows: [string, string][] = [
     ["Location", `${position.x}, ${position.y}`],
     [
       "Observation",
-      visible
-        ? "Current coverage"
-        : known == null
-          ? "Unsurveyed"
-          : `Last surveyed ${state.tick - state.observations.tileLastSeen[index]!} minutes ago`,
+      perspective === "world"
+        ? "Simulation state"
+        : visible
+          ? "Current coverage"
+          : known == null
+            ? "Unsurveyed"
+            : `Last surveyed ${state.tick - state.observations.tileLastSeen[index]!} minutes ago`,
     ],
-    ["Recorded tile", known ?? "Unknown"],
+    [perspective === "world" ? "Tile" : "Recorded tile", known ?? "Unknown"],
   ];
   if (known == null) return rows;
-  const room = state.observations.knownRooms.find(
+  const room = (
+    perspective === "world"
+      ? state.world.map.rooms
+      : state.observations.knownRooms
+  ).find(
     (room) =>
       position.x >= room.x &&
       position.x < room.x + room.width &&
@@ -64,7 +88,10 @@ export function engineeringRecord(
   );
   rows.push(["Room", room?.name ?? "Exterior / corridor"]);
   rows.push(["Ground", "Soil"]);
-  const cell = state.observations.knownSurfaces[index];
+  const cell =
+    perspective === "world"
+      ? state.world.map.surfaces[index]
+      : state.observations.knownSurfaces[index];
   for (const selected of layer ? [layer] : (["floor", "structure"] as const)) {
     const surface = cell?.[selected];
     rows.push([

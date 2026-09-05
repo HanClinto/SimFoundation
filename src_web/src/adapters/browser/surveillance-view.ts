@@ -1,3 +1,24 @@
+import type { PlacementRequest } from "./placement";
+
+export function cameraPlacement(controller: GameController): PlacementRequest {
+  return {
+    label: "Surveillance camera / 1 kit",
+    origin: { x: 63, y: 62 },
+    footprint: (position) => [{ position }],
+    validate: (origin) => {
+      const code = controller.previewCamera(origin);
+      return code ? cameraMessages[code] : null;
+    },
+    confirm: (origin) => {
+      const result = controller.installCamera(origin);
+      return {
+        accepted: result.code === "installed-order",
+        message: cameraMessages[result.code],
+        snapshot: result.snapshot,
+      };
+    },
+  };
+}
 import type {
   ControllerSnapshot,
   GameController,

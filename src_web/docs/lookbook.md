@@ -147,7 +147,7 @@ The institution and its personnel have different voices. Forms, alerts, protocol
 
 ### Knowledge language
 
-**Global fog-of-war rule:** ordinary interfaces show only facts justified by observation, records, sensors, or assessments. Never render an authoritative simulation value merely because it exists in the snapshot. Exact values and causal contributors belong in debug tools unless a named player-facing source supports them.
+**Perspective rule:** the simulation-oriented map explicitly offers World and Recorded views. World exposes physical state and labels Engineering reads as simulation state; Recorded uses observations and timestamps. This distinction is deliberate, not a side effect of disabling an overlay. Personnel assessments remain evidence-limited records; World mode does not fabricate diagnoses or update survey history.
 
 Facility observability follows the same rule. Personnel presence and functioning, placed cameras provide coverage subject to their sensing limits. Without current observation, show timestamped remembered terrain, facility condition, and anomaly sightings rather than live state. An unexplored area is unknown; a previously observed area is remembered, not guaranteed unchanged. Map rendering, selection, tracking, inspector links, and anomaly records must all respect that boundary. Authoritative simulation activity continues outside observation. The initial observation layer implements local sight, remembered tiles and entity sightings, and camera enable/disable controls; power and communications failures remain later extensions.
 
@@ -203,8 +203,8 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 ## Current Prototype Decisions
 
 - Inventory, pawn identity, and anomaly identity icons use 32x32 display boxes with labels outside the icon. Larger anatomy, uniform, and chamber images are reference illustrations, not oversized identity icons.
-- Placement clicks pin the preview; hovering away to authorize does not move it. Click elsewhere to reposition. Map cameras and AN-001 use the same select/open pattern as personnel.
-- Materials and Condition overlays select Floors or Structures explicitly. Every installed layer has a recorded material and integrity. Material swatches and condition keys are shared across the map; unseen changes do not update them. Engineering owns replacement orders and door controls; the anomaly archive is a read-only reference, not an experiment control panel.
+- Placement starts in its owning inspector, with only a temporary Confirm/Cancel bar in the map. Clicks pin the supplied footprint; changing layers never changes placement. The permanent Inspect/Plan Laboratory/Place Camera selector is removed.
+- The Layers panel provides World/Recorded perspective, Site/Materials base maps, Floors/Structures, and independent Condition, Rooms, Objects, Coverage, and Projects toggles. Condition outlines compose over material colors. Engineering follows the chosen physical perspective; clinical records do not.
 - Day Planner has directly selectable Work/Free/Sleep paint modes and drag painting. Preset application names the selected person and reports the full-day change. Hourly skill coverage counts scheduled recorded skills, not exclusive job assignment or guaranteed availability.
 
 - Occupational Health is a facility subwindow for clinical duty assignment, routine review cadence, appointment status, and chart access. Assessment buttons create referrals; they no longer immediately reveal findings. Clinical appointments require a distinct attending clinician and patient, so coverage and staff availability matter.
@@ -216,7 +216,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 
 - Site 828 opens as a facility folder.
 - Camera Feed owns the isometric map window.
-- Construction is a separate modeless facility inspector, not a Camera Feed tab or embedded register. It owns project status, cancellation, and research-laboratory selection. Plan and Locate commands coordinate with Camera Feed, which owns the spatial preview and placement input.
+- Construction is a separate modeless facility inspector. It owns project status and cancellation; Plan and Locate coordinate with the generic map placement request. The scenario-only research-laboratory selector is removed.
 - Work Orders owns proposed, available, active, and completed facility jobs. Authorization is a player decision; qualified pawn selection and progress are simulation-owned and inspectable.
 - Anomaly Registry owns resident-anomaly and experiment protocol state. SCP-9620 reports the current authorized phase and earned observations; SCP-999 reports current supervised contact, recovery timing, and the last completed personnel interaction.
 - Alarm Manager owns live facility incident status and response configuration. Escalation opens it automatically; Yellow incidents reduce simulation speed to 1x and link directly to response Work Orders.
@@ -224,7 +224,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - The taskbar clock opens Simulation Control and reflects run/pause state.
 - The SCP menu provides explicit Save Site and Load Site commands backed by the same local record used for autosave. Settings remains visibly unavailable until implemented.
 - Foundation Library demonstrates the Encarta-like article/tree split and now hosts facility-level research capabilities such as Anomalous Psychometrics.
-- Personnel Roster and pawn inspectors project assessment-limited personnel state. Mood and Sanity appear as coarse behavioral impressions until a psychological evaluation records bounded estimates and frozen contributors; old evaluations remain timestamped rather than silently tracking current truth. Several pawn inspectors can remain open for comparison. Budget remains an explicitly provisional preview until its simulation exists.
+- Personnel Roster and pawn inspectors project assessment-limited personnel state. Mood and Sanity appear as coarse behavioral impressions until an evaluation records bounded estimates; old evaluations remain timestamped. Several inspectors can remain open for comparison. The fake Budget Report and unsimulated alarm-hardware panel have been removed.
 - Personnel inspectors use a compact corporate ID/dossier header with manila-style Summary, Equipment, Skills, and Influences tabs. Summary reports Physical Health only as an assessed range and launches separate modeless Medical Chart and Assessment Record windows.
 - Equipment and carried inventory use the same fixed portrait-oriented icon tile: a recessed pictogram field, short caption, and item-description tooltip. Empty equipment and inventory cells retain the same geometry so changing loadout never shifts the dossier.
 - Medical Chart combines a selectable body-region map with a findings list. Regions visualize assessed Injury Effects rather than owning hit points; unknown, assessed-clear, suspected, and confirmed states remain visibly distinct.

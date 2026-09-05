@@ -4,10 +4,9 @@ import { createController } from "../src/application/controller";
 import {
   advanceJobs,
   authorizeJob,
-  createStartingJobs,
   type SiteJob,
 } from "../src/simulation/jobs";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState, createTestJobs } from "./fixtures/work-state";
 import { advanceSimulation } from "../src/simulation/tick";
 
 describe("site jobs", () => {
@@ -141,7 +140,7 @@ describe("site jobs", () => {
       progress: 0,
     });
 
-    const authorized = controller.authorizeJob("job-calibrate-9620-sensors");
+    const authorized = controller.authorizeJob("job-test-survey");
     expect(authorized.game.jobs[0]).toMatchObject({
       status: "available",
       authorizedTick: 0,
@@ -158,8 +157,8 @@ describe("site jobs", () => {
     const mara = advanced.game.personnel.find(
       ({ id }) => id === "person-mara-voss",
     );
-    expect(mara?.currentJobId).toBe("job-calibrate-9620-sensors");
-    expect(mara?.activity).toBe("Travelling: Calibrate SCP-9620 sensor array");
+    expect(mara?.currentJobId).toBe("job-test-survey");
+    expect(mara?.activity).toBe("Travelling: Survey site");
     expect(mara?.skills.find(({ id }) => id === "research")?.xp).toBe(0);
     expect(advanced.game.world.positions["person-mara-voss"]).toEqual({
       x: 55,
@@ -172,8 +171,8 @@ describe("site jobs", () => {
   it("completes work deterministically and releases the assigned pawn", () => {
     const first = createController(createInitialState(42));
     const second = createController(createInitialState(42));
-    first.authorizeJob("job-calibrate-9620-sensors");
-    second.authorizeJob("job-calibrate-9620-sensors");
+    first.authorizeJob("job-test-survey");
+    second.authorizeJob("job-test-survey");
 
     const firstResult = first.advance(11);
     const secondResult = second.advance(11);
@@ -204,17 +203,15 @@ describe("site jobs", () => {
       "Unknown job: missing-job",
     );
 
-    controller.authorizeJob("job-calibrate-9620-sensors");
-    const authorizedAgain = controller.authorizeJob(
-      "job-calibrate-9620-sensors",
-    );
+    controller.authorizeJob("job-test-survey");
+    const authorizedAgain = controller.authorizeJob("job-test-survey");
     expect(authorizedAgain.game.jobs[0]?.status).toBe("available");
     expect(authorizedAgain.game.jobs[0]?.authorizedTick).toBe(0);
   });
 
   it("assigns competing work by explicit priority and reserves workers", () => {
     const state = createInitialState();
-    const baseJob = createStartingJobs()[0];
+    const baseJob = createTestJobs()[0];
     if (!baseJob) throw new Error("starting job missing");
     const lowerPriority: SiteJob = {
       ...baseJob,
@@ -248,7 +245,7 @@ describe("site jobs", () => {
 
   it("leaves work available with a reason when no worker is eligible", () => {
     const state = createInitialState();
-    const job = createStartingJobs()[0];
+    const job = createTestJobs()[0];
     if (!job) throw new Error("starting job missing");
 
     const result = advanceJobs(
@@ -263,71 +260,5 @@ describe("site jobs", () => {
       assignedPersonId: null,
       assignmentReason: "No eligible worker is currently available.",
     });
-  });
-
-  it("runs the staged SCP-9620 protocol and resolves its incident", () => {
-    const controller = createController(createInitialState(42));
-    controller.authorizeJob("job-calibrate-9620-sensors");
-
-    const calibrated = controller.advance(11);
-    expect(calibrated.game.incident.level).toBe("green");
-    expect(calibrated.game.scp9620).toMatchObject({
-      phase: "baseline",
-      observations: [
-        expect.objectContaining({ id: "observation-9620-calibration" }),
-      ],
-    });
-    expect(
-      calibrated.game.jobs.find(({ id }) => id === "job-record-9620-baseline"),
-    ).toMatchObject({ status: "proposed", skillId: "research" });
-
-    controller.authorizeJob("job-record-9620-baseline");
-    const baseline = controller.advance(6);
-    expect(baseline.game.scp9620.phase).toBe("activation");
-    expect(
-      baseline.game.jobs.find(
-        ({ id }) => id === "job-run-9620-activation-trial",
-      ),
-    ).toMatchObject({ status: "proposed", skillId: "research" });
-
-    controller.authorizeJob("job-run-9620-activation-trial");
-    const incident = controller.advance(17);
-    expect(incident.game.incident).toEqual({
-      level: "yellow",
-      summary: "SCP-9620 telemetry feedback outside validated limits",
-    });
-    expect(incident.game.scp9620.phase).toBe("feedback-incident");
-    expect(
-      incident.game.jobs.find(({ id }) => id === "job-stabilize-9620-feedback"),
-    ).toMatchObject({ status: "proposed", skillId: "engineering" });
-
-    controller.authorizeJob("job-stabilize-9620-feedback");
-    const resolved = controller.advance(9);
-    const recovery = resolved.game.jobs.find(
-      ({ id }) => id === "job-stabilize-9620-feedback",
-    );
-    expect(recovery).toMatchObject({
-      status: "completed",
-      assignedPersonId: "person-caleb-ward",
-      progress: 56,
-    });
-    expect(resolved.game.incident).toEqual({
-      level: "green",
-      summary: "Telemetry feedback stabilized",
-    });
-    expect(resolved.game.scp9620).toMatchObject({
-      phase: "stabilized",
-      observations: [
-        expect.objectContaining({ id: "observation-9620-calibration" }),
-        expect.objectContaining({ id: "observation-9620-passive" }),
-        expect.objectContaining({ id: "observation-9620-feedback" }),
-        expect.objectContaining({ id: "observation-9620-unresolved" }),
-      ],
-    });
-    expect(
-      resolved.game.personnel
-        .find(({ id }) => id === "person-caleb-ward")
-        ?.skills.find(({ id }) => id === "engineering")?.xp,
-    ).toBe(8);
   });
 });

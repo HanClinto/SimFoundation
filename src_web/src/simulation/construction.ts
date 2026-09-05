@@ -30,15 +30,12 @@ export interface LaboratoryBlueprint {
 
 export interface ConstructionState {
   readonly availableMaterials: number;
-  readonly researchLaboratoryId: string;
   readonly stockpile: TilePosition;
   readonly nextBlueprintNumber: number;
   readonly blueprints: readonly LaboratoryBlueprint[];
 }
 
 export type ConstructionCode =
-  | "laboratory-selected"
-  | "not-commissioned"
   | "placed"
   | "cancelled"
   | "out-of-bounds"
@@ -58,43 +55,9 @@ export interface ConstructionResult {
 export function createConstructionState(): ConstructionState {
   return {
     availableMaterials: 160,
-    researchLaboratoryId: "room-laboratory",
     stockpile: { x: 67, y: 68 },
     nextBlueprintNumber: 1,
     blueprints: [],
-  };
-}
-
-export function availableResearchLaboratories(state: GameState) {
-  return state.world.map.rooms.filter(
-    (room) =>
-      room.kind === "laboratory" &&
-      (room.id === "room-laboratory" ||
-        state.construction.blueprints.some(
-          (blueprint) =>
-            `room-${blueprint.id}` === room.id &&
-            blueprint.status === "completed" &&
-            state.jobs.some(
-              (job) =>
-                job.id === blueprint.commissionJobId &&
-                job.status === "completed",
-            ),
-        )),
-  );
-}
-
-export function setResearchLaboratory(
-  state: GameState,
-  roomId: string,
-): ConstructionResult {
-  if (!availableResearchLaboratories(state).some(({ id }) => id === roomId))
-    return { code: "not-commissioned", state };
-  return {
-    code: "laboratory-selected",
-    state: {
-      ...state,
-      construction: { ...state.construction, researchLaboratoryId: roomId },
-    },
   };
 }
 
@@ -102,22 +65,10 @@ export function authorizeSiteWork(state: GameState, jobId: string): GameState {
   const job = state.jobs.find(({ id }) => id === jobId);
   if (!job) throw new Error(`Unknown job: ${jobId}`);
   if (job.status !== "proposed") return state;
-  const blueprint = state.construction.blueprints.find(
-    (entry) => `room-${entry.id}` === state.construction.researchLaboratoryId,
-  );
-  const usesLaboratory =
-    job.id === "job-calibrate-9620-sensors" ||
-    job.id === "job-record-9620-baseline";
-  const workSite =
-    usesLaboratory && blueprint
-      ? { x: blueprint.origin.x + 4, y: blueprint.origin.y + 3 }
-      : job.workSite;
   return {
     ...state,
     jobs: state.jobs.map((entry) =>
-      entry.id === job.id
-        ? authorizeJob({ ...entry, workSite }, state.tick)
-        : entry,
+      entry.id === job.id ? authorizeJob(entry, state.tick) : entry,
     ),
   };
 }

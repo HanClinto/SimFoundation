@@ -2,7 +2,7 @@
 
 SCPSiteManager is a cozy-ish, idle-ish facility management simulator about growing a small provisional SCP Foundation site into a capable research and containment complex. Satisfying routines and increasingly elaborate automation are punctuated by short periods of cascading panic.
 
-The player is the newly promoted Site Director of Site 828 near Jarbridge, Nevada. The site was established around SCP-9620, an intentionally undefined and highly dangerous anomaly. Studying SCP-9620 is the central questline, but discoveries should create branching investigations, optional objectives, and run-specific complications rather than a single linear reveal.
+The current build prioritizes a broad, inspectable simulation foundation: materials, physical work, movement, needs, schedules, records, and maintenance. The default site starts without staged research objectives or automatic exposure scenarios. World perspective exposes physical simulation state; Recorded perspective preserves the sensor-limited view. Campaign investigations, including the previously proposed SCP-9620 storyline, are deferred design ideas rather than active gameplay.
 
 The first release is a browser game. Its simulation must remain deterministic, serializable, and independent of any browser or presentation technology so that other frontends and related SCP games can reuse appropriate parts later.
 
@@ -21,13 +21,13 @@ Run the complete local validation pipeline with `npm run check`. This formats-ch
 
 ### Current Physical-Site Checkpoint
 
-The Camera Feed now displays an authoritative 128x128 map, a compact starting facility, six personnel, and SCP-999. Pan with a pointer drag or arrow keys, zoom with the wheel or toolbar, and select personnel to focus or open their records. Approved research and recovery work requires workers to reach physical work sites through passable doors; blocked access prevents progress. Travel and work continue deterministically after save/load.
+The Camera Feed displays a 128x128 map, a compact starting facility, six personnel, and the functioning SCP-999 resident simulation. Pan with a pointer drag or arrow keys, zoom with the wheel or toolbar, and select objects or tiles to inspect them. Work requires workers to reach physical sites; blocked access prevents progress. Travel and work continue deterministically after save/load.
 
 SCP-999 physically approaches available personnel before providing Calm, interrupts contact if a person moves away or begins work, and returns to common-room roaming when no suitable contact is available.
 
-The **Construction** facility window owns the annex register and research-laboratory selection. **Plan laboratory annex** opens the Camera Feed's 9x7 placement preview with its entrance marked. **Authorize Annex** reserves 40 material units from an initial stock of 160. Logistics collects and delivers the kit, engineering assembles the building, and research commissions it inside the new room. Construction locates orders in the camera, explains blocked work, and permits cancellation before materials leave storage. The two modeless windows remain independent. Placement and cancellation are available while paused. Arrow keys move a focused preview, Enter authorizes it, and Escape cancels the preview.
+The **Construction** window owns the annex register. **Plan annex** requests a 9x7 map footprint with its entrance marked. A temporary **Confirm / Cancel** bar appears only during placement; confirmation reserves 40 material units from an initial stock of 160. Logistics collects and delivers the kit, engineering assembles the building, and commissioning takes place inside the new room. Construction locates work and permits cancellation before materials leave storage. Click to pin a preview, use arrow keys to reposition, Enter to confirm, or Escape to cancel. Changing map layers does not affect the request.
 
-After commissioning, select the annex as the **Research laboratory** in the construction register. Newly authorized SCP-9620 calibration and passive-baseline work uses that laboratory; active work keeps its assigned location. Activation still takes place in containment, and recovery uses the plant room. Work Orders reports locations and provides **Locate** links back to the camera.
+Surveillance requests device placement through the same map interaction. The map owns positioning and cancellation, not object-specific validation or resource rules. Work Orders reports physical locations and provides **Locate** links. The research-laboratory selector and scripted experiment task ladder have been removed.
 
 Construction currently provides one fixed annex template and abstract counted material kits, not arbitrary wall painting, furniture placement, supply replenishment, or a power network. Starting room categories are spatial designations, not fully operational systems. The physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
 
@@ -85,7 +85,7 @@ The pantry starts with 36 meals and the store with 72 more. Logistics automatica
 
 Surveillance lists installed cameras, their enabled state, and remaining installation kits. **Place camera** opens a single-tile preview in Camera Feed. Orders can be queued without current coverage, including unsurveyed locations; an engineer must reach the site, verify an interior floor, and complete installation before the camera observes anything. Known unsuitable terrain is rejected from recorded survey data; unknown or changed unsuitable terrain leaves an inspectable blocked work order. Awake personnel and active cameras provide local sight through open doors but not walls. Sleeping personnel do not observe.
 
-Click a placement preview to pin it, then use its authorization button; click another map location to reposition it. Cameras open their highlighted Surveillance record; AN-001 opens a read-only reference entry. Materials and Condition overlays support separate Floors and Structures views. Double-click any tile to open its recorded layers and related surface work in Engineering. Construction overlay enters annex blueprint placement.
+The **Layers** panel separates World/Recorded perspective, Site/Materials base maps, and Floors/Structures. Condition, Rooms, Objects, Coverage, and Projects are independent overlay checkboxes. Condition outlines and values compose over material colors. Projects only controls project visibility; it never enters placement mode. Double-click a tile or object to inspect it. World-mode Engineering reads physical truth; Recorded-mode Engineering reads the last survey. Personnel assessments remain documentary records in either map perspective.
 
 The map shows bright live coverage, dim remembered terrain, unknown areas beyond the initial survey, and labeled last-sighting markers. Unseen anomalies continue simulating, but their registry and map information remain at the last recorded observation. Camera placement and range are provisional abstractions; power, communications failures, and directional lenses remain future work.
 
@@ -95,9 +95,9 @@ Every installed floor, wall, and door has its own material and integrity. Soil i
 
 Engineering can order replacement of either installed layer using the shared construction stock. Materials are collected at the store, delivered by the same carrier, and fitted by an engineer. Rebuilding waits for occupied structure footprints to clear. Optional facility maintenance queues work for currently observed condition at 55% or below, preserving the existing material. Failed structures receive emergency priority; appointments, urgent needs, and cargo deliveries remain protected from preemption. Known doors can be opened or closed in Engineering; closing cannot trap an occupant.
 
-AN-001 occupies a five-by-five ceramic enclosure. Its stationary corrosive field uses the general exposure system: it reaches cardinally connected surfaces within four tiles, stops at intact walls or sealed doors, and reaches neighboring space after a barrier opens. The field is bounded, not a fluid or contamination simulation. All reached surfaces use their own material resistance; there are no primary/secondary counters or automatic whole-enclosure restoration.
+The general exposure API remains available to authored scenarios and tests: bounded sources reach cardinally connected surfaces, stop at intact walls or sealed doors, and reach neighboring space after a barrier opens. The default source list is empty. The AN-001 scenario, bespoke enclosure, and dedicated window were removed from active play; its design notes remain archived in the catalog.
 
-The scripted AN-001 Protocols/Findings workflow and the Library's instant **Complete Research** shortcut have been removed. The library and anomaly reference are documentary views. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 24; earlier development saves require a fresh session.
+The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 25; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 
@@ -180,7 +180,7 @@ Possible expedition rewards include:
 
 ### Original Containment Study
 
-**AN-001 Study** opens an illustrated reference entry for the Chalk Knot. Its location link centers the map on the enclosure; material selection, condition, and replacement work belong to the general Engineering inspector. See [the authored catalog](docs/anomaly-catalog.md) for developer-only source parameters and limitations.
+AN-001 is a deferred scenario, not currently spawned or exposed through a dedicated inspector. See [the authored catalog](docs/anomaly-catalog.md) for its retained design notes. Material selection, condition, and replacement work belong to general Engineering.
 
 ### SCP-9620
 
@@ -267,7 +267,7 @@ The first vertical slice is complete when a player can:
 - Inspect every pawn, anomaly, room, item, machine, and active job through 98.css windows
 - Manage satiety, rest, restorative activities, stress, fear, injury, mood, and derived sanity
 - Pause and select simulation speeds, with configurable color-coded alert responses
-- Complete a multi-stage SCP-9620 experiment that can trigger one recoverable containment incident
+- Inspect and repair ordinary surfaces through the shared simulation; scripted campaign progression is deferred
 - House SCP-999 as an autonomous friendly anomaly with visible social and mood effects
 - Equip pawns through a fixed-slot inventory and visual paper doll
 - See skin tint, clothing, held items, and selected equipment reflected by layered SVG character templates

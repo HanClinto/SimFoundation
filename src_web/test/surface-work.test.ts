@@ -78,12 +78,12 @@ describe("general surface work", () => {
       observeSite({
         ...recorded,
         world: state.world,
-        scp9620: { ...state.scp9620, phase: "feedback-incident" },
+        incident: { level: "red", summary: "Independent emergency" },
       }),
     );
     expect(repaired.incident).toMatchObject({
-      level: "yellow",
-      summary: "SCP-9620 telemetry feedback outside validated limits",
+      level: "red",
+      summary: "Independent emergency",
     });
   });
   it("delivers and repairs an ordinary wall using shared stock", () => {

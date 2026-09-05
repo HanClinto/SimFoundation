@@ -15,7 +15,6 @@ import {
   LABORATORY_WIDTH,
   laboratoryTiles,
   laboratoryWorkSite,
-  availableResearchLaboratories,
   type ConstructionState,
 } from "../../simulation/construction";
 
@@ -468,7 +467,6 @@ function isConstructionState(value: unknown): value is ConstructionState {
   return (
     isRecord(value) &&
     isIntegerInRange(value.availableMaterials, 0, 160) &&
-    isNonEmptyString(value.researchLaboratoryId) &&
     isRecord(value.stockpile) &&
     isIntegerInRange(value.stockpile.x, 0, 127) &&
     isIntegerInRange(value.stockpile.y, 0, 127) &&
@@ -499,12 +497,6 @@ function isConstructionState(value: unknown): value is ConstructionState {
 
 function constructionReferencesValid(state: GameState): boolean {
   const construction = state.construction;
-  if (
-    !availableResearchLaboratories(state).some(
-      ({ id }) => id === construction.researchLaboratoryId,
-    )
-  )
-    return false;
   if (
     !isWalkable(state.world.map, construction.stockpile) ||
     construction.nextBlueprintNumber !== construction.blueprints.length + 1
@@ -703,32 +695,6 @@ function isScp999State(value: unknown): boolean {
     isRecord(value.lastInteraction) &&
     isNonEmptyString(value.lastInteraction.personId) &&
     isIntegerInRange(value.lastInteraction.completedTick, 0)
-  );
-}
-
-function isScp9620State(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    value.id === "SCP-9620" &&
-    isLiteral(value.phase, [
-      "calibration",
-      "baseline",
-      "activation",
-      "feedback-incident",
-      "stabilized",
-    ] as const) &&
-    isArrayOf(
-      value.observations,
-      (observation) =>
-        isRecord(observation) &&
-        isNonEmptyString(observation.id) &&
-        isIntegerInRange(observation.recordedTick, 0) &&
-        isLiteral(observation.certainty, [
-          "confirmed",
-          "unresolved",
-        ] as const) &&
-        isNonEmptyString(observation.label),
-    )
   );
 }
 
@@ -1220,7 +1186,6 @@ function isGameState(value: unknown): value is GameState {
     !isArrayOf(value.jobs, isSiteJob) ||
     !isArrayOf(value.personnel, isPersonnelRecord) ||
     !isScp999State(value.scp999) ||
-    !isScp9620State(value.scp9620) ||
     !isSiteWorld(value.world) ||
     !isConstructionState(value.construction) ||
     !isRoutineState(value.routines) ||

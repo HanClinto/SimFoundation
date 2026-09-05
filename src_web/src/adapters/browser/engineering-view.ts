@@ -10,6 +10,7 @@ import {
 import { sameTile } from "../../simulation/world";
 import type { TilePosition } from "../../simulation/world";
 import { engineeringRecord } from "./map-objects";
+import type { MapPerspective } from "./map-settings";
 
 export function createEngineeringWindow(
   host: HTMLElement,
@@ -53,6 +54,7 @@ export function createEngineeringWindow(
     "[data-surface-feedback]",
   )!;
   let position: TilePosition | null = null;
+  let perspective: MapPerspective = "recorded";
   let current = controller.getSnapshot();
   layerSelect.addEventListener("change", () => render(current));
   materialSelect.addEventListener("change", () => render(current));
@@ -96,10 +98,12 @@ export function createEngineeringWindow(
     element.querySelector("[data-surface-stock]")!.textContent =
       `${snapshot.game.construction.availableMaterials} material units in store`;
     const layer = layerSelect.value as SurfaceLayer;
+    const surfaces =
+      perspective === "world"
+        ? snapshot.game.world.map.surfaces
+        : snapshot.game.observations.knownSurfaces;
     const cell = position
-      ? snapshot.game.observations.knownSurfaces[
-          position.y * snapshot.game.world.map.width + position.x
-        ]
+      ? surfaces[position.y * snapshot.game.world.map.width + position.x]
       : undefined;
     const surface = cell?.[layer];
     replace.disabled =
@@ -127,7 +131,7 @@ export function createEngineeringWindow(
       doorSetting === "closed-door" ? "Open door" : "Close door";
     if (!position) return;
     element.querySelector("[data-tile-record]")!.replaceChildren(
-      ...engineeringRecord(snapshot.game, position, layer).map(
+      ...engineeringRecord(snapshot.game, position, layer, perspective).map(
         ([label, value]) => {
           const row = document.createElement("div");
           const term = document.createElement("dt");
@@ -148,19 +152,23 @@ export function createEngineeringWindow(
       next: TilePosition,
       snapshot: ControllerSnapshot,
       layer?: SurfaceLayer,
+      nextPerspective: MapPerspective = "recorded",
     ) => {
       position = next;
+      perspective = nextPerspective;
+      const surfaces =
+        perspective === "world"
+          ? snapshot.game.world.map.surfaces
+          : snapshot.game.observations.knownSurfaces;
       layerSelect.value =
         layer ??
-        (snapshot.game.observations.knownSurfaces[
-          next.y * snapshot.game.world.map.width + next.x
-        ]?.structure
+        (surfaces[next.y * snapshot.game.world.map.width + next.x]?.structure
           ? "structure"
           : "floor");
       const surface =
-        snapshot.game.observations.knownSurfaces[
-          next.y * snapshot.game.world.map.width + next.x
-        ]?.[layerSelect.value as SurfaceLayer];
+        surfaces[next.y * snapshot.game.world.map.width + next.x]?.[
+          layerSelect.value as SurfaceLayer
+        ];
       if (surface) materialSelect.value = surface.material;
       feedback.textContent = "";
       render(snapshot);

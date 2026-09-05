@@ -9,7 +9,6 @@ import {
 import { createInitialState } from "../../simulation/state";
 import bookIconUrl from "./assets/book.svg";
 import alarmIconUrl from "./assets/alarm.svg";
-import budgetIconUrl from "./assets/budget.svg";
 import cameraIconUrl from "./assets/camera.svg";
 import controlIconUrl from "./assets/control.svg";
 import debugIconUrl from "./assets/debug.svg";
@@ -31,19 +30,18 @@ import {
   updatePersonnelRoster,
 } from "./personnel-view";
 import { refreshForNewDeployment } from "./deployment-version";
-import { createSiteCamera } from "./camera-view";
+import { createSiteMap } from "./site-map-view";
+import { laboratoryPlacement } from "./construction-view";
+import { cameraPlacement } from "./surveillance-view";
 import "./personnel-reference.css";
 import { createClinicalCareView } from "./clinical-care-view";
 import { createDayPlanner } from "./day-planner-view";
 import { observedSnapshot } from "./observed-view";
 import { createSurveillanceView } from "./surveillance-view";
-import { createAnomalyReference } from "./anomaly-reference-view";
-import { AN001_POSITION } from "../../simulation/environment";
 import { MATERIALS } from "../../simulation/materials";
 import { createConstructionWindow } from "./construction-view";
 import { createEngineeringWindow } from "./engineering-view";
 import scp999IconUrl from "./assets/site-999.svg";
-import chamberIconUrl from "./assets/an-001-chamber.svg";
 import { incidentResponse } from "./incident-response";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
@@ -110,10 +108,6 @@ app.innerHTML = `
             <img class="subsystem-icon-asset" data-window-icon src="${alarmIconUrl}" alt="" />
             <span>Alarm Manager</span>
           </button>
-          <button class="subsystem-icon" type="button" data-open-window="budget-window">
-            <img class="subsystem-icon-asset" data-window-icon src="${budgetIconUrl}" alt="" />
-            <span>Budget Report</span>
-          </button>
           <button class="subsystem-icon" type="button" data-open-window="knowledge-window">
             <img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" />
             <span>Research Archive</span>
@@ -132,7 +126,6 @@ app.innerHTML = `
           </button>
           <button class="subsystem-icon" type="button" data-open-window="day-planner-window"><img class="subsystem-icon-asset" data-window-icon src="${controlIconUrl}" alt="" /><span>Day Planner</span></button>
           <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
-          <button class="subsystem-icon" type="button" data-open-window="containment-study-window"><img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" /><span>AN-001 Study</span></button>
           <button class="subsystem-icon" type="button" data-open-window="construction-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Construction</span></button>
           <button class="subsystem-icon" type="button" data-open-window="engineering-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Engineering</span></button>
         </div>
@@ -142,13 +135,13 @@ app.innerHTML = `
           <dl class="status-list">
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
-            <div><dt>Containment</dt><dd>2 occupied</dd></div>
-            <div><dt>Systems</dt><dd>13 available</dd></div>
+            <div><dt>Residents</dt><dd>1 assigned</dd></div>
+            <div><dt>Systems</dt><dd>11 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">13 objects</p>
+        <p class="status-bar-field">11 objects</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -171,11 +164,12 @@ app.innerHTML = `
       <button type="button" data-camera-action="home" title="Center on Site 828" aria-label="Center on Site 828">&#8962;</button>
       <select data-camera-entity aria-label="Focus personnel"></select>
       <button type="button" data-camera-action="inspect" disabled>Open Record</button>
-      <select data-camera-mode aria-label="Map mode"><option value="inspect">Inspect</option><option value="laboratory">Plan laboratory</option><option value="camera">Place camera</option></select>
-      <select data-camera-overlay aria-label="Map overlay"><option value="normal">Standard view</option><option value="construction">Construction</option><option value="materials">Materials</option><option value="engineering">Condition</option></select>
-      <select data-camera-layer aria-label="Map surface layer"><option value="structure">Structures</option><option value="floor">Floors</option></select>
-      <button type="button" data-camera-action="place" disabled>Authorize Annex</button>
-      <button type="button" data-open-related-window="construction-window">Construction</button>
+      <details class="map-layers"><summary>Layers</summary><div class="map-layer-panel">
+        <fieldset><legend>Perspective</legend><div class="field-row"><input id="map-world" type="radio" name="map-perspective" data-map-perspective="world" checked/><label for="map-world">World</label><input id="map-recorded" type="radio" name="map-perspective" data-map-perspective="recorded"/><label for="map-recorded">Recorded</label></div></fieldset>
+        <fieldset><legend>Base map</legend><div class="field-row"><input id="map-site" type="radio" name="map-base" data-map-base="site" checked/><label for="map-site">Site</label><input id="map-materials" type="radio" name="map-base" data-map-base="materials"/><label for="map-materials">Materials</label></div></fieldset>
+        <fieldset><legend>Surface</legend><div class="field-row"><input id="map-structures" type="radio" name="map-layer" data-map-layer="structure" checked/><label for="map-structures">Structures</label><input id="map-floors" type="radio" name="map-layer" data-map-layer="floor"/><label for="map-floors">Floors</label></div></fieldset>
+        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "coverage", "projects"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "projects"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
+      </div></details>
     </div>
     <div class="window-body camera-body">
       <div class="surface-legend" data-material-legend hidden>${Object.values(
@@ -190,9 +184,9 @@ app.innerHTML = `
       <div class="viewport-shell">
         <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
       </div>
-      <div class="construction-feedback"><span data-construction-materials></span><span data-construction-feedback role="status"></span></div>
+      <div class="map-placement-bar" data-placement-bar hidden><strong data-placement-label></strong><button type="button" data-camera-action="confirm">Confirm</button><button type="button" data-camera-action="cancel">Cancel</button><span data-placement-feedback role="status"></span></div>
       <div class="status-bar">
-        <p class="status-bar-field">OBSERVATIONS</p>
+        <p class="status-bar-field" data-camera-perspective-label>SIMULATION</p>
         <p class="status-bar-field" id="camera-game-time">08:00</p>
         <p class="status-bar-field camera-selection" data-camera-status>Site 828 / Live surveillance</p>
       </div>
@@ -251,15 +245,6 @@ app.innerHTML = `
         <label><input type="checkbox" checked disabled /> Orange events pause simulation</label>
         <label><input type="checkbox" checked disabled /> Red events pause simulation</label>
       </fieldset>
-      <fieldset>
-        <legend>Physical system</legend>
-        <dl class="status-list">
-          <div><dt>Console</dt><dd>B1-SEC-03</dd></div>
-          <div><dt>Condition</dt><dd class="online-status">ONLINE</dd></div>
-          <div><dt>Controller</dt><dd>Basic Mk I</dd></div>
-        </dl>
-        <p class="system-note">Automatic responses require power and a functioning alarm controller inside the facility.</p>
-      </fieldset>
       <ol class="response-key" aria-label="Incident response levels">
         <li><span class="key-light green"></span>Green - routine</li>
         <li><span class="key-light yellow"></span>Yellow - attention</li>
@@ -281,24 +266,6 @@ app.innerHTML = `
         <tbody id="personnel-rows"></tbody>
       </table>
       <p class="preview-note">Double-click a person to open an independent inspector.</p>
-    </div>
-    <div class="resize-grip" aria-hidden="true"></div>
-  </section>
-
-  <section id="budget-window" class="window managed-window budget-window" aria-label="Site 828 budget report" hidden>
-    <div class="title-bar">
-      <div class="title-bar-text">Site 828 - Budget Report</div>
-      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
-    </div>
-    <div class="window-body report-paper">
-      <h2>Quarterly Discretionary Account</h2>
-      <dl class="ledger">
-        <div><dt>Current allocation</dt><dd>$ 240,000</dd></div>
-        <div><dt>Committed construction</dt><dd>$ (38,400)</dd></div>
-        <div><dt>Payroll forecast</dt><dd>$ (71,200)</dd></div>
-        <div class="ledger-total"><dt>Available funds</dt><dd>$ 130,400</dd></div>
-      </dl>
-      <p class="preview-note">Provisional planning figures. Economy simulation is not active yet.</p>
     </div>
     <div class="resize-grip" aria-hidden="true"></div>
   </section>
@@ -333,14 +300,7 @@ app.innerHTML = `
       <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
     </div>
     <div class="window-body alarm-body">
-      <div class="anomaly-identities"><span class="object-identity"><img src="${scp999IconUrl}" alt=""/><span>SCP-999</span></span><button type="button" class="object-identity" data-open-related-window="containment-study-window"><img src="${chamberIconUrl}" alt=""/><span>AN-001</span></button></div>
-      <fieldset>
-        <legend>SCP-9620 experimental protocol</legend>
-        <dl class="status-list">
-          <div><dt>Current phase</dt><dd id="scp-9620-phase">CALIBRATION</dd></div>
-        </dl>
-        <ol id="scp-9620-observations" class="response-key" aria-label="SCP-9620 observations"></ol>
-      </fieldset>
+      <div class="anomaly-identities"><span class="object-identity"><img src="${scp999IconUrl}" alt=""/><span>SCP-999</span></span></div>
       <fieldset>
         <legend>SCP-999 resident protocol</legend>
         <dl class="status-list">
@@ -474,10 +434,6 @@ const simulationSeed = requireElement<HTMLElement>("#simulation-seed");
 const personnelRows = requireElement<HTMLElement>("#personnel-rows");
 const personnelCount = requireElement<HTMLElement>("#personnel-count");
 const workOrdersList = requireElement<HTMLElement>("#work-orders-list");
-const scp9620Phase = requireElement<HTMLElement>("#scp-9620-phase");
-const scp9620Observations = requireElement<HTMLOListElement>(
-  "#scp-9620-observations",
-);
 const scp999Status = requireElement<HTMLElement>("#scp-999-status");
 const scp999Target = requireElement<HTMLElement>("#scp-999-target");
 const scp999Timing = requireElement<HTMLElement>("#scp-999-timing");
@@ -570,15 +526,6 @@ windowManager.register(requireElement<HTMLElement>("#personnel-window"), {
   title: "Personnel Roster",
   iconUrl: personnelIconUrl,
   defaultRect: { left: 218, top: 164, width: 500, height: 330 },
-  defaultOpen: false,
-  minimumWidth: 120,
-  minimumHeight: 32,
-});
-windowManager.register(requireElement<HTMLElement>("#budget-window"), {
-  id: "budget-window",
-  title: "Budget Report",
-  iconUrl: budgetIconUrl,
-  defaultRect: { left: 322, top: 238, width: 420, height: 330 },
   defaultOpen: false,
   minimumWidth: 120,
   minimumHeight: 32,
@@ -707,13 +654,12 @@ function openPersonnelInspector(personId: string): void {
   windowManager.open(`personnel-inspector-${personId}`);
 }
 
-const siteCamera = createSiteCamera(
+const siteCamera = createSiteMap(
   canvas,
   requireElement<HTMLElement>("#camera-window"),
   controller,
-  (id) => {
+  (id, perspective) => {
     if (id === "SCP-999") windowManager.open("anomaly-window");
-    else if (id === "AN-001") windowManager.open("containment-study-window");
     else if (id.startsWith("camera-")) {
       windowManager.open("surveillance-window");
       surveillanceView.selectCamera(id);
@@ -724,9 +670,23 @@ const siteCamera = createSiteCamera(
         { x: x!, y: y! },
         controller.getSnapshot(),
         layer === "floor" ? "floor" : "structure",
+        perspective,
       );
       windowManager.open("engineering-window");
-    } else openPersonnelInspector(id);
+    } else {
+      const source = controller
+        .getSnapshot()
+        .game.environment.sources.find((source) => source.id === id);
+      if (source) {
+        engineeringView.select(
+          source.position,
+          controller.getSnapshot(),
+          "floor",
+          perspective,
+        );
+        windowManager.open("engineering-window");
+      } else openPersonnelInspector(id);
+    }
   },
 );
 const clinicalCareView = createClinicalCareView(
@@ -756,20 +716,16 @@ const surveillanceView = createSurveillanceView(
   },
   () => {
     windowManager.open("camera-window");
-    siteCamera.planCamera();
+    siteCamera.beginPlacement(cameraPlacement(controller));
   },
 );
 
-const containmentStudy = createAnomalyReference(app, () => {
-  windowManager.open("camera-window");
-  siteCamera.focus(AN001_POSITION);
-});
 const constructionView = createConstructionWindow(
   app,
   controller,
   () => {
     windowManager.open("camera-window");
-    siteCamera.planLaboratory();
+    siteCamera.beginPlacement(laboratoryPlacement(controller));
   },
   (position) => {
     windowManager.open("camera-window");
@@ -784,15 +740,6 @@ windowManager.register(constructionView.element, {
   defaultOpen: false,
   minimumWidth: 320,
   minimumHeight: 220,
-});
-windowManager.register(containmentStudy.element, {
-  id: "containment-study-window",
-  title: "AN-001 Study",
-  iconUrl: bookIconUrl,
-  defaultRect: { left: 300, top: 100, width: 720, height: 600 },
-  defaultOpen: false,
-  minimumWidth: 350,
-  minimumHeight: 260,
 });
 
 personnelRows.addEventListener("dblclick", (event) => {
@@ -1037,13 +984,13 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
+  siteCamera.render(snapshot);
+  engineeringView.render(snapshot);
   snapshot = observedSnapshot(snapshot);
   constructionView.render(snapshot);
-  engineeringView.render(snapshot);
   dayPlanner.render(snapshot);
   surveillanceView.render(snapshot);
   clinicalCareView.render(snapshot);
-  siteCamera.render(snapshot);
   updatePersonnelRoster(
     personnelRows,
     snapshot.game.personnel,
@@ -1067,27 +1014,6 @@ function render(snapshot: ControllerSnapshot): void {
     snapshot.game.jobs,
     snapshot.game.personnel,
     snapshot.game.world,
-  );
-  const scp9620Labels = {
-    calibration: "CALIBRATION",
-    baseline: "BASELINE OBSERVATION",
-    activation: "ACTIVATION REVIEW",
-    "feedback-incident": "FEEDBACK INCIDENT",
-    stabilized: "STABILIZED / REVIEW PENDING",
-  } as const;
-  scp9620Phase.textContent = scp9620Labels[snapshot.game.scp9620.phase];
-  scp9620Observations.replaceChildren(
-    ...(snapshot.game.scp9620.observations.length > 0
-      ? snapshot.game.scp9620.observations.map((observation) => {
-          const item = document.createElement("li");
-          item.textContent = `${observation.certainty === "confirmed" ? "Confirmed" : "Unresolved"} / ${observation.label}`;
-          return item;
-        })
-      : [
-          Object.assign(document.createElement("li"), {
-            textContent: "No approved observations recorded.",
-          }),
-        ]),
   );
   const scp999TargetPerson = snapshot.game.personnel.find(
     ({ id }) => id === snapshot.game.scp999.targetPersonId,

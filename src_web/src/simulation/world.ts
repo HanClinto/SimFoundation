@@ -206,29 +206,11 @@ export function createStartingMap(): SiteMap {
     { x: 63, y: 77 },
   ])
     tiles[door.y * width + door.x] = "door";
-  for (let row = 56; row <= 60; row += 1)
-    for (let column = 68; column <= 72; column += 1)
-      tiles[row * width + column] =
-        row === 56 || row === 60 || column === 68 || column === 72
-          ? "wall"
-          : "floor";
-  tiles[58 * width + 68] = "closed-door";
   const surfaces = Object.fromEntries(
     tiles.flatMap((tile, index) =>
       tile === "grass" ? [] : [[index, surfacesForTile(tile)]],
     ),
   );
-  for (let row = 56; row <= 60; row += 1)
-    for (let column = 68; column <= 72; column += 1) {
-      const index = row * width + column;
-      const cell = surfaces[index]!;
-      surfaces[index] = {
-        floor: cell.floor ? { ...cell.floor, material: "ceramic" } : null,
-        structure: cell.structure
-          ? { ...cell.structure, material: "ceramic" }
-          : null,
-      };
-    }
   return { id: "map-site-828", width, height, tiles, surfaces, rooms };
 }
 

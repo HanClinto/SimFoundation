@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState, type GameState } from "../src/simulation/state";
+import { createInitialState, type GameState } from "./fixtures/work-state";
 import {
   advanceRoutines,
   setPersonnelSchedule,
@@ -107,7 +107,7 @@ describe("needs-driven routines", () => {
   });
   it("critical needs interrupt work without losing its progress or duplicating a reservation", () => {
     const controller = createController(createInitialState());
-    controller.authorizeJob("job-calibrate-9620-sensors");
+    controller.authorizeJob("job-test-survey");
     const working = controller.advance(4).game;
     const exhausted = {
       ...working,

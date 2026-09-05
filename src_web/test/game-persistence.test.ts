@@ -7,10 +7,7 @@ import {
   type StoragePort,
 } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
-import {
-  createInitialState,
-  GAME_STATE_VERSION,
-} from "../src/simulation/state";
+import { createInitialState, GAME_STATE_VERSION } from "./fixtures/work-state";
 
 function memoryStorage(initialValue: string | null = null): StoragePort {
   let value = initialValue;
@@ -62,7 +59,7 @@ describe("game persistence", () => {
 
   it("continues a worker's journey identically after save and reload", () => {
     const original = createController(createInitialState());
-    original.authorizeJob("job-calibrate-9620-sensors");
+    original.authorizeJob("job-test-survey");
     const storage = memoryStorage();
     saveGameState(storage, original.advance().game);
     const loaded = loadGameState(storage);
@@ -75,7 +72,7 @@ describe("game persistence", () => {
   it("round-trips deterministic job and incident progress", () => {
     const storage = memoryStorage();
     const controller = createController(createInitialState(42));
-    controller.authorizeJob("job-calibrate-9620-sensors");
+    controller.authorizeJob("job-test-survey");
     const saved = controller.advance(8).game;
     saveGameState(storage, saved);
 
@@ -167,17 +164,6 @@ describe("game persistence", () => {
       loadGameState(memoryStorage(JSON.stringify(brokenAnomaly))).status,
     ).toBe("invalid");
 
-    const brokenProtocol = {
-      ...state,
-      scp9620: {
-        ...state.scp9620,
-        observations: [{ certainty: "probably" }],
-      },
-    };
-    expect(
-      loadGameState(memoryStorage(JSON.stringify(brokenProtocol))).status,
-    ).toBe("invalid");
-
     const brokenPsychology = {
       ...state,
       personnel: [
@@ -196,13 +182,8 @@ describe("game persistence", () => {
     const storage = memoryStorage();
     let controller = createController(createInitialState(42));
 
-    for (const [jobId, ticks] of [
-      ["job-calibrate-9620-sensors", 11],
-      ["job-record-9620-baseline", 6],
-      ["job-run-9620-activation-trial", 17],
-      ["job-stabilize-9620-feedback", 9],
-    ] as const) {
-      controller.authorizeJob(jobId);
+    controller.authorizeJob("job-test-survey");
+    for (const ticks of [3, 3, 3, 3]) {
       saveGameState(storage, controller.advance(ticks).game);
       const loaded = loadGameState(storage);
       if (loaded.status !== "loaded") throw new Error("save did not load");
@@ -215,7 +196,7 @@ describe("game persistence", () => {
     const reloaded = loadGameState(storage);
     expect(reloaded).toEqual({ status: "loaded", state: resolved });
     expect(resolved.incident.level).toBe("green");
-    expect(resolved.scp9620.phase).toBe("stabilized");
+    expect(resolved.jobs[0]?.status).toBe("completed");
   });
 
   it("replaces controller state with a detached loaded snapshot", () => {
