@@ -28,8 +28,11 @@ Nonblocking questions and provisional choices from the unattended development ru
 | `1d66263` | Local SCP-999 encounters, immediate contact effects, and reserved/masking expressions        |
 | `62081d1` | Original AN-001 material trial, observable failure, repair, and illustrated evidence archive |
 | `5c73616` | Independent Construction inspector coordinated with Camera Feed                              |
+| `337bcdd` | Exact-tick incident auto-pause and full-day integrated replay                                |
 
 The final validation checkpoint adds exact-tick Orange/Red auto-pause, safe manual resume, and a full-day integrated replay. The required pipeline passes 111 tests across 26 files, strict typechecking, formatting, production build, and deployment verification. Browser checks covered the principal controls, asset rendering, hidden-state presentation, trial failure/repair, and exact pause/resume behavior. No claim of a completed 6-8-hour background process is implied; work runs only while the active agent session is executing.
+
+Hosted CI exposed a timeout in the intentional two-day replay: 7.6 seconds on the runner exceeded the default five-second limit, although its assertions passed locally. That long-run test now has an explicit 20-second budget, matching its integration-test scope. Ordinary unit-test timeouts are unchanged.
 
 ### Suggested Review
 

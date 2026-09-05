@@ -37,7 +37,7 @@ describe("needs-driven routines", () => {
     expect(saved.status).toBe("loaded");
     if (saved.status !== "loaded") throw new Error("long-run save rejected");
     expect(advanceSimulation(saved.state)).toEqual(advanceSimulation(state));
-  });
+  }, 20000);
   it("replenishes the pantry by physically hauling finite reserves without duplication", () => {
     const initial = createInitialState();
     const controller = createController({
