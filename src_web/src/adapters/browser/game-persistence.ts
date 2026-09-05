@@ -413,11 +413,28 @@ function isSiteWorld(value: unknown): value is SiteWorld {
 
 function isScp999State(value: unknown): boolean {
   if (!isRecord(value) || value.id !== "SCP-999") return false;
-  if (!isLiteral(value.status, ["wandering", "comforting", "resting"] as const))
+  if (
+    !isLiteral(value.status, [
+      "wandering",
+      "approaching",
+      "comforting",
+      "resting",
+    ] as const)
+  )
     return false;
   if (!isNullableString(value.targetPersonId)) return false;
   if (!isNullableTick(value.interactionEndsAtTick)) return false;
   if (!isIntegerInRange(value.nextAvailableTick, 0)) return false;
+  if (
+    (value.status === "comforting" || value.status === "approaching") !==
+    (value.targetPersonId !== null)
+  )
+    return false;
+  if (
+    (value.status === "comforting") !==
+    (value.interactionEndsAtTick !== null)
+  )
+    return false;
   if (value.lastInteraction === null) return true;
   return (
     isRecord(value.lastInteraction) &&

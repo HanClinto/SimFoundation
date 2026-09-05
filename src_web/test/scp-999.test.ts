@@ -11,10 +11,77 @@ function advance(state: ReturnType<typeof createInitialState>, ticks: number) {
   return current;
 }
 
+function contactState() {
+  const state = createInitialState(42);
+  return {
+    ...state,
+    world: {
+      ...state.world,
+      positions: {
+        ...state.world.positions,
+        "SCP-999": { x: 54, y: 58 },
+        "person-jon-bell": { x: 55, y: 58 },
+      },
+    },
+  };
+}
+
 describe("SCP-999", () => {
+  it("travels before contact and cannot deliver Calm remotely", () => {
+    const initial = createInitialState();
+    const approaching = advanceSimulation(initial);
+    expect(approaching.scp999).toMatchObject({
+      status: "approaching",
+      targetPersonId: "person-emil-novak",
+      interactionEndsAtTick: null,
+    });
+    expect(approaching.world.positions["SCP-999"]).not.toEqual(
+      initial.world.positions["SCP-999"],
+    );
+    expect(
+      advance(initial, 5)
+        .personnel.flatMap(({ effects }) => effects)
+        .some(({ id }) => id === "effect-comforted-by-999"),
+    ).toBe(false);
+    let state = approaching;
+    for (
+      let tick = 0;
+      tick < 100 && state.scp999.lastInteraction === null;
+      tick += 1
+    )
+      state = advanceSimulation(state);
+    expect(state.scp999.lastInteraction?.personId).toBe("person-emil-novak");
+    const target = state.world.positions["person-emil-novak"]!;
+    const origin = state.world.positions["SCP-999"]!;
+    expect(
+      Math.abs(target.x - origin.x) + Math.abs(target.y - origin.y),
+    ).toBeLessThanOrEqual(1);
+  });
+
+  it("interrupts contact if the person moves away", () => {
+    const contact = advanceSimulation(contactState());
+    const separated = {
+      ...contact,
+      world: {
+        ...contact.world,
+        positions: {
+          ...contact.world.positions,
+          "person-emil-novak": { x: 67, y: 72 },
+        },
+      },
+    };
+    const interrupted = advanceSimulation(separated);
+    expect(interrupted.scp999).toMatchObject({
+      status: "wandering",
+      targetPersonId: null,
+      interactionEndsAtTick: null,
+    });
+    expect(advance(interrupted, 3).scp999.lastInteraction).toBeNull();
+  });
+
   it("comforts the most stressed eligible person deterministically", () => {
-    const first = advanceSimulation(createInitialState(42));
-    const second = advanceSimulation(createInitialState(42));
+    const first = advanceSimulation(contactState());
+    const second = advanceSimulation(contactState());
 
     expect(first.scp999).toEqual(second.scp999);
     expect(first.scp999).toMatchObject({
@@ -25,7 +92,7 @@ describe("SCP-999", () => {
   });
 
   it("applies temporary calm, rests, then selects another eligible person", () => {
-    const comforted = advance(createInitialState(42), 5);
+    const comforted = advance(contactState(), 5);
     const emil = comforted.personnel.find(
       ({ id }) => id === "person-emil-novak",
     );
@@ -60,7 +127,7 @@ describe("SCP-999", () => {
   });
 
   it("expires the calm Effect at its authoritative tick", () => {
-    const state = advance(createInitialState(42), 17);
+    const state = advance(contactState(), 17);
     const emil = state.personnel.find(({ id }) => id === "person-emil-novak");
 
     expect(

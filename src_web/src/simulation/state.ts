@@ -4,7 +4,7 @@ import { createScp999State, type Scp999State } from "./scp-999";
 import { createScp9620State, type Scp9620State } from "./scp-9620";
 import { createStartingWorld, type SiteWorld } from "./world";
 
-export const GAME_STATE_VERSION = 14;
+export const GAME_STATE_VERSION = 15;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

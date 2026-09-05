@@ -68,6 +68,7 @@ describe("game persistence", () => {
     const loaded = loadGameState(storage);
     if (loaded.status !== "loaded") throw new Error("save did not load");
     const resumed = createController(loaded.state);
+    expect(loaded.state.scp999.status).toBe("approaching");
     expect(resumed.advance(20).game).toEqual(original.advance(20).game);
   });
 

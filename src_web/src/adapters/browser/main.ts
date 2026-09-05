@@ -927,6 +927,7 @@ function render(snapshot: ControllerSnapshot): void {
   );
   const scp999Labels = {
     wandering: "ROAMING",
+    approaching: "APPROACHING PERSONNEL",
     comforting: "CONTACT IN PROGRESS",
     resting: "RECOVERY PERIOD",
   } as const;
@@ -948,9 +949,11 @@ function render(snapshot: ControllerSnapshot): void {
       ? `${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"} remaining`
       : snapshot.game.scp999.status === "resting"
         ? `Available in ${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"}`
-        : "Available";
+        : snapshot.game.scp999.status === "approaching"
+          ? "Contact pending arrival"
+          : "Available";
   scp999LastInteraction.textContent = snapshot.game.scp999.lastInteraction
-    ? `${scp999LastPerson?.name ?? "Unknown personnel"} / completed tick ${snapshot.game.scp999.lastInteraction.completedTick}`
+    ? `${scp999LastPerson?.name ?? "Unknown personnel"} / recorded ${formatGameTime(snapshot.game.gameMinute - snapshot.game.tick + snapshot.game.scp999.lastInteraction.completedTick)}`
     : "No interaction recorded.";
   psychometricsStatus.textContent = snapshot.game.capabilities
     .anomalousPsychometrics

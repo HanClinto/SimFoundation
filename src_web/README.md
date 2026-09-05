@@ -23,7 +23,9 @@ Run the complete local validation pipeline with `npm run check`. This formats-ch
 
 The Camera Feed now displays an authoritative 128x128 map, a compact starting facility, six personnel, and SCP-999. Pan with a pointer drag or arrow keys, zoom with the wheel or toolbar, and select personnel to focus or open their records. Approved research and recovery work requires workers to reach physical work sites through passable doors; blocked access prevents progress. Travel and work continue deterministically after save/load.
 
-Rooms are currently spatial designations, not fully furnished operational systems. Construction, utilities, physical SCP-999 contact, and needs-driven movement are still in progress under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
+SCP-999 physically approaches available personnel before providing Calm, interrupts contact if a person moves away or begins work, and returns to common-room roaming when no suitable contact is available.
+
+Rooms are currently spatial designations, not fully furnished operational systems. Construction, utilities, and needs-driven movement remain future work. The current physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
 
 ## Design Pillars
 
