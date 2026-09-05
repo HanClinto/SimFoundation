@@ -200,7 +200,7 @@ For example: `Elevated heart rate detected. Wearable telemetry, 2 minutes ago. M
 - Alarm Manager owns live facility incident status and response configuration. Escalation opens it automatically; Yellow incidents reduce simulation speed to 1x and link directly to response Work Orders.
 - Simulation Control supports Standard and Minimal views.
 - The taskbar clock opens Simulation Control and reflects run/pause state.
-- The SCP menu reserves save/load/settings locations without pretending those systems exist yet.
+- The SCP menu provides explicit Save Site and Load Site commands backed by the same local record used for autosave. Settings remains visibly unavailable until implemented.
 - Foundation Library demonstrates the Encarta-like article/tree split and now hosts facility-level research capabilities such as Anomalous Psychometrics.
 - Personnel Roster and pawn inspectors now project assessment-limited personnel state. Several pawn inspectors can remain open for comparison, and derived mood/sanity views explain their contributing factors. Budget remains an explicitly provisional preview until its simulation exists.
 - Personnel inspectors use a compact corporate ID/dossier header with manila-style Summary, Equipment, Skills, and Influences tabs. Summary reports Physical Health only as an assessed range and launches separate modeless Medical Chart and Assessment Record windows.

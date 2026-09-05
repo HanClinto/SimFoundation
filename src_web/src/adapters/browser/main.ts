@@ -24,6 +24,7 @@ import {
   createPersonnelMedicalWindows,
   updatePersonnelMedicalWindows,
 } from "./medical-view";
+import { loadGameState, saveGameState } from "./game-persistence";
 import {
   createPersonnelInspectorWindows,
   updatePersonnelInspectors,
@@ -39,6 +40,7 @@ void refreshForNewDeployment();
 
 const app = document.querySelector<HTMLElement>("#app");
 if (!app) throw new Error("Application root was not found");
+const initialGameLoad = loadGameState(localStorage);
 
 app.innerHTML = `
   <div class="desktop-icons" aria-label="Site Manager desktop">
@@ -337,8 +339,8 @@ app.innerHTML = `
       </details>
       <button type="button" data-open-window="knowledge-window"><img class="menu-item-icon" src="${bookIconUrl}" alt="" /><span><strong>Foundation Library</strong><small>Browse available records</small></span></button>
       <hr />
-      <button type="button" disabled><strong>Save Site...</strong><small>Not available in this build</small></button>
-      <button type="button" disabled><strong>Load Site...</strong><small>Not available in this build</small></button>
+      <button id="save-site" type="button"><strong>Save Site</strong><small id="save-site-status">Preparing local record</small></button>
+      <button id="load-site" type="button"><strong>Load Site</strong><small>Restore the latest local record</small></button>
       <button type="button" disabled><strong>Settings</strong><small>Desktop and simulation options</small></button>
     </div>
   </div>
@@ -389,6 +391,9 @@ const taskbar = requireElement<HTMLElement>("#taskbar");
 const taskbarWindowList = requireElement<HTMLElement>("#taskbar-window-list");
 const startMenu = requireElement<HTMLElement>("#start-menu");
 const scpMenuButton = requireElement<HTMLButtonElement>("#scp-menu-button");
+const saveSiteButton = requireElement<HTMLButtonElement>("#save-site");
+const loadSiteButton = requireElement<HTMLButtonElement>("#load-site");
+const saveSiteStatus = requireElement<HTMLElement>("#save-site-status");
 const stateVersion = requireElement<HTMLElement>("#state-version");
 const simulationSeed = requireElement<HTMLElement>("#simulation-seed");
 const personnelRows = requireElement<HTMLElement>("#personnel-rows");
@@ -398,7 +403,33 @@ const speedButtons = Array.from(
   document.querySelectorAll<HTMLButtonElement>("[data-speed]"),
 );
 
-const controller = createController(createInitialState());
+const controller = createController(
+  initialGameLoad.state ?? createInitialState(),
+);
+let autosaveEnabled =
+  initialGameLoad.status === "loaded" || initialGameLoad.status === "empty";
+
+function updatePersistenceControls(message: string): void {
+  saveSiteStatus.textContent = message;
+  loadSiteButton.disabled = loadGameState(localStorage).status !== "loaded";
+}
+
+if (initialGameLoad.status === "loaded") {
+  updatePersistenceControls("Local site restored; autosave active");
+} else if (initialGameLoad.status === "empty") {
+  autosaveEnabled = saveGameState(localStorage, controller.getSnapshot().game);
+  updatePersistenceControls(
+    autosaveEnabled ? "Autosave active" : "Browser storage unavailable",
+  );
+} else {
+  const reason =
+    initialGameLoad.status === "incompatible"
+      ? "Stored site uses another version"
+      : initialGameLoad.status === "invalid"
+        ? "Stored site is invalid"
+        : "Browser storage unavailable";
+  updatePersistenceControls(`${reason}; Save Site to replace`);
+}
 const runtime = createBrowserRuntime(controller);
 const personnelInspectors = createPersonnelInspectorWindows(
   app,
@@ -664,6 +695,28 @@ scpMenuButton.addEventListener("click", () => {
   scpMenuButton.setAttribute("aria-expanded", String(!startMenu.hidden));
 });
 
+saveSiteButton.addEventListener("click", () => {
+  autosaveEnabled = saveGameState(localStorage, controller.getSnapshot().game);
+  updatePersistenceControls(
+    autosaveEnabled ? "Saved; autosave active" : "Save failed",
+  );
+  startMenu.hidden = true;
+  scpMenuButton.setAttribute("aria-expanded", "false");
+});
+
+loadSiteButton.addEventListener("click", () => {
+  const saved = loadGameState(localStorage);
+  if (saved.status === "loaded") {
+    controller.replaceState(saved.state);
+    autosaveEnabled = true;
+    updatePersistenceControls("Local site restored; autosave active");
+  } else {
+    updatePersistenceControls("No compatible local site available");
+  }
+  startMenu.hidden = true;
+  scpMenuButton.setAttribute("aria-expanded", "false");
+});
+
 document.addEventListener("pointerdown", (event) => {
   const target = event.target as Element;
   if (!startMenu.hidden && !target.closest("#start-menu, #scp-menu-button")) {
@@ -843,6 +896,11 @@ for (const speedButton of speedButtons) {
   });
 }
 
-controller.subscribe(render);
+controller.subscribe((snapshot) => {
+  render(snapshot);
+  if (!autosaveEnabled) return;
+  autosaveEnabled = saveGameState(localStorage, snapshot.game);
+  if (!autosaveEnabled) updatePersistenceControls("Autosave unavailable");
+});
 render(controller.getSnapshot());
 runtime.start();

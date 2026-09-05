@@ -18,6 +18,7 @@ export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 export interface GameController {
   getSnapshot(): ControllerSnapshot;
   advance(tickCount?: number): ControllerSnapshot;
+  replaceState(nextState: GameState): ControllerSnapshot;
   authorizeJob(jobId: string): ControllerSnapshot;
   unlockAnomalousPsychometrics(): ControllerSnapshot;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
@@ -54,6 +55,11 @@ export function createController(initialState: GameState): GameController {
       for (let index = 0; index < tickCount; index += 1) {
         state = advanceSimulation(state);
       }
+      return publish();
+    },
+
+    replaceState(nextState) {
+      state = structuredClone(nextState);
       return publish();
     },
 

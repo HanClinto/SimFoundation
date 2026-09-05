@@ -72,6 +72,8 @@ The browser adapter owns:
 
 The initial browser target is desktop only, with a minimum virtual workspace rather than a mobile reflow. A browser-owned window manager controls modeless inspector geometry, z-order, open state, and focus. These preferences are stored separately from authoritative game state so the same save can be presented by another frontend or restored with a different desktop layout.
 
+The browser stores authoritative game state under `scp-site-manager.game-state.v1`, separately from window layout. Published simulation changes autosave, and explicit Save Site/Load Site commands use the same record. Only exact current-version development saves load; malformed or incompatible saves start a fresh session and are not overwritten until the player explicitly saves. Running/paused state remains browser state and is not serialized.
+
 Facility and map windows are inspectors over simulation-owned map entities. Global playback and lifecycle controls live in dedicated utility windows. Raw deterministic internals such as tick number and seed are exposed only through opt-in developer inspectors.
 
 Browser presentation should follow the interface contract in [lookbook.md](lookbook.md). The look-book may evolve through visual review without weakening the dependency or state-ownership rules in this document.
