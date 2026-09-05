@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { blocksSpace } from "./spaces";
 import {
   reserveSupply,
   reservedObject,
@@ -186,7 +187,7 @@ export function exposureTiles(
       continue;
     visited.add(key);
     reached.push(position);
-    if (isWalkable(state.world.map, position))
+    if (!blocksSpace(tileAt(state.world.map, position)))
       queue.push(...neighbors(position));
   }
   return reached;
@@ -195,9 +196,9 @@ export function advanceExposure(state: GameState): GameState {
   const damage: SurfaceDamage[] = [];
   for (const source of state.environment.sources) {
     for (const position of exposureTiles(state, source)) {
-      const layer = isWalkable(state.world.map, position)
-        ? "floor"
-        : "structure";
+      const layer = blocksSpace(tileAt(state.world.map, position))
+        ? "structure"
+        : "floor";
       damage.push({ position, layer, kind: source.kind, dose: source.dose });
       if (
         layer === "floor" &&

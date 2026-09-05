@@ -28,6 +28,8 @@ import {
   drawMaterialTop,
 } from "./material-art";
 
+import { spaceProjection } from "./space-projection";
+
 const TILE_WIDTH = 40;
 const TILE_HEIGHT = 20;
 
@@ -332,6 +334,53 @@ export function renderSite(
         context.restore();
       }
     }
+  if (overlays.spaces) {
+    const topology = spaceProjection(
+      map.width,
+      map.height,
+      knowledge.knownTiles,
+    );
+    const colors = [
+      "rgba(40, 157, 134, .3)",
+      "rgba(198, 153, 43, .3)",
+      "rgba(73, 133, 202, .3)",
+      "rgba(192, 98, 124, .3)",
+    ];
+    for (let row = minimumY; row <= maximumY; row += 1) {
+      for (let column = minimumX; column <= maximumX; column += 1) {
+        const index = row * map.width + column;
+        if (!["floor", "door"].includes(knowledge.knownTiles[index] ?? ""))
+          continue;
+        const id = topology.spaceByTile[index];
+        if (id == null) continue;
+        const space = topology.spaces[id]!;
+        const point = projectPosition(
+          { x: column, y: row },
+          camera,
+          width,
+          height,
+        );
+        context.save();
+        context.translate(point.x, point.y);
+        context.scale(camera.zoom, camera.zoom);
+        drawTile(
+          context,
+          { x: 0, y: -10 },
+          space.reachesEdge
+            ? "rgba(205, 103, 65, .3)"
+            : space.touchesUnknown
+              ? "rgba(130, 130, 130, .3)"
+              : colors[space.tiles[0]! % colors.length]!,
+          space.reachesEdge
+            ? "#b46847"
+            : space.touchesUnknown
+              ? "#777777"
+              : "#397f74",
+        );
+        context.restore();
+      }
+    }
+  }
   for (const room of overlays.rooms ? map.rooms : []) {
     if (camera.zoom < 0.55) continue;
     const point = projectPosition(

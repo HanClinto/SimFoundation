@@ -1,4 +1,6 @@
 import type { GameState } from "../../simulation/state";
+import { spaceBoundary } from "../../simulation/spaces";
+import { spaceProjection } from "./space-projection";
 import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { sameTile } from "../../simulation/world";
 import type { TilePosition } from "../../simulation/world";
@@ -98,6 +100,21 @@ export function engineeringRecord(
     [perspective === "world" ? "Tile" : "Recorded tile", known ?? "Unknown"],
   ];
   if (known == null) return rows;
+  const topology = spaceProjection(
+    state.world.map.width,
+    state.world.map.height,
+    perspective === "world"
+      ? state.world.map.tiles
+      : state.observations.knownTiles,
+  );
+  const spaceId = topology.spaceByTile[index];
+  const space = spaceId == null ? undefined : topology.spaces[spaceId];
+  rows.push([
+    perspective === "world" ? "Physical space" : "Recorded space",
+    space
+      ? `${spaceBoundary(space)} / ${space.tiles.length} connected tiles / ${space.floorTiles} floored`
+      : "Boundary structure",
+  ]);
   const room = (
     perspective === "world"
       ? state.world.map.rooms

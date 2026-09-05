@@ -115,6 +115,10 @@ The map shows bright live coverage, dim remembered terrain, unknown areas beyond
 
 ### Doors and Passage
 
+**Layers > Spaces** shows physical connectivity independently of room names. Walls and closed doors divide spaces; opening doors or breaching walls joins them. Engineering reports whether a tile's connected space is enclosed, reaches the map edge, or has an unknown recorded boundary, plus its connected and floored tile counts. Floor tiles in enclosed spaces receive distinct tints, edge-connected spaces use a rust-colored tint, and uncertain recorded spaces use gray. Furniture blocks walking where appropriate but does not divide spaces or shield floors from environmental exposure.
+
+Spaces are derived, not saved room objects. Recorded mode uses only recorded topology and does not reveal an unseen breach. Horizontal enclosure does not imply a roof, airtight construction, weather protection, or a room-function bonus; those systems are not modeled yet.
+
 Engineering exposes **Automatic**, **Held open**, and **Held closed** door policies. Starting doors and new annex doors are automatic: routes may pass through them, but a pawn at a closed doorway spends one movement step opening it before crossing. Work, clinical appointments, hauling, routines, and SCP-999 all use the same passage rule. Opening staff show an action bubble. Automatic doors close at the start of a tick once no pawn or ground object is on or cardinally adjacent to the doorway.
 
 Held-closed doors block route planning; a delivery can stall with its stock still reserved or carried, then resume when access is restored. Closed doors also block sight and the existing exposure propagation; an opening changes both without separate containment scripting. Material failure leaves a passable breach, and replacement restores the door with its retained policy. Closure commands refuse a doorway occupied by a pawn or object. Policies are administrative settings; Recorded physical state still reflects the last observation.
