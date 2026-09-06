@@ -73,6 +73,8 @@ A facility inspector behaves like a folder. Its icons represent installed and fu
 - Research Archive
 - Future logistics, utilities, medical, security, and containment systems
 
+Subsystem buttons open with a single click, Enter, or Space. Desktop shortcuts retain pointer double-click activation and also support Enter/Space; taskbar and SCP-menu entries remain single-click. These activation rules do not change simulation state.
+
 Subsystem availability is simulation-backed. A physical system can be uninstalled, underpowered, damaged, jammed, sabotaged, or upgraded. Losing the alarm controller can remove automatic speed reduction or pause behavior even though manual pause remains globally available.
 
 Staffing and routine inspectors should emphasize shift coverage, responsibilities, outstanding needs, and exceptions rather than requiring approval of each pawn action. Support progressive detail: a facility summary identifies a missed or uncovered duty, its inspector shows the schedule and available evidence, and personnel records provide assessed context. Report the observed deviation without automatically revealing its hidden cause. Keep optional opportunities and research authorization distinct from the routine job monitor; its final interaction design remains open.

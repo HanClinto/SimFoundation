@@ -49,7 +49,7 @@ import scp999IconUrl from "./assets/site-999.svg";
 import { incidentResponse } from "./incident-response";
 import { createVesselAlerts } from "./vessel-alert-view";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
-import { createWindowManager } from "./window-manager";
+import { bindWindowShortcuts, createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
 
 void refreshForNewDeployment();
@@ -888,14 +888,12 @@ personnelRows.addEventListener("keydown", (event) => {
   openPersonnelInspector(row.dataset.personId);
 });
 
-for (const desktopIcon of document.querySelectorAll<HTMLButtonElement>(
-  "[data-open-window]",
-)) {
-  desktopIcon.addEventListener("dblclick", () => {
-    const windowId = desktopIcon.dataset.openWindow;
-    if (windowId) windowManager.open(windowId);
-  });
-}
+bindWindowShortcuts(
+  document.querySelectorAll<HTMLButtonElement>(
+    ".desktop-icon[data-open-window], .subsystem-icon[data-open-window]",
+  ),
+  (windowId) => windowManager.open(windowId),
+);
 
 for (const directLauncher of document.querySelectorAll<HTMLButtonElement>(
   ".start-menu [data-open-window]",

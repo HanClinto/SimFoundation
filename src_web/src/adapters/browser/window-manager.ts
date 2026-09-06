@@ -107,6 +107,23 @@ export function synchronizeLauncherIcons(
   }
 }
 
+export function bindWindowShortcuts(
+  shortcuts: Iterable<HTMLButtonElement>,
+  open: (windowId: string) => void,
+): void {
+  for (const shortcut of shortcuts) {
+    const activate = () => {
+      const windowId = shortcut.dataset.openWindow;
+      if (windowId) open(windowId);
+    };
+    const desktop = shortcut.classList.contains("desktop-icon");
+    shortcut.addEventListener("click", (event) => {
+      if (!desktop || event.detail === 0) activate();
+    });
+    if (desktop) shortcut.addEventListener("dblclick", activate);
+  }
+}
+
 export function createWindowManager(desktop: HTMLElement) {
   const windows = new Map<string, ManagedWindow>();
   const listeners = new Set<

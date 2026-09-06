@@ -1,6 +1,34 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { JSDOM } from "jsdom";
 
-import { synchronizeLauncherIcons } from "../src/adapters/browser/window-manager";
+import {
+  bindWindowShortcuts,
+  synchronizeLauncherIcons,
+} from "../src/adapters/browser/window-manager";
+
+it("opens subsystem buttons on click and desktop shortcuts on double-click or keyboard activation", () => {
+  const window = new JSDOM(
+    '<button class="desktop-icon" data-open-window="facility-window"></button><button class="subsystem-icon" data-open-window="day-planner-window"></button>',
+  ).window;
+  const buttons = window.document.querySelectorAll("button");
+  const open = vi.fn();
+  bindWindowShortcuts(buttons, open);
+  const [desktop, subsystem] = buttons;
+  desktop!.dispatchEvent(new window.MouseEvent("click", { detail: 1 }));
+  expect(open).not.toHaveBeenCalled();
+  desktop!.dispatchEvent(new window.MouseEvent("dblclick", { detail: 2 }));
+  expect(open).toHaveBeenLastCalledWith("facility-window");
+  expect(open).toHaveBeenCalledTimes(1);
+  desktop!.click();
+  expect(open).toHaveBeenCalledTimes(2);
+  subsystem!.dispatchEvent(new window.MouseEvent("click", { detail: 1 }));
+  expect(open).toHaveBeenLastCalledWith("day-planner-window");
+  expect(open).toHaveBeenCalledTimes(3);
+  subsystem!.click();
+  expect(open).toHaveBeenCalledTimes(4);
+  subsystem!.dispatchEvent(new window.MouseEvent("dblclick", { detail: 2 }));
+  expect(open).toHaveBeenCalledTimes(4);
+});
 
 function launcher(windowId: string, initialIcon: string) {
   const icon = { src: initialIcon };
