@@ -9,6 +9,7 @@ import { storageContains } from "../../simulation/storage";
 import { layoutPawnBubbles, bubbleAt, type PawnBubble } from "./pawn-bubbles";
 import { pawnCues } from "./pawn-cues";
 import { emissionMotes } from "./emission-effects";
+import { createMapSelection } from "./map-selection";
 import {
   renderSite,
   projectPosition,
@@ -27,6 +28,7 @@ export function createSiteMap(
   element: HTMLElement,
   controller: GameController,
   openRecord: (id: string, perspective: MapPerspective) => void,
+  moveObject?: (id: string, snapshot: ControllerSnapshot) => void,
 ) {
   let current = controller.getSnapshot();
   let visualTime = 0;
@@ -66,6 +68,12 @@ export function createSiteMap(
   const confirm = element.querySelector<HTMLButtonElement>(
     '[data-camera-action="confirm"]',
   )!;
+  const selectionHost = element.querySelector<HTMLElement>(
+    "[data-map-selection]",
+  );
+  const selectionPanel = selectionHost
+    ? createMapSelection(selectionHost, controller, openRecord, moveObject)
+    : null;
   let objectSignature = "";
   let bubbles: readonly PawnBubble[] = [];
   let hoverPoint: TilePosition | null = null;
@@ -95,6 +103,11 @@ export function createSiteMap(
 
   function render(snapshot: ControllerSnapshot) {
     current = snapshot;
+    selectionPanel?.render(
+      snapshot,
+      placement ? null : camera.selectedId,
+      camera.perspective ?? "world",
+    );
     const preview = placement?.preview(current);
     camera = {
       ...camera,

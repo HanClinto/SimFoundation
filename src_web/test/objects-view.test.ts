@@ -48,4 +48,9 @@ it("uses shared placement for oriented furniture and counted supplies without in
           item.id === controller.getSnapshot().game.objectOrders[1]!.objectId,
       )?.quantity,
   ).toBe(10);
+  const before = controller.getSnapshot();
+  view.move("spare-break-seat", before);
+  expect(requests.at(-1)!.origin).toEqual({ x: 67, y: 66 });
+  expect(controller.getSnapshot()).toEqual(before);
+  expect(requests.at(-1)!.confirm({ x: 54, y: 59 }).accepted).toBe(true);
 });

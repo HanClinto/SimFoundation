@@ -236,3 +236,50 @@ it("combines independent layers without changing pinned placement and cancels wi
   );
   expect(open).toHaveBeenLastCalledWith("storage:storage-1", "world");
 });
+
+it("updates the inline selection panel from a single map selection and delegates Move", () => {
+  const window = new JSDOM(
+    '<section><select data-camera-entity></select><span data-camera-status></span><output data-camera-zoom></output><button data-camera-action="inspect"></button><div data-map-selection></div><div data-placement-bar><strong data-placement-label></strong><span data-placement-feedback></span><button data-camera-action="confirm"></button><button data-camera-action="cancel"></button></div><canvas></canvas></section>',
+  ).window;
+  for (const name of ["document", "Element", "Option"] as const)
+    vi.stubGlobal(name, window[name]);
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+    },
+  );
+  const root = document.querySelector("section")!;
+  const canvas = root.querySelector("canvas")!;
+  Object.defineProperties(canvas, {
+    clientWidth: { value: 760 },
+    clientHeight: { value: 420 },
+    setPointerCapture: { value: () => {} },
+    hasPointerCapture: { value: () => false },
+  });
+  const controller = createController(createInitialState());
+  const move = vi.fn();
+  const inspect = vi.fn();
+  const view = createSiteMap(canvas, root, controller, inspect, move);
+  view.focus({ x: 67, y: 66 });
+  canvas.dispatchEvent(
+    new window.MouseEvent("pointerdown", {
+      clientX: 380,
+      clientY: 204,
+      button: 0,
+    }),
+  );
+  canvas.dispatchEvent(
+    new window.MouseEvent("pointerup", {
+      clientX: 380,
+      clientY: 204,
+      button: 0,
+    }),
+  );
+  expect(root.querySelector("[data-selection-name]")!.textContent).toContain(
+    "spare-break-seat",
+  );
+  expect(inspect).not.toHaveBeenCalled();
+  root.querySelector<HTMLButtonElement>("[data-selection-move]")!.click();
+  expect(move.mock.calls[0]![0]).toBe("spare-break-seat");
+});

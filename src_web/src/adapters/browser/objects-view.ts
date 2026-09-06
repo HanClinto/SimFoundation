@@ -65,7 +65,7 @@ export function createObjectsWindow(
     render(current);
   }
   choice.addEventListener("change", () => choose(choice.value));
-  element.querySelector("[data-object-move]")!.addEventListener("click", () => {
+  function moveSelected() {
     const item = selectedObject();
     if (!item || item.location.kind !== "ground") return;
     const install =
@@ -112,7 +112,10 @@ export function createObjectsWindow(
         };
       },
     });
-  });
+  }
+  element
+    .querySelector("[data-object-move]")!
+    .addEventListener("click", moveSelected);
   element.querySelector("[data-object-pack]")!.addEventListener("click", () => {
     const item = selectedObject();
     if (!item || item.location.kind !== "ground") return;
@@ -251,6 +254,12 @@ export function createObjectsWindow(
   return {
     element,
     render,
+    move(id: string, snapshot: ControllerSnapshot) {
+      current = snapshot;
+      perspective = "world";
+      choose(id);
+      moveSelected();
+    },
     select(
       id: string,
       snapshot: ControllerSnapshot,

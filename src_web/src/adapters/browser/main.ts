@@ -193,6 +193,7 @@ app.innerHTML = `
       <div class="viewport-shell">
         <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
       </div>
+      <div data-map-selection></div>
       <div class="map-placement-bar" data-placement-bar hidden><strong data-placement-label></strong><button type="button" data-camera-action="confirm">Confirm</button><button type="button" data-camera-action="cancel">Cancel</button><span data-placement-feedback role="status"></span></div>
       <div class="status-bar">
         <p class="status-bar-field" data-camera-perspective-label>SIMULATION</p>
@@ -714,6 +715,7 @@ const siteCamera = createSiteMap(
       } else openPersonnelInspector(id);
     }
   },
+  (id, snapshot) => objectsView.move(id, snapshot),
 );
 const clinicalCareView = createClinicalCareView(
   requireElement<HTMLElement>("#clinical-care-body"),
