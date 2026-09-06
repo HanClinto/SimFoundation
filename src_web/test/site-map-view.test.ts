@@ -14,6 +14,82 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
+it("animates cosmetic emissions without ticking and respects pause, hidden windows, and reduced motion", () => {
+  const window = new JSDOM(
+    '<section><select data-camera-entity></select><span data-camera-status></span><output data-camera-zoom></output><button data-camera-action="inspect"></button><input data-map-perspective="recorded"/><input type="checkbox" data-map-overlay="effects"/><div data-placement-bar><strong data-placement-label></strong><span data-placement-feedback></span><button data-camera-action="confirm"></button><button data-camera-action="cancel"></button></div><canvas></canvas></section>',
+    { pretendToBeVisual: true },
+  ).window;
+  for (const name of ["document", "Element", "Option"] as const)
+    vi.stubGlobal(name, window[name]);
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+    },
+  );
+  let reduced = false;
+  Object.defineProperty(window, "matchMedia", {
+    value: () => ({
+      get matches() {
+        return reduced;
+      },
+    }),
+  });
+  const root = document.querySelector("section")!;
+  const canvas = root.querySelector("canvas")!;
+  Object.defineProperties(canvas, {
+    clientWidth: { value: 760 },
+    clientHeight: { value: 420 },
+  });
+  const controller = createController(createInitialState());
+  controller.setExposureSource({
+    name: "Effect",
+    position: { x: 60, y: 54 },
+    kind: "corrosion",
+    dose: 4,
+    radius: 1,
+  });
+  const view = createSiteMap(canvas, root, controller, vi.fn());
+  const renderer = vi.mocked(renderSite);
+  renderer.mockClear();
+  view.animate(100);
+  expect(renderer.mock.calls[0]![3]).toBe(100);
+  expect(controller.getSnapshot().game.tick).toBe(0);
+  view.render(controller.setRunning(false));
+  renderer.mockClear();
+  view.animate(500);
+  expect(renderer).not.toHaveBeenCalled();
+  view.render(controller.setRunning(true));
+  renderer.mockClear();
+  reduced = true;
+  view.animate(600);
+  expect(renderer.mock.calls[0]![3]).toBe(0);
+  renderer.mockClear();
+  view.animate(800);
+  expect(renderer).not.toHaveBeenCalled();
+  reduced = false;
+  root.hidden = true;
+  view.animate(1000);
+  expect(renderer).not.toHaveBeenCalled();
+  root.hidden = false;
+  const effects = root.querySelector<HTMLInputElement>(
+    '[data-map-overlay="effects"]',
+  )!;
+  effects.checked = false;
+  effects.dispatchEvent(new window.Event("change", { bubbles: true }));
+  renderer.mockClear();
+  view.animate(1200);
+  expect(renderer).not.toHaveBeenCalled();
+  effects.checked = true;
+  effects.dispatchEvent(new window.Event("change", { bubbles: true }));
+  root
+    .querySelector('[data-map-perspective="recorded"]')!
+    .dispatchEvent(new window.Event("change", { bubbles: true }));
+  renderer.mockClear();
+  view.animate(1400);
+  expect(renderer).not.toHaveBeenCalled();
+});
+
 it("combines independent layers without changing pinned placement and cancels without mutation", () => {
   const window = new JSDOM(
     '<section><select data-camera-entity></select><span data-camera-status></span><output data-camera-zoom></output><button data-camera-action="inspect"></button><input type="checkbox" data-map-overlay="condition"/><input type="radio" data-map-base="materials"/><div data-placement-bar hidden><strong data-placement-label></strong><span data-placement-feedback></span><button data-camera-action="confirm"></button><button data-camera-action="cancel"></button></div><canvas></canvas></section>',

@@ -14,11 +14,15 @@ const MAX_FRAME_DELTA_MS = 1_000;
 
 export function createBrowserRuntime(
   controller: GameController,
+  onFrame?: (visualTimeMs: number) => void,
 ): BrowserRuntime {
   let speed: SimulationSpeed = 1;
   let animationFrame: number | null = null;
   let previousTime: number | null = null;
   let accumulatedTime = 0;
+  let visualTime = 0;
+  let running = controller.getSnapshot().running;
+  let unsubscribe: (() => void) | null = null;
 
   function frame(currentTime: number): void {
     if (previousTime !== null) {
@@ -26,17 +30,18 @@ export function createBrowserRuntime(
         currentTime - previousTime,
         MAX_FRAME_DELTA_MS,
       );
-      accumulatedTime += frameDelta * speed;
+      if (running) visualTime += frameDelta * speed;
+      accumulatedTime = running ? accumulatedTime + frameDelta * speed : 0;
       const ticksDue = Math.floor(accumulatedTime / BASE_TICK_DURATION_MS);
       const initialSpeed = speed;
       for (let tick = 0; tick < ticksDue; tick += 1) {
-        if (!controller.getSnapshot().running) {
+        if (!running) {
           accumulatedTime = 0;
           break;
         }
         controller.advance();
         accumulatedTime -= BASE_TICK_DURATION_MS;
-        if (!controller.getSnapshot().running || speed !== initialSpeed) {
+        if (!running || speed !== initialSpeed) {
           accumulatedTime = 0;
           break;
         }
@@ -44,6 +49,7 @@ export function createBrowserRuntime(
     }
 
     previousTime = currentTime;
+    onFrame?.(visualTime);
     animationFrame = requestAnimationFrame(frame);
   }
 
@@ -58,6 +64,10 @@ export function createBrowserRuntime(
 
     start() {
       if (animationFrame !== null) return;
+      running = controller.getSnapshot().running;
+      unsubscribe = controller.subscribe((snapshot) => {
+        running = snapshot.running;
+      });
       animationFrame = requestAnimationFrame(frame);
     },
 
@@ -67,6 +77,8 @@ export function createBrowserRuntime(
       animationFrame = null;
       previousTime = null;
       accumulatedTime = 0;
+      unsubscribe?.();
+      unsubscribe = null;
     },
   };
 }

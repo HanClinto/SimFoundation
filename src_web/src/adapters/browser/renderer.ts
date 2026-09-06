@@ -1,4 +1,5 @@
 import type { ControllerSnapshot } from "../../application/controller";
+import { drawEmissionEffects, emissionMotes } from "./emission-effects";
 import { type TilePosition } from "../../simulation/world";
 import { observedSnapshot } from "./observed-view";
 import workerUrl from "./assets/site-worker.svg";
@@ -113,6 +114,7 @@ export function renderSite(
     zoom: 0.7,
     selectedId: null,
   },
+  visualTimeMs = 0,
 ): void {
   const recorded = camera.perspective === "recorded";
   const overlays = camera.overlays ?? DEFAULT_MAP_OVERLAYS;
@@ -523,6 +525,16 @@ export function renderSite(
       context.restore();
     }
   }
+  if (overlays.effects !== false && !recorded)
+    drawEmissionEffects(
+      context,
+      emissionMotes(snapshot.game, "world"),
+      visualTimeMs,
+      camera.zoom,
+      width,
+      height,
+      (position) => projectPosition(position, camera, width, height),
+    );
   const cameraImage = stationImages.get("camera");
   if (
     overlays.objects &&

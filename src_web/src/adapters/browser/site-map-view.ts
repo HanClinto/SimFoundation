@@ -8,6 +8,7 @@ import { mapObjects } from "./map-objects";
 import { storageContains } from "../../simulation/storage";
 import { layoutPawnBubbles, bubbleAt, type PawnBubble } from "./pawn-bubbles";
 import { pawnCues } from "./pawn-cues";
+import { emissionMotes } from "./emission-effects";
 import {
   renderSite,
   projectPosition,
@@ -28,6 +29,10 @@ export function createSiteMap(
   openRecord: (id: string, perspective: MapPerspective) => void,
 ) {
   let current = controller.getSnapshot();
+  let visualTime = 0;
+  const reducedMotion = canvas.ownerDocument.defaultView?.matchMedia?.(
+    "(prefers-reduced-motion: reduce)",
+  );
   let placement: ReturnType<typeof createPlacementSession> | null = null;
   const fitZoom = () =>
     Math.max(
@@ -135,7 +140,12 @@ export function createSiteMap(
         camera.perspective === "world" ? "SIMULATION" : "RECORDED";
     zoomLabel.value = `${Math.round(camera.zoom * 100)}%`;
     inspect.disabled = camera.selectedId === null;
-    renderSite(canvas, current, camera);
+    renderSite(
+      canvas,
+      current,
+      camera,
+      reducedMotion?.matches ? 0 : visualTime,
+    );
     bubbles =
       camera.overlays?.objects && camera.overlays.activity
         ? layoutPawnBubbles(
@@ -450,6 +460,28 @@ export function createSiteMap(
   render(current);
   return {
     render,
+    animate(timeMs: number) {
+      if (
+        element.hidden ||
+        canvas.ownerDocument.hidden ||
+        !current.running ||
+        camera.perspective === "recorded" ||
+        camera.overlays?.effects === false ||
+        camera.zoom < 0.3 ||
+        emissionMotes(current.game, "world").length === 0
+      )
+        return;
+      if (reducedMotion?.matches) {
+        if (visualTime !== 0) {
+          visualTime = 0;
+          renderSite(canvas, current, camera, 0);
+        }
+        return;
+      }
+      if (timeMs - visualTime < 32) return;
+      visualTime = timeMs;
+      renderSite(canvas, current, camera, visualTime);
+    },
     focus,
     beginPlacement(request: PlacementRequest) {
       placement = createPlacementSession(request);

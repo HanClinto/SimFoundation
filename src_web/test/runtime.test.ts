@@ -6,6 +6,38 @@ import { incidentResponse } from "../src/adapters/browser/incident-response";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("incident-aware browser timing", () => {
+  it("advances cosmetic time between ticks, freezes it while paused, and releases subscriptions on stop", () => {
+    let callback: FrameRequestCallback = () => {};
+    vi.stubGlobal("requestAnimationFrame", (next: FrameRequestCallback) => {
+      callback = next;
+      return 1;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const controller = createController(createInitialState());
+    const frame = vi.fn();
+    const runtime = createBrowserRuntime(controller, frame);
+    runtime.start();
+    callback(0);
+    callback(250);
+    expect(controller.getSnapshot().game.tick).toBe(0);
+    expect(frame).toHaveBeenLastCalledWith(250);
+    controller.setRunning(false);
+    callback(1000);
+    callback(2000);
+    expect(frame).toHaveBeenLastCalledWith(250);
+    runtime.setSpeed(2);
+    controller.setRunning(true);
+    callback(2250);
+    expect(frame).toHaveBeenLastCalledWith(750);
+    expect(controller.getSnapshot().game.tick).toBe(1);
+    runtime.stop();
+    controller.setRunning(false);
+    runtime.start();
+    callback(3000);
+    callback(3500);
+    expect(frame).toHaveBeenLastCalledWith(750);
+    runtime.stop();
+  });
   it("pauses Orange and Red transitions without repeatedly overriding player resume", () => {
     expect(incidentResponse("green", "yellow")).toBe("slow");
     expect(incidentResponse("yellow", "orange")).toBe("pause");
@@ -44,6 +76,27 @@ describe("incident-aware browser timing", () => {
     expect(controller.getSnapshot().game.tick).toBe(1);
     callback(2500);
     expect(controller.getSnapshot().game.tick).toBe(2);
+    runtime.stop();
+  });
+  it("does not bank paused time when the pause is shorter than a tick", () => {
+    let callback: FrameRequestCallback = () => {};
+    vi.stubGlobal("requestAnimationFrame", (next: FrameRequestCallback) => {
+      callback = next;
+      return 1;
+    });
+    vi.stubGlobal("cancelAnimationFrame", vi.fn());
+    const controller = createController(createInitialState());
+    const runtime = createBrowserRuntime(controller);
+    runtime.start();
+    callback(0);
+    callback(200);
+    controller.setRunning(false);
+    callback(300);
+    controller.setRunning(true);
+    callback(600);
+    expect(controller.getSnapshot().game.tick).toBe(0);
+    callback(800);
+    expect(controller.getSnapshot().game.tick).toBe(1);
     runtime.stop();
   });
   it("stops a catch-up burst when an incident slows the runtime", () => {

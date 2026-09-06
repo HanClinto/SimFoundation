@@ -177,7 +177,7 @@ app.innerHTML = `
         <fieldset><legend>Perspective</legend><div class="field-row"><input id="map-world" type="radio" name="map-perspective" data-map-perspective="world" checked/><label for="map-world">World</label><input id="map-recorded" type="radio" name="map-perspective" data-map-perspective="recorded"/><label for="map-recorded">Recorded</label></div></fieldset>
         <fieldset><legend>Base map</legend><div class="field-row"><input id="map-site" type="radio" name="map-base" data-map-base="site" checked/><label for="map-site">Site</label><input id="map-materials" type="radio" name="map-base" data-map-base="materials"/><label for="map-materials">Materials</label></div></fieldset>
         <fieldset><legend>Surface</legend><div class="field-row"><input id="map-structures" type="radio" name="map-layer" data-map-layer="structure" checked/><label for="map-structures">Structures</label><input id="map-floors" type="radio" name="map-layer" data-map-layer="floor"/><label for="map-floors">Floors</label></div></fieldset>
-        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "activity", "coverage", "projects", "storage", "spaces", "exposure"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "activity", "projects"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
+        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "activity", "coverage", "projects", "storage", "spaces", "exposure", "effects"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "activity", "projects", "effects"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
       </div></details>
     </div>
     <div class="window-body camera-body">
@@ -481,7 +481,9 @@ if (initialGameLoad.status === "loaded") {
         : "Browser storage unavailable";
   updatePersistenceControls(`${reason}; Save Site to replace`);
 }
-const runtime = createBrowserRuntime(controller);
+const runtime = createBrowserRuntime(controller, (time) =>
+  siteCamera.animate(time),
+);
 const personnelInspectors = createPersonnelInspectorWindows(
   app,
   controller.getSnapshot().game.personnel,
