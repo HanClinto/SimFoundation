@@ -5,6 +5,7 @@ import {
   type CameraPlacementCode,
 } from "../simulation/observations";
 import { advanceSimulation } from "../simulation/tick";
+import { setWorkPriority, type WorkPriority } from "../simulation/jobs";
 import {
   craftVessel,
   orderVesselAction,
@@ -154,6 +155,10 @@ export interface GameController {
   advance(tickCount?: number): ControllerSnapshot;
   replaceState(nextState: GameState): ControllerSnapshot;
   authorizeJob(jobId: string): ControllerSnapshot;
+  setWorkPriority(
+    jobId: string,
+    priority: WorkPriority | null,
+  ): ControllerSnapshot;
   previewLaboratory(origin: TilePosition): ConstructionCode | null;
   placeLaboratory(origin: TilePosition): ConstructionCommandResult;
   cancelLaboratory(blueprintId: string): ConstructionCommandResult;
@@ -402,6 +407,10 @@ export function createController(initialState: GameState): GameController {
 
     authorizeJob(jobId) {
       state = authorizeSiteWork(state, jobId);
+      return publish();
+    },
+    setWorkPriority(jobId, priority) {
+      state = { ...state, jobs: setWorkPriority(state.jobs, jobId, priority) };
       return publish();
     },
 

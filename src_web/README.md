@@ -35,6 +35,8 @@ The **Construction** window owns the annex register. **Plan annex** requests a 9
 
 Surveillance requests device placement through the same map interaction. The map owns positioning and cancellation, not object-specific validation or resource rules. Work Orders reports physical locations and provides **Locate** links. The research-laboratory selector and scripted experiment task ladder have been removed.
 
+**Work Orders > Priority** controls the next eligible assignment for an individual job. Automatic uses the system's original priority; Low, Normal, and High override it with 20, 50, and 75. The ledger shows effective priority and uses the scheduler's descending priority and stable ID ordering. Genuine emergencies (automatic priority 90 or above) cannot be demoted and remain ahead of all manual overrides. Completed work is read-only. Changing priority neither authorizes proposed work nor interrupts an active assignment, clinical appointment, or cargo carrier. Worker qualification, schedules, needs, reachability, and reservations still govern eligibility. The override persists while the same job progresses through collection, delivery, and fitting; separate jobs created by a project keep their own priorities. Select Automatic to remove the override without losing the original rule.
+
 Construction retains one fixed annex template, while Engineering can build and remove individual floor, wall, and door tiles anywhere accessible. Both consume the same physical material inventory. Furniture placement and stock relocation use the shared Objects and Supplies system; external procurement and a power network remain future work. Starting room categories are spatial designations, not fully operational systems. The physical-facility slice is tracked under [#15](https://github.com/HanClinto/SimFoundation/issues/15). Development save compatibility is intentionally not maintained between schema versions.
 
 ## Design Pillars
@@ -89,7 +91,7 @@ Beds have a two-tile footprint; one tile is the interaction position and the rem
 
 Building materials and packaged meals are real counted stacks with ground/carrier locations and exclusive work reservations. Surface replacement and annex construction reserve, pick up, deliver, and consume those objects. Pantry replenishment transports meal stacks; individual pawns collect a portion and carry it to a seat before eating. Moving stock changes subsequent collection destinations. The displayed material and meal counters are validated summaries, not additional copies of the inventory.
 
-World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **34**, requiring a fresh development session. Vessel fabrication is available; general crafting, procurement, arbitrary nested containers, weight limits, and a universal equipment system remain deferred. Cameras retain their existing specialized device/kit workflow.
+World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **35**, requiring a fresh development session. Vessel fabrication is available; general crafting, procurement, arbitrary nested containers, weight limits, and a universal equipment system remain deferred. Cameras retain their existing specialized device/kit workflow.
 
 ### Portable Containment
 
@@ -159,7 +161,7 @@ Removal requires an engineer at an adjacent work face and gives no salvage refun
 
 **Cancel surface work** stops an active order on the selected tile/layer. Before pickup or during fitting, unused materials are released on the ground and any assigned worker is freed. During transport, **Cancel after delivery** keeps the carrier and supplies reserved until the delivery is physically set down, then releases the stock and skips fitting. A blocked route still needs to be reopened. Cancelled orders stop reserving their target tiles and cannot refund twice. Completed work cannot be cancelled, and removal gives no salvage. Automatic maintenance may discover the same damaged surface again while its policy remains enabled.
 
-This is single-tile construction, not an instant brush or a room generator. Room names/designations are unchanged by new walls. No drag painting, demolition salvage, or structural support simulation is included. Cancel the placement preview before confirmation to avoid queuing work at all. Save schema 34 requires a fresh development session.
+This is single-tile construction, not an instant brush or a room generator. Room names/designations are unchanged by new walls. No drag painting, demolition salvage, or structural support simulation is included. Cancel the placement preview before confirmation to avoid queuing work at all. Save schema 35 requires a fresh development session.
 
 Every installed floor, wall, and door has its own material and integrity. Soil is the base ground; floors and structures are independent layers. Failed walls cease blocking movement and sight but leave the floor beneath them intact. Failed flooring exposes soil. Starting rooms and newly built annexes use the same shared material catalog: concrete, steel, ceramic, and composite.
 
@@ -175,9 +177,9 @@ For a small containment exercise, place a source beside a wall, inspect its mate
 
 **Attachment** can bind a source to an individual furniture or packed-object identity. Choose the object and **Bind source**, then **Open object** to issue an ordinary move through Objects and Supplies. Exposure follows its ground position or carrier throughout transport, including while opening doors. Packing, installation, and cancelling a move preserve the attachment and do not suppress emission. Active emitting cargo has a World-mode action cue, and the object record lists its sources. Recorded map markers use the host's observations, not its unseen live position.
 
-Set Attachment back to **Fixed map position** and apply to detach at the object's current location. Supply stacks are excluded until split/merge behavior for effects is defined; no extra inventory or named anomaly is spawned by binding. Multiple source effects may bind to one object. These remain sandbox-authored properties, with no worker suppression or health effects. Save schema 34 records host identity and requires a fresh development session.
+Set Attachment back to **Fixed map position** and apply to detach at the object's current location. Supply stacks are excluded until split/merge behavior for effects is defined; no extra inventory or named anomaly is spawned by binding. Multiple source effects may bind to one object. These remain sandbox-authored properties, with no worker suppression or health effects. Save schema 35 records host identity and requires a fresh development session.
 
-The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 34; earlier development saves require a fresh session.
+The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and claimed alarm hardware/power system have been removed. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 35; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 

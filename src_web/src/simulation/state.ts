@@ -19,7 +19,7 @@ import { type ObjectOrder } from "./object-work";
 import { createStorage, type StorageState } from "./storage";
 import type { VesselWork } from "./vessel-work";
 
-export const GAME_STATE_VERSION = 34;
+export const GAME_STATE_VERSION = 35;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

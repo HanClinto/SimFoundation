@@ -1144,6 +1144,7 @@ function render(snapshot: ControllerSnapshot): void {
     snapshot.game.jobs,
     snapshot.game.personnel,
     snapshot.game.world,
+    (id, priority) => controller.setWorkPriority(id, priority),
   );
   const scp999TargetPerson = snapshot.game.personnel.find(
     ({ id }) => id === snapshot.game.scp999.targetPersonId,

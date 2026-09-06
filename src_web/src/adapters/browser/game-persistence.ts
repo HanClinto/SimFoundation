@@ -410,6 +410,8 @@ function isSiteJob(value: unknown): boolean {
     isNonEmptyString(value.description) &&
     isLiteral(value.skillId, SKILL_IDS) &&
     isIntegerInRange(value.priority, 0) &&
+    (value.priorityOverride === undefined ||
+      isLiteral(value.priorityOverride, ["low", "normal", "high"])) &&
     isIntegerInRange(value.xpPerTick, 0) &&
     isRecord(value.preferredBiases) &&
     [-1, 0, 1].includes(value.preferredBiases.mindMight as number) &&

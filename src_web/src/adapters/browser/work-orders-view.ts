@@ -1,4 +1,8 @@
-import type { SiteJob } from "../../simulation/jobs";
+import {
+  effectiveJobPriority,
+  type SiteJob,
+  type WorkPriority,
+} from "../../simulation/jobs";
 import type { PersonnelRecord } from "../../simulation/personnel";
 import type { SiteWorld } from "../../simulation/world";
 
@@ -13,6 +17,7 @@ function titleCase(value: string): string {
 interface WorkOrderDesk {
   selectedId: string | null;
   refresh: () => void;
+  setPriority?: (id: string, priority: WorkPriority | null) => void;
 }
 
 const desks = new WeakMap<HTMLElement, WorkOrderDesk>();
@@ -21,7 +26,18 @@ function prepareDesk(container: HTMLElement): WorkOrderDesk {
   const existing = desks.get(container);
   if (existing) return existing;
   const desk: WorkOrderDesk = { selectedId: null, refresh: () => {} };
-  container.innerHTML = `<div class="order-toolbar"><label>View <select data-order-filter aria-label="Work order view"><option value="open">Open orders</option><option value="proposed">Awaiting authorization</option><option value="in-progress">Assigned work</option><option value="completed">Completed</option><option value="all">All orders</option></select></label><input type="search" data-order-search aria-label="Search work orders" placeholder="Search orders" /></div><div class="order-desk"><div class="order-ledger-scroll"><table class="order-ledger" aria-label="Work order ledger"><thead><tr><th>Work order</th><th>Status</th><th>Assigned</th></tr></thead><tbody data-order-rows></tbody></table><p data-order-empty hidden>No matching work orders.</p></div><div class="order-report" data-order-reports aria-label="Selected work order"></div></div><div class="order-register-status" data-order-count></div>`;
+  container.innerHTML = `<div class="order-toolbar"><label>View <select data-order-filter aria-label="Work order view"><option value="open">Open orders</option><option value="proposed">Awaiting authorization</option><option value="in-progress">Assigned work</option><option value="completed">Completed</option><option value="all">All orders</option></select></label><input type="search" data-order-search aria-label="Search work orders" placeholder="Search orders" /></div><div class="order-desk"><div class="order-ledger-scroll"><table class="order-ledger" aria-label="Work order ledger"><thead><tr><th>Work order</th><th>Priority</th><th>Status</th><th>Assigned</th></tr></thead><tbody data-order-rows></tbody></table><p data-order-empty hidden>No matching work orders.</p></div><div class="order-report" data-order-reports aria-label="Selected work order"></div></div><div class="order-register-status" data-order-count></div>`;
+  container.addEventListener("change", (event) => {
+    const control = (event.target as Element).closest<HTMLSelectElement>(
+      "[data-job-priority]",
+    );
+    const id = control?.closest<HTMLElement>("[data-job-id]")?.dataset.jobId;
+    if (control && id)
+      desk.setPriority?.(
+        id,
+        control.value === "automatic" ? null : (control.value as WorkPriority),
+      );
+  });
   container
     .querySelector("[data-order-filter]")!
     .addEventListener("change", () => desk.refresh());
@@ -70,9 +86,12 @@ export function updateWorkOrders(
   jobs: readonly SiteJob[],
   personnel: readonly PersonnelRecord[],
   world: SiteWorld,
+  setPriority?: (id: string, priority: WorkPriority | null) => void,
 ): void {
   const desk = prepareDesk(container);
-  desk.refresh = () => updateWorkOrders(container, jobs, personnel, world);
+  desk.setPriority = setPriority;
+  desk.refresh = () =>
+    updateWorkOrders(container, jobs, personnel, world, setPriority);
   const filter = container.querySelector<HTMLSelectElement>(
     "[data-order-filter]",
   )!.value;
@@ -81,16 +100,22 @@ export function updateWorkOrders(
     .value.toLowerCase()
     .trim();
   const people = new Map(personnel.map((person) => [person.id, person]));
-  const visible = jobs.filter(
-    (job) =>
-      (filter === "all" ||
-        (filter === "open"
-          ? job.status !== "completed"
-          : job.status === filter)) &&
-      `${job.title} ${job.skillId} ${people.get(job.assignedPersonId ?? "")?.name ?? ""}`
-        .toLowerCase()
-        .includes(search),
-  );
+  const visible = jobs
+    .filter(
+      (job) =>
+        (filter === "all" ||
+          (filter === "open"
+            ? job.status !== "completed"
+            : job.status === filter)) &&
+        `${job.title} ${job.skillId} ${people.get(job.assignedPersonId ?? "")?.name ?? ""}`
+          .toLowerCase()
+          .includes(search),
+    )
+    .sort(
+      (first, second) =>
+        effectiveJobPriority(second) - effectiveJobPriority(first) ||
+        first.id.localeCompare(second.id),
+    );
   if (!visible.some(({ id }) => id === desk.selectedId))
     desk.selectedId = visible[0]?.id ?? null;
   const reportList = container.querySelector<HTMLElement>(
@@ -106,13 +131,17 @@ export function updateWorkOrders(
   visible.forEach((job, index) => {
     const row = existingRows.get(job.id) ?? document.createElement("tr");
     if (!existingRows.has(job.id))
-      row.innerHTML = "<td></td><td></td><td></td>";
+      row.innerHTML = "<td></td><td></td><td></td><td></td>";
     row.dataset.orderRow = job.id;
     row.tabIndex = desk.selectedId === job.id ? 0 : -1;
     row.setAttribute("aria-selected", String(desk.selectedId === job.id));
     row.children[0]!.textContent = job.title;
-    row.children[1]!.textContent = titleCase(job.status);
-    row.children[2]!.textContent =
+    row.children[1]!.textContent =
+      job.priority >= 90
+        ? `Emergency ${effectiveJobPriority(job)}`
+        : `${titleCase(job.priorityOverride ?? "automatic")} ${effectiveJobPriority(job)}`;
+    row.children[2]!.textContent = titleCase(job.status);
+    row.children[3]!.textContent =
       people.get(job.assignedPersonId ?? "")?.name ?? "Unassigned";
     if (rows.children[index] !== row)
       rows.insertBefore(row, rows.children[index] ?? null);
@@ -133,6 +162,11 @@ export function updateWorkOrders(
     const article = existing.get(job.id) ?? document.createElement("article");
     if (!existing.has(job.id)) {
       article.innerHTML = `<header><strong data-job-title></strong><span class="work-order-status"></span></header><p data-job-description></p><dl><div><dt>Skill</dt><dd data-job-skill></dd></div><div><dt>Location</dt><dd data-job-location></dd></div><div><dt>Assigned</dt><dd data-job-assigned></dd></div><div><dt>Activity</dt><dd data-job-activity></dd></div></dl><progress></progress><footer><span data-job-progress></span><button type="button" data-job-locate>Locate</button><button type="button" data-job-authorize>Authorize Work</button></footer><p class="assignment-reason"></p>`;
+      const priorityRow = document.createElement("div");
+      priorityRow.className = "field-row";
+      priorityRow.innerHTML =
+        '<label>Priority <select data-job-priority><option value="automatic">Automatic</option><option value="low">Low</option><option value="normal">Normal</option><option value="high">High</option></select></label><span data-priority-status></span>';
+      article.querySelector("[data-job-description]")!.before(priorityRow);
     }
     article.className = `work-order work-order-${job.status}`;
     article.dataset.jobId = job.id;
@@ -154,6 +188,23 @@ export function updateWorkOrders(
     setText("[data-job-title]", job.title);
     setText(".work-order-status", titleCase(job.status));
     setText("[data-job-description]", job.description);
+    const priority = article.querySelector<HTMLSelectElement>(
+      "[data-job-priority]",
+    )!;
+    priority.value = job.priorityOverride ?? "automatic";
+    priority.disabled =
+      !setPriority || job.status === "completed" || job.priority >= 90;
+    priority.setAttribute("aria-label", `Priority for ${job.title}`);
+    priority.title =
+      job.priority >= 90
+        ? "Automatic emergency priority cannot be lowered."
+        : job.status === "completed"
+          ? "Completed work cannot be reprioritized."
+          : "Orders eligible work; existing assignments and cargo ownership are retained.";
+    setText(
+      "[data-priority-status]",
+      `Effective ${effectiveJobPriority(job)} / automatic ${job.priority}`,
+    );
     setText("[data-job-skill]", titleCase(job.skillId));
     setText("[data-job-location]", room?.name ?? "Exterior works");
     setText(

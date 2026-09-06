@@ -25,6 +25,42 @@ function meetsJobSkill(person: PersonnelRecord, job: SiteJob): boolean {
 }
 
 export type JobStatus = "proposed" | "available" | "in-progress" | "completed";
+export type WorkPriority = "low" | "normal" | "high";
+export const WORK_PRIORITIES: Readonly<Record<WorkPriority, number>> = {
+  low: 20,
+  normal: 50,
+  high: 75,
+};
+
+export function effectiveJobPriority(job: SiteJob): number {
+  return job.priority >= 90
+    ? job.priority
+    : job.priorityOverride
+      ? WORK_PRIORITIES[job.priorityOverride]
+      : job.priority;
+}
+
+export function setWorkPriority(
+  jobs: readonly SiteJob[],
+  id: string,
+  priority: WorkPriority | null,
+): readonly SiteJob[] {
+  if (priority !== null && !Object.hasOwn(WORK_PRIORITIES, priority))
+    return jobs;
+  const job = jobs.find((job) => job.id === id);
+  if (
+    !job ||
+    job.status === "completed" ||
+    job.priority >= 90 ||
+    (job.priorityOverride ?? null) === priority
+  )
+    return jobs;
+  return jobs.map((candidate) =>
+    candidate === job
+      ? { ...candidate, priorityOverride: priority ?? undefined }
+      : candidate,
+  );
+}
 
 export interface SiteJob {
   readonly id: string;
@@ -32,6 +68,7 @@ export interface SiteJob {
   readonly description: string;
   readonly skillId: PersonnelSkill["id"];
   readonly priority: number;
+  readonly priorityOverride?: WorkPriority;
   readonly xpPerTick: number;
   readonly preferredBiases: {
     readonly mindMight: -1 | 0 | 1;
@@ -165,7 +202,8 @@ export function advanceJobs(
   const advancedJobsById = new Map<string, SiteJob>();
   const orderedJobs = [...jobs].sort(
     (first, second) =>
-      second.priority - first.priority || first.id.localeCompare(second.id),
+      effectiveJobPriority(second) - effectiveJobPriority(first) ||
+      first.id.localeCompare(second.id),
   );
 
   for (const queuedJob of orderedJobs) {
