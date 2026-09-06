@@ -10,6 +10,66 @@ import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { consumeSupply } from "../src/simulation/objects";
 
 describe("needs-driven routines", () => {
+  it("staggered free-time recreation uses real seats and restores nothing during travel", () => {
+    const initial = createInitialState();
+    const relaxed: GameState = {
+      ...initial,
+      personnel: initial.personnel.map((person) => ({
+        ...person,
+        stress: 0,
+        needs: { rest: 100, satiety: 100 },
+      })),
+      routines: {
+        ...initial.routines,
+        schedules: Object.fromEntries(
+          initial.personnel.map(({ id }) => [id, Array(24).fill("free")]),
+        ),
+      },
+    };
+    const participant = relaxed.personnel[0]!;
+    let state = relaxed;
+    for (
+      let minute = 0;
+      minute < 120 && !state.routines.activities[participant.id];
+      minute += 1
+    )
+      state = advanceRoutines({ ...relaxed, gameMinute: minute });
+    expect(state.routines.activities[participant.id]?.kind).toBe("break");
+    expect(state.routines.activities[participant.id]?.progress).toBe(0);
+    expect(state.personnel[0]!.needs).toEqual(participant.needs);
+    expect(state.world.positions[participant.id]).not.toEqual(
+      relaxed.world.positions[participant.id],
+    );
+    expect(state.objects).toEqual(relaxed.objects);
+    const saved = loadGameState({
+      getItem: () => JSON.stringify(state),
+      setItem: () => {},
+    });
+    expect(saved.status).toBe("loaded");
+    if (saved.status !== "loaded") throw new Error("recreation save rejected");
+    expect(advanceSimulation(saved.state)).toEqual(advanceSimulation(state));
+    const atWork = advanceRoutines(
+      setPersonnelSchedule(state, participant.id, Array(24).fill("work")),
+    );
+    expect(atWork.routines.activities[participant.id]).toBeUndefined();
+    const hungry = advanceRoutines({
+      ...state,
+      personnel: state.personnel.map((person) =>
+        person.id === participant.id
+          ? { ...person, needs: { ...person.needs, satiety: 25 } }
+          : person,
+      ),
+    });
+    expect(hungry.routines.activities[participant.id]?.kind).toBe("meal");
+    expect(
+      Object.values(hungry.routines.activities).filter(
+        (activity) =>
+          activity.stationId ===
+          state.routines.activities[participant.id]!.stationId,
+      ),
+    ).toHaveLength(0);
+  });
+
   it("sustains two days of autonomous routines and preserves a deterministic continuation", () => {
     let state = createInitialState(828);
     const observed = new Set<string>();
@@ -39,6 +99,80 @@ describe("needs-driven routines", () => {
     if (saved.status !== "loaded") throw new Error("long-run save rejected");
     expect(advanceSimulation(saved.state)).toEqual(advanceSimulation(state));
   }, 20000);
+  it("finishes optional breaks, shares seats, and leaves cargo and unavailable furniture alone", () => {
+    const initial = createInitialState();
+    const relaxed: GameState = {
+      ...initial,
+      personnel: initial.personnel.map((person) => ({
+        ...person,
+        stress: 0,
+        needs: { rest: 100, satiety: 100 },
+      })),
+      routines: {
+        ...initial.routines,
+        schedules: Object.fromEntries(
+          initial.personnel.map(({ id }) => [id, Array(24).fill("free")]),
+        ),
+      },
+    };
+    let state = relaxed;
+    const completed = new Set<string>();
+    const starts = new Map<string, number>();
+    for (let minute = 0; minute < 300; minute += 1) {
+      const previous = state;
+      state = advanceRoutines({ ...state, tick: minute, gameMinute: minute });
+      const activities = Object.values(state.routines.activities);
+      expect(
+        new Set(activities.map((activity) => activity.stationId)).size,
+      ).toBe(activities.length);
+      for (const person of state.personnel) {
+        if (
+          state.routines.activities[person.id] &&
+          !previous.routines.activities[person.id]
+        )
+          starts.set(person.id, (starts.get(person.id) ?? 0) + 1);
+        if (person.activity === "Completed: Personal routine")
+          completed.add(person.id);
+      }
+    }
+    expect(completed.size).toBe(initial.personnel.length);
+    expect([...starts.values()].every((count) => count <= 3)).toBe(true);
+    expect(state.objects).toEqual(relaxed.objects);
+    const unavailable = {
+      ...relaxed,
+      objects: {
+        ...relaxed.objects,
+        items: relaxed.objects.items.map((object) =>
+          object.kind === "break-seat"
+            ? { ...object, reservedBy: "pending-move" }
+            : object,
+        ),
+      },
+    };
+    const carrier = relaxed.personnel[0]!.id;
+    const carrying: GameState = {
+      ...relaxed,
+      objects: {
+        ...relaxed.objects,
+        items: relaxed.objects.items.map((object) =>
+          object.id === "spare-break-seat"
+            ? { ...object, location: { kind: "carried", personId: carrier } }
+            : object,
+        ),
+      },
+    };
+    for (let minute = 0; minute < 120; minute += 1) {
+      expect(
+        advanceRoutines({ ...unavailable, gameMinute: minute }).routines
+          .activities,
+      ).toEqual({});
+      expect(
+        advanceRoutines({ ...carrying, gameMinute: minute }).routines
+          .activities[carrier],
+      ).toBeUndefined();
+    }
+  });
+
   it("replenishes the pantry by physically hauling finite reserves without duplication", () => {
     const initial = createInitialState();
     const controller = createController({

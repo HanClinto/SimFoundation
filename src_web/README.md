@@ -129,6 +129,8 @@ Set a target above current stock to let staff queue ordinary pickup/carry/placem
 
 The Day Planner edits each pawn's 24 hourly work, free-time, and sleep blocks, with day-shift, night-shift, and rest-day presets. Staff autonomously seek a meal when hungry, a bed when tired, and a break when stressed. Beds, meal seats, and break seats are physically located and exclusively reserved; travel alone does not restore needs. Ordinary schedule changes let current jobs finish, while critical hunger or exhaustion can release work reservations without erasing progress.
 
+Satisfied staff also seek occasional recreation during free time. Opportunities are staggered across the roster every two game hours; an available break seat supports a 30-minute visit after actual travel. Hunger, tiredness, or the next work/sleep block can interrupt a low-stress break. Staff carrying cargo skip optional recreation, and unavailable furniture can delay a visit until a later opportunity. This reuses ordinary breaks, not a new need, social relationship system, or source of supplies.
+
 The pantry starts with 36 meals and the meal reserve with 72 more. The default dining policy targets 24 meals with capacity 36; general storage hauling replenishes deficits. Day Planner reports meals available in serving areas, other stock (including transport), and issued portions. No food is created by restocking. Shortages and unreachable or occupied service stations are visible in Day Planner. External procurement, cooking, treatment, and richer refusal behavior remain future systems.
 
 ### Surveillance Prototype

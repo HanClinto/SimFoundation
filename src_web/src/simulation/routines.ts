@@ -109,6 +109,19 @@ function urgentNeed(person: PersonnelRecord): boolean {
   return person.needs.satiety < 20 || person.needs.rest < 15;
 }
 
+function recreationDue(state: GameState, personId: string): boolean {
+  const roster = state.personnel.map(({ id }) => id).sort();
+  const offset = Math.floor((roster.indexOf(personId) * 120) / roster.length);
+  return (
+    (state.gameMinute + 120 - offset) % 120 < 10 &&
+    !state.objects.items.some(
+      (object) =>
+        object.location.kind === "carried" &&
+        object.location.personId === personId,
+    )
+  );
+}
+
 export function routineUnavailableIds(state: GameState): readonly string[] {
   return state.personnel
     .filter(
@@ -189,8 +202,9 @@ export function advanceRoutines(state: GameState): GameState {
         schedule !== "sleep" &&
         person.needs.rest >= 70) ||
         (activity.kind === "break" &&
-          schedule === "work" &&
-          person.stress < 55))
+          ((schedule !== "free" && person.stress < 55) ||
+            person.needs.satiety < 40 ||
+            person.needs.rest < 30)))
     ) {
       reserved.delete(activity.stationId);
       delete activities[id];
@@ -203,7 +217,9 @@ export function advanceRoutines(state: GameState): GameState {
           : person.needs.rest < 30 ||
               (schedule === "sleep" && person.needs.rest < 90)
             ? "sleep"
-            : person.stress > 55 || (schedule === "free" && person.stress > 20)
+            : person.stress > 55 ||
+                (schedule === "free" &&
+                  (person.stress > 20 || recreationDue(state, id)))
               ? "break"
               : null;
       if (!kind) {
