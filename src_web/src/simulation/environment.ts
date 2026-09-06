@@ -1,5 +1,7 @@
 import type { GameState } from "./state";
 import { blocksSpace } from "./spaces";
+import { advanceVesselWear, containingBarrier } from "./vessels";
+import { vesselReservesTile } from "./vessel-work";
 import {
   reserveSupply,
   reservedObject,
@@ -135,6 +137,7 @@ export function surfaceChangeIssue(
   layer: SurfaceLayer,
   operation: SurfaceOperation,
 ): SurfaceOrderCode | null {
+  if (vesselReservesTile(state, position)) return "occupied";
   const surface = surfaceAt(state.world.map, position, layer);
   if (
     tileAt(state.world.map, position) === null ||
@@ -238,7 +241,9 @@ export function exposurePosition(
   const object = state.objects.items.find(
     (item) => item.id === source.objectId,
   );
-  return object ? objectPosition(object, state.world.positions) : null;
+  return object
+    ? objectPosition(object, state.world.positions, state.objects)
+    : null;
 }
 export type ExposureSourcePolicy = Omit<ExposureSource, "id">;
 export type ExposureCommandCode =
@@ -277,7 +282,7 @@ export function exposureSourceIssue(
       !object ||
       OBJECT_DEFINITIONS[object.kind].stackable ||
       object.quantity !== 1 ||
-      !objectPosition(object, state.world.positions)
+      !objectPosition(object, state.world.positions, state.objects)
     )
       return "invalid-source";
     return null;
@@ -318,6 +323,7 @@ export function setExposureSource(
         ? objectPosition(
             state.objects.items.find((item) => item.id === policy.objectId)!,
             state.world.positions,
+            state.objects,
           )!
         : policy.position),
     },
@@ -380,7 +386,7 @@ export function exposureTiles(
   state: GameState,
   source: ExposureSource,
 ): readonly TilePosition[] {
-  if (source.enabled === false) return [];
+  if (source.enabled === false || containingBarrier(state, source)) return [];
   const origin = exposurePosition(state, source);
   if (!origin) return [];
   const queue = [origin];
@@ -404,6 +410,7 @@ export function exposureTiles(
   return reached;
 }
 export function advanceExposure(state: GameState): GameState {
+  state = advanceVesselWear(state);
   const damage: SurfaceDamage[] = [];
   for (const source of state.environment.sources) {
     for (const position of exposureTiles(state, source)) {

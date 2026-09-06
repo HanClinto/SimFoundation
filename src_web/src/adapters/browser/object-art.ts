@@ -5,6 +5,7 @@ import {
 } from "../../simulation/objects";
 import type { GameState } from "../../simulation/state";
 import type { TilePosition } from "../../simulation/world";
+import { MATERIALS } from "../../simulation/materials";
 
 export function drawPhysicalObjects(
   context: CanvasRenderingContext2D,
@@ -16,7 +17,12 @@ export function drawPhysicalObjects(
 ): void {
   for (const item of state.objects.items) {
     const position = objectPosition(item, state.world.positions);
-    if (!position || item.location.kind === "carried") continue;
+    if (
+      !position ||
+      item.location.kind === "carried" ||
+      item.location.kind === "contained"
+    )
+      continue;
     const point = project(position);
     const kind = OBJECT_DEFINITIONS[item.kind].activity;
     const image = kind ? images.get(kind) : null;
@@ -26,7 +32,29 @@ export function drawPhysicalObjects(
       state.observations.objects[item.id]?.observedTick === state.tick
         ? 1
         : 0.45;
-    if (item.installed && image?.complete && image.naturalWidth > 0) {
+    if (item.kind === "vessel" && item.vessel) {
+      context.translate(point.x, point.y);
+      context.scale(zoom, zoom);
+      context.fillStyle = MATERIALS[item.vessel.material].color;
+      context.strokeStyle = "#35443e";
+      context.lineWidth = 2;
+      context.fillRect(-15, -22, 30, 20);
+      context.strokeRect(-15, -22, 30, 20);
+      context.fillStyle =
+        item.condition <= 0
+          ? "#c24e43"
+          : item.vessel.sealed
+            ? "#317d66"
+            : "#cfa74e";
+      context.fillRect(-16, -27, 32, 6);
+      context.strokeRect(-16, -27, 32, 6);
+      context.fillStyle = "#263b35";
+      context.fillRect(-11, -19, 3, 14);
+      context.fillRect(8, -19, 3, 14);
+      context.font = "bold 10px 'Courier New', monospace";
+      context.textAlign = "center";
+      context.fillText("V", 0, -7);
+    } else if (item.installed && image?.complete && image.naturalWidth > 0) {
       context.strokeStyle = "#526e5c";
       context.lineWidth = 1;
       for (const tile of objectFootprint(item, position)) {

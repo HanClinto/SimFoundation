@@ -68,7 +68,8 @@ export function createObjectsWindow(
   element.querySelector("[data-object-move]")!.addEventListener("click", () => {
     const item = selectedObject();
     if (!item || item.location.kind !== "ground") return;
-    const install = !OBJECT_DEFINITIONS[item.kind].stackable;
+    const install =
+      item.kind !== "vessel" && !OBJECT_DEFINITIONS[item.kind].stackable;
     const direction = orientation.value as ObjectOrientation;
     const count = Number(quantity.value);
     if (!Number.isInteger(count) || count < 1 || count > item.quantity) {
@@ -129,7 +130,11 @@ export function createObjectsWindow(
     .addEventListener("click", () => {
       const item = selectedObject();
       const position = item
-        ? objectPosition(item, displayed().game.world.positions)
+        ? objectPosition(
+            item,
+            displayed().game.world.positions,
+            displayed().game.objects,
+          )
         : null;
       if (position) locate(position);
     });
@@ -171,7 +176,9 @@ export function createObjectsWindow(
         !["completed", "cancelled"].includes(order.phase),
     );
     const job = state.jobs.find((job) => job.id === order?.jobId);
-    const position = item ? objectPosition(item, state.world.positions) : null;
+    const position = item
+      ? objectPosition(item, state.world.positions, state.objects)
+      : null;
     const rows = item
       ? [
           ["Definition", OBJECT_DEFINITIONS[item.kind].name],
@@ -182,9 +189,13 @@ export function createObjectsWindow(
             "State",
             item.location.kind === "carried"
               ? `Carried by ${state.personnel.find((person) => person.id === (item.location.kind === "carried" ? item.location.personId : ""))?.name}`
-              : item.installed
-                ? "Installed"
-                : "Packed / on ground",
+              : item.location.kind === "transit"
+                ? "Dispatched transport"
+                : item.location.kind === "contained"
+                  ? `Inside ${item.location.vesselId}`
+                  : item.installed
+                    ? "Installed"
+                    : "Packed / on ground",
           ],
           ["Location", position ? `${position.x}, ${position.y}` : "Unknown"],
           ["Orientation", item.orientation],

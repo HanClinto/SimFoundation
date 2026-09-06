@@ -1,4 +1,5 @@
 import { authorizeJob, type SiteJob } from "./jobs";
+import { vesselReservesTile } from "./vessel-work";
 import { isActiveSurfaceOrder } from "./environment";
 import { surfacesForTile } from "./materials";
 import type { GameState } from "./state";
@@ -143,6 +144,8 @@ export function validateLaboratoryPlacement(
     return "out-of-bounds";
   if (state.construction.blueprints.length >= 32) return "limit-reached";
   const tiles = laboratoryTiles(origin);
+  if (tiles.some((tile) => vesselReservesTile(state, tile.position)))
+    return "overlap";
   if (
     state.environment.orders.some(
       (order) =>

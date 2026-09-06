@@ -44,6 +44,7 @@ import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createStorageWindow } from "./storage-view";
 import { createExposureWindow } from "./exposure-view";
+import { createVesselWindow } from "./vessel-view";
 import scp999IconUrl from "./assets/site-999.svg";
 import { incidentResponse } from "./incident-response";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
@@ -134,6 +135,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="objects-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Objects and Supplies</span></button>
           <button class="subsystem-icon" type="button" data-open-window="storage-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Storage and Hauling</span></button>
           <button class="subsystem-icon" type="button" data-open-window="exposure-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Exposure Sources</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="vessel-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Vessels and Transport</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -142,12 +144,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Residents</dt><dd>1 assigned</dd></div>
-            <div><dt>Systems</dt><dd>14 available</dd></div>
+            <div><dt>Systems</dt><dd>15 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">14 systems</p>
+        <p class="status-bar-field">15 systems</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -672,6 +674,17 @@ const siteCamera = createSiteMap(
     }
     if (id === "SCP-999") windowManager.open("anomaly-window");
     else if (id.startsWith("object:")) {
+      if (
+        controller
+          .getSnapshot()
+          .game.objects.items.some(
+            (item) => item.id === id.slice(7) && item.kind === "vessel",
+          )
+      ) {
+        vesselView.select(id.slice(7), controller.getSnapshot());
+        windowManager.open("vessel-window");
+        return;
+      }
       objectsView.select(id.slice(7), controller.getSnapshot(), perspective);
       windowManager.open("objects-window");
     } else if (id.startsWith("camera-")) {
@@ -722,6 +735,31 @@ const exposureView = createExposureWindow(
     windowManager.open("objects-window");
   },
 );
+const vesselView = createVesselWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  (id) => {
+    objectsView.select(id, controller.getSnapshot(), "world");
+    windowManager.open("objects-window");
+  },
+);
+windowManager.register(vesselView.element, {
+  id: "vessel-window",
+  title: "Vessels and Transport",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 210, top: 60, width: 560, height: 680 },
+  defaultOpen: false,
+  minimumWidth: 340,
+  minimumHeight: 300,
+});
 windowManager.register(exposureView.element, {
   id: "exposure-window",
   title: "Exposure Sources",
@@ -1065,6 +1103,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 function render(snapshot: ControllerSnapshot): void {
   storageView.render(snapshot);
   exposureView.render(snapshot);
+  vesselView.render(snapshot);
   objectsView.render(snapshot);
   siteCamera.render(snapshot);
   engineeringView.render(snapshot);

@@ -1,5 +1,6 @@
 import PF from "pathfinding";
 import type { GameState } from "./state";
+import { vesselReservesTile } from "./vessel-work";
 import { isActiveSurfaceOrder } from "./environment";
 import { objectPosition, type PhysicalObject } from "./objects";
 import type { TileSurfaces } from "./materials";
@@ -218,6 +219,7 @@ export function observeSite(state: GameState): GameState {
       delete objects[id];
   }
   for (const object of state.objects.items) {
+    if (object.location.kind === "contained") continue;
     const position = objectPosition(object, state.world.positions);
     if (position && visible.has(position.y * map.width + position.x))
       objects[object.id] = {
@@ -322,6 +324,7 @@ export function cameraPlacementIssue(
   state: GameState,
   position: TilePosition,
 ): CameraPlacementCode | null {
+  if (vesselReservesTile(state, position)) return "occupied";
   if (
     !Number.isInteger(position.x) ||
     !Number.isInteger(position.y) ||

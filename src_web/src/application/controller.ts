@@ -6,6 +6,13 @@ import {
 } from "../simulation/observations";
 import { advanceSimulation } from "../simulation/tick";
 import {
+  craftVessel,
+  orderVesselAction,
+  cancelVesselWork,
+  type VesselAction,
+  type VesselCommandCode,
+} from "../simulation/vessel-work";
+import {
   setStorageArea,
   removeStorageArea,
   storagePlacementIssue,
@@ -68,6 +75,29 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  craftVessel(
+    position: TilePosition,
+    material: MaterialId,
+  ): { code: VesselCommandCode; snapshot: ControllerSnapshot };
+  previewVesselCraft(
+    position: TilePosition,
+    material: MaterialId,
+  ): VesselCommandCode | null;
+  orderVesselAction(
+    vesselId: string,
+    action: Exclude<VesselAction, "craft">,
+    cargoId?: string,
+    position?: TilePosition,
+    transport?: { mode: "helicopter" | "truck"; duration: number },
+  ): { code: VesselCommandCode; snapshot: ControllerSnapshot };
+  previewVesselAction(
+    vesselId: string,
+    action: Exclude<VesselAction, "craft">,
+    cargoId?: string,
+    position?: TilePosition,
+    transport?: { mode: "helicopter" | "truck"; duration: number },
+  ): VesselCommandCode | null;
+  cancelVesselWork(id: string): ControllerSnapshot;
   previewExposureSource(
     policy: ExposureSourcePolicy,
     id?: string,
@@ -182,6 +212,42 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    craftVessel(position, material) {
+      const result = craftVessel(state, position, material);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    previewVesselCraft(position, material) {
+      const code = craftVessel(state, position, material).code;
+      return code === "accepted" ? null : code;
+    },
+    orderVesselAction(vesselId, action, cargoId, position, transport) {
+      const result = orderVesselAction(
+        state,
+        vesselId,
+        action,
+        cargoId,
+        position,
+        transport,
+      );
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    previewVesselAction(vesselId, action, cargoId, position, transport) {
+      const code = orderVesselAction(
+        state,
+        vesselId,
+        action,
+        cargoId,
+        position,
+        transport,
+      ).code;
+      return code === "accepted" ? null : code;
+    },
+    cancelVesselWork(id) {
+      state = cancelVesselWork(state, id);
+      return publish();
+    },
     previewExposureSource(policy, id) {
       return exposureSourceIssue(state, policy, id);
     },

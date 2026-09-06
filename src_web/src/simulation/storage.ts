@@ -1,4 +1,6 @@
 import type { GameState } from "./state";
+import { objectEmits } from "./vessels";
+import { vesselReservesTile } from "./vessel-work";
 import { isActiveSurfaceOrder } from "./environment";
 import {
   OBJECT_DEFINITIONS,
@@ -28,12 +30,7 @@ export function storageAccepts(
   item: PhysicalObject,
 ): boolean {
   if (!area.accepts.includes(item.kind)) return false;
-  const emitting = state.environment.sources.some(
-    (source) =>
-      source.objectId === item.id &&
-      source.enabled !== false &&
-      source.dose > 0,
-  );
+  const emitting = objectEmits(state, item.id);
   return area.emission === "active"
     ? emitting
     : area.emission === "none"
@@ -263,6 +260,8 @@ export function storagePlacementIssue(
   if (!id && state.storage.areas.length >= 32) return "invalid-policy";
   const area = { ...policy, id: id ?? "preview" };
   const tiles = storageTiles(area);
+  if (tiles.some((position) => vesselReservesTile(state, position)))
+    return "occupied";
   if (
     state.environment.orders.some(
       (order) =>

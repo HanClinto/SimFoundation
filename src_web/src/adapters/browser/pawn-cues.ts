@@ -1,4 +1,5 @@
 import type { GameState } from "../../simulation/state";
+import { objectEmits } from "../../simulation/vessels";
 import { OBJECT_DEFINITIONS } from "../../simulation/objects";
 import { projectPsychology } from "../../simulation/personnel";
 import { scheduleAt } from "../../simulation/routines";
@@ -62,11 +63,7 @@ export function pawnCues(
       item.location.kind === "carried" && item.location.personId === personId,
   );
   const emitting =
-    carried &&
-    perspective === "world" &&
-    state.environment.sources.some(
-      (source) => source.objectId === carried.id && source.enabled !== false,
-    );
+    carried && perspective === "world" && objectEmits(state, carried.id);
   if (perspective === "world" && person.activity === "Opening door") {
     action = { icon: "tools", kind: "action", label: "Opening door" };
   } else if (emitting) {

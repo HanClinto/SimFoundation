@@ -1,5 +1,10 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import {
+  activeVesselOrder,
+  vesselCost,
+  vesselMaterialCommitted,
+} from "../../simulation/vessel-work";
+import {
   isActiveSurfaceOrder,
   surfaceOrderCost,
 } from "../../simulation/environment";
@@ -523,6 +528,7 @@ function constructionReferencesValid(state: GameState): boolean {
     return false;
   if (
     construction.availableMaterials +
+      vesselMaterialCommitted(state) +
       state.environment.spentMaterials +
       construction.blueprints.filter(({ status }) => status !== "cancelled")
         .length *
@@ -1195,6 +1201,16 @@ function isPhysicalObject(value: unknown): value is PhysicalObject {
     !isRecord(value.location)
   )
     return false;
+  if (
+    value.kind === "vessel"
+      ? !isRecord(value.vessel) ||
+        !isNonEmptyString(value.vessel.material) ||
+        !Object.hasOwn(MATERIALS, value.vessel.material) ||
+        typeof value.vessel.sealed !== "boolean" ||
+        value.installed
+      : value.vessel !== undefined
+  )
+    return false;
   if (value.location.kind === "consumed")
     return (
       value.quantity === 0 && !value.installed && value.reservedBy === null
@@ -1206,6 +1222,22 @@ function isPhysicalObject(value: unknown): value is PhysicalObject {
       value.quantity !== 1)
   )
     return false;
+  if (value.location.kind === "contained")
+    return (
+      value.kind !== "vessel" &&
+      !OBJECT_DEFINITIONS[value.kind as keyof typeof OBJECT_DEFINITIONS]
+        .stackable &&
+      !value.installed &&
+      value.reservedBy === null &&
+      isNonEmptyString(value.location.vesselId)
+    );
+  if (value.location.kind === "transit")
+    return (
+      value.kind === "vessel" &&
+      !value.installed &&
+      isNonEmptyString(value.location.orderId) &&
+      value.reservedBy !== null
+    );
   return value.location.kind === "ground"
     ? isTilePosition(value.location.position)
     : value.location.kind === "carried" &&
@@ -1217,6 +1249,29 @@ function isPhysicalObject(value: unknown): value is PhysicalObject {
 function objectsValid(state: GameState): boolean {
   const items = state.objects.items;
   if (new Set(items.map((item) => item.id)).size !== items.length) return false;
+  const contents = items.filter((item) => item.location.kind === "contained");
+  if (
+    new Set(
+      contents.map((item) =>
+        item.location.kind === "contained" ? item.location.vesselId : "",
+      ),
+    ).size !== contents.length
+  )
+    return false;
+  if (
+    contents.some(
+      (item) =>
+        item.location.kind === "contained" &&
+        !items.some(
+          (vessel) =>
+            item.location.kind === "contained" &&
+            vessel.id === item.location.vesselId &&
+            vessel.kind === "vessel" &&
+            vessel.location.kind !== "consumed",
+        ),
+    )
+  )
+    return false;
   if (
     items.some(
       (item) =>
@@ -1235,6 +1290,18 @@ function objectsValid(state: GameState): boolean {
   )
     return false;
   for (const item of items) {
+    if (
+      item.location.kind === "transit" &&
+      !state.vesselWork.orders.some(
+        (order) =>
+          item.location.kind === "transit" &&
+          order.id === item.location.orderId &&
+          order.phase === "transit" &&
+          order.vesselId === item.id &&
+          order.jobId === item.reservedBy,
+      )
+    )
+      return false;
     const routineCarrier = item.reservedBy?.startsWith("routine-")
       ? item.reservedBy.slice(8)
       : null;
@@ -1350,6 +1417,11 @@ function objectsValid(state: GameState): boolean {
     .reduce((sum, item) => sum + item.quantity, 0);
   if (unreserved !== state.construction.availableMaterials) return false;
   const materialUsed =
+    state.vesselWork.orders
+      .filter(
+        (order) => order.action === "craft" && order.phase === "completed",
+      )
+      .reduce((sum, order) => sum + vesselCost(order.material), 0) +
     state.environment.orders
       .filter((order) => order.phase === "completed")
       .reduce((sum, order) => sum + surfaceOrderCost(order), 0) +
@@ -1435,7 +1507,7 @@ function isStorageArea(value: unknown): value is StorageArea {
       value.accepts,
       (kind) =>
         isNonEmptyString(kind) && Object.hasOwn(OBJECT_DEFINITIONS, kind),
-      5,
+      6,
     ) &&
     value.accepts.length > 0 &&
     new Set(value.accepts).size === value.accepts.length &&
@@ -1486,6 +1558,141 @@ function storageReferencesValid(state: GameState): boolean {
   });
 }
 
+function vesselReferencesValid(state: GameState): boolean {
+  const orders = state.vesselWork.orders;
+  if (
+    state.vesselWork.nextId !== orders.length + 1 ||
+    state.jobs.filter((job) => job.id.startsWith("job-vessel-order-"))
+      .length !== orders.filter((order) => order.phase !== "cancelled").length
+  )
+    return false;
+  const crafted = orders.filter(
+    (order) => order.action === "craft" && order.phase === "completed",
+  );
+  if (
+    state.objects.items
+      .filter((item) => item.kind === "vessel")
+      .some(
+        (item) =>
+          !crafted.some(
+            (order) =>
+              order.vesselId === item.id &&
+              order.material === item.vessel?.material,
+          ),
+      )
+  )
+    return false;
+  return orders.every((order, index) => {
+    if (
+      order.id !== `vessel-order-${index + 1}` ||
+      order.jobId !== `job-${order.id}` ||
+      (order.action === "craft" && order.vesselId !== `vessel-${index + 1}`)
+    )
+      return false;
+    if (
+      order.action !== "craft" &&
+      ["collecting", "delivering"].includes(order.phase)
+    )
+      return false;
+    if (order.phase === "transit" && order.action !== "transport") return false;
+    if (order.action === "transport") {
+      if (
+        !order.transport ||
+        !["truck", "helicopter"].includes(order.transport.mode) ||
+        !isIntegerInRange(order.transport.duration, 30, 1440) ||
+        !(
+          order.transport.arrivesAt === null ||
+          isIntegerInRange(order.transport.arrivesAt, order.transport.duration)
+        )
+      )
+        return false;
+      if (
+        (order.phase === "working" || order.phase === "cancelled") !==
+        (order.transport.arrivesAt === null)
+      )
+        return false;
+    } else if (order.transport !== undefined) return false;
+    const job = state.jobs.find((job) => job.id === order.jobId);
+    const vessel = state.objects.items.find(
+      (item) => item.id === order.vesselId,
+    );
+    const cargo = state.objects.items.find((item) => item.id === order.cargoId);
+    if (order.phase === "cancelled")
+      return (
+        !job &&
+        !state.objects.items.some((item) => item.reservedBy === order.jobId)
+      );
+    if (!job) return false;
+    if (order.phase === "transit")
+      return (
+        job.status === "completed" &&
+        vessel?.location.kind === "transit" &&
+        vessel.location.orderId === order.id &&
+        vessel.reservedBy === job.id &&
+        !!vessel.vessel?.sealed
+      );
+    if (
+      job.status === "completed" &&
+      activeVesselOrder(order) &&
+      !order.blockedReason
+    )
+      return false;
+    if (order.phase === "completed")
+      return job.status === "completed" && vessel?.kind === "vessel";
+    if (order.action === "craft") {
+      if (
+        vessel ||
+        !cargo ||
+        cargo.kind !== "materials" ||
+        cargo.reservedBy !== order.jobId ||
+        cargo.quantity !== vesselCost(order.material)
+      )
+        return false;
+      if (
+        job.skillId !==
+        (order.phase === "working" ? "engineering" : "logistics")
+      )
+        return false;
+      if (order.phase === "delivering")
+        return (
+          cargo.location.kind === "carried" &&
+          job.requiredWorkerId === cargo.location.personId
+        );
+      return (
+        cargo.location.kind === "ground" &&
+        sameTile(cargo.location.position, job.workSite) &&
+        job.requiredWorkerId === null
+      );
+    }
+    if (
+      vessel?.kind !== "vessel" ||
+      vessel.reservedBy !== job.id ||
+      vessel.location.kind !== "ground" ||
+      job.requiredWorkerId !== null
+    )
+      return false;
+    if (order.action === "load")
+      return (
+        !!cargo &&
+        cargo.kind !== "vessel" &&
+        !OBJECT_DEFINITIONS[cargo.kind].stackable &&
+        !cargo.installed &&
+        cargo.location.kind === "ground" &&
+        cargo.reservedBy === job.id
+      );
+    if (order.action === "unload")
+      return (
+        cargo?.location.kind === "contained" &&
+        cargo.location.vesselId === vessel.id
+      );
+    return (
+      order.cargoId === null &&
+      job.skillId ===
+        (order.action === "transport" ? "logistics" : "engineering")
+    );
+  });
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -1527,6 +1734,44 @@ function isGameState(value: unknown): value is GameState {
     !isRoutineState(value.routines) ||
     !isObservationState(value.observations) ||
     !isEnvironment(value.environment) ||
+    !isRecord(value.vesselWork) ||
+    !isIntegerInRange(value.vesselWork.nextId, 1) ||
+    !isArrayOf(
+      value.vesselWork.orders,
+      (order) =>
+        isRecord(order) &&
+        isNonEmptyString(order.id) &&
+        isNonEmptyString(order.jobId) &&
+        isLiteral(order.action, [
+          "craft",
+          "load",
+          "unload",
+          "seal",
+          "open",
+          "transport",
+        ]) &&
+        isNonEmptyString(order.vesselId) &&
+        isNullableString(order.cargoId) &&
+        isNonEmptyString(order.material) &&
+        Object.hasOwn(MATERIALS, order.material) &&
+        isTilePosition(order.position) &&
+        isLiteral(order.phase, [
+          "collecting",
+          "delivering",
+          "working",
+          "transit",
+          "completed",
+          "cancelled",
+        ]) &&
+        (order.transport === undefined ||
+          (isRecord(order.transport) &&
+            isLiteral(order.transport.mode, ["truck", "helicopter"]) &&
+            isIntegerInRange(order.transport.duration, 30, 1440) &&
+            (order.transport.arrivesAt === null ||
+              isIntegerInRange(order.transport.arrivesAt, 0)))) &&
+        isNullableString(order.blockedReason),
+      1000,
+    ) ||
     !isRecord(value.storage) ||
     !isIntegerInRange(value.storage.nextId, 1) ||
     !isArrayOf(value.storage.areas, isStorageArea, 32) ||
@@ -1579,6 +1824,7 @@ function isGameState(value: unknown): value is GameState {
     observationReferencesValid(state) &&
     environmentReferencesValid(state) &&
     objectsValid(state) &&
+    vesselReferencesValid(state) &&
     storageReferencesValid(state) &&
     workerReferencesValid(state) &&
     (state.scp999.targetPersonId === null ||

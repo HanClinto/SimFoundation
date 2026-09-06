@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { vesselReservesTile } from "./vessel-work";
 import {
   storageContains,
   storageQuantity,
@@ -90,6 +91,9 @@ export function objectPlacementIssue(
   const footprint = install
     ? objectFootprint({ ...object, orientation }, destination)
     : [destination];
+  if (object.kind === "vessel" && install) return "invalid-position";
+  if (footprint.some((position) => vesselReservesTile(state, position)))
+    return "occupied";
   if (
     install &&
     state.storage.areas.some((area) =>

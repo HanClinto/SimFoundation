@@ -9,6 +9,7 @@ import {
   type ExposureSourcePolicy,
 } from "../../simulation/environment";
 import { surfaceAt } from "../../simulation/materials";
+import { containingBarrier } from "../../simulation/vessels";
 import { OBJECT_DEFINITIONS } from "../../simulation/objects";
 import type { TilePosition } from "../../simulation/world";
 import type { PlacementRequest } from "./placement";
@@ -247,24 +248,35 @@ export function createExposureWindow(
           ],
           ["Attachment", existing.objectId ?? "Fixed map position"],
           [
+            "Containment",
+            containingBarrier(snapshot.game, existing)?.id ??
+              "No intact sealed vessel",
+          ],
+          [
             "Host state",
             object
               ? object.location.kind === "carried"
                 ? `Carried by ${snapshot.game.personnel.find((person) => object.location.kind === "carried" && person.id === object.location.personId)?.name ?? "unknown carrier"}`
-                : object.installed
-                  ? "Installed"
-                  : object.location.kind === "ground"
-                    ? "Packed / on ground"
-                    : "Unavailable"
+                : object.location.kind === "contained"
+                  ? `Inside ${object.location.vesselId}`
+                  : object.location.kind === "transit"
+                    ? "In transport"
+                    : object.installed
+                      ? "Installed"
+                      : object.location.kind === "ground"
+                        ? "Packed / on ground"
+                        : "Unavailable"
               : "Not attached",
           ],
           [
             "State",
             existing.enabled === false
               ? "Disabled"
-              : position
-                ? "Emitting"
-                : "No host position",
+              : containingBarrier(snapshot.game, existing)
+                ? "Contained / source active"
+                : position
+                  ? "Emitting"
+                  : "No host position",
           ],
           [
             "Current reach",

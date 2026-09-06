@@ -1,7 +1,15 @@
 import type { TilePosition } from "./world";
 import type { RoutineStation } from "./routines";
+import type { MaterialId } from "./materials";
 
 export const OBJECT_DEFINITIONS = {
+  vessel: {
+    name: "Containment vessel",
+    width: 1,
+    height: 1,
+    activity: null,
+    stackable: false,
+  },
   bed: {
     name: "Bed",
     width: 1,
@@ -43,6 +51,8 @@ export type ObjectOrientation = "north" | "east" | "south" | "west";
 export type ObjectLocation =
   | { readonly kind: "ground"; readonly position: TilePosition }
   | { readonly kind: "carried"; readonly personId: string }
+  | { readonly kind: "contained"; readonly vesselId: string }
+  | { readonly kind: "transit"; readonly orderId: string }
   | { readonly kind: "consumed" };
 export interface PhysicalObject {
   readonly id: string;
@@ -53,6 +63,7 @@ export interface PhysicalObject {
   readonly installed: boolean;
   readonly location: ObjectLocation;
   readonly reservedBy: string | null;
+  readonly vessel?: { readonly material: MaterialId; readonly sealed: boolean };
 }
 export interface ObjectStore {
   readonly nextId: number;
@@ -148,7 +159,19 @@ export function objectFootprint(
 export function objectPosition(
   object: PhysicalObject,
   positions: Readonly<Record<string, TilePosition>>,
+  store?: ObjectStore,
 ): TilePosition | null {
+  if (object.location.kind === "contained") {
+    const vesselId = object.location.vesselId;
+    const vessel = store?.items.find(
+      (item) => item.id === vesselId && item.kind === "vessel",
+    );
+    return vessel?.location.kind === "ground"
+      ? vessel.location.position
+      : vessel?.location.kind === "carried"
+        ? (positions[vessel.location.personId] ?? null)
+        : null;
+  }
   return object.location.kind === "ground"
     ? object.location.position
     : object.location.kind === "carried"

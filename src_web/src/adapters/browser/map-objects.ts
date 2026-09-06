@@ -77,6 +77,7 @@ export function mapObjects(
           (observation) => observation.object,
         )
     ).flatMap((item) => {
+      if (item.location.kind === "contained") return [];
       const position = objectPosition(item, state.world.positions);
       return position
         ? [

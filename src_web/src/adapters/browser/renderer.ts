@@ -11,6 +11,7 @@ import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { cameraInstalled } from "../../simulation/observations";
 import { laboratoryTiles } from "../../simulation/construction";
 import { exposureTiles } from "../../simulation/environment";
+import { containingBarrier } from "../../simulation/vessels";
 import { exposureMapPosition, mapObjects } from "./map-objects";
 import {
   DEFAULT_MAP_OVERLAYS,
@@ -438,6 +439,14 @@ export function renderSite(
   for (const source of overlays.objects
     ? snapshot.game.environment.sources
     : []) {
+    if (
+      source.objectId &&
+      snapshot.game.objects.items.some(
+        (item) =>
+          item.id === source.objectId && item.location.kind === "contained",
+      )
+    )
+      continue;
     const position = exposureMapPosition(
       snapshot.game,
       source,
@@ -465,7 +474,11 @@ export function renderSite(
       context.font = "bold 10px 'Courier New', monospace";
       context.fillStyle = "#172e25";
       context.fillText(
-        source.enabled === false ? "OFF" : source.kind.toUpperCase(),
+        source.enabled === false
+          ? "OFF"
+          : !recorded && containingBarrier(snapshot.game, source)
+            ? "SEALED"
+            : source.kind.toUpperCase(),
         0,
         -16,
       );

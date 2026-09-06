@@ -3,6 +3,7 @@ import { closeAutomaticDoors } from "./world";
 import { objectFootprint } from "./objects";
 import { discoverStorageWork, refreshMealSummary } from "./storage";
 import { advanceObjectWork } from "./object-work";
+import { advanceVesselWork } from "./vessel-work";
 import {
   advanceExposure,
   advanceSurfaceWork,
@@ -74,17 +75,19 @@ export function advanceSimulation(state: GameState): GameState {
         observeStructuralDamage(
           observeSite(
             advanceExposure(
-              advanceObjectWork(
-                advanceSurfaceWork(
-                  advanceConstruction({
-                    ...state,
-                    tick,
-                    gameMinute: state.gameMinute,
-                    jobs: jobResult.jobs,
-                    personnel: scp999Result.personnel,
-                    scp999: scp999Result.anomaly,
-                    world: scp999Result.world,
-                  }),
+              advanceVesselWork(
+                advanceObjectWork(
+                  advanceSurfaceWork(
+                    advanceConstruction({
+                      ...state,
+                      tick,
+                      gameMinute: state.gameMinute,
+                      jobs: jobResult.jobs,
+                      personnel: scp999Result.personnel,
+                      scp999: scp999Result.anomaly,
+                      world: scp999Result.world,
+                    }),
+                  ),
                 ),
               ),
             ),
