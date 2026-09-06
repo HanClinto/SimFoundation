@@ -2,7 +2,7 @@ import type { ControllerSnapshot } from "../../application/controller";
 import { drawEmissionEffects, emissionMotes } from "./emission-effects";
 import { type TilePosition } from "../../simulation/world";
 import { observedSnapshot } from "./observed-view";
-import workerUrl from "./assets/site-worker.svg";
+import { pawnMapSprite } from "./pawn-art";
 import scp999Url from "./assets/site-999.svg";
 import bedUrl from "./assets/station-bed.svg";
 import mealUrl from "./assets/station-meal.svg";
@@ -102,7 +102,7 @@ function drawTile(
   context.stroke();
 }
 
-let worker: HTMLImageElement | null = null;
+const workers = new Map<string, HTMLImageElement>();
 let scp999: HTMLImageElement | null = null;
 const stationImages = new Map<string, HTMLImageElement>();
 
@@ -119,12 +119,9 @@ export function renderSite(
   const recorded = camera.perspective === "recorded";
   const overlays = camera.overlays ?? DEFAULT_MAP_OVERLAYS;
   if (recorded) snapshot = observedSnapshot(snapshot);
-  if (!worker || !scp999) {
-    worker = new Image();
+  if (!scp999) {
     scp999 = new Image();
-    worker.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
     scp999.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
-    worker.src = workerUrl;
     scp999.src = scp999Url;
     for (const [kind, url] of [
       ["sleep", bedUrl],
@@ -588,7 +585,13 @@ export function renderSite(
       );
       context.stroke();
     }
-    const image = id === "SCP-999" ? scp999 : worker;
+    let image = id === "SCP-999" ? scp999 : workers.get(id);
+    if (!image) {
+      image = new Image();
+      image.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
+      image.src = pawnMapSprite(id);
+      workers.set(id, image);
+    }
     const spriteWidth = (id === "SCP-999" ? 52 : 24) * camera.zoom;
     const spriteHeight = (id === "SCP-999" ? 30 : 36) * camera.zoom;
     if (live && image.complete && image.naturalWidth > 0)

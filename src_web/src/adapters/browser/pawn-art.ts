@@ -1,6 +1,8 @@
 import figureSource from "./assets/personnel-figure.svg?raw";
+import mapSource from "./assets/site-worker.svg?raw";
 
 const portraits = new Map<string, string>();
+const mapSprites = new Map<string, string>();
 const profiles = [
   { skin: "#d7ad89", shade: "#b88969", hair: "#51463d", uniform: "#c0d1c4" },
   { skin: "#bd8c69", shade: "#976648", hair: "#5e4936", uniform: "#b6c1aa" },
@@ -10,9 +12,7 @@ const profiles = [
   { skin: "#c59e80", shade: "#9f765c", hair: "#443f3a", uniform: "#cdc5a7" },
 ];
 
-export function pawnPortrait(personId: string): string {
-  const cached = portraits.get(personId);
-  if (cached) return cached;
+function pawnProfile(personId: string) {
   const index = [
     "person-mara-voss",
     "person-caleb-ward",
@@ -21,7 +21,26 @@ export function pawnPortrait(personId: string): string {
     "person-jon-bell",
     "person-emil-novak",
   ].indexOf(personId);
-  const profile = profiles[index >= 0 ? index : 0]!;
+  return profiles[index >= 0 ? index : 0]!;
+}
+
+export function pawnMapSprite(personId: string): string {
+  const cached = mapSprites.get(personId);
+  if (cached) return cached;
+  const profile = pawnProfile(personId);
+  const document = new DOMParser().parseFromString(mapSource, "image/svg+xml");
+  document.getElementById("head")!.setAttribute("fill", profile.skin);
+  document.getElementById("hair")!.setAttribute("fill", profile.hair);
+  document.getElementById("uniform")!.setAttribute("fill", profile.uniform);
+  const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(document))}`;
+  mapSprites.set(personId, url);
+  return url;
+}
+
+export function pawnPortrait(personId: string): string {
+  const cached = portraits.get(personId);
+  if (cached) return cached;
+  const profile = pawnProfile(personId);
   const document = new DOMParser().parseFromString(
     figureSource,
     "image/svg+xml",

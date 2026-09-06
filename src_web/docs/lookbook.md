@@ -14,6 +14,8 @@ The player is not looking at a game wrapped in an operating-system skin. The des
 - Several windows should be useful at once. The interface defaults toward comparison and arrangement rather than one full-screen view replacing another.
 - Window position, size, open state, view mode, focus, and stacking persist as presentation preferences outside simulation state.
 
+Personnel retain the same skin, hair, and uniform palette across their map sprite, inline selection portrait, Day Planner, and dossier. These colors identify the person; they do not encode hidden health, diagnosis, or an unimplemented equipment loadout.
+
 Temporary expedition maps and future facilities use the same pattern. They are additional inspectable simulation objects, not routes in a single-page application.
 
 ## Historical Touchstones

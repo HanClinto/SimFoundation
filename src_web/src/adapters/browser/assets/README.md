@@ -17,6 +17,8 @@ Pawn action and outward-mood glyphs are original 9x9 pixel patterns in `../pawn-
 
 `site-worker.svg` and `site-999.svg` are original SVG artwork created for SimFoundation by GitHub Copilot on 2026-09-05. Source: the editable SVG files in this directory. License: CC BY-SA 3.0. Modification history: initial authored personnel and SCP-999 surveillance markers. They contain no copied prototype or third-party artwork. SCP-999 is based on the [SCP Wiki article](https://scp-wiki.wikidot.com/scp-999) by ProfSnider, under CC BY-SA 3.0. These provisional map markers are not the future generic OpenIsoGfx equipment rig.
 
+Runtime personnel variants of `site-worker.svg` recolor the original head, hair, and uniform groups with the same six palettes used by `pawn-art.ts` dossier portraits. Modification author: GitHub Copilot, 2026-09-05. The geometry and CC BY-SA 3.0 license are unchanged; no external artwork or new outfit/equipment state is introduced. Generated SVG data URLs and loaded canvas images are cached per person.
+
 On 2026-09-05, the SCP-999 marker was revised against source revision 40: a broad translucent oblate dome, without a permanent face. Dimensions remain a stylized approximation; see the local source catalog and adaptation notes under `docs/references/`.
 
 ## Personnel Reference Illustrations

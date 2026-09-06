@@ -9,7 +9,7 @@ import { pawnCues } from "./pawn-cues";
 import { observedSnapshot } from "./observed-view";
 import { mapObjects } from "./map-objects";
 import type { MapPerspective } from "./map-settings";
-import workerUrl from "./assets/site-worker.svg";
+import { pawnPortrait } from "./pawn-art";
 import residentUrl from "./assets/site-999.svg";
 
 export function createMapSelection(
@@ -91,7 +91,10 @@ export function createMapSelection(
     const source = state.environment.sources.find((source) => source.id === id);
     const resident = id === "SCP-999" && !!entry;
     portrait.hidden = !(person && entry) && !resident;
-    if (!portrait.hidden) portrait.src = resident ? residentUrl : workerUrl;
+    if (!portrait.hidden) {
+      const portraitUrl = resident ? residentUrl : pawnPortrait(person!.id);
+      if (portrait.src !== portraitUrl) portrait.src = portraitUrl;
+    }
     name.textContent =
       entry?.name ??
       (id?.startsWith("tile:")

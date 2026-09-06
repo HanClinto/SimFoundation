@@ -8,6 +8,8 @@ afterEach(() => vi.unstubAllGlobals());
 it("shows needs only in World view and routes object actions without directly moving inventory", () => {
   const window = new JSDOM("<!doctype html><body></body>").window;
   vi.stubGlobal("document", window.document);
+  vi.stubGlobal("DOMParser", window.DOMParser);
+  vi.stubGlobal("XMLSerializer", window.XMLSerializer);
   const controller = createController(createInitialState());
   const inspect = vi.fn();
   const move = vi.fn();
