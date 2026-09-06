@@ -172,6 +172,7 @@ app.innerHTML = `
       <button type="button" data-camera-action="in" title="Zoom in" aria-label="Zoom in">+</button>
       <button type="button" data-camera-action="home" title="Center on Site 828" aria-label="Center on Site 828">&#8962;</button>
       <select data-camera-entity aria-label="Focus personnel"></select>
+      <div class="field-row"><input id="map-follow" type="checkbox" data-camera-follow disabled/><label for="map-follow">Follow</label></div>
       <button type="button" data-camera-action="inspect" disabled>Open Record</button>
       <details class="map-layers"><summary>Layers</summary><div class="map-layer-panel">
         <fieldset><legend>Perspective</legend><div class="field-row"><input id="map-world" type="radio" name="map-perspective" data-map-perspective="world" checked/><label for="map-world">World</label><input id="map-recorded" type="radio" name="map-perspective" data-map-perspective="recorded"/><label for="map-recorded">Recorded</label></div></fieldset>

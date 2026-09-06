@@ -53,6 +53,10 @@ export function createSiteMap(
   const entitySelect = element.querySelector<HTMLSelectElement>(
     "[data-camera-entity]",
   )!;
+  const followControl = element.querySelector<HTMLInputElement>(
+    "[data-camera-follow]",
+  );
+  let following = false;
   const status = element.querySelector<HTMLElement>("[data-camera-status]")!;
   const zoomLabel =
     element.querySelector<HTMLOutputElement>("[data-camera-zoom]")!;
@@ -137,6 +141,13 @@ export function createSiteMap(
     }
     entitySelect.value = camera.selectedId ?? "";
     const selected = objects.find((object) => object.id === camera.selectedId);
+    if (!selected || placement) following = false;
+    if (following && selected)
+      camera = { ...camera, center: selected.position };
+    if (followControl) {
+      followControl.checked = following;
+      followControl.disabled = !selected || !!placement;
+    }
     const selectedCues = selected
       ? pawnCues(displayed().game, selected.id, camera.perspective ?? "world")
       : [];
@@ -179,7 +190,8 @@ export function createSiteMap(
         : [];
     updateTooltip();
   }
-  function focus(position: TilePosition) {
+  function focus(position: TilePosition, preserveFollow = false) {
+    if (!preserveFollow) following = false;
     camera = {
       ...camera,
       center: {
@@ -209,10 +221,13 @@ export function createSiteMap(
       canvas.clientWidth,
       canvas.clientHeight,
     );
-    focus({
-      x: camera.center.x + before.x - after.x,
-      y: camera.center.y + before.y - after.y,
-    });
+    focus(
+      {
+        x: camera.center.x + before.x - after.x,
+        y: camera.center.y + before.y - after.y,
+      },
+      true,
+    );
   }
   function cancelPlacement() {
     placement = null;
@@ -229,6 +244,7 @@ export function createSiteMap(
   }
   element.addEventListener("change", (event) => {
     const target = event.target as HTMLInputElement;
+    if (target === followControl) following = target.checked;
     if (target.dataset.mapBase)
       camera = {
         ...camera,
@@ -273,7 +289,7 @@ export function createSiteMap(
     const object = mapObjects(displayed().game, camera.perspective).find(
       (object) => object.id === camera.selectedId,
     );
-    if (object) focus(object.position);
+    if (object) focus(object.position, true);
     else render(current);
   });
   element.addEventListener("click", (event) => {

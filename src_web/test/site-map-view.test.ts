@@ -237,6 +237,119 @@ it("combines independent layers without changing pinned placement and cancels wi
   expect(open).toHaveBeenLastCalledWith("storage:storage-1", "world");
 });
 
+it("follows only the selected perspective's position and releases the camera for manual navigation", () => {
+  const window = new JSDOM(
+    '<section><select data-camera-entity></select><input type="checkbox" data-camera-follow/><input type="radio" data-map-perspective="recorded"/><span data-camera-status></span><output data-camera-zoom></output><button data-camera-action="inspect"></button><div data-placement-bar><strong data-placement-label></strong><span data-placement-feedback></span><button data-camera-action="confirm"></button><button data-camera-action="cancel"></button></div><canvas></canvas></section>',
+  ).window;
+  for (const name of ["document", "Element", "Option"] as const)
+    vi.stubGlobal(name, window[name]);
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+    },
+  );
+  const root = document.querySelector("section")!;
+  const canvas = root.querySelector("canvas")!;
+  Object.defineProperties(canvas, {
+    clientWidth: { value: 760 },
+    clientHeight: { value: 420 },
+  });
+  const controller = createController(createInitialState());
+  const initial = controller.advance();
+  const view = createSiteMap(canvas, root, controller, vi.fn());
+  const follow = root.querySelector<HTMLInputElement>("[data-camera-follow]")!;
+  const select = root.querySelector<HTMLSelectElement>("[data-camera-entity]")!;
+  const personId = "person-mara-voss";
+  const camera = () => vi.mocked(renderSite).mock.calls.at(-1)![2]!;
+  expect(follow.disabled).toBe(true);
+  select.value = personId;
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  follow.click();
+  const moved = {
+    ...initial,
+    game: {
+      ...initial.game,
+      world: {
+        ...initial.game.world,
+        positions: {
+          ...initial.game.world.positions,
+          [personId]: { x: 60, y: 58 },
+        },
+      },
+    },
+  };
+  view.render(moved);
+  expect(camera().center).toEqual({ x: 60, y: 58 });
+  canvas.dispatchEvent(new window.KeyboardEvent("keydown", { key: "+" }));
+  expect(follow.checked).toBe(true);
+  expect(camera().center).toEqual({ x: 60, y: 58 });
+  canvas.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "ArrowRight" }),
+  );
+  expect(follow.checked).toBe(false);
+  const manualCenter = camera().center;
+  view.render(initial);
+  expect(camera().center).toEqual(manualCenter);
+  select.value = "object:spare-break-seat";
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  follow.click();
+  const carried: typeof initial = {
+    ...moved,
+    game: {
+      ...moved.game,
+      objects: {
+        ...moved.game.objects,
+        items: moved.game.objects.items.map((object) =>
+          object.id === "spare-break-seat"
+            ? { ...object, location: { kind: "carried", personId } }
+            : object,
+        ),
+      },
+    },
+  };
+  view.render(carried);
+  expect(camera().center).toEqual(carried.game.world.positions[personId]);
+  view.render({
+    ...carried,
+    game: {
+      ...carried.game,
+      objects: {
+        ...carried.game.objects,
+        items: carried.game.objects.items.filter(
+          (object) => object.id !== "spare-break-seat",
+        ),
+      },
+    },
+  });
+  expect(follow.checked).toBe(false);
+  expect(follow.disabled).toBe(true);
+  view.render(initial);
+  root
+    .querySelector('[data-map-perspective="recorded"]')!
+    .dispatchEvent(new window.Event("change", { bubbles: true }));
+  expect(follow.disabled).toBe(true);
+  select.value = personId;
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  follow.click();
+  view.render(moved);
+  expect(camera().center).toEqual(
+    initial.game.observations.entities[personId]!.position,
+  );
+  expect(camera().center).not.toEqual(moved.game.world.positions[personId]);
+  view.beginPlacement({
+    label: "Placement",
+    origin: { x: 65, y: 68 },
+    footprint: (position) => [{ position }],
+    validate: () => null,
+    confirm: () => ({ accepted: true, message: "Queued", snapshot: initial }),
+  });
+  expect(follow.checked).toBe(false);
+  expect(follow.disabled).toBe(true);
+  expect(camera().center).toEqual({ x: 65, y: 68 });
+  expect(controller.getSnapshot()).toEqual(initial);
+});
+
 it("updates the inline selection panel from a single map selection and delegates Move", () => {
   const window = new JSDOM(
     '<section><select data-camera-entity></select><span data-camera-status></span><output data-camera-zoom></output><button data-camera-action="inspect"></button><div data-map-selection></div><div data-placement-bar><strong data-placement-label></strong><span data-placement-feedback></span><button data-camera-action="confirm"></button><button data-camera-action="cancel"></button></div><canvas></canvas></section>',

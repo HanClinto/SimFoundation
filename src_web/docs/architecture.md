@@ -90,6 +90,8 @@ The Camera Feed projects map tiles and actual occupant positions, with browser-o
 
 `map-selection.ts` is the fixed-height inline selection surface. It uses raw World state or `observedSnapshot` projections, exposes live needs only in World mode, and routes Inspect/Move to existing owners. Quick object movement reuses the object inspector's placement routine, including confirmation and validation, rather than relocating inventory. Door policy changes use the controller's protected command; Recorded edits are disabled. The panel is updated only on selection/simulation render, not cosmetic animation frames, and it clears its actions during placement.
 
+Camera following is transient browser state in `site-map-view.ts`, not a simulation field. Each normal render resolves the selection through `mapObjects(displayed().game, perspective)` before moving the center, so unseen Recorded movement cannot affect framing. Zoom retains following; manual navigation, explicit focus, placement, or a missing projected selection clears it. A carried object's position is resolved by the existing object projection, with no duplicate transport logic.
+
 ### Laboratory Annex Construction
 
 The first construction slice uses one fixed 9x7 laboratory annex rather than a general tile editor. `construction` stores available material kits, a stockpile position, stable blueprint numbering, and a bounded register. Placement validates the complete grass footprint, entrance, occupancy, neighboring reservations, reachability, and stock. Authorizing a blueprint atomically reserves 40 units from the initial 160; cancellation refunds exactly once and is permitted only before dispatch.
