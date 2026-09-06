@@ -1,7 +1,7 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import {
   activeVesselOrder,
-  vesselCost,
+  vesselOrderCost,
   vesselMaterialCommitted,
 } from "../../simulation/vessel-work";
 import {
@@ -1418,10 +1418,8 @@ function objectsValid(state: GameState): boolean {
   if (unreserved !== state.construction.availableMaterials) return false;
   const materialUsed =
     state.vesselWork.orders
-      .filter(
-        (order) => order.action === "craft" && order.phase === "completed",
-      )
-      .reduce((sum, order) => sum + vesselCost(order.material), 0) +
+      .filter((order) => order.phase === "completed")
+      .reduce((sum, order) => sum + vesselOrderCost(order), 0) +
     state.environment.orders
       .filter((order) => order.phase === "completed")
       .reduce((sum, order) => sum + surfaceOrderCost(order), 0) +
@@ -1590,7 +1588,7 @@ function vesselReferencesValid(state: GameState): boolean {
     )
       return false;
     if (
-      order.action !== "craft" &&
+      !["craft", "repair"].includes(order.action) &&
       ["collecting", "delivering"].includes(order.phase)
     )
       return false;
@@ -1617,6 +1615,11 @@ function vesselReferencesValid(state: GameState): boolean {
       (item) => item.id === order.vesselId,
     );
     const cargo = state.objects.items.find((item) => item.id === order.cargoId);
+    if (
+      order.action === "repair" &&
+      (vessel?.kind !== "vessel" || vessel.vessel?.material !== order.material)
+    )
+      return false;
     if (order.phase === "cancelled")
       return (
         !job &&
@@ -1639,13 +1642,18 @@ function vesselReferencesValid(state: GameState): boolean {
       return false;
     if (order.phase === "completed")
       return job.status === "completed" && vessel?.kind === "vessel";
-    if (order.action === "craft") {
+    if (order.action === "craft" || order.action === "repair") {
       if (
-        vessel ||
+        (order.action === "craft"
+          ? !!vessel
+          : !vessel ||
+            vessel.reservedBy !== order.jobId ||
+            vessel.location.kind !== "ground" ||
+            !sameTile(vessel.location.position, order.position)) ||
         !cargo ||
         cargo.kind !== "materials" ||
         cargo.reservedBy !== order.jobId ||
-        cargo.quantity !== vesselCost(order.material)
+        cargo.quantity !== vesselOrderCost(order)
       )
         return false;
       if (
@@ -1744,6 +1752,7 @@ function isGameState(value: unknown): value is GameState {
         isNonEmptyString(order.jobId) &&
         isLiteral(order.action, [
           "craft",
+          "repair",
           "load",
           "unload",
           "seal",

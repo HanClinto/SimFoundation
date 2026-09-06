@@ -7,6 +7,66 @@ import { createExposureWindow } from "../src/adapters/browser/exposure-view";
 import type { PlacementRequest } from "../src/adapters/browser/placement";
 
 afterEach(() => vi.unstubAllGlobals());
+it("repairs an empty case through delivered supplies and reports why repair is unavailable", () => {
+  const window = new JSDOM("<!doctype html><body></body>").window;
+  vi.stubGlobal("document", window.document);
+  vi.stubGlobal("Option", window.Option);
+  const controller = createController(createInitialState());
+  controller.craftVessel({ x: 66, y: 65 }, "steel");
+  for (
+    let tick = 0;
+    tick < 200 &&
+    controller.getSnapshot().game.vesselWork.orders[0]!.phase !== "completed";
+    tick += 1
+  )
+    controller.advance();
+  const view = createVesselWindow(
+    document.body,
+    controller,
+    vi.fn(),
+    vi.fn(),
+    vi.fn(),
+  );
+  view.select("vessel-1", controller.getSnapshot());
+  const repair = view.element.querySelector<HTMLButtonElement>(
+    "[data-vessel-repair]",
+  )!;
+  expect(repair.disabled).toBe(true);
+  expect(repair.title).toBe("Case is fully intact.");
+  const initial = controller.getSnapshot().game;
+  view.render(
+    controller.replaceState({
+      ...initial,
+      objects: {
+        ...initial.objects,
+        items: initial.objects.items.map((item) =>
+          item.id === "vessel-1" ? { ...item, condition: 0 } : item,
+        ),
+      },
+    }),
+  );
+  expect(repair.disabled).toBe(false);
+  expect(repair.textContent).toContain("8 units");
+  repair.click();
+  expect(controller.getSnapshot().game.construction.availableMaterials).toBe(
+    136,
+  );
+  expect(repair.disabled).toBe(true);
+  for (
+    let tick = 0;
+    tick < 200 &&
+    controller.getSnapshot().game.vesselWork.orders.at(-1)!.phase !==
+      "completed";
+    tick += 1
+  )
+    view.render(controller.advance());
+  expect(
+    controller
+      .getSnapshot()
+      .game.objects.items.find((item) => item.id === "vessel-1")!.condition,
+  ).toBe(100);
+  expect(repair.title).toBe("Case is fully intact.");
+});
 it("fabricates by preview and exposes physical loading, sealing and scheduled deposit controls", () => {
   const window = new JSDOM("<!doctype html><body></body>").window;
   vi.stubGlobal("document", window.document);

@@ -23,6 +23,7 @@ import { storageContains } from "./storage";
 
 export type VesselAction =
   | "craft"
+  | "repair"
   | "load"
   | "unload"
   | "seal"
@@ -81,13 +82,19 @@ export function vesselReservesTile(
 export function vesselCost(material: MaterialId): number {
   return MATERIALS[material].cost * 4;
 }
+export function vesselOrderCost(
+  order: Pick<VesselOrder, "action" | "material">,
+): number {
+  return order.action === "craft"
+    ? vesselCost(order.material)
+    : order.action === "repair"
+      ? MATERIALS[order.material].cost * 2
+      : 0;
+}
 export function vesselMaterialCommitted(state: GameState): number {
   return state.vesselWork.orders.reduce(
     (sum, order) =>
-      sum +
-      (order.action === "craft" && order.phase !== "cancelled"
-        ? vesselCost(order.material)
-        : 0),
+      sum + (order.phase !== "cancelled" ? vesselOrderCost(order) : 0),
     0,
   );
 }
@@ -165,7 +172,7 @@ function jobFor(
 ): SiteJob {
   return {
     id: order.jobId,
-    title: `${order.action === "craft" ? "Collect vessel materials" : `${order.action} containment vessel`}`,
+    title: `${order.action === "craft" || order.action === "repair" ? "Collect vessel materials" : `${order.action} containment vessel`}`,
     description: "Physical vessel work",
     skillId,
     priority: 50,
@@ -286,10 +293,74 @@ export function orderVesselAction(
   const position =
     action === "unload" || action === "transport" ? destination : origin;
   if (
-    !["load", "unload", "seal", "open", "transport"].includes(action) ||
+    !["load", "unload", "seal", "open", "transport", "repair"].includes(
+      action,
+    ) ||
     !position
   )
     return { state, code: "invalid-cargo" };
+  if (action === "repair") {
+    if (vessel.vessel.sealed) return { state, code: "sealed" };
+    if (content) return { state, code: "invalid-cargo" };
+    if (vessel.condition >= 100) return { state, code: "busy" };
+    const id = `vessel-order-${state.vesselWork.nextId}`;
+    const jobId = `job-${id}`;
+    const material = vessel.vessel.material;
+    const cost = vesselOrderCost({ action, material });
+    if (state.construction.availableMaterials < cost)
+      return { state, code: "insufficient-materials" };
+    const supply = reserveSupply(
+      state.objects,
+      "materials",
+      cost,
+      state.construction.stockpile,
+      jobId,
+      true,
+    );
+    const materials = supply.store.items.find(
+      (item) => item.id === supply.objectId,
+    );
+    if (!materials || materials.location.kind !== "ground")
+      return { state, code: "insufficient-materials" };
+    const collection = materials.location.position;
+    if (
+      !neighbors(origin).some(
+        (tile) => findRoute(state.world.map, collection, tile) !== null,
+      )
+    )
+      return { state, code: "unreachable" };
+    const order: VesselOrder = {
+      id,
+      jobId,
+      action,
+      vesselId,
+      cargoId: materials.id,
+      material,
+      position: { ...origin },
+      phase: "collecting",
+      blockedReason: null,
+    };
+    return {
+      code: "accepted",
+      state: addOrder(
+        {
+          ...state,
+          objects: {
+            ...supply.store,
+            items: supply.store.items.map((item) =>
+              item.id === vessel.id ? { ...item, reservedBy: jobId } : item,
+            ),
+          },
+          construction: {
+            ...state.construction,
+            availableMaterials: state.construction.availableMaterials - cost,
+          },
+        },
+        order,
+        jobFor(state, order, collection, "logistics"),
+      ),
+    };
+  }
   if (action === "transport") {
     if (
       !transport ||
@@ -470,11 +541,11 @@ export function advanceVesselWork(state: GameState): GameState {
         candidate.id === job.id
           ? {
               ...job,
-              title: `Fabricate ${MATERIALS[order.material].name.toLowerCase()} vessel`,
+              title: `${order.action === "repair" ? "Repair" : "Fabricate"} ${MATERIALS[order.material].name.toLowerCase()} vessel`,
               skillId: "engineering",
               status: "available",
               progress: 0,
-              requiredProgress: 48,
+              requiredProgress: order.action === "repair" ? 32 : 48,
               completedTick: null,
               assignedPersonId: null,
               requiredWorkerId: null,
@@ -483,7 +554,47 @@ export function advanceVesselWork(state: GameState): GameState {
       );
       return { ...order, phase: "working", blockedReason: null };
     }
-    if (order.action === "craft") {
+    if (order.action === "repair") {
+      const vessel = objects.items.find((item) => item.id === order.vesselId);
+      if (
+        !vessel?.vessel ||
+        vessel.vessel.sealed ||
+        vessel.location.kind !== "ground" ||
+        vessel.reservedBy !== job.id ||
+        Math.abs(origin.x - vessel.location.position.x) +
+          Math.abs(origin.y - vessel.location.position.y) >
+          1 ||
+        objects.items.some(
+          (item) =>
+            item.location.kind === "contained" &&
+            item.location.vesselId === vessel.id,
+        )
+      )
+        return {
+          ...order,
+          blockedReason:
+            "Repair requires an empty open case and a worker at the vessel.",
+        };
+      if (!cargo)
+        return {
+          ...order,
+          blockedReason: "Reserved repair materials missing.",
+        };
+      const consumed = consumeObject(objects, cargo.id, job.id, origin);
+      if (consumed === objects)
+        return {
+          ...order,
+          blockedReason: "Repair materials must be delivered to the work face.",
+        };
+      objects = {
+        ...consumed,
+        items: consumed.items.map((item) =>
+          item.id === vessel.id
+            ? { ...item, condition: 100, reservedBy: null }
+            : item,
+        ),
+      };
+    } else if (order.action === "craft") {
       const issue = vesselPlacementIssue(
         { ...state, objects },
         order.position,
@@ -664,8 +775,7 @@ export function cancelVesselWork(state: GameState, id: string): GameState {
     construction: {
       ...state.construction,
       availableMaterials:
-        state.construction.availableMaterials +
-        (order.action === "craft" ? vesselCost(order.material) : 0),
+        state.construction.availableMaterials + vesselOrderCost(order),
     },
     vesselWork: {
       ...state.vesselWork,

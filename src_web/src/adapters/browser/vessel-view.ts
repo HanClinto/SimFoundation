@@ -7,6 +7,7 @@ import { OBJECT_DEFINITIONS, objectPosition } from "../../simulation/objects";
 import {
   activeVesselOrder,
   vesselCost,
+  vesselOrderCost,
   type VesselCommandCode,
 } from "../../simulation/vessel-work";
 import {
@@ -59,6 +60,14 @@ export function createVesselWindow(
   const cargo = element.querySelector<HTMLSelectElement>("#vessel-cargo")!;
   const material =
     element.querySelector<HTMLSelectElement>("#vessel-material")!;
+  const repair = document.createElement("button");
+  repair.type = "button";
+  repair.dataset.vesselRepair = "";
+  repair.textContent = "Repair empty case";
+  element.querySelector("[data-vessel-seal]")!.after(repair);
+  const repairReason = document.createElement("p");
+  repairReason.dataset.vesselRepairReason = "";
+  element.querySelector("[data-vessel-availability]")!.after(repairReason);
   const feedback = element.querySelector<HTMLElement>(
     "[data-vessel-feedback]",
   )!;
@@ -86,6 +95,9 @@ export function createVesselWindow(
     render(current);
   });
   cargo.addEventListener("change", () => render(current));
+  repair.addEventListener("click", () =>
+    resultMessage(controller.orderVesselAction(selected, "repair")),
+  );
   element
     .querySelector("[data-vessel-craft]")!
     .addEventListener("click", () => {
@@ -273,6 +285,33 @@ export function createVesselWindow(
         )
       : null;
     const wear = item ? vesselWearRate(snapshot.game, item) : 0;
+    const repairIssue = item
+      ? controller.previewVesselAction(selected, "repair")
+      : "not-found";
+    repair.disabled = !!repairIssue;
+    const cost = item?.vessel
+      ? vesselOrderCost({ action: "repair", material: item.vessel.material })
+      : 0;
+    repair.textContent = item
+      ? `Repair empty case (${cost} units)`
+      : "Repair empty case";
+    const reason = !item
+      ? "Choose a case to repair."
+      : item.location.kind !== "ground"
+        ? "Repair requires a case on the ground."
+        : item.reservedBy
+          ? "Case reserved for active work."
+          : item.vessel?.sealed
+            ? "Open the case before repair."
+            : content
+              ? "Unload all contents before repair."
+              : item.condition >= 100
+                ? "Case is fully intact."
+                : repairIssue
+                  ? messages[repairIssue]
+                  : `Restore this case using ${cost} delivered material units and engineering work.`;
+    repair.title = reason;
+    repairReason.textContent = reason;
     forecast.textContent = item
       ? vesselTransitForecast(snapshot.game, item, Number(duration.value))
       : "Choose a vessel to assess transit wear.";
