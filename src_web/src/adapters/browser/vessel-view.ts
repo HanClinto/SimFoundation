@@ -9,7 +9,10 @@ import {
   vesselCost,
   type VesselCommandCode,
 } from "../../simulation/vessel-work";
-import { vesselWearRate } from "../../simulation/vessels";
+import {
+  vesselTransitForecast,
+  vesselWearRate,
+} from "../../simulation/vessels";
 import type { TilePosition } from "../../simulation/world";
 import type { PlacementRequest } from "./placement";
 
@@ -59,6 +62,12 @@ export function createVesselWindow(
   const feedback = element.querySelector<HTMLElement>(
     "[data-vessel-feedback]",
   )!;
+  const duration = element.querySelector<HTMLInputElement>("#vessel-duration")!;
+  const forecast = document.createElement("p");
+  forecast.dataset.vesselForecast = "";
+  forecast.setAttribute("role", "status");
+  element.querySelector("[data-vessel-transport]")!.before(forecast);
+  duration.addEventListener("input", () => render(current));
   let current = controller.getSnapshot();
   let selected = "";
   let signature = "";
@@ -144,7 +153,8 @@ export function createVesselWindow(
         begin({
           label:
             action === "transport"
-              ? `${transport!.mode} deposit / ${transport!.duration} minutes / ${id}`
+              ? `${transport!.mode} deposit / ${transport!.duration} minutes / ${id}` +
+                ` / ${vesselTransitForecast(current.game, item, transport!.duration)}`
               : `Unload ${id}`,
           origin:
             action === "transport"
@@ -263,6 +273,9 @@ export function createVesselWindow(
         )
       : null;
     const wear = item ? vesselWearRate(snapshot.game, item) : 0;
+    forecast.textContent = item
+      ? vesselTransitForecast(snapshot.game, item, Number(duration.value))
+      : "Choose a vessel to assess transit wear.";
     const work = snapshot.game.vesselWork.orders.find(
       (order) => activeVesselOrder(order) && order.vesselId === selected,
     );

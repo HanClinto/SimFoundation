@@ -88,10 +88,37 @@ it("fabricates by preview and exposes physical loading, sealing and scheduled de
   expect(
     exposure.element.querySelector("[data-exposure-record]")!.textContent,
   ).toContain("Contained / source active");
+  const worn = {
+    ...bound.snapshot.game,
+    objects: {
+      ...bound.snapshot.game.objects,
+      items: bound.snapshot.game.objects.items.map((item) =>
+        item.kind === "vessel" ? { ...item, condition: 2 } : item,
+      ),
+    },
+  };
+  view.render(controller.replaceState(worn));
+  const duration =
+    view.element.querySelector<HTMLInputElement>("#vessel-duration")!;
+  duration.value = "30";
+  duration.dispatchEvent(new window.Event("input"));
+  expect(
+    view.element.querySelector("[data-vessel-forecast]")!.textContent,
+  ).toContain("0.80%");
+  duration.value = "120";
+  duration.dispatchEvent(new window.Event("input"));
+  expect(
+    view.element.querySelector("[data-vessel-forecast]")!.textContent,
+  ).toContain("Breach risk");
+  expect(
+    view.element.querySelector<HTMLButtonElement>("[data-vessel-transport]")!
+      .disabled,
+  ).toBe(false);
   view.element
     .querySelector<HTMLButtonElement>("[data-vessel-transport]")!
     .click();
   const request = begin.mock.calls.at(-1)![0];
+  expect(request.label).toContain("Breach risk");
   expect(request.confirm({ x: 54, y: 59 }).accepted).toBe(true);
   expect(controller.getSnapshot().game.vesselWork.orders.at(-1)).toMatchObject({
     action: "transport",

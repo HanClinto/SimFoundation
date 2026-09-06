@@ -4,11 +4,11 @@ import { objectFootprint } from "./objects";
 import { discoverStorageWork, refreshMealSummary } from "./storage";
 import { advanceObjectWork } from "./object-work";
 import { advanceVesselWork } from "./vessel-work";
+import { observeFacilityIncidents } from "./facility-incidents";
 import {
   advanceExposure,
   advanceSurfaceWork,
   discoverSurfaceWork,
-  observeStructuralDamage,
 } from "./environment";
 import { advanceJobs } from "./jobs";
 import { advancePersonnel } from "./personnel";
@@ -72,7 +72,7 @@ export function advanceSimulation(state: GameState): GameState {
   return refreshMealSummary(
     discoverStorageWork(
       discoverSurfaceWork(
-        observeStructuralDamage(
+        observeFacilityIncidents(
           observeSite(
             advanceExposure(
               advanceVesselWork(

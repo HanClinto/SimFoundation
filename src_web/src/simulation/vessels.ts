@@ -96,3 +96,23 @@ export function vesselWearRate(
     0,
   );
 }
+
+export function vesselTransitForecast(
+  state: GameState,
+  vessel: PhysicalObject,
+  minutes: number,
+): string {
+  if (!Number.isInteger(minutes) || minutes < 30 || minutes > 1440)
+    return "Choose 30 to 1440 transit minutes.";
+  if (vessel.condition <= 0)
+    return "Case breached; transport cannot be dispatched.";
+  if (!vessel.vessel?.sealed)
+    return "Seal the case before estimating contained transit wear.";
+  const wear = vesselWearRate(state, vessel);
+  if (wear === 0)
+    return "No current internal wear. Emission changes can invalidate this estimate.";
+  const remaining = Math.floor(vessel.condition / wear);
+  if (vessel.condition - wear * minutes <= 0)
+    return `Breach risk: about ${remaining} minutes remaining for a ${minutes}-minute trip. Pickup and deposit delays add wear.`;
+  return `Projected case integrity after ${minutes} transit minutes: ${(vessel.condition - wear * minutes).toFixed(2)}%. Pickup and deposit delays add wear; emission must remain unchanged.`;
+}

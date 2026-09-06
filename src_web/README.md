@@ -93,6 +93,10 @@ World view shows current objects and carried cargo; Recorded view retains observ
 
 ### Portable Containment
 
+Alarm Manager reports recorded vessel condition: a sealed case at 25% integrity or below raises Yellow; a recorded breached case raises Orange. These use the normal slowdown/pause profile. Readings remain observations, not remote telemetry from an unseen or dispatched package. Structural and vessel warnings are assessed together so resolving one does not clear the other; unrelated incidents of equal or higher severity are preserved. The alarm list links to vessel inspection and shows observation age.
+
+Before dispatch, the vessel inspector and placement preview compare the chosen transit time against current case integrity and internal wear. A predicted breach is a warning, not a dispatch prohibition. Estimates assume unchanged emission and exclude worker pickup and blocked-deposit delays, both of which can consume additional case life. No save-schema change is needed for these derived warnings.
+
 **Vessels and Transport** fabricates reusable one-object cases from concrete, steel, ceramic, or composite. A case costs four times its material's surface cost (8/16/12/24 units). Choose a clear interior fabrication tile; logistics collects and delivers real supplies, then an engineer fabricates the case. No materials or cases are spawned by completing UI steps.
 
 Stage a packed individual object beside an open vessel using **Objects and Supplies**, then select it as cargo and schedule **Load cargo**. Loading, sealing, opening, and unloading require workers at the actual case. One packed non-stackable object fits; stacks, nested vessels, and mobile residents such as SCP-999 are excluded. An intact case can be opened, unloaded, and reused, retaining wear. Its contents keep their identity and attached sources and are not rendered as another object on the ground. Local movement carries the whole case through ordinary hauling.

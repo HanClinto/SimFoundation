@@ -47,6 +47,7 @@ import { createExposureWindow } from "./exposure-view";
 import { createVesselWindow } from "./vessel-view";
 import scp999IconUrl from "./assets/site-999.svg";
 import { incidentResponse } from "./incident-response";
+import { createVesselAlerts } from "./vessel-alert-view";
 import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
 import { createWindowManager } from "./window-manager";
 import { updateWorkOrders } from "./work-orders-view";
@@ -247,6 +248,7 @@ app.innerHTML = `
         <span><strong id="incident-level">GREEN / NORMAL</strong><small id="incident-summary">Routine operations</small></span>
       </div>
       <button type="button" data-open-related-window="work-orders-window">Open Response Work Orders</button>
+      <fieldset><legend>Recorded vessel condition</legend><div id="vessel-alerts"></div></fieldset>
       <fieldset>
         <legend>Automatic response profile</legend>
         <label><input type="checkbox" checked disabled /> Yellow events reduce speed to 1x</label>
@@ -719,6 +721,13 @@ const engineeringView = createEngineeringWindow(app, controller, (request) => {
   windowManager.open("camera-window");
   siteCamera.beginPlacement(request);
 });
+const vesselAlerts = createVesselAlerts(
+  requireElement<HTMLElement>("#vessel-alerts"),
+  (id) => {
+    vesselView.select(id, controller.getSnapshot());
+    windowManager.open("vessel-window");
+  },
+);
 const exposureView = createExposureWindow(
   app,
   controller,
@@ -1201,6 +1210,7 @@ function render(snapshot: ControllerSnapshot): void {
   stateVersion.textContent = snapshot.game.version.toString();
   simulationSeed.textContent = snapshot.game.seed.toString();
   incidentSummary.textContent = snapshot.game.incident.summary;
+  vesselAlerts.render(snapshot.game);
   incidentBadge.className = `incident-badge incident-${snapshot.game.incident.level}`;
   const incidentLabels = {
     green: "GREEN / NORMAL",
