@@ -1,6 +1,6 @@
 # Proposed First Tactical Slice
 
-Status: design proposal, not implemented or a canonical anomaly adaptation.
+Status: initial proposal retained for context. The bounded first slice is now implemented; see [Tactical Response](tactical-response.md) for current behavior and [source notes](references/scp-049/adaptation.md) for the reviewed SCP-049 revision. Broader systems described below remain proposals.
 
 ## Recommendation
 

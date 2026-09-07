@@ -5,6 +5,14 @@ import {
   type CameraPlacementCode,
 } from "../simulation/observations";
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
+import {
+  draftResponder,
+  orderResponder,
+  startEncounter,
+  observeCombat,
+  type TacticalCode,
+  type TacticalOrder,
+} from "../simulation/combat";
 import { advanceSimulation } from "../simulation/tick";
 import { setWorkPriority, type WorkPriority } from "../simulation/jobs";
 import {
@@ -77,6 +85,27 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  draftResponder(
+    id: string,
+    drafted: boolean,
+  ): { code: TacticalCode; snapshot: ControllerSnapshot };
+  orderResponder(
+    id: string,
+    order: TacticalOrder,
+    destination?: TilePosition,
+    targetId?: string,
+  ): { code: TacticalCode; snapshot: ControllerSnapshot };
+  previewTacticalOrder(
+    id: string,
+    order: TacticalOrder,
+    destination?: TilePosition,
+    targetId?: string,
+  ): TacticalCode;
+  startEncounter(position: TilePosition): {
+    code: TacticalCode;
+    snapshot: ControllerSnapshot;
+  };
+  previewEncounter(position: TilePosition): TacticalCode;
   setUtilityEnabled(id: string, enabled: boolean): ControllerSnapshot;
   repairUtility(id: string): {
     code: VesselCommandCode;
@@ -215,6 +244,8 @@ export function createController(initialState: GameState): GameController {
           : [item.location.position]
         : [],
     );
+    if (state.combat.adversary)
+      obstructions.push(state.combat.adversary.position);
     state = observeSite({
       ...state,
       world: setDoorPolicy(state.world, position, policy, obstructions),
@@ -224,6 +255,27 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    draftResponder(id, drafted) {
+      const result = draftResponder(state, id, drafted);
+      state = observeCombat(observeSite(result.state));
+      return { code: result.code, snapshot: publish() };
+    },
+    orderResponder(id, order, destination, targetId) {
+      const result = orderResponder(state, id, order, destination, targetId);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    previewTacticalOrder(id, order, destination, targetId) {
+      return orderResponder(state, id, order, destination, targetId).code;
+    },
+    startEncounter(position) {
+      const result = startEncounter(state, position);
+      state = observeCombat(observeSite(result.state));
+      return { code: result.code, snapshot: publish() };
+    },
+    previewEncounter(position) {
+      return startEncounter(state, position).code;
+    },
     setUtilityEnabled(id, enabled) {
       state = observeSite(setUtilityEnabled(state, id, enabled));
       return publish();

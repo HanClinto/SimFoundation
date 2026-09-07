@@ -3,6 +3,11 @@ import { lightField } from "../../simulation/lighting";
 import { drawPowerNetwork } from "./power-art";
 import { powerNetwork } from "../../simulation/power";
 import { sceneOrder, foregroundWallOpacity } from "./scene-order";
+import {
+  drawTacticalOverlay,
+  drawAdversary,
+  drawResponseStatus,
+} from "./combat-art";
 import { drawEmissionEffects, emissionMotes } from "./emission-effects";
 import { type TilePosition } from "../../simulation/world";
 import { observedSnapshot } from "./observed-view";
@@ -606,12 +611,22 @@ export function renderSite(
       context.restore();
     }
   }
+  if (overlays.tactical && !recorded)
+    drawTacticalOverlay(
+      context,
+      snapshot.game,
+      camera.selectedId,
+      camera.zoom,
+      (position) => projectPosition(position, camera, width, height),
+    );
   const displayedPositions = Object.fromEntries(
     Object.entries(positions).map(([id, position]) => [
       id,
       pawnVisuals[id]?.position ?? position,
     ]),
   );
+  if (snapshot.game.combat.adversary)
+    displayedPositions["SCP-049-2"] = snapshot.game.combat.adversary.position;
   for (const { id, position, object: groundObject } of overlays.objects
     ? sceneOrder(snapshot.game, displayedPositions, camera.selectedId)
     : []) {
@@ -637,6 +652,24 @@ export function renderSite(
     }
     const selected = id === camera.selectedId;
     const live = !recorded || visibleEntities.has(id);
+    if (id === "SCP-049-2" && snapshot.game.combat.adversary) {
+      drawAdversary(
+        context,
+        snapshot.game.combat.adversary,
+        point,
+        camera.zoom,
+        recorded &&
+          snapshot.game.combat.sighting?.observedTick !== snapshot.game.tick,
+      );
+      if (overlays.tactical && !recorded)
+        drawResponseStatus(context, snapshot.game, id, point, camera.zoom);
+      if (selected) {
+        context.fillStyle = "#ffe9bb";
+        context.font = "bold 12px 'Courier New', monospace";
+        context.fillText("SCP-049-2", point.x, point.y + 20);
+      }
+      continue;
+    }
     if (selected) {
       context.strokeStyle = "#ffe477";
       context.lineWidth = 2;
@@ -742,6 +775,8 @@ export function renderSite(
       context.fillStyle = "#24382d";
       context.fillText(label, point.x, point.y + 23);
     }
+    if (overlays.tactical && !recorded)
+      drawResponseStatus(context, snapshot.game, id, point, camera.zoom);
   }
   if (overlays.objects && overlays.activity !== false)
     drawPawnBubbles(

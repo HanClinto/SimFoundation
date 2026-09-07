@@ -46,6 +46,14 @@ export function createMapSelection(
   const feedback = element.querySelector<HTMLElement>(
     "[data-selection-feedback]",
   )!;
+  const ordersButton = document.createElement("button");
+  ordersButton.type = "button";
+  ordersButton.textContent = "Orders";
+  ordersButton.hidden = true;
+  element.querySelector(".map-selection-actions")!.append(ordersButton);
+  ordersButton.addEventListener("click", () => {
+    if (selected) inspect(`tactical:${selected}`, perspective);
+  });
   let current = controller.getSnapshot();
   let selected: string | null = null;
   let perspective: MapPerspective = "world";
@@ -86,6 +94,7 @@ export function createMapSelection(
       view === "recorded" ? observedSnapshot(snapshot).game : snapshot.game;
     const entry = mapObjects(state, view).find((item) => item.id === id);
     const person = state.personnel.find((person) => person.id === id);
+    ordersButton.hidden = !person || !entry;
     const object = id?.startsWith("object:")
       ? state.objects.items.find((item) => item.id === id.slice(7))
       : undefined;

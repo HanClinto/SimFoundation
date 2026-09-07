@@ -21,6 +21,17 @@ export function observedSnapshot(
     ...snapshot,
     game: {
       ...snapshot.game,
+      combat: {
+        ...snapshot.game.combat,
+        responders: {},
+        adversary: snapshot.game.combat.sighting?.adversary ?? null,
+        events: [],
+        status: snapshot.game.combat.sighting
+          ? snapshot.game.combat.sighting.adversary.health <= 0
+            ? "neutralized"
+            : "active"
+          : "idle",
+      },
       objects,
       personnel: snapshot.game.personnel.map((person) => {
         const observation = knowledge.entities[person.id];

@@ -20,7 +20,9 @@ export function physicalPawnPose(
   if (perspective === "recorded") {
     if (!state.observations.visibleEntityIds.includes(id)) return "stand";
     const activity = state.observations.entities[id]?.activity;
-    return activity === "Sleeping"
+    return activity?.startsWith("Incapacitated:") ||
+      activity?.startsWith("Stabilized:") ||
+      activity === "Sleeping"
       ? "sleep"
       : activity === "Eating a meal" ||
           activity === "Taking a restorative break"
@@ -29,6 +31,9 @@ export function physicalPawnPose(
           ? "work"
           : "stand";
   }
+  const responder = state.combat.responders[id];
+  if (responder?.incapacitated) return "sleep";
+  if (responder?.drafted && responder.phase === "preparing") return "work";
   const position = state.world.positions[id];
   const routine = state.routines.activities[id];
   const station = state.routines.stations.find(

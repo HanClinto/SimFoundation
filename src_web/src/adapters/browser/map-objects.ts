@@ -47,6 +47,21 @@ export function mapObjects(
   readonly position: TilePosition;
 }[] {
   return [
+    ...((
+      perspective === "world"
+        ? state.combat.adversary
+        : state.combat.sighting?.adversary
+    )
+      ? [
+          {
+            id: "SCP-049-2",
+            name: "SCP-049-2",
+            position: (perspective === "world"
+              ? state.combat.adversary
+              : state.combat.sighting!.adversary)!.position,
+          },
+        ]
+      : []),
     ...state.storage.areas.map((area) => ({
       id: `storage:${area.id}`,
       name: `Storage / ${area.name}`,

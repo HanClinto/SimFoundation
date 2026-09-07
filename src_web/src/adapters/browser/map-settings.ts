@@ -12,7 +12,8 @@ export type MapOverlay =
   | "exposure"
   | "effects"
   | "power"
-  | "lighting";
+  | "lighting"
+  | "tactical";
 export const DEFAULT_MAP_OVERLAYS: Readonly<Record<MapOverlay, boolean>> = {
   condition: false,
   rooms: true,
@@ -26,4 +27,5 @@ export const DEFAULT_MAP_OVERLAYS: Readonly<Record<MapOverlay, boolean>> = {
   effects: true,
   power: false,
   lighting: true,
+  tactical: true,
 };

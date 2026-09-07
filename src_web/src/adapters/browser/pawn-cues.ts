@@ -43,6 +43,43 @@ export function pawnCues(
       !state.observations.visibleEntityIds.includes(personId))
   )
     return [];
+  const responder =
+    perspective === "world" ? state.combat.responders[personId] : null;
+  const recordedActivity =
+    perspective === "recorded"
+      ? state.observations.entities[personId]?.activity
+      : null;
+  if (
+    recordedActivity &&
+    /^(Drafted:|Incapacitated:|Stabilized:)/.test(recordedActivity)
+  )
+    return [
+      {
+        icon: recordedActivity.startsWith("Drafted:") ? "guard" : "medical",
+        kind: "action",
+        label: recordedActivity,
+      },
+    ];
+  if (responder?.drafted || responder?.incapacitated)
+    return [
+      {
+        icon: responder.incapacitated
+          ? "medical"
+          : responder.order === "engage"
+            ? "guard"
+            : responder.order === "stabilize"
+              ? "medical"
+              : responder.order === "hold"
+                ? "guard"
+                : "walk",
+        kind: "action",
+        label: responder.incapacitated
+          ? responder.stabilized
+            ? "Stabilized; recovering"
+            : "Incapacitated; needs stabilization"
+          : `${responder.order} / ${responder.phase}${responder.remaining ? ` (${responder.remaining})` : ""}${responder.blockedReason ? ` / ${responder.blockedReason}` : ""}`,
+      },
+    ];
   const routine = state.routines.activities[personId];
   const station = state.routines.stations.find(
     (station) => station.id === routine?.stationId,

@@ -114,6 +114,16 @@ Browser code reads immutable snapshots and domain events. It never mutates entit
 
 ## State Model
 
+### Tactical Response (Schema 37)
+
+`combat.ts` owns drafted responders, positional orders, preparation/recovery counters, finite response supplies, functional injuries/incapacitation/stabilization, a bounded optional adversary, its sight memory, terminal encounter status and a 40-entry event history. It uses existing routing, door movement and line-of-sight rules. No browser clock, DOM, or randomized rendering state enters combat resolution. See [decision 002](decisions/002-tactical-response.md).
+
+Tactical movement and actions run after door closing and before routines/jobs. Drafted or incapacitated people are excluded from routines, new job assignment, and resident social contact. Drafting retains ordinary job progress and material reservations, but refuses active cargo and clinical commitments. New medical referrals for drafted/incapacitated staff wait for release. Persistent tactical trauma becomes an ordinary injury effect for subsequent clinical assessment without creating a diagnosis automatically.
+
+The adversary's position belongs to the optional encounter record, not the fixed personnel/resident position registry. Its position is included in manual/automatic door obstruction checks. It currently targets only the enrollment roster; generalized hostile interactions with civilians, other anomalies, construction occupancy, or destructible objects remain future work. Renderer/map selection project its location independently, with remembered sightings in Recorded view. Live tactical health, events and response controls are World-only.
+
+`combat-persistence.ts` validates responder IDs, supply bounds, action timers, targets, injury-state consistency, encounter membership, map bounds, observation timestamps, event history, and absence of contradictory job/routine/cargo ownership. Schema 37 requires a fresh development save.
+
 ### Electrical Utilities (Schema 36)
 
 `PhysicalObject.kind` includes generator, cable, and light, with optional boolean `utilityEnabled` defaulting to true. Installation, relocation, reservations, and cargo remain owned by the existing object store and object-work system. Installed cable occupies a separate underfloor layer: it does not count toward storage capacity, obstruct doors, or conflict with furniture. Packed cable is ordinary finite inventory. Starting equipment and its commissioned circuit are authored by `power-setup.ts`.

@@ -152,6 +152,11 @@ export function requestAssessment(
 ): GameState {
   const patient = state.personnel.find(({ id }) => id === patientId);
   if (!patient) throw new Error(`Unknown person: ${patientId}`);
+  if (
+    state.combat.responders[patientId]?.drafted ||
+    state.combat.responders[patientId]?.incapacitated
+  )
+    return state;
   if (kind === "anomalous" && !state.capabilities.anomalousPsychometrics)
     throw new Error("Anomalous Psychometrics has not been unlocked");
   if (

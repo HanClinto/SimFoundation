@@ -43,6 +43,7 @@ import { createConstructionWindow } from "./construction-view";
 import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createPowerWindow } from "./power-view";
+import { createCombatWindow } from "./combat-view";
 import { isElectrical } from "../../simulation/power";
 import { createStorageWindow } from "./storage-view";
 import { createExposureWindow } from "./exposure-view";
@@ -140,6 +141,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="exposure-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Exposure Sources</span></button>
           <button class="subsystem-icon" type="button" data-open-window="vessel-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Vessels and Transport</span></button>
           <button class="subsystem-icon" type="button" data-open-window="power-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Power and Lighting</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="combat-window"><img class="subsystem-icon-asset" data-window-icon src="${personnelIconUrl}" alt="" /><span>Tactical Response</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -148,12 +150,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Residents</dt><dd>1 assigned</dd></div>
-            <div><dt>Systems</dt><dd>16 available</dd></div>
+            <div><dt>Systems</dt><dd>17 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">16 systems</p>
+        <p class="status-bar-field">17 systems</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -181,7 +183,7 @@ app.innerHTML = `
         <fieldset><legend>Perspective</legend><div class="field-row"><input id="map-world" type="radio" name="map-perspective" data-map-perspective="world" checked/><label for="map-world">World</label><input id="map-recorded" type="radio" name="map-perspective" data-map-perspective="recorded"/><label for="map-recorded">Recorded</label></div></fieldset>
         <fieldset><legend>Base map</legend><div class="field-row"><input id="map-site" type="radio" name="map-base" data-map-base="site" checked/><label for="map-site">Site</label><input id="map-materials" type="radio" name="map-base" data-map-base="materials"/><label for="map-materials">Materials</label></div></fieldset>
         <fieldset><legend>Surface</legend><div class="field-row"><input id="map-structures" type="radio" name="map-layer" data-map-layer="structure" checked/><label for="map-structures">Structures</label><input id="map-floors" type="radio" name="map-layer" data-map-layer="floor"/><label for="map-floors">Floors</label></div></fieldset>
-        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "activity", "coverage", "projects", "storage", "spaces", "exposure", "effects", "lighting", "power"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "activity", "projects", "effects", "lighting"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
+        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "activity", "coverage", "projects", "storage", "spaces", "exposure", "effects", "lighting", "power", "tactical"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "activity", "projects", "effects", "lighting", "tactical"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
       </div></details>
     </div>
     <div class="window-body camera-body">
@@ -676,6 +678,11 @@ const siteCamera = createSiteMap(
   requireElement<HTMLElement>("#camera-window"),
   controller,
   (id, perspective) => {
+    if (id === "SCP-049-2" || id.startsWith("tactical:")) {
+      combatView.select(id.slice(9), controller.getSnapshot(), perspective);
+      windowManager.open("combat-window");
+      return;
+    }
     if (id.startsWith("storage:")) {
       storageView.select(id.slice(8), controller.getSnapshot());
       windowManager.open("storage-window");
@@ -856,6 +863,27 @@ windowManager.register(powerView.element, {
   defaultRect: { left: 230, top: 60, width: 550, height: 640 },
   defaultOpen: false,
   minimumWidth: 340,
+  minimumHeight: 300,
+});
+const combatView = createCombatWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+);
+windowManager.register(combatView.element, {
+  id: "combat-window",
+  title: "Tactical Response",
+  iconUrl: personnelIconUrl,
+  defaultRect: { left: 180, top: 35, width: 620, height: 700 },
+  defaultOpen: false,
+  minimumWidth: 350,
   minimumHeight: 300,
 });
 windowManager.register(engineeringView.element, {
@@ -1146,6 +1174,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
+  combatView.render(snapshot);
   powerView.render(snapshot);
   surveillanceView.render(snapshot);
   storageView.render(snapshot);

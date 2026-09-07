@@ -1,4 +1,5 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
+import { combatStateValid } from "./combat-persistence";
 import { isElectrical } from "../../simulation/power";
 import {
   activeVesselOrder,
@@ -1844,6 +1845,7 @@ function isGameState(value: unknown): value is GameState {
   const personIds = state.personnel.map(({ id }) => id);
   const entityIds = [...personIds, "SCP-999"];
   return (
+    combatStateValid(state) &&
     new Set(state.clinicalCare.clinicianIds).size ===
       state.clinicalCare.clinicianIds.length &&
     state.clinicalCare.clinicianIds.every((id) =>

@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { tacticallyUnavailable } from "./combat";
 import type { PersonnelRecord } from "./personnel";
 import { mealCollectionPoint, refreshMealSummary } from "./storage";
 import { findRoute, sameTile, stepWorld, type TilePosition } from "./world";
@@ -126,6 +127,7 @@ export function routineUnavailableIds(state: GameState): readonly string[] {
   return state.personnel
     .filter(
       (person) =>
+        tacticallyUnavailable(state, person.id) ||
         state.routines.activities[person.id] ||
         (person.currentJobId === null &&
           (scheduleAt(state, person.id) !== "work" ||
@@ -157,6 +159,7 @@ export function advanceRoutines(state: GameState): GameState {
   );
 
   for (const id of [...people.keys()].sort()) {
+    if (tacticallyUnavailable(state, id)) continue;
     let person = people.get(id)!;
     const schedule = scheduleAt(state, id);
     let activity = activities[id];

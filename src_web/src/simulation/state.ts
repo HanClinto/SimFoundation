@@ -19,8 +19,9 @@ import { type ObjectOrder } from "./object-work";
 import { createStorage, type StorageState } from "./storage";
 import type { VesselWork } from "./vessel-work";
 import { installStartingPower } from "./power-setup";
+import { createCombatState, type CombatState } from "./combat";
 
-export const GAME_STATE_VERSION = 36;
+export const GAME_STATE_VERSION = 37;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -30,6 +31,7 @@ export interface IncidentState {
 }
 
 export interface GameState {
+  readonly combat: CombatState;
   readonly version: typeof GAME_STATE_VERSION;
   readonly seed: number;
   readonly tick: number;
@@ -69,6 +71,7 @@ export function createInitialState(seed = 9620): GameState {
     map: { ...world.map, objectBlocks: objectBlocks(objects, world.map.width) },
   };
   return observeSite({
+    combat: createCombatState(),
     version: GAME_STATE_VERSION,
     seed,
     tick: 0,

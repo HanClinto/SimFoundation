@@ -1,4 +1,5 @@
 import { observeSite } from "./observations";
+import { advanceCombat, observeCombat, tacticallyUnavailable } from "./combat";
 import { closeAutomaticDoors } from "./world";
 import { objectFootprint } from "./objects";
 import { discoverStorageWork, refreshMealSummary } from "./storage";
@@ -22,9 +23,9 @@ export function advanceSimulation(state: GameState): GameState {
   const tick = state.tick + 1;
   state = {
     ...state,
-    world: closeAutomaticDoors(
-      state.world,
-      state.objects.items.flatMap((item) =>
+    world: closeAutomaticDoors(state.world, [
+      ...(state.combat.adversary ? [state.combat.adversary.position] : []),
+      ...state.objects.items.flatMap((item) =>
         item.location.kind === "ground" &&
         !(item.kind === "cable" && item.installed)
           ? item.installed
@@ -32,8 +33,9 @@ export function advanceSimulation(state: GameState): GameState {
             : [item.location.position]
           : [],
       ),
-    ),
+    ]),
   };
+  state = advanceCombat({ ...state, tick });
   state = advanceRoutines(
     refreshMealSummary(
       discoverClinicalWork({
@@ -66,28 +68,35 @@ export function advanceSimulation(state: GameState): GameState {
     jobResult.personnel,
     tick,
     jobResult.world,
-    Object.entries(state.routines.activities)
-      .filter(([, activity]) => activity.kind !== "break")
-      .map(([id]) => id),
+    [
+      ...state.personnel
+        .filter((person) => tacticallyUnavailable(state, person.id))
+        .map((person) => person.id),
+      ...Object.entries(state.routines.activities)
+        .filter(([, activity]) => activity.kind !== "break")
+        .map(([id]) => id),
+    ],
   );
   return refreshMealSummary(
     discoverStorageWork(
       discoverSurfaceWork(
         observeFacilityIncidents(
-          observeSite(
-            advanceExposure(
-              advanceVesselWork(
-                advanceObjectWork(
-                  advanceSurfaceWork(
-                    advanceConstruction({
-                      ...state,
-                      tick,
-                      gameMinute: state.gameMinute,
-                      jobs: jobResult.jobs,
-                      personnel: scp999Result.personnel,
-                      scp999: scp999Result.anomaly,
-                      world: scp999Result.world,
-                    }),
+          observeCombat(
+            observeSite(
+              advanceExposure(
+                advanceVesselWork(
+                  advanceObjectWork(
+                    advanceSurfaceWork(
+                      advanceConstruction({
+                        ...state,
+                        tick,
+                        gameMinute: state.gameMinute,
+                        jobs: jobResult.jobs,
+                        personnel: scp999Result.personnel,
+                        scp999: scp999Result.anomaly,
+                        world: scp999Result.world,
+                      }),
+                    ),
                   ),
                 ),
               ),
