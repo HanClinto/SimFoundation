@@ -8,7 +8,7 @@ import { mapObjects } from "./map-objects";
 import { storageContains } from "../../simulation/storage";
 import { layoutPawnBubbles, bubbleAt, type PawnBubble } from "./pawn-bubbles";
 import { pawnCues } from "./pawn-cues";
-import { emissionMotes } from "./emission-effects";
+import { createPawnVisuals, type PawnVisual } from "./pawn-visuals";
 import { createMapSelection } from "./map-selection";
 import {
   renderSite,
@@ -32,6 +32,8 @@ export function createSiteMap(
 ) {
   let current = controller.getSnapshot();
   let visualTime = 0;
+  const updatePawnVisuals = createPawnVisuals();
+  let pawnVisuals: Readonly<Record<string, PawnVisual>> = {};
   const reducedMotion = canvas.ownerDocument.defaultView?.matchMedia?.(
     "(prefers-reduced-motion: reduce)",
   );
@@ -105,6 +107,60 @@ export function createSiteMap(
   const displayed = () =>
     camera.perspective === "recorded" ? observedSnapshot(current) : current;
 
+  function visualPosition(id: string, fallback: TilePosition): TilePosition {
+    if (pawnVisuals[id]) return pawnVisuals[id].position;
+    const item = displayed().game.objects.items.find((item) => item.id === id);
+    return item?.location.kind === "carried"
+      ? (pawnVisuals[item.location.personId]?.position ?? fallback)
+      : fallback;
+  }
+
+  function drawFrame() {
+    pawnVisuals = updatePawnVisuals(
+      current.game,
+      camera.perspective ?? "world",
+      visualTime,
+      current.running,
+      reducedMotion?.matches ?? false,
+    );
+    if (following && camera.selectedId) {
+      const selected = mapObjects(displayed().game, camera.perspective).find(
+        (object) => object.id === camera.selectedId,
+      );
+      if (selected)
+        camera = {
+          ...camera,
+          center: visualPosition(selected.id, selected.position),
+        };
+    }
+    renderSite(
+      canvas,
+      current,
+      camera,
+      reducedMotion?.matches ? 0 : visualTime,
+      pawnVisuals,
+    );
+    bubbles =
+      camera.overlays?.objects && camera.overlays.activity
+        ? layoutPawnBubbles(
+            displayed().game,
+            camera.perspective ?? "world",
+            camera.zoom,
+            canvas.clientWidth,
+            canvas.clientHeight,
+            (position, id) =>
+              projectPosition(
+                visualPosition(id, position),
+                camera,
+                canvas.clientWidth,
+                canvas.clientHeight,
+              ),
+            camera.selectedId,
+          )
+        : [];
+    updateTooltip();
+  }
+
   function render(snapshot: ControllerSnapshot) {
     current = snapshot;
     selectionPanel?.render(
@@ -164,31 +220,7 @@ export function createSiteMap(
         camera.perspective === "world" ? "SIMULATION" : "RECORDED";
     zoomLabel.value = `${Math.round(camera.zoom * 100)}%`;
     inspect.disabled = camera.selectedId === null;
-    renderSite(
-      canvas,
-      current,
-      camera,
-      reducedMotion?.matches ? 0 : visualTime,
-    );
-    bubbles =
-      camera.overlays?.objects && camera.overlays.activity
-        ? layoutPawnBubbles(
-            displayed().game,
-            camera.perspective ?? "world",
-            camera.zoom,
-            canvas.clientWidth,
-            canvas.clientHeight,
-            (position) =>
-              projectPosition(
-                position,
-                camera,
-                canvas.clientWidth,
-                canvas.clientHeight,
-              ),
-            camera.selectedId,
-          )
-        : [];
-    updateTooltip();
+    drawFrame();
   }
   function focus(position: TilePosition, preserveFollow = false) {
     if (!preserveFollow) following = false;
@@ -336,7 +368,7 @@ export function createSiteMap(
           .filter((object) => !object.id.startsWith("storage:"))
           .map((object) => {
             const projected = projectPosition(
-              object.position,
+              visualPosition(object.id, object.position),
               camera,
               canvas.clientWidth,
               canvas.clientHeight,
@@ -490,26 +522,18 @@ export function createSiteMap(
   return {
     render,
     animate(timeMs: number) {
-      if (
-        element.hidden ||
-        canvas.ownerDocument.hidden ||
-        !current.running ||
-        camera.perspective === "recorded" ||
-        camera.overlays?.effects === false ||
-        camera.zoom < 0.3 ||
-        emissionMotes(current.game, "world").length === 0
-      )
+      if (element.hidden || canvas.ownerDocument.hidden || !current.running)
         return;
       if (reducedMotion?.matches) {
         if (visualTime !== 0) {
           visualTime = 0;
-          renderSite(canvas, current, camera, 0);
+          drawFrame();
         }
         return;
       }
       if (timeMs - visualTime < 32) return;
       visualTime = timeMs;
-      renderSite(canvas, current, camera, visualTime);
+      drawFrame();
     },
     focus,
     beginPlacement(request: PlacementRequest) {

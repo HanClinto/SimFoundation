@@ -10,7 +10,7 @@ import breakUrl from "./assets/station-break.svg";
 import cameraUrl from "./assets/camera.svg";
 import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
 import { cameraInstalled } from "../../simulation/observations";
-import { laboratoryTiles } from "../../simulation/construction";
+import { drawWorkSites, workSiteVisuals } from "./work-art";
 import { exposureTiles } from "../../simulation/environment";
 import { containingBarrier } from "../../simulation/vessels";
 import { exposureMapPosition, mapObjects } from "./map-objects";
@@ -22,13 +22,15 @@ import {
 } from "./map-settings";
 import type { PlacementTile } from "./placement";
 import { storageTiles } from "../../simulation/storage";
-import { drawPhysicalObjects } from "./object-art";
+import { drawPhysicalObjects, drawObjectGlyph } from "./object-art";
+import { physicalPawnPose, type PawnVisual } from "./pawn-visuals";
 import { layoutPawnBubbles, drawPawnBubbles } from "./pawn-bubbles";
 import {
   MATERIAL_ART,
   visibleSurface,
   drawMaterialSides,
   drawMaterialTop,
+  drawSurfaceDamage,
 } from "./material-art";
 
 import { spaceProjection } from "./space-projection";
@@ -115,6 +117,7 @@ export function renderSite(
     selectedId: null,
   },
   visualTimeMs = 0,
+  pawnVisuals: Readonly<Record<string, PawnVisual>> = {},
 ): void {
   const recorded = camera.perspective === "recorded";
   const overlays = camera.overlays ?? DEFAULT_MAP_OVERLAYS;
@@ -148,9 +151,11 @@ export function renderSite(
   }
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas 2D is unavailable");
-  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.globalAlpha = 1;
   context.fillStyle = "#26382f";
-  context.fillRect(0, 0, width, height);
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   const { map, positions } = snapshot.game.world;
   const knowledge = recorded
     ? snapshot.game.observations
@@ -267,6 +272,13 @@ export function renderSite(
       );
       if (installed && camera.zoom >= 0.55)
         drawMaterialTop(context, installed.material, raised);
+      if (camera.zoom >= 0.45) {
+        if (installed) drawSurfaceDamage(context, installed, raised);
+        const failed =
+          knowledge.knownSurfaces[row * map.width + column]?.structure;
+        if (camera.surfaceLayer !== "floor" && failed && failed.integrity <= 0)
+          drawSurfaceDamage(context, failed, false);
+      }
       if (tile === "door" || tile === "closed-door") {
         context.strokeStyle = "#dfbc52";
         context.lineWidth = 2;
@@ -485,16 +497,6 @@ export function renderSite(
     }
   }
   const footprints = [
-    ...(overlays.projects ? snapshot.game.construction.blueprints : [])
-      .filter(({ status }) => status !== "completed" && status !== "cancelled")
-      .map((blueprint) => ({
-        tiles: laboratoryTiles(blueprint.origin).map((tile) => ({
-          position: tile.position,
-          entrance: tile.tile === "door",
-        })),
-        fill: "rgba(125, 208, 223, .38)",
-        stroke: "#c0f5ff",
-      })),
     ...(camera.draft
       ? [
           {
@@ -507,6 +509,17 @@ export function renderSite(
         ]
       : []),
   ];
+  if (overlays.projects)
+    drawWorkSites(
+      context,
+      workSiteVisuals(snapshot.game, recorded ? "recorded" : "world"),
+      camera.zoom,
+      width,
+      height,
+      visualTimeMs,
+      overlays.effects !== false,
+      (position) => projectPosition(position, camera, width, height),
+    );
   for (const footprint of footprints) {
     for (const { position, entrance } of footprint.tiles) {
       const point = projectPosition(position, camera, width, height);
@@ -554,7 +567,14 @@ export function renderSite(
     }
   }
   for (const [id, position] of Object.entries(
-    overlays.objects ? positions : {},
+    overlays.objects
+      ? Object.fromEntries(
+          Object.entries(positions).map(([id, position]) => [
+            id,
+            pawnVisuals[id]?.position ?? position,
+          ]),
+        )
+      : {},
   ).sort(
     ([firstId, first], [secondId, second]) =>
       first.x + first.y - second.x - second.y ||
@@ -585,12 +605,18 @@ export function renderSite(
       );
       context.stroke();
     }
-    let image = id === "SCP-999" ? scp999 : workers.get(id);
+    const visual = pawnVisuals[id];
+    const pose =
+      visual?.pose ??
+      physicalPawnPose(snapshot.game, id, recorded ? "recorded" : "world");
+    const facing = visual?.facing ?? "right";
+    const imageKey = `${id}:${pose}:${facing}`;
+    let image = id === "SCP-999" ? scp999 : workers.get(imageKey);
     if (!image) {
       image = new Image();
       image.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
-      image.src = pawnMapSprite(id);
-      workers.set(id, image);
+      image.src = pawnMapSprite(id, pose, facing);
+      workers.set(imageKey, image);
     }
     const spriteWidth = (id === "SCP-999" ? 52 : 24) * camera.zoom;
     const spriteHeight = (id === "SCP-999" ? 30 : 36) * camera.zoom;
@@ -598,7 +624,7 @@ export function renderSite(
       context.drawImage(
         image,
         point.x - spriteWidth / 2,
-        point.y - spriteHeight + 4 * camera.zoom,
+        point.y - spriteHeight + (4 - (visual?.bob ?? 0)) * camera.zoom,
         spriteWidth,
         spriteHeight,
       );
@@ -621,25 +647,41 @@ export function renderSite(
       context.restore();
     }
     if (live) {
-      const cargo = snapshot.game.objects.items.find(
-        (item) =>
-          item.location.kind === "carried" && item.location.personId === id,
-      );
+      const cargo =
+        visual?.cargo ??
+        snapshot.game.objects.items.find(
+          (item) =>
+            item.location.kind === "carried" && item.location.personId === id,
+        );
       if (cargo) {
-        context.fillStyle = cargo.kind === "meals" ? "#e2c677" : "#91afbc";
-        context.strokeStyle = "#294e3e";
-        context.fillRect(
-          point.x + 5 * camera.zoom,
-          point.y - 15 * camera.zoom,
-          12,
-          10,
+        context.save();
+        context.translate(
+          point.x + (facing === "left" ? -3 : 3) * camera.zoom,
+          point.y - (7 + (visual?.bob ?? 0)) * camera.zoom,
         );
-        context.strokeRect(
-          point.x + 5 * camera.zoom,
-          point.y - 15 * camera.zoom,
-          12,
-          10,
+        context.scale(camera.zoom * 0.65, camera.zoom * 0.65);
+        drawObjectGlyph(context, cargo);
+        context.restore();
+      } else if (
+        pose === "work" &&
+        snapshot.game.jobs.some(
+          (job) =>
+            job.assignedPersonId === id &&
+            job.status === "in-progress" &&
+            job.skillId === "engineering",
+        )
+      ) {
+        context.save();
+        context.translate(
+          point.x + (facing === "left" ? -9 : 9) * camera.zoom,
+          point.y - (19 + (visual?.bob ?? 0) * 2) * camera.zoom,
         );
+        context.scale(camera.zoom, camera.zoom);
+        context.fillStyle = "#a88350";
+        context.fillRect(-1, -5, 2, 10);
+        context.fillStyle = "#bdd0d0";
+        context.fillRect(-4, -6, 8, 3);
+        context.restore();
       }
     }
     if (selected) {
@@ -663,7 +705,13 @@ export function renderSite(
         camera.zoom,
         width,
         height,
-        (position) => projectPosition(position, camera, width, height),
+        (position, id) =>
+          projectPosition(
+            pawnVisuals[id]?.position ?? position,
+            camera,
+            width,
+            height,
+          ),
         camera.selectedId,
       ),
     );

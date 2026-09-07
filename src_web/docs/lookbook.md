@@ -16,6 +16,19 @@ The player is not looking at a game wrapped in an operating-system skin. The des
 
 Personnel retain the same skin, hair, and uniform palette across their map sprite, inline selection portrait, Day Planner, and dossier. These colors identify the person; they do not encode hidden health, diagnosis, or an unimplemented equipment loadout.
 
+### Physical Activity
+
+The map shows physical work through objects and posture as well as activity bubbles:
+
+- Meals, bundled building materials, strapped beds, folded furniture, and material containment vessels retain the same artwork when carried and placed. Installed furniture uses its full station illustration.
+- Personnel face left or right with their most recent movement, alternate walking and carrying steps, and adopt working, seated, or reclining poses. Routine destinations are not treated as completed actions.
+- Adjacent observed tile steps interpolate in presentation only. Teleports, skipped ticks, perspective changes, and lost visibility do not invent travel. Bubbles, selection hit tests, and the follow camera use the displayed position. Pause freezes visual time; reduced motion uses immediate positioning and static poses.
+- Projects shows wireframe planned surfaces and vessels, crossed removal targets, and scaffolding with fitting progress. Delivered supplies remain real ground objects. Working effects require an active worker at the work site and respect the Effects toggle. These previews are not installed structures or new collision geometry.
+- Concrete cracks, steel wear and dents, ceramic fractures, composite splits, and failed-structure debris expose material condition even without the numeric Condition overlay. Viewing Floors does not paint failed-wall debris over that layer.
+- Vessel lids and latches distinguish open from sealed cases; wear, critical damage, and breaches alter the case itself. Existing emission effects stop at an intact sealed vessel and resume when its physical barrier fails. Wear marks are condition cues, not a forecast of an invented gradual leak.
+
+Recorded view uses observed object art and posture. Issued work plans remain available, but unobserved fitting progress and current work effects are withheld. Cosmetic animation neither modifies simulation state nor creates assessments, inventory, equipment, or saved animation state.
+
 Temporary expedition maps and future facilities use the same pattern. They are additional inspectable simulation objects, not routes in a single-page application.
 
 ## Historical Touchstones

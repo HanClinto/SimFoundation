@@ -210,7 +210,7 @@ export function layoutPawnBubbles(
   zoom: number,
   width: number,
   height: number,
-  project: (position: TilePosition) => TilePosition,
+  project: (position: TilePosition, personId: string) => TilePosition,
   selectedId: string | null = null,
 ): readonly PawnBubble[] {
   if (zoom < 0.45 || width < 40 || height < 40) return [];
@@ -218,7 +218,7 @@ export function layoutPawnBubbles(
     .flatMap((person) => {
       const position = state.world.positions[person.id];
       if (!position) return [];
-      const point = project(position);
+      const point = project(position, person.id);
       if (point.x < 0 || point.x > width || point.y < 0 || point.y > height)
         return [];
       return [{ person, point, cues: pawnCues(state, person.id, perspective) }];

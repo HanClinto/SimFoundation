@@ -10,8 +10,8 @@ import { DEFAULT_MAP_OVERLAYS } from "../src/adapters/browser/map-settings";
 
 afterEach(() => vi.unstubAllGlobals());
 
-it("draws distinct installed materials in Site view and retains recorded appearance until observed", () => {
-  vi.stubGlobal("window", { devicePixelRatio: 1 });
+it("draws distinct installed materials in Site view, clears the full high-DPI buffer and retains recorded appearance until observed", () => {
+  vi.stubGlobal("window", { devicePixelRatio: 1.75 });
   vi.stubGlobal(
     "Image",
     class {
@@ -34,8 +34,8 @@ it("draws distinct installed materials in Site view and retains recorded appeara
     },
   ) as CanvasRenderingContext2D;
   const canvas = {
-    clientWidth: 160,
-    clientHeight: 120,
+    clientWidth: 161,
+    clientHeight: 121,
     width: 160,
     height: 120,
     getContext: () => context,
@@ -71,6 +71,13 @@ it("draws distinct installed materials in Site view and retains recorded appeara
     return structuredClone(commands);
   };
   const concrete = draw("concrete", "world");
+  expect(concrete.slice(0, 5)).toEqual([
+    ["setTransform", 1, 0, 0, 1, 0, 0],
+    ["globalAlpha", 1],
+    ["fillStyle", "#26382f"],
+    ["fillRect", 0, 0, 282, 212],
+    ["setTransform", 1.75, 0, 0, 1.75, 0, 0],
+  ]);
   for (const material of ["steel", "ceramic", "composite"] as const) {
     const rendered = draw(material, "world");
     expect(rendered).not.toEqual(concrete);

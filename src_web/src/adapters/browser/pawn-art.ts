@@ -24,16 +24,66 @@ function pawnProfile(personId: string) {
   return profiles[index >= 0 ? index : 0]!;
 }
 
-export function pawnMapSprite(personId: string): string {
-  const cached = mapSprites.get(personId);
+export type PawnPose =
+  | "stand"
+  | "walk-left"
+  | "walk-right"
+  | "carry"
+  | "carry-left"
+  | "carry-right"
+  | "work"
+  | "sit"
+  | "sleep";
+
+export function pawnMapSprite(
+  personId: string,
+  pose: PawnPose = "stand",
+  facing: "left" | "right" = "right",
+): string {
+  const key = `${personId}:${pose}:${facing}`;
+  const cached = mapSprites.get(key);
   if (cached) return cached;
   const profile = pawnProfile(personId);
   const document = new DOMParser().parseFromString(mapSource, "image/svg+xml");
   document.getElementById("head")!.setAttribute("fill", profile.skin);
   document.getElementById("hair")!.setAttribute("fill", profile.hair);
   document.getElementById("uniform")!.setAttribute("fill", profile.uniform);
+  const legs = document.getElementById("legs")!.querySelectorAll("path");
+  const arms = document.getElementById("uniform")!.querySelectorAll("path")[1]!;
+  if (
+    pose === "walk-left" ||
+    pose === "walk-right" ||
+    pose === "carry-left" ||
+    pose === "carry-right"
+  ) {
+    const stride = pose.endsWith("left") ? 2 : -2;
+    legs[0]!.setAttribute("transform", `translate(0 ${stride})`);
+    legs[1]!.setAttribute("transform", `translate(0 ${-stride})`);
+  }
+  if (pose.startsWith("carry"))
+    arms.setAttribute("d", "M5 13L2 19l8 2 1-4-5-1M19 13l3 6-8 2-1-4 5-1");
+  if (pose === "work")
+    arms.setAttribute("d", "M5 13L2 19l8-5-2-3M19 13l3 5-9 3-1-4 6-2");
+  if (pose === "sit") {
+    legs[0]!.setAttribute("d", "M6 23h5v5H5v4H2v-8z");
+    legs[1]!.setAttribute("d", "M13 23h5l4 4v6h-4v-5h-5z");
+  }
+  if (pose === "sleep") {
+    document.getElementById("shadow")!.setAttribute("opacity", "0");
+    for (const group of Array.from(document.documentElement.children))
+      group.setAttribute(
+        "transform",
+        "translate(12 22) rotate(-65) scale(.65) translate(-12 -18)",
+      );
+  }
+  if (facing === "left") {
+    const group = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    group.setAttribute("transform", "translate(24 0) scale(-1 1)");
+    group.append(...Array.from(document.documentElement.children));
+    document.documentElement.append(group);
+  }
   const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(new XMLSerializer().serializeToString(document))}`;
-  mapSprites.set(personId, url);
+  mapSprites.set(key, url);
   return url;
 }
 

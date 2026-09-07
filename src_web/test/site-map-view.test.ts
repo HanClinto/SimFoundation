@@ -14,7 +14,7 @@ afterEach(() => {
   vi.clearAllMocks();
 });
 
-it("animates cosmetic emissions without ticking and respects pause, hidden windows, and reduced motion", () => {
+it("animates physical activity without emissions or ticking and respects pause, hidden windows, and reduced motion", () => {
   const window = new JSDOM(
     '<section><select data-camera-entity></select><span data-camera-status></span><output data-camera-zoom></output><button data-camera-action="inspect"></button><input data-map-perspective="recorded"/><input type="checkbox" data-map-overlay="effects"/><div data-placement-bar><strong data-placement-label></strong><span data-placement-feedback></span><button data-camera-action="confirm"></button><button data-camera-action="cancel"></button></div><canvas></canvas></section>',
     { pretendToBeVisual: true },
@@ -42,19 +42,33 @@ it("animates cosmetic emissions without ticking and respects pause, hidden windo
     clientHeight: { value: 420 },
   });
   const controller = createController(createInitialState());
-  controller.setExposureSource({
-    name: "Effect",
-    position: { x: 60, y: 54 },
-    kind: "corrosion",
-    dose: 4,
-    radius: 1,
-  });
   const view = createSiteMap(canvas, root, controller, vi.fn());
   const renderer = vi.mocked(renderSite);
   renderer.mockClear();
   view.animate(100);
   expect(renderer.mock.calls[0]![3]).toBe(100);
   expect(controller.getSnapshot().game.tick).toBe(0);
+  const initial = controller.getSnapshot();
+  const id = initial.game.personnel[0]!.id;
+  const origin = initial.game.world.positions[id]!;
+  view.render({
+    ...initial,
+    game: {
+      ...initial.game,
+      tick: 1,
+      world: {
+        ...initial.game.world,
+        positions: {
+          ...initial.game.world.positions,
+          [id]: { x: origin.x + 1, y: origin.y },
+        },
+      },
+    },
+  });
+  view.animate(300);
+  expect(renderer.mock.calls.at(-1)![4]![id]!.position.x).toBe(origin.x + 0.5);
+  expect(renderer.mock.calls.at(-1)![4]![id]!.pose).toMatch(/^walk-/);
+  expect(controller.getSnapshot()).toEqual(initial);
   view.render(controller.setRunning(false));
   renderer.mockClear();
   view.animate(500);
@@ -79,7 +93,8 @@ it("animates cosmetic emissions without ticking and respects pause, hidden windo
   effects.dispatchEvent(new window.Event("change", { bubbles: true }));
   renderer.mockClear();
   view.animate(1200);
-  expect(renderer).not.toHaveBeenCalled();
+  expect(renderer.mock.calls[0]![3]).toBe(1200);
+  expect(renderer.mock.calls[0]![2]!.overlays!.effects).toBe(false);
   effects.checked = true;
   effects.dispatchEvent(new window.Event("change", { bubbles: true }));
   root
@@ -87,7 +102,8 @@ it("animates cosmetic emissions without ticking and respects pause, hidden windo
     .dispatchEvent(new window.Event("change", { bubbles: true }));
   renderer.mockClear();
   view.animate(1400);
-  expect(renderer).not.toHaveBeenCalled();
+  expect(renderer.mock.calls[0]![3]).toBe(1400);
+  expect(renderer.mock.calls[0]![2]!.perspective).toBe("recorded");
 });
 
 it("combines independent layers without changing pinned placement and cancels without mutation", () => {

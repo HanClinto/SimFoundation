@@ -1,9 +1,48 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { pawnMapSprite, pawnPortrait } from "../src/adapters/browser/pawn-art";
+import {
+  pawnMapSprite,
+  pawnPortrait,
+  type PawnPose,
+} from "../src/adapters/browser/pawn-art";
 import { createInitialState } from "../src/simulation/state";
 
 afterEach(() => vi.unstubAllGlobals());
+
+it("provides distinct bounded poses and mirrored facing without changing identity", () => {
+  const window = new JSDOM().window;
+  vi.stubGlobal("DOMParser", window.DOMParser);
+  vi.stubGlobal("XMLSerializer", window.XMLSerializer);
+  const poses: PawnPose[] = [
+    "stand",
+    "walk-left",
+    "walk-right",
+    "carry",
+    "carry-left",
+    "carry-right",
+    "work",
+    "sit",
+    "sleep",
+  ];
+  const urls = poses.map((pose) => pawnMapSprite("person-priya-shah", pose));
+  expect(new Set(urls).size).toBe(poses.length);
+  for (const pose of poses) {
+    const url = pawnMapSprite("person-priya-shah", pose, "left");
+    expect(pawnMapSprite("person-priya-shah", pose, "left")).toBe(url);
+    const sprite = new window.DOMParser().parseFromString(
+      decodeURIComponent(url.split(",")[1]!),
+      "image/svg+xml",
+    );
+    expect(sprite.querySelector("parsererror")).toBeNull();
+    expect(sprite.documentElement.getAttribute("viewBox")).toBe("0 0 24 36");
+    expect(sprite.getElementById("uniform")!.getAttribute("fill")).toBe(
+      "#a6c7bd",
+    );
+    expect(
+      sprite.documentElement.firstElementChild!.getAttribute("transform"),
+    ).toBe("translate(24 0) scale(-1 1)");
+  }
+});
 
 it("matches each map sprite to its portrait palette and caches well-formed original SVG variants", () => {
   const window = new JSDOM().window;

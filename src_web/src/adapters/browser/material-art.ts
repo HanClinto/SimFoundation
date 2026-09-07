@@ -36,6 +36,64 @@ export const MATERIAL_ART = {
   },
 } as const;
 
+export function drawSurfaceDamage(
+  context: CanvasRenderingContext2D,
+  surface: Surface,
+  raised: boolean,
+): void {
+  if (surface.integrity >= 100) return;
+  context.save();
+  const top = raised ? -12 : -3;
+  context.lineWidth = surface.integrity <= 25 ? 2 : 1;
+  context.strokeStyle = MATERIAL_ART[surface.material].edge;
+  if (surface.integrity <= 0) {
+    context.fillStyle = MATERIAL_ART[surface.material].side;
+    for (const [horizontal, vertical, size] of [
+      [-11, -3, 5],
+      [3, 1, 6],
+      [-3, -6, 4],
+      [9, -4, 3],
+    ]) {
+      context.fillRect(horizontal!, vertical!, size!, Math.max(2, size! / 2));
+      context.strokeRect(horizontal!, vertical!, size!, Math.max(2, size! / 2));
+    }
+  } else if (surface.material === "steel") {
+    context.fillStyle = "#986548";
+    context.fillRect(-7, top - 2, 4, 3);
+    if (surface.integrity < 70) context.fillRect(4, top + 2, 7, 3);
+    context.beginPath();
+    context.moveTo(-10, top + 3);
+    context.lineTo(-2, top + 5);
+    context.lineTo(6, top + 2);
+    context.stroke();
+  } else {
+    context.beginPath();
+    context.moveTo(-11, top - 3);
+    context.lineTo(-4, top);
+    context.lineTo(-6, top + 3);
+    context.lineTo(2, top + 5);
+    if (surface.integrity < 70) {
+      context.lineTo(8, top + 2);
+      context.lineTo(13, top + 5);
+    }
+    if (surface.material === "ceramic") {
+      context.moveTo(-4, top);
+      context.lineTo(2, top - 4);
+      context.moveTo(2, top + 5);
+      context.lineTo(0, top + 9);
+    } else if (surface.material === "composite") {
+      context.moveTo(-9, top + 1);
+      context.lineTo(9, top + 7);
+    }
+    context.stroke();
+    if (surface.integrity <= 25) {
+      context.fillStyle = MATERIAL_ART[surface.material].side;
+      context.fillRect(-3, top + 1, 5, 4);
+    }
+  }
+  context.restore();
+}
+
 export function visibleSurface(
   cell: TileSurfaces | undefined,
   tile: TileKind,

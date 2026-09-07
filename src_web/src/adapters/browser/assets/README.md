@@ -19,6 +19,10 @@ Pawn action and outward-mood glyphs are original 9x9 pixel patterns in `../pawn-
 
 Runtime personnel variants of `site-worker.svg` recolor the original head, hair, and uniform groups with the same six palettes used by `pawn-art.ts` dossier portraits. Modification author: GitHub Copilot, 2026-09-05. The geometry and CC BY-SA 3.0 license are unchanged; no external artwork or new outfit/equipment state is introduced. Generated SVG data URLs and loaded canvas images are cached per person.
 
+On 2026-09-06, GitHub Copilot added original runtime posture variants in `../pawn-art.ts`: alternating walking and carrying steps, raised carrying arms, working arms, seated legs, a reclining pose, and mirrored facing. These modify the original SVG geometry, preserve personnel palettes, and are cached by person, pose, and facing. License remains CC BY-SA 3.0. These are presentation poses, not new equipment state.
+
+The shared cargo silhouettes and vessel lids, latches, handles, and damage marks in `../object-art.ts`, construction wireframes and scaffolding in `../work-art.ts`, and condition-dependent material marks in `../material-art.ts` are original editable Canvas artwork authored by GitHub Copilot on 2026-09-06, under CC BY-SA 3.0. No third-party game art or paid generated assets were used.
+
 On 2026-09-05, the SCP-999 marker was revised against source revision 40: a broad translucent oblate dome, without a permanent face. Dimensions remain a stylized approximation; see the local source catalog and adaptation notes under `docs/references/`.
 
 ## Personnel Reference Illustrations
