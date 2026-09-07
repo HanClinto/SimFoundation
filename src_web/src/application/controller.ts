@@ -4,6 +4,7 @@ import {
   setCameraEnabled,
   type CameraPlacementCode,
 } from "../simulation/observations";
+import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import { advanceSimulation } from "../simulation/tick";
 import { setWorkPriority, type WorkPriority } from "../simulation/jobs";
 import {
@@ -76,6 +77,11 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  setUtilityEnabled(id: string, enabled: boolean): ControllerSnapshot;
+  repairUtility(id: string): {
+    code: VesselCommandCode;
+    snapshot: ControllerSnapshot;
+  };
   craftVessel(
     position: TilePosition,
     material: MaterialId,
@@ -202,7 +208,8 @@ export function createController(initialState: GameState): GameController {
     policy: DoorPolicy,
   ): ControllerSnapshot {
     const obstructions = state.objects.items.flatMap((item) =>
-      item.location.kind === "ground"
+      item.location.kind === "ground" &&
+      !(item.kind === "cable" && item.installed)
         ? item.installed
           ? objectFootprint(item, item.location.position)
           : [item.location.position]
@@ -217,6 +224,21 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    setUtilityEnabled(id, enabled) {
+      state = observeSite(setUtilityEnabled(state, id, enabled));
+      return publish();
+    },
+    repairUtility(id) {
+      if (
+        !state.objects.items.some(
+          (item) => item.id === id && isElectrical(item),
+        )
+      )
+        return { code: "not-found", snapshot: getSnapshot() };
+      const result = orderVesselAction(state, id, "repair");
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
     craftVessel(position, material) {
       const result = craftVessel(state, position, material);
       state = result.state;

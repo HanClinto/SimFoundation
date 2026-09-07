@@ -210,6 +210,22 @@ describe("facility observations", () => {
     const position = { x: 90, y: 90 };
     const state = {
       ...initial,
+      objects: {
+        ...initial.objects,
+        items: [
+          ...initial.objects.items,
+          {
+            id: "test-generator",
+            kind: "generator" as const,
+            installed: true,
+            quantity: 1,
+            condition: 100,
+            orientation: "north" as const,
+            reservedBy: null,
+            location: { kind: "ground" as const, position },
+          },
+        ],
+      },
       tick: 12,
       world: {
         ...initial.world,

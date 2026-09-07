@@ -1,5 +1,6 @@
 import PF from "pathfinding";
 import type { GameState } from "./state";
+import { powerNetwork } from "./power";
 import { vesselReservesTile } from "./vessel-work";
 import { isActiveSurfaceOrder } from "./environment";
 import { objectPosition, type PhysicalObject } from "./objects";
@@ -151,6 +152,7 @@ export function createSiteObservations(world: SiteWorld): SiteObservations {
 
 export function observeSite(state: GameState): GameState {
   const map = state.world.map;
+  const power = powerNetwork(state);
   const sensors = [
     ...state.personnel
       .filter(
@@ -166,7 +168,12 @@ export function observeSite(state: GameState): GameState {
         range: 6,
       })),
     ...state.observations.cameras
-      .filter((camera) => camera.enabled && cameraInstalled(state, camera))
+      .filter(
+        (camera) =>
+          camera.enabled &&
+          cameraInstalled(state, camera) &&
+          power.readings[camera.id]?.status === "powered",
+      )
       .map((camera) => ({
         id: camera.id,
         position: camera.position,

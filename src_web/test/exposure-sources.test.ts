@@ -156,6 +156,13 @@ it("lets a generic source trigger observed barrier failure and physical maintena
   let state = setExposureSource(
     {
       ...initial,
+      world: {
+        ...initial.world,
+        positions: {
+          ...initial.world.positions,
+          "person-mara-voss": { x: 60, y: 54 },
+        },
+      },
       environment: { ...initial.environment, automaticRepairs: true },
     },
     { ...policy, radius: 1 },

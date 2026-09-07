@@ -67,18 +67,23 @@ export function objectPlacementIssue(
     storageContains(area, destination),
   );
   if (area) {
-    if (install || !storageAccepts(state, area, object)) return "occupied";
+    if (
+      !(object.kind === "cable" && install) &&
+      (install || !storageAccepts(state, area, object))
+    )
+      return "occupied";
     const alreadyHere =
       object.location.kind === "ground" &&
       storageContains(area, object.location.position)
         ? object.quantity
         : 0;
     if (
+      !(object.kind === "cable" && install) &&
       storageQuantity(state, area) -
         alreadyHere +
         incomingQuantity(state, area, objectId) +
         (quantity ?? object.quantity) >
-      area.capacity
+        area.capacity
     )
       return "occupied";
   }
@@ -96,6 +101,7 @@ export function objectPlacementIssue(
     return "occupied";
   if (
     install &&
+    object.kind !== "cable" &&
     state.storage.areas.some((area) =>
       footprint.some((position) => storageContains(area, position)),
     )
@@ -107,8 +113,13 @@ export function objectPlacementIssue(
       return (
         tile === null ||
         tile === "wall" ||
-        tile === "closed-door" ||
-        (install && tile !== "floor")
+        (tile === "closed-door" && object.kind !== "cable") ||
+        (install &&
+          tile !== "floor" &&
+          !(
+            object.kind === "cable" &&
+            (tile === "door" || tile === "closed-door")
+          ))
       );
     })
   )
@@ -144,6 +155,8 @@ export function objectPlacementIssue(
       (item) =>
         item.id !== objectId &&
         item.location.kind === "ground" &&
+        !(item.kind === "cable" && item.installed && object.kind !== "cable") &&
+        !(object.kind === "cable" && install && item.kind !== "cable") &&
         (install ||
           item.installed ||
           !OBJECT_DEFINITIONS[item.kind].stackable) &&
@@ -163,6 +176,10 @@ export function objectPlacementIssue(
           const item = state.objects.items.find(
             (item) => item.id === order.objectId,
           )!;
+          if (order.install && item.kind === "cable" && object.kind !== "cable")
+            return false;
+          if (install && object.kind === "cable" && item.kind !== "cable")
+            return false;
           return (
             order.install
               ? objectFootprint(

@@ -25,7 +25,8 @@ export function advanceSimulation(state: GameState): GameState {
     world: closeAutomaticDoors(
       state.world,
       state.objects.items.flatMap((item) =>
-        item.location.kind === "ground"
+        item.location.kind === "ground" &&
+        !(item.kind === "cable" && item.installed)
           ? item.installed
             ? objectFootprint(item, item.location.position)
             : [item.location.position]

@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { isElectrical } from "./power";
 import type { SiteJob } from "./jobs";
 import { MATERIALS, type MaterialId } from "./materials";
 import {
@@ -276,9 +277,15 @@ export function orderVesselAction(
   if (action !== "load" && cargoId !== undefined)
     return { state, code: "invalid-cargo" };
   const vessel = state.objects.items.find(
-    (item) => item.id === vesselId && item.kind === "vessel",
+    (item) =>
+      item.id === vesselId &&
+      (item.kind === "vessel" || (action === "repair" && isElectrical(item))),
   );
-  if (!vessel?.vessel || vessel.location.kind !== "ground")
+  if (
+    !vessel ||
+    (!vessel.vessel && !isElectrical(vessel)) ||
+    vessel.location.kind !== "ground"
+  )
     return { state, code: "not-found" };
   if (vessel.reservedBy || state.vesselWork.orders.length >= 1000)
     return { state, code: "busy" };
@@ -300,12 +307,12 @@ export function orderVesselAction(
   )
     return { state, code: "invalid-cargo" };
   if (action === "repair") {
-    if (vessel.vessel.sealed) return { state, code: "sealed" };
+    if (vessel.vessel?.sealed) return { state, code: "sealed" };
     if (content) return { state, code: "invalid-cargo" };
     if (vessel.condition >= 100) return { state, code: "busy" };
     const id = `vessel-order-${state.vesselWork.nextId}`;
     const jobId = `job-${id}`;
-    const material = vessel.vessel.material;
+    const material = vessel.vessel?.material ?? "steel";
     const cost = vesselOrderCost({ action, material });
     if (state.construction.availableMaterials < cost)
       return { state, code: "insufficient-materials" };
@@ -361,6 +368,7 @@ export function orderVesselAction(
       ),
     };
   }
+  if (!vessel.vessel) return { state, code: "invalid-cargo" };
   if (action === "transport") {
     if (
       !transport ||
@@ -512,7 +520,10 @@ export function advanceVesselWork(state: GameState): GameState {
         candidate.id === job.id
           ? {
               ...job,
-              title: "Deliver vessel materials",
+              title:
+                order.action === "repair"
+                  ? "Deliver repair materials"
+                  : "Deliver vessel materials",
               status: "available",
               progress: 0,
               completedTick: null,
@@ -541,7 +552,10 @@ export function advanceVesselWork(state: GameState): GameState {
         candidate.id === job.id
           ? {
               ...job,
-              title: `${order.action === "repair" ? "Repair" : "Fabricate"} ${MATERIALS[order.material].name.toLowerCase()} vessel`,
+              title:
+                order.action === "repair"
+                  ? `Repair ${OBJECT_DEFINITIONS[objects.items.find((item) => item.id === order.vesselId)!.kind].name.toLowerCase()}`
+                  : `Fabricate ${MATERIALS[order.material].name.toLowerCase()} vessel`,
               skillId: "engineering",
               status: "available",
               progress: 0,
@@ -557,8 +571,9 @@ export function advanceVesselWork(state: GameState): GameState {
     if (order.action === "repair") {
       const vessel = objects.items.find((item) => item.id === order.vesselId);
       if (
-        !vessel?.vessel ||
-        vessel.vessel.sealed ||
+        !vessel ||
+        (!vessel.vessel && !isElectrical(vessel)) ||
+        vessel.vessel?.sealed ||
         vessel.location.kind !== "ground" ||
         vessel.reservedBy !== job.id ||
         Math.abs(origin.x - vessel.location.position.x) +
@@ -573,7 +588,7 @@ export function advanceVesselWork(state: GameState): GameState {
         return {
           ...order,
           blockedReason:
-            "Repair requires an empty open case and a worker at the vessel.",
+            "Repair requires accessible equipment and a worker at the work face; cases must be empty and open.",
         };
       if (!cargo)
         return {

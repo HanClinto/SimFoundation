@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { isElectrical } from "./power";
 import { blocksSpace } from "./spaces";
 import { advanceVesselWear, containingBarrier } from "./vessels";
 import { vesselReservesTile } from "./vessel-work";
@@ -412,8 +413,15 @@ export function exposureTiles(
 export function advanceExposure(state: GameState): GameState {
   state = advanceVesselWear(state);
   const damage: SurfaceDamage[] = [];
+  const electricalDamage = new Map<number, number>();
   for (const source of state.environment.sources) {
     for (const position of exposureTiles(state, source)) {
+      const index = position.y * state.world.map.width + position.x;
+      electricalDamage.set(
+        index,
+        (electricalDamage.get(index) ?? 0) +
+          source.dose * (source.kind === "corrosion" ? 0.5 : 0.2),
+      );
       if (surfaceAt(state.world.map, position, "structure"))
         damage.push({
           position,
@@ -423,6 +431,31 @@ export function advanceExposure(state: GameState): GameState {
         });
     }
   }
+  if (electricalDamage.size)
+    state = {
+      ...state,
+      objects: {
+        ...state.objects,
+        items: state.objects.items.map((item) => {
+          if (!isElectrical(item)) return item;
+          const position = objectPosition(item, state.world.positions);
+          const dose = position
+            ? (electricalDamage.get(
+                position.y * state.world.map.width + position.x,
+              ) ?? 0)
+            : 0;
+          return dose > 0
+            ? {
+                ...item,
+                condition: Math.max(
+                  0,
+                  Math.round((item.condition - dose) * 100) / 100,
+                ),
+              }
+            : item;
+        }),
+      },
+    };
   const map = damageSurfaces(state.world.map, damage);
   return map === state.world.map
     ? state

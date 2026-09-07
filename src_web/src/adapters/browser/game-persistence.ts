@@ -1,4 +1,5 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
+import { isElectrical } from "../../simulation/power";
 import {
   activeVesselOrder,
   vesselOrderCost,
@@ -1200,6 +1201,9 @@ function isPhysicalObject(value: unknown): value is PhysicalObject {
     typeof value.installed !== "boolean" ||
     !isLiteral(value.orientation, ["north", "east", "south", "west"]) ||
     !isNullableString(value.reservedBy) ||
+    (value.utilityEnabled !== undefined &&
+      (typeof value.utilityEnabled !== "boolean" ||
+        !["generator", "cable", "light"].includes(String(value.kind)))) ||
     !isRecord(value.location)
   )
     return false;
@@ -1337,9 +1341,11 @@ function objectsValid(state: GameState): boolean {
         (OBJECT_DEFINITIONS[item.kind].stackable ||
           objectFootprint(item, item.location.position).some(
             (position) =>
-              !["grass", "floor", "door"].includes(
-                tileAt(state.world.map, position) ?? "",
-              ),
+              !(
+                item.kind === "cable"
+                  ? ["grass", "floor", "door", "closed-door"]
+                  : ["grass", "floor", "door"]
+              ).includes(tileAt(state.world.map, position) ?? ""),
           ))
       )
         return false;
@@ -1352,12 +1358,14 @@ function objectsValid(state: GameState): boolean {
     return false;
   const materials = items.filter((item) => item.kind === "materials");
   const occupied = new Set<number>();
+  const conduit = new Set<number>();
   for (const item of items)
     if (item.installed && item.location.kind === "ground")
       for (const position of objectFootprint(item, item.location.position)) {
         const index = position.y * state.world.map.width + position.x;
-        if (occupied.has(index)) return false;
-        occupied.add(index);
+        const layer = item.kind === "cable" ? conduit : occupied;
+        if (layer.has(index)) return false;
+        layer.add(index);
       }
   for (const [personId, activity] of Object.entries(
     state.routines.activities,
@@ -1507,7 +1515,7 @@ function isStorageArea(value: unknown): value is StorageArea {
       value.accepts,
       (kind) =>
         isNonEmptyString(kind) && Object.hasOwn(OBJECT_DEFINITIONS, kind),
-      6,
+      Object.keys(OBJECT_DEFINITIONS).length,
     ) &&
     value.accepts.length > 0 &&
     new Set(value.accepts).size === value.accepts.length &&
@@ -1553,7 +1561,9 @@ function storageReferencesValid(state: GameState): boolean {
     );
     const item = state.objects.items.find((item) => item.id === order.objectId);
     return (
-      !area || (!!item && !order.install && area.accepts.includes(item.kind))
+      !area ||
+      (item?.kind === "cable" && order.install) ||
+      (!!item && !order.install && area.accepts.includes(item.kind))
     );
   });
 }
@@ -1619,7 +1629,11 @@ function vesselReferencesValid(state: GameState): boolean {
     const cargo = state.objects.items.find((item) => item.id === order.cargoId);
     if (
       order.action === "repair" &&
-      (vessel?.kind !== "vessel" || vessel.vessel?.material !== order.material)
+      (!vessel ||
+        (isElectrical(vessel)
+          ? order.material !== "steel"
+          : vessel.kind !== "vessel" ||
+            vessel.vessel?.material !== order.material))
     )
       return false;
     if (order.phase === "cancelled")
@@ -1643,7 +1657,12 @@ function vesselReferencesValid(state: GameState): boolean {
     )
       return false;
     if (order.phase === "completed")
-      return job.status === "completed" && vessel?.kind === "vessel";
+      return (
+        job.status === "completed" &&
+        !!vessel &&
+        (vessel.kind === "vessel" ||
+          (order.action === "repair" && isElectrical(vessel)))
+      );
     if (order.action === "craft" || order.action === "repair") {
       if (
         (order.action === "craft"

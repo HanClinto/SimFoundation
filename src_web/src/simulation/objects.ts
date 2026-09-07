@@ -3,6 +3,27 @@ import type { RoutineStation } from "./routines";
 import type { MaterialId } from "./materials";
 
 export const OBJECT_DEFINITIONS = {
+  generator: {
+    name: "Generator",
+    width: 1,
+    height: 1,
+    activity: null,
+    stackable: false,
+  },
+  cable: {
+    name: "Power cable",
+    width: 1,
+    height: 1,
+    activity: null,
+    stackable: false,
+  },
+  light: {
+    name: "Light fixture",
+    width: 1,
+    height: 1,
+    activity: null,
+    stackable: false,
+  },
   vessel: {
     name: "Containment vessel",
     width: 1,
@@ -63,6 +84,7 @@ export interface PhysicalObject {
   readonly installed: boolean;
   readonly location: ObjectLocation;
   readonly reservedBy: string | null;
+  readonly utilityEnabled?: boolean;
   readonly vessel?: { readonly material: MaterialId; readonly sealed: boolean };
 }
 export interface ObjectStore {

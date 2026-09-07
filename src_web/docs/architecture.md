@@ -114,6 +114,18 @@ Browser code reads immutable snapshots and domain events. It never mutates entit
 
 ## State Model
 
+### Electrical Utilities (Schema 36)
+
+`PhysicalObject.kind` includes generator, cable, and light, with optional boolean `utilityEnabled` defaulting to true. Installation, relocation, reservations, and cargo remain owned by the existing object store and object-work system. Installed cable occupies a separate underfloor layer: it does not count toward storage capacity, obstruct doors, or conflict with furniture. Packed cable is ordinary finite inventory. Starting equipment and its commissioned circuit are authored by `power-setup.ts`.
+
+`power.ts` derives cardinal connected components, supply, demand, and per-device status from immutable authoritative state. Cameras attach to one same-tile or adjacent terminal with a stable ID tie-break and add demand without bridging circuits. Components overload as a unit; removing demand or adding supply restores service on the next derivation, without time-based oscillation. `observeSite` consults this graph before admitting a camera as a sensor. Personnel vision is unchanged. `lighting.ts` derives bounded illumination using the existing line-of-sight implementation. Neither graph nor light field is serialized.
+
+Electrical damage is accumulated from the existing exposure reach and applied to object condition. Ground and carried electrical objects are affected; contained and off-map objects are excluded from external exposure. Zero condition removes electrical continuity and service. Repair reuses the existing material-delivery and engineering pipeline with an electrical target and a steel service kit. `repairUtility` rejects non-electrical targets. Reservations prevent moving or switching a device during repair; save validation checks repair targets and material accounting. The historical `vesselWork` field remains the storage owner for this shared repair pipeline; its other actions still require vessels.
+
+The Power inspector is explicitly World-state inspection, with a read-only Recorded projection when opened from that perspective. Recorded mode does not infer current power or illumination from partial knowledge. Camera service status is administrative telemetry, while sightings remain observation-limited. Utility problems are inspectable service states, not new automatic Orange/Red incidents. The renderer consumes graph/light results, original equipment glyphs, and a separate power overlay; it never changes service or applies damage.
+
+See [decision 001](decisions/001-physical-electrical-utilities.md) for the scope and alternatives.
+
 ### Facility Observation Memory
 
 `observations` is simulation-owned, serialized knowledge: remembered tiles and their last-seen ticks, current visible tile/entity sets, entity sightings with observer IDs and coarse outward impressions, known room records, the last observed SCP-999 protocol snapshot, and camera installations. Awake personnel report their local surroundings; sleeping staff do not provide sight. This initial model assumes working staff communications. Installed enabled cameras provide local omnidirectional coverage. Walls occlude sight, closed doors occlude sight, diagonal wall corners block sight, and range is bounded. Directional cameras, communications failures, lighting, and unusual sensing are later extensions.

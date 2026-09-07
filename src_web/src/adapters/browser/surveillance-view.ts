@@ -28,6 +28,7 @@ import {
   type CameraPlacementCode,
 } from "../../simulation/observations";
 import type { TilePosition } from "../../simulation/world";
+import { powerNetwork } from "../../simulation/power";
 
 export const cameraMessages: Record<CameraPlacementCode, string> = {
   "installed-order": "Camera installation assigned to engineering.",
@@ -99,7 +100,10 @@ export function createSurveillanceView(
       )
         ? "Installation pending"
         : camera.enabled
-          ? "Online"
+          ? powerNetwork(snapshot.game).readings[camera.id]?.status ===
+            "powered"
+            ? "Online"
+            : `Offline / ${powerNetwork(snapshot.game).readings[camera.id]?.status ?? "disconnected"}`
           : "Disabled";
       row.querySelector("[data-camera-range]")!.textContent =
         `${camera.range} tiles`;

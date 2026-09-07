@@ -18,8 +18,9 @@ import { createObjectStore, objectBlocks, type ObjectStore } from "./objects";
 import { type ObjectOrder } from "./object-work";
 import { createStorage, type StorageState } from "./storage";
 import type { VesselWork } from "./vessel-work";
+import { installStartingPower } from "./power-setup";
 
-export const GAME_STATE_VERSION = 35;
+export const GAME_STATE_VERSION = 36;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -57,7 +58,12 @@ export function createInitialState(seed = 9620): GameState {
   const personnel = createStartingPersonnel();
   const world = createStartingWorld(personnel.map(({ id }) => id));
   const routines = createRoutineState(personnel);
-  const objects = createObjectStore(routines.stations);
+  const observations = createSiteObservations(world);
+  const objects = installStartingPower(
+    createObjectStore(routines.stations),
+    world,
+    observations.cameras,
+  );
   const furnishedWorld = {
     ...world,
     map: { ...world.map, objectBlocks: objectBlocks(objects, world.map.width) },
@@ -92,7 +98,7 @@ export function createInitialState(seed = 9620): GameState {
     objectOrders: [],
     vesselWork: { nextId: 1, orders: [] },
     storage: createStorage(),
-    observations: createSiteObservations(world),
+    observations,
     environment: createEnvironment(),
   });
 }

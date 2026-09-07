@@ -43,6 +43,7 @@ it("draws distinct cargo silhouettes independent of ground or carrier location",
     closePath: vi.fn(),
     stroke: vi.fn(),
     fill: vi.fn(),
+    ellipse: vi.fn(),
   };
   const items = [
     ...createInitialState().objects.items.filter((item) => !item.installed),
@@ -61,7 +62,7 @@ it("draws distinct cargo silhouettes independent of ground or carrier location",
     });
     expect(JSON.stringify(context.fillRect.mock.calls)).toBe(signature);
   }
-  expect(new Set(silhouettes.values()).size).toBe(6);
+  expect(new Set(silhouettes.values()).size).toBe(9);
   expect(context.save.mock.calls.length).toBe(
     context.restore.mock.calls.length,
   );

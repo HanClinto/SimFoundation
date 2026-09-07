@@ -106,6 +106,16 @@ export function storedObjects(
   return state.objects.items.filter(
     (item) =>
       item.location.kind === "ground" &&
+      !(
+        item.kind === "cable" &&
+        (item.installed ||
+          state.objectOrders.some(
+            (order) =>
+              order.objectId === item.id &&
+              order.install &&
+              order.phase === "install",
+          ))
+      ) &&
       storageContains(area, item.location.position),
   );
 }
@@ -204,6 +214,7 @@ export function incomingQuantity(
     .filter(
       (order) =>
         !["completed", "cancelled"].includes(order.phase) &&
+        !order.install &&
         order.objectId !== exceptObject &&
         storageContains(area, order.destination),
     )
@@ -318,6 +329,7 @@ export function storagePlacementIssue(
           (storageContains(area, item.location.position) ||
             (old && storageContains(old, item.location.position)))) ||
           (item.installed &&
+            item.kind !== "cable" &&
             objectFootprint(item, item.location.position).some((position) =>
               storageContains(area, position),
             ))),

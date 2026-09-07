@@ -366,6 +366,16 @@ export function createSiteMap(
     const object = camera.overlays?.objects
       ? mapObjects(displayed().game, camera.perspective)
           .filter((object) => !object.id.startsWith("storage:"))
+          .filter(
+            (object) =>
+              camera.overlays?.power ||
+              !displayed().game.objects.items.some(
+                (item) =>
+                  object.id === `object:${item.id}` &&
+                  item.kind === "cable" &&
+                  item.installed,
+              ),
+          )
           .map((object) => {
             const projected = projectPosition(
               visualPosition(object.id, object.position),

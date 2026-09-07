@@ -7,6 +7,7 @@ import {
 import type { GameState } from "../../simulation/state";
 import type { TilePosition } from "../../simulation/world";
 import { MATERIALS } from "../../simulation/materials";
+import { isElectrical, powerNetwork } from "../../simulation/power";
 
 export function vesselAppearance(
   item: PhysicalObject,
@@ -27,7 +28,36 @@ export function drawObjectGlyph(
   context.save();
   context.strokeStyle = "#35443e";
   context.lineWidth = 1.5;
-  if (item.kind === "vessel" && item.vessel) {
+  if (item.kind === "generator") {
+    context.fillStyle = "#749392";
+    context.fillRect(-16, -25, 32, 23);
+    context.strokeRect(-16, -25, 32, 23);
+    context.fillStyle = "#344c49";
+    for (let vent = 0; vent < 4; vent += 1)
+      context.fillRect(-12, -21 + vent * 4, 14, 2);
+    context.fillStyle = "#ddd7a8";
+    context.fillRect(6, -21, 6, 7);
+    context.fillStyle = "#394846";
+    context.fillRect(-13, -2, 5, 4);
+    context.fillRect(8, -2, 5, 4);
+  } else if (item.kind === "cable") {
+    context.strokeStyle = "#bd9c51";
+    context.lineWidth = 3;
+    context.beginPath();
+    context.ellipse(0, -10, 10, 7, 0, 0, Math.PI * 2);
+    context.stroke();
+    context.fillStyle = "#344943";
+    context.fillRect(-3, -18, 6, 16);
+  } else if (item.kind === "light") {
+    context.fillStyle = "#5d7575";
+    context.fillRect(-3, -26, 6, 24);
+    context.fillRect(-9, -3, 18, 4);
+    context.fillStyle = "#d9ded5";
+    context.fillRect(-12, -30, 24, 8);
+    context.strokeRect(-12, -30, 24, 8);
+    context.fillStyle = "#fff1b5";
+    context.fillRect(-10, -27, 20, 4);
+  } else if (item.kind === "vessel" && item.vessel) {
     const appearance = vesselAppearance(item);
     context.fillStyle = MATERIALS[item.vessel.material].color;
     context.fillRect(-15, -22, 30, 20);
@@ -116,6 +146,16 @@ export function drawObjectGlyph(
       context.strokeRect(-14, -18, 28, 4);
     }
   }
+  if (isElectrical(item) && item.condition < 100) {
+    context.strokeStyle = item.condition <= 0 ? "#d45e4e" : "#8f623f";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(-7, -20);
+    context.lineTo(1, -13);
+    context.lineTo(-3, -9);
+    context.lineTo(8, -4);
+    context.stroke();
+  }
   context.restore();
 }
 
@@ -126,13 +166,15 @@ export function drawPhysicalObjects(
   recorded: boolean,
   project: (position: TilePosition) => TilePosition,
   images: ReadonlyMap<string, HTMLImageElement>,
+  items: readonly PhysicalObject[] = state.objects.items,
 ): void {
-  for (const item of state.objects.items) {
+  for (const item of items) {
     const position = objectPosition(item, state.world.positions);
     if (
       !position ||
       item.location.kind === "carried" ||
-      item.location.kind === "contained"
+      item.location.kind === "contained" ||
+      (item.kind === "cable" && item.installed)
     )
       continue;
     const point = project(position);
@@ -170,6 +212,17 @@ export function drawPhysicalObjects(
       context.translate(point.x, point.y);
       context.scale(zoom, zoom);
       drawObjectGlyph(context, item);
+      if (isElectrical(item) && item.installed && !recorded) {
+        const status = powerNetwork(state).readings[item.id]?.status;
+        context.fillStyle =
+          status === "powered"
+            ? "#f8efb5"
+            : status === "overloaded" || status === "damaged"
+              ? "#d45e4e"
+              : "#52635f";
+        if (item.kind === "light") context.fillRect(-10, -27, 20, 4);
+        else context.fillRect(7, -20, 4, 5);
+      }
       context.restore();
       context.font = "bold 10px 'Courier New', monospace";
       context.textAlign = "center";

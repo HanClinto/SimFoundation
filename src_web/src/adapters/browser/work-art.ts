@@ -4,11 +4,19 @@ import { isActiveSurfaceOrder } from "../../simulation/environment";
 import { MATERIALS, type MaterialId } from "../../simulation/materials";
 import { sameTile, type TilePosition } from "../../simulation/world";
 import type { MapPerspective } from "./map-settings";
+import { isElectrical } from "../../simulation/power";
 
 export interface WorkVisual {
   readonly id: string;
   readonly position: TilePosition;
-  readonly kind: "floor" | "wall" | "door" | "vessel";
+  readonly kind:
+    | "floor"
+    | "wall"
+    | "door"
+    | "vessel"
+    | "generator"
+    | "cable"
+    | "light";
   readonly material: MaterialId;
   readonly removal: boolean;
   readonly stage: "planned" | "fitting";
@@ -118,13 +126,38 @@ export function workSiteVisuals(
       ["completed", "cancelled", "transit"].includes(order.phase)
     )
       continue;
+    const target = state.objects.items.find(
+      (item) => item.id === order.vesselId,
+    );
     add(
       order.id,
       order.position,
-      "vessel",
+      target && isElectrical(target) ? target.kind : "vessel",
       order.material,
       false,
       order.phase === "working",
+      order.jobId,
+      !!order.blockedReason,
+    );
+  }
+  for (const order of state.objectOrders) {
+    const target = state.objects.items.find(
+      (item) => item.id === order.objectId,
+    );
+    if (
+      !target ||
+      !isElectrical(target) ||
+      !order.install ||
+      ["completed", "cancelled"].includes(order.phase)
+    )
+      continue;
+    add(
+      order.id,
+      order.destination,
+      target.kind,
+      "steel",
+      false,
+      order.phase === "install",
       order.jobId,
       !!order.blockedReason,
     );
@@ -162,7 +195,7 @@ export function drawWorkSites(
         : "#5bb5c5";
     context.lineWidth = 1.5;
     context.setLineDash([3, 2]);
-    const raised = site.kind !== "floor";
+    const raised = site.kind !== "floor" && site.kind !== "cable";
     const top = raised ? -25 : -10;
     context.beginPath();
     context.moveTo(0, top);

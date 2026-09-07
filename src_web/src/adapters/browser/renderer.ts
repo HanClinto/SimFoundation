@@ -1,4 +1,8 @@
 import type { ControllerSnapshot } from "../../application/controller";
+import { lightField } from "../../simulation/lighting";
+import { drawPowerNetwork } from "./power-art";
+import { powerNetwork } from "../../simulation/power";
+import { sceneOrder, foregroundWallOpacity } from "./scene-order";
 import { drawEmissionEffects, emissionMotes } from "./emission-effects";
 import { type TilePosition } from "../../simulation/world";
 import { observedSnapshot } from "./observed-view";
@@ -157,6 +161,17 @@ export function renderSite(
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
   const { map, positions } = snapshot.game.world;
+  const selectedMapPosition = mapObjects(
+    snapshot.game,
+    recorded ? "recorded" : "world",
+  ).find((item) => item.id === camera.selectedId)?.position;
+  const wallSelection = camera.selectedId
+    ? (pawnVisuals[camera.selectedId]?.position ?? selectedMapPosition)
+    : undefined;
+  const lighting =
+    !recorded && overlays.lighting !== false && camera.base !== "materials"
+      ? lightField(snapshot.game)
+      : null;
   const knowledge = recorded
     ? snapshot.game.observations
     : {
@@ -262,6 +277,11 @@ export function renderSite(
       context.translate(point.x, point.y);
       context.scale(camera.zoom, camera.zoom);
       const raised = tile === "wall" || tile === "closed-door";
+      if (raised)
+        context.globalAlpha *= foregroundWallOpacity(
+          { x: column, y: row },
+          wallSelection,
+        );
       if (raised && installed)
         drawMaterialSides(context, installed.material, camera.zoom >= 0.55);
       drawTile(
@@ -287,6 +307,22 @@ export function renderSite(
         context.lineTo(0, raised ? 1 : 10);
         context.lineTo(12, raised ? -5 : 4);
         context.stroke();
+      }
+      if (lighting && tile !== "grass") {
+        const intensity = lighting.get(row * map.width + column) ?? 0;
+        drawTile(
+          context,
+          { x: 0, y: raised ? -19 : -10 },
+          `rgba(12, 28, 25, ${0.38 * (1 - intensity)})`,
+          "transparent",
+        );
+        if (intensity > 0.1)
+          drawTile(
+            context,
+            { x: 0, y: raised ? -19 : -10 },
+            `rgba(255, 239, 181, ${intensity * 0.12})`,
+            "transparent",
+          );
       }
       context.restore();
     }
@@ -438,14 +474,13 @@ export function renderSite(
     context.fillStyle = "#38473f";
     context.fillText(label, point.x, point.y + 3);
   }
-  if (overlays.objects)
-    drawPhysicalObjects(
+  if (overlays.power)
+    drawPowerNetwork(
       context,
       snapshot.game,
-      camera.zoom,
       recorded,
+      camera.zoom,
       (position) => projectPosition(position, camera, width, height),
-      stationImages,
     );
   for (const source of overlays.objects
     ? snapshot.game.environment.sources
@@ -555,7 +590,12 @@ export function renderSite(
       const point = projectPosition(device.position, camera, width, height);
       context.save();
       context.globalAlpha =
-        cameraInstalled(snapshot.game, device) && device.enabled ? 1 : 0.4;
+        cameraInstalled(snapshot.game, device) &&
+        device.enabled &&
+        (recorded ||
+          powerNetwork(snapshot.game).readings[device.id]?.status === "powered")
+          ? 1
+          : 0.4;
       context.drawImage(
         cameraImage,
         point.x - 10 * camera.zoom,
@@ -566,20 +606,15 @@ export function renderSite(
       context.restore();
     }
   }
-  for (const [id, position] of Object.entries(
-    overlays.objects
-      ? Object.fromEntries(
-          Object.entries(positions).map(([id, position]) => [
-            id,
-            pawnVisuals[id]?.position ?? position,
-          ]),
-        )
-      : {},
-  ).sort(
-    ([firstId, first], [secondId, second]) =>
-      first.x + first.y - second.x - second.y ||
-      firstId.localeCompare(secondId),
-  )) {
+  const displayedPositions = Object.fromEntries(
+    Object.entries(positions).map(([id, position]) => [
+      id,
+      pawnVisuals[id]?.position ?? position,
+    ]),
+  );
+  for (const { id, position, object: groundObject } of overlays.objects
+    ? sceneOrder(snapshot.game, displayedPositions, camera.selectedId)
+    : []) {
     const point = projectPosition(position, camera, width, height);
     if (
       point.x < -40 ||
@@ -588,6 +623,18 @@ export function renderSite(
       point.y > height + 40
     )
       continue;
+    if (groundObject) {
+      drawPhysicalObjects(
+        context,
+        snapshot.game,
+        camera.zoom,
+        recorded,
+        (position) => projectPosition(position, camera, width, height),
+        stationImages,
+        [groundObject],
+      );
+      continue;
+    }
     const selected = id === camera.selectedId;
     const live = !recorded || visibleEntities.has(id);
     if (selected) {

@@ -11,6 +11,7 @@ import { mapObjects } from "./map-objects";
 import type { MapPerspective } from "./map-settings";
 import { pawnPortrait } from "./pawn-art";
 import residentUrl from "./assets/site-999.svg";
+import { isElectrical, powerNetwork } from "../../simulation/power";
 
 export function createMapSelection(
   host: HTMLElement,
@@ -106,7 +107,7 @@ export function createMapSelection(
             .map((cue) => cue.label)
             .join(" / ") || person.activity
         : object
-          ? `${object.location.kind === "carried" ? "Being carried" : object.installed ? "Installed" : "Packed"} / ${object.condition.toFixed(0)}% condition${object.reservedBy ? " / Reserved for work" : ""}`
+          ? `${object.location.kind === "carried" ? "Being carried" : object.installed ? "Installed" : "Packed"} / ${object.condition.toFixed(0)}% condition${object.reservedBy ? " / Reserved for work" : ""}${isElectrical(object) && view === "world" ? ` / ${powerNetwork(state).readings[object.id]?.status ?? "disconnected"}` : ""}`
           : resident
             ? state.scp999.status
             : source
