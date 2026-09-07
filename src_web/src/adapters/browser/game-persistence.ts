@@ -1,5 +1,10 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import { combatStateValid } from "./combat-persistence";
+import {
+  awayPersonnel,
+  fieldState,
+  EXPEDITION_ASSEMBLY,
+} from "../../simulation/expeditions";
 import { isElectrical } from "../../simulation/power";
 import {
   activeVesselOrder,
@@ -1723,6 +1728,319 @@ function vesselReferencesValid(state: GameState): boolean {
   });
 }
 
+function expeditionsValid(state: GameState): boolean {
+  const expeditions = state.expeditions;
+  if (
+    !isRecord(expeditions) ||
+    !isIntegerInRange(expeditions.nextId, 1) ||
+    !isArrayOf(
+      expeditions.notices,
+      (notice) =>
+        isRecord(notice) &&
+        isNonEmptyString(notice.id) &&
+        isNonEmptyString(notice.title) &&
+        isNonEmptyString(notice.report) &&
+        isLiteral(notice.status, ["available", "assigned", "resolved"]),
+      20,
+    ) ||
+    !isArrayOf(
+      expeditions.history,
+      (entry) =>
+        isRecord(entry) &&
+        isNonEmptyString(entry.id) &&
+        isNonEmptyString(entry.noticeId) &&
+        isIntegerInRange(entry.returnedAt, 0, state.tick) &&
+        isArrayOf(entry.team, isNonEmptyString, 3) &&
+        isArrayOf(entry.cargo, isNonEmptyString, 20),
+      20,
+    )
+  )
+    return false;
+  if (
+    new Set(expeditions.notices.map((notice) => notice.id)).size !==
+      expeditions.notices.length ||
+    new Set(expeditions.history.map((entry) => entry.id)).size !==
+      expeditions.history.length
+  )
+    return false;
+  const active = expeditions.active;
+  if (active === null)
+    return !expeditions.notices.some((notice) => notice.status === "assigned");
+  if (
+    !isRecord(active) ||
+    !isNonEmptyString(active.id) ||
+    !/^expedition-[1-9]\d*$/.test(active.id) ||
+    Number(active.id.slice(11)) >= expeditions.nextId ||
+    !isLiteral(active.phase, [
+      "assembling",
+      "outbound",
+      "field",
+      "regrouping",
+      "inbound",
+    ]) ||
+    !isArrayOf(active.team, isNonEmptyString, 3) ||
+    active.team.length < 2 ||
+    new Set(active.team).size !== active.team.length ||
+    active.team.some(
+      (id) => !state.personnel.some((person) => person.id === id),
+    ) ||
+    !isArrayOf(active.previouslyDrafted, isNonEmptyString, 3) ||
+    active.previouslyDrafted.some((id) => !active.team.includes(id)) ||
+    !isRecord(active.returnPositions) ||
+    Object.keys(active.returnPositions).length !== active.team.length ||
+    !active.team.every(
+      (id) =>
+        isTilePosition(active.returnPositions[id]) &&
+        sameTile(active.returnPositions[id]!, EXPEDITION_ASSEMBLY),
+    ) ||
+    !isArrayOf(active.cargo, isNonEmptyString, 2) ||
+    new Set(active.cargo).size !== active.cargo.length ||
+    !isArrayOf(
+      active.recoveryOrders,
+      (order) =>
+        isRecord(order) &&
+        active.team.includes(String(order.personId)) &&
+        isNonEmptyString(order.objectId) &&
+        isIntegerInRange(order.progress, 0, 6) &&
+        isLiteral(order.phase, ["collecting", "carrying", "delivered"]) &&
+        isNullableString(order.blockedReason),
+      2,
+    )
+  )
+    return false;
+  if (
+    expeditions.notices.filter((notice) => notice.status === "assigned")
+      .length !== 1 ||
+    !expeditions.notices.some(
+      (notice) => notice.id === active.noticeId && notice.status === "assigned",
+    )
+  )
+    return false;
+  if (
+    !isRecord(active.reserves) ||
+    Object.keys(active.reserves).length !== active.team.length ||
+    !active.team.every(
+      (id) =>
+        isRecord(active.reserves[id]) &&
+        isIntegerInRange(active.reserves[id]!.ammunition, 0, 12) &&
+        isIntegerInRange(active.reserves[id]!.medicalSupplies, 0, 2),
+    )
+  )
+    return false;
+  const travelling = active.phase === "outbound" || active.phase === "inbound";
+  if (
+    travelling
+      ? !isIntegerInRange(active.arrivesAt, 0, state.tick + 30)
+      : active.arrivesAt !== null
+  )
+    return false;
+  if (active.phase === "assembling")
+    return (
+      active.site === null &&
+      !active.cargo.length &&
+      !active.recoveryOrders.length &&
+      active.team.every(
+        (id) =>
+          state.combat.responders[id]?.drafted &&
+          !!state.world.positions[id] &&
+          active.reserves[id]!.ammunition <=
+            state.combat.responders[id]!.ammunition &&
+          active.reserves[id]!.medicalSupplies <=
+            state.combat.responders[id]!.medicalSupplies,
+      )
+    );
+  if (
+    !isRecord(active.site) ||
+    !isSiteWorld(active.site.world) ||
+    !isRecord(active.site.objects) ||
+    !isIntegerInRange(active.site.objects.nextId, 1) ||
+    !isArrayOf(active.site.objects.items, isPhysicalObject, 20) ||
+    !isObservationState(active.site.observations) ||
+    !isEnvironment(active.site.environment) ||
+    !isSurfaceRecord(active.site.world.map.surfaces)
+  )
+    return false;
+  if (
+    active.site.world.map.id !== `field-${active.id}` ||
+    active.site.world.map.width !== 28 ||
+    active.site.world.map.height !== 24
+  )
+    return false;
+  if (
+    active.team.some(
+      (id) =>
+        state.world.positions[id] ||
+        state.combat.responders[id] ||
+        state.personnel.find((person) => person.id === id)?.currentJobId ||
+        state.routines.activities[id] ||
+        state.jobs.some(
+          (job) =>
+            job.status === "in-progress" &&
+            (job.assignedPersonId === id || job.assessment?.patientId === id),
+        ),
+    )
+  )
+    return false;
+  if (
+    Object.keys(active.site.world.positions).length !==
+      (travelling ? 0 : active.team.length) ||
+    (!travelling &&
+      !active.team.every(
+        (id) =>
+          !!active.site!.world.positions[id] &&
+          isWalkable(active.site!.world.map, active.site!.world.positions[id]!),
+      ))
+  )
+    return false;
+  const site = active.site;
+  const expectedObjects = [`${active.id}-archive`, `${active.id}-specimen`];
+  if (
+    site.objects.items.length !== 2 ||
+    new Set(site.objects.items.map((item) => item.id)).size !== 2 ||
+    site.objects.items.some(
+      (item) =>
+        !expectedObjects.includes(item.id) ||
+        state.objects.items.some((base) => base.id === item.id) ||
+        item.kind !==
+          (item.id.endsWith("-archive") ? "archive-case" : "anomaly-case") ||
+        item.quantity !== 1 ||
+        item.installed ||
+        !["ground", "carried"].includes(item.location.kind) ||
+        (item.location.kind === "ground" &&
+          tileAt(site.world.map, item.location.position) === null),
+    )
+  )
+    return false;
+  if (
+    new Set(active.recoveryOrders.map((order) => order.objectId)).size !==
+      active.recoveryOrders.length ||
+    new Set(
+      active.recoveryOrders
+        .filter((order) => order.phase !== "delivered")
+        .map((order) => order.personId),
+    ).size !==
+      active.recoveryOrders.filter((order) => order.phase !== "delivered")
+        .length
+  )
+    return false;
+  for (const item of site.objects.items) {
+    const order = active.recoveryOrders.find(
+      (order) => order.objectId === item.id,
+    );
+    if (!order) {
+      if (item.reservedBy !== null || item.location.kind !== "ground")
+        return false;
+      continue;
+    }
+    if (
+      order.phase === "carrying"
+        ? item.location.kind !== "carried" ||
+          item.location.personId !== order.personId ||
+          item.reservedBy !== `recovery-${order.personId}`
+        : item.location.kind !== "ground" ||
+          item.reservedBy !==
+            (order.phase === "delivered" ? null : `recovery-${order.personId}`)
+    )
+      return false;
+    if ((order.phase === "delivered") !== active.cargo.includes(item.id))
+      return false;
+  }
+  if (
+    active.cargo.some(
+      (id) =>
+        !expectedObjects.includes(id) ||
+        !active.recoveryOrders.some(
+          (order) => order.objectId === id && order.phase === "delivered",
+        ) ||
+        !site.objects.items.some(
+          (item) =>
+            item.id === id &&
+            item.location.kind === "ground" &&
+            sameTile(item.location.position, { x: 4, y: 12 }),
+        ),
+    ) ||
+    site.environment.sources.length !== 1 ||
+    site.environment.sources[0]!.id !== `${active.id}-emission` ||
+    site.environment.sources[0]!.objectId !== `${active.id}-specimen` ||
+    site.environment.orders.length ||
+    site.observations.cameras.length
+  )
+    return false;
+  const field = fieldState(state)!;
+  if (!environmentReferencesValid(field)) return false;
+  const validationField = {
+    ...field,
+    objects: {
+      ...field.objects,
+      items: field.objects.items.filter(
+        (item) => item.location.kind !== "carried",
+      ),
+    },
+  };
+  if (!combatStateValid(validationField)) return false;
+  if (
+    Object.keys(site.combat.responders).length !== active.team.length ||
+    !active.team.every((id) => !!site.combat.responders[id]?.drafted)
+  )
+    return false;
+  if (
+    active.team.some(
+      (id) =>
+        site.combat.responders[id]!.ammunition +
+          active.reserves[id]!.ammunition >
+          12 ||
+        site.combat.responders[id]!.medicalSupplies +
+          active.reserves[id]!.medicalSupplies >
+          2,
+    )
+  )
+    return false;
+  if (
+    active.phase === "outbound" &&
+    (site.combat.status !== "idle" || active.recoveryOrders.length)
+  )
+    return false;
+  if (
+    active.phase === "inbound" &&
+    active.recoveryOrders.some((order) => order.phase !== "delivered")
+  )
+    return false;
+  if (
+    site.observations.knownTiles.length !== 28 * 24 ||
+    site.observations.tileLastSeen.length !== 28 * 24 ||
+    site.observations.visibleTiles.some(
+      (index) => index < 0 || index >= 28 * 24,
+    ) ||
+    new Set(site.observations.visibleTiles).size !==
+      site.observations.visibleTiles.length ||
+    site.observations.tileLastSeen.some((tick) => tick > state.tick) ||
+    site.observations.visibleEntityIds.some(
+      (id) =>
+        !active.team.includes(id) ||
+        !site.observations.entities[id] ||
+        !site.observations.visibleTiles.includes(
+          site.observations.entities[id]!.position.y * 28 +
+            site.observations.entities[id]!.position.x,
+        ),
+    ) ||
+    Object.entries(site.observations.entities).some(
+      ([id, observation]) =>
+        !active.team.includes(id) ||
+        observation.observedTick > state.tick ||
+        observation.sources.some((source) => !active.team.includes(source)) ||
+        tileAt(site.world.map, observation.position) === null,
+    ) ||
+    Object.entries(site.observations.objects).some(
+      ([id, observation]) =>
+        !expectedObjects.includes(id) ||
+        !isPhysicalObject(observation.object) ||
+        !isIntegerInRange(observation.observedTick, 0, state.tick),
+    )
+  )
+    return false;
+  return true;
+}
+
 function isGameState(value: unknown): value is GameState {
   if (!isRecord(value)) return false;
   if (value.version !== GAME_STATE_VERSION) return false;
@@ -1843,7 +2161,12 @@ function isGameState(value: unknown): value is GameState {
     return false;
   const state = value as unknown as GameState;
   const personIds = state.personnel.map(({ id }) => id);
-  const entityIds = [...personIds, "SCP-999"];
+  if (!expeditionsValid(state)) return false;
+  const away = awayPersonnel(state);
+  const entityIds = [
+    ...personIds.filter((id) => !away.includes(id)),
+    "SCP-999",
+  ];
   return (
     combatStateValid(state) &&
     new Set(state.clinicalCare.clinicianIds).size ===

@@ -44,6 +44,11 @@ import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createPowerWindow } from "./power-view";
 import { createCombatWindow } from "./combat-view";
+import { createExpeditionsWindow } from "./expeditions-view";
+import {
+  expeditionMapController,
+  fieldSnapshot,
+} from "./expedition-controller";
 import { isElectrical } from "../../simulation/power";
 import { createStorageWindow } from "./storage-view";
 import { createExposureWindow } from "./exposure-view";
@@ -142,6 +147,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="vessel-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Vessels and Transport</span></button>
           <button class="subsystem-icon" type="button" data-open-window="power-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Power and Lighting</span></button>
           <button class="subsystem-icon" type="button" data-open-window="combat-window"><img class="subsystem-icon-asset" data-window-icon src="${personnelIconUrl}" alt="" /><span>Tactical Response</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="expeditions-window"><img class="subsystem-icon-asset" data-window-icon src="${folderIconUrl}" alt="" /><span>Expeditions</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
           <h2 id="site-name">Site 828</h2>
@@ -150,12 +156,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Residents</dt><dd>1 assigned</dd></div>
-            <div><dt>Systems</dt><dd>17 available</dd></div>
+            <div><dt>Systems</dt><dd>18 available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">17 systems</p>
+        <p class="status-bar-field">18 systems</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -488,9 +494,10 @@ if (initialGameLoad.status === "loaded") {
         : "Browser storage unavailable";
   updatePersistenceControls(`${reason}; Save Site to replace`);
 }
-const runtime = createBrowserRuntime(controller, (time) =>
-  siteCamera.animate(time),
-);
+const runtime = createBrowserRuntime(controller, (time) => {
+  siteCamera.animate(time);
+  if (!fieldWindow.hidden) fieldCamera.animate(time);
+});
 const personnelInspectors = createPersonnelInspectorWindows(
   app,
   controller.getSnapshot().game.personnel,
@@ -886,6 +893,99 @@ windowManager.register(combatView.element, {
   minimumWidth: 350,
   minimumHeight: 300,
 });
+const fieldWindow = requireElement<HTMLElement>("#camera-window").cloneNode(
+  true,
+) as HTMLElement;
+fieldWindow.id = "expedition-map-window";
+fieldWindow.hidden = true;
+fieldWindow.setAttribute("aria-label", "Expedition field map");
+for (const node of fieldWindow.querySelectorAll<HTMLElement>("[id]"))
+  node.id = `field-${node.id}`;
+for (const label of fieldWindow.querySelectorAll<HTMLLabelElement>(
+  "label[for]",
+))
+  label.htmlFor = `field-${label.htmlFor}`;
+for (const input of fieldWindow.querySelectorAll<HTMLInputElement>(
+  "input[name]",
+))
+  input.name = `field-${input.name}`;
+fieldWindow.querySelector(".title-bar-text")!.textContent =
+  "Expedition - Relay Depot 14";
+fieldWindow
+  .querySelector("canvas")!
+  .setAttribute("aria-label", "Isometric expedition field map");
+fieldWindow
+  .querySelector('[data-camera-action="home"]')!
+  .setAttribute("aria-label", "Center on expedition site");
+fieldWindow
+  .querySelector('[data-camera-action="home"]')!
+  .setAttribute("title", "Center on expedition site");
+fieldWindow.querySelector("[data-map-selection]")!.replaceChildren();
+fieldWindow.querySelector('[role="tooltip"]')?.remove();
+app.append(fieldWindow);
+windowManager.register(fieldWindow, {
+  id: "expedition-map-window",
+  title: "Expedition Map",
+  iconUrl: cameraIconUrl,
+  defaultRect: { left: 380, top: 40, width: 830, height: 670 },
+  defaultOpen: false,
+  minimumWidth: 350,
+  minimumHeight: 300,
+});
+const fieldController = expeditionMapController(controller);
+const fieldCamera = createSiteMap(
+  fieldWindow.querySelector<HTMLCanvasElement>("canvas")!,
+  fieldWindow,
+  fieldController,
+  (id) => {
+    expeditionsView.select(id.startsWith("tactical:") ? id.slice(9) : id);
+    windowManager.open("expeditions-window");
+  },
+);
+const showField = () => {
+  const snapshot = fieldSnapshot(controller.getSnapshot());
+  if (
+    !snapshot ||
+    !["field", "regrouping"].includes(
+      controller.getSnapshot().game.expeditions.active?.phase ?? "",
+    )
+  )
+    return;
+  fieldCamera.render(snapshot);
+  windowManager.open("expedition-map-window");
+};
+const expeditionsView = createExpeditionsWindow(
+  app,
+  controller,
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  showField,
+  (request) => {
+    showField();
+    fieldCamera.beginPlacement({
+      ...request,
+      confirm: (position) => {
+        const result = request.confirm(position);
+        return {
+          ...result,
+          snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
+        };
+      },
+    });
+  },
+  (position) => fieldCamera.focus(position),
+);
+windowManager.register(expeditionsView.element, {
+  id: "expeditions-window",
+  title: "Expeditions",
+  iconUrl: folderIconUrl,
+  defaultRect: { left: 80, top: 30, width: 640, height: 710 },
+  defaultOpen: false,
+  minimumWidth: 380,
+  minimumHeight: 320,
+});
 windowManager.register(engineeringView.element, {
   id: "engineering-window",
   title: "Engineering",
@@ -1174,6 +1274,20 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
+  expeditionsView.render(snapshot);
+  const field = fieldSnapshot(snapshot);
+  const fieldTime =
+    fieldWindow.querySelector(".camera-selection")?.previousElementSibling;
+  if (fieldTime)
+    fieldTime.textContent = formatGameTime(snapshot.game.gameMinute);
+  if (
+    field &&
+    ["field", "regrouping"].includes(
+      snapshot.game.expeditions.active?.phase ?? "",
+    )
+  )
+    fieldCamera.render(field);
+  else if (!fieldWindow.hidden) windowManager.close("expedition-map-window");
   combatView.render(snapshot);
   powerView.render(snapshot);
   surveillanceView.render(snapshot);

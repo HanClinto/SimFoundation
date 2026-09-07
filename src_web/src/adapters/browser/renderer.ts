@@ -3,6 +3,7 @@ import { lightField } from "../../simulation/lighting";
 import { drawPowerNetwork } from "./power-art";
 import { powerNetwork } from "../../simulation/power";
 import { sceneOrder, foregroundWallOpacity } from "./scene-order";
+import { drawExpeditionMarker } from "./expedition-art";
 import {
   drawTacticalOverlay,
   drawAdversary,
@@ -611,6 +612,10 @@ export function renderSite(
       context.restore();
     }
   }
+  if (overlays.projects)
+    drawExpeditionMarker(context, snapshot.game, camera.zoom, (position) =>
+      projectPosition(position, camera, width, height),
+    );
   if (overlays.tactical && !recorded)
     drawTacticalOverlay(
       context,

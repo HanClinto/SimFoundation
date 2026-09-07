@@ -27,6 +27,8 @@ On 2026-09-05, the SCP-999 marker was revised against source revision 40: a broa
 
 ## Personnel Reference Illustrations
 
+`../expedition-art.ts` and the archive/specimen branches of `../object-art.ts` contain original assembly/extraction markers, recovery-case silhouettes and specimen markings by GitHub Copilot, 2026-09-07, CC BY-SA 3.0. `src/simulation/expedition-site.ts` authors the original relay-depot layout; the incident and portable emitter are original gameplay content, not a canonical SCP incident. The field 049-2 uses the already-attributed combat artwork and source adaptation. No external images or paid generation were used.
+
 `../combat-art.ts` contains original SCP-049-2 and tactical overlay Canvas artwork by GitHub Copilot, 2026-09-07, licensed CC BY-SA 3.0. It includes response/threat rings, preparation/recovery bars, a simple fixed response-loadout marker, and non-graphic casualty rendering. SCP-049 source: Gabriel Jade, rewritten by djkaktus and Gabriel Jade, [SCP Wiki](https://scp-wiki.wikidot.com/scp-049), CC BY-SA 3.0, revision 122. See `docs/references/scp-049/adaptation.md` for source versus game-specific behavior. No source images or third-party game art were used.
 
 On 2026-09-06, original generator housings, cable reels, light fixtures, electrical damage marks, and circuit-line artwork were added in `../object-art.ts` and `../power-art.ts` by GitHub Copilot for SimFoundation. Source: those editable Canvas drawing functions. License: CC BY-SA 3.0. No external images or paid asset generation were used. Lighting is a simulation-derived tile treatment, not an illustration or inferred sensor reading.

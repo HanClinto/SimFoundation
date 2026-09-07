@@ -57,9 +57,13 @@ The map interleaves objects and pawns by depth, brings a same-tile selected obje
 
 ## Design Pillars
 
+### Expedition Checkpoint
+
+**Expeditions** now provides an incident notice, a two/three-person manifest with equipment summaries and finite tactical loadouts, physical assembly, timed travel, a separate temporary depot map, field combat and cargo recovery, regrouping, and return. Site 828 keeps advancing while its dispatched personnel are away. Returned personnel retain their equipment, injuries and spent supplies; recovered archive/specimen objects transfer exactly once before the temporary map is removed. The specimen's real emission remains active after recovery. See the [expedition guide](docs/expeditions.md) for the complete workflow and current limits, including no living captive transport or staff abandonment. **Schema 38 requires a fresh development save.**
+
 ### Tactical Response Checkpoint
 
-The first opt-in 049-2 encounter is implemented. **Tactical Response** and selected staff's **Orders** button expose drafting, positional orders, engagement, and stabilization. Tactical range and action phases are visible on the map. Staff continue using real routes and doors; injuries, ammunition, recovery, and the encounter survive save/load. **Schema 37 requires a fresh development site.** See the [tactical response guide](docs/tactical-response.md) for the two/three-responder workflow, withdrawal route, source attribution, and explicit sandbox limits.
+The first opt-in 049-2 encounter is implemented. **Tactical Response** and selected staff's **Orders** button expose drafting, positional orders, engagement, and stabilization. Tactical range and action phases are visible on the map. Staff continue using real routes and doors; injuries, ammunition, recovery, and the encounter survive save/load. **Schema 38 requires a fresh development site.** See the [tactical response guide](docs/tactical-response.md) for the two/three-responder workflow, withdrawal route, source attribution, and explicit sandbox limits.
 
 ### A living facility
 
@@ -111,7 +115,7 @@ Beds have a two-tile footprint; one tile is the interaction position and the rem
 
 Building materials and packaged meals are real counted stacks with ground/carrier locations and exclusive work reservations. Surface replacement and annex construction reserve, pick up, deliver, and consume those objects. Pantry replenishment transports meal stacks; individual pawns collect a portion and carry it to a seat before eating. Moving stock changes subsequent collection destinations. The displayed material and meal counters are validated summaries, not additional copies of the inventory.
 
-World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **37**, requiring a fresh development session. Vessel fabrication is available; general crafting, procurement, arbitrary nested containers, weight limits, and a universal equipment system remain deferred. Cameras retain their existing specialized device/kit workflow but now require a physical power connection.
+World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **38**, requiring a fresh development session. Vessel fabrication is available; general crafting, procurement, arbitrary nested containers, weight limits, and a universal equipment system remain deferred. Cameras retain their existing specialized device/kit workflow but now require a physical power connection.
 
 ### Portable Containment
 
@@ -203,7 +207,7 @@ For a small containment exercise, place a source beside a wall, inspect its mate
 
 Set Attachment back to **Fixed map position** and apply to detach at the object's current location. Supply stacks are excluded until split/merge behavior for effects is defined; no extra inventory or named anomaly is spawned by binding. Multiple source effects may bind to one object. These remain sandbox-authored properties, with no worker suppression or health effects. Save schema 35 records host identity and requires a fresh development session.
 
-The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and unsupported alarm-hardware claims have been removed. Physical electrical power has since been implemented. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 37; earlier development saves require a fresh session.
+The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortcut, fabricated budget figures, and unsupported alarm-hardware claims have been removed. Physical electrical power has since been implemented. The library is a documentary view. Anomalous screening remains unavailable in the default scenario until a real research system exists. Save schema is now 38; earlier development saves require a fresh session.
 
 ### Occupational Health Prototype
 

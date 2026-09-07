@@ -1,6 +1,7 @@
 import type { ControllerSnapshot } from "../../application/controller";
 import { createScp999State } from "../../simulation/scp-999";
 import { objectBlocks, objectStations } from "../../simulation/objects";
+import { awayPersonnel } from "../../simulation/expeditions";
 
 const projections = new WeakMap<ControllerSnapshot, ControllerSnapshot>();
 
@@ -11,6 +12,11 @@ export function observedSnapshot(
   if (existing) return existing;
   const knowledge = snapshot.game.observations;
   const visible = new Set(knowledge.visibleEntityIds);
+  const away =
+    snapshot.game.world.map.id ===
+    snapshot.game.expeditions.active?.site?.world.map.id
+      ? []
+      : awayPersonnel(snapshot.game);
   const objects = {
     ...snapshot.game.objects,
     items: Object.values(knowledge.objects).map(
@@ -37,11 +43,13 @@ export function observedSnapshot(
         const observation = knowledge.entities[person.id];
         return {
           ...person,
-          activity: !observation
-            ? "No recorded observation"
-            : visible.has(person.id)
-              ? observation.activity
-              : `Last observed ${snapshot.game.tick - observation.observedTick} minutes ago: ${observation.activity}`,
+          activity: away.includes(person.id)
+            ? "Away on expedition"
+            : !observation
+              ? "No recorded observation"
+              : visible.has(person.id)
+                ? observation.activity
+                : `Last observed ${snapshot.game.tick - observation.observedTick} minutes ago: ${observation.activity}`,
         };
       }),
       world: {

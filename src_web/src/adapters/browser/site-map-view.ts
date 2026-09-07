@@ -31,6 +31,7 @@ export function createSiteMap(
   moveObject?: (id: string, snapshot: ControllerSnapshot) => void,
 ) {
   let current = controller.getSnapshot();
+  let mapId = current.game.world.map.id;
   let visualTime = 0;
   const updatePawnVisuals = createPawnVisuals();
   let pawnVisuals: Readonly<Record<string, PawnVisual>> = {};
@@ -44,8 +45,14 @@ export function createSiteMap(
       Math.min(0.7, canvas.clientWidth / 1280, canvas.clientHeight / 680),
     );
   let camera: MapCamera = {
-    center: { x: 62.5, y: 62.5 },
-    zoom: fitZoom(),
+    center:
+      current.game.world.map.width === 128
+        ? { x: 62.5, y: 62.5 }
+        : {
+            x: current.game.world.map.width / 2,
+            y: current.game.world.map.height / 2,
+          },
+    zoom: current.game.world.map.width === 128 ? fitZoom() : 1,
     selectedId: null,
     perspective: "world",
     base: "site",
@@ -162,6 +169,21 @@ export function createSiteMap(
   }
 
   function render(snapshot: ControllerSnapshot) {
+    if (snapshot.game.world.map.id !== mapId) {
+      mapId = snapshot.game.world.map.id;
+      placement = null;
+      following = false;
+      camera = {
+        ...camera,
+        zoom: snapshot.game.world.map.width === 128 ? fitZoom() : 1,
+        center: {
+          x: snapshot.game.world.map.width / 2,
+          y: snapshot.game.world.map.height / 2,
+        },
+        selectedId: null,
+        draft: null,
+      };
+    }
     current = snapshot;
     selectionPanel?.render(
       snapshot,
@@ -332,7 +354,14 @@ export function createSiteMap(
     if (action === "out") zoom(0.8);
     if (action === "home") {
       camera = { ...camera, zoom: fitZoom() };
-      focus({ x: 62.5, y: 62.5 });
+      focus(
+        current.game.world.map.width === 128
+          ? { x: 62.5, y: 62.5 }
+          : {
+              x: current.game.world.map.width / 2,
+              y: current.game.world.map.height / 2,
+            },
+      );
     }
     if (action === "inspect" && camera.selectedId)
       openRecord(camera.selectedId, camera.perspective ?? "world");
@@ -523,7 +552,14 @@ export function createSiteMap(
     if (event.key === "Home") {
       event.preventDefault();
       camera = { ...camera, zoom: fitZoom() };
-      focus({ x: 62.5, y: 62.5 });
+      focus(
+        current.game.world.map.width === 128
+          ? { x: 62.5, y: 62.5 }
+          : {
+              x: current.game.world.map.width / 2,
+              y: current.game.world.map.height / 2,
+            },
+      );
     }
   });
   canvas.addEventListener("assets-ready", () => render(current));

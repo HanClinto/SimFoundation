@@ -707,7 +707,9 @@ export function advanceCombat(state: GameState): GameState {
           distance(state.world.positions[id]!, adversary!.origin) >
             ENCOUNTER_RADIUS,
       );
-      withdrawalTicks = withdrawn ? withdrawalTicks + 1 : 0;
+      const fieldEncounter =
+        state.expeditions.active?.site?.world.map.id === state.world.map.id;
+      withdrawalTicks = withdrawn && !fieldEncounter ? withdrawalTicks + 1 : 0;
       if (withdrawalTicks >= 8) {
         status = "withdrawn";
         adversary = {

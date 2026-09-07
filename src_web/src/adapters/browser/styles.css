@@ -301,12 +301,17 @@ textarea {
   flex-direction: column;
 }
 
+#expeditions-window h3 {
+  font-size: 14px;
+  margin: 8px 0 4px;
+}
+
 .camera-body .viewport-shell {
   min-height: 0;
   flex: 1 1 auto;
 }
 
-.camera-body #site-canvas {
+.camera-body canvas {
   height: 100%;
   aspect-ratio: auto;
   cursor: grab;
@@ -481,16 +486,16 @@ textarea {
   margin: 0 2px;
 }
 
-#site-canvas:active {
+.camera-window canvas:active {
   cursor: grabbing;
 }
 
-#site-canvas:focus-visible {
+.camera-window canvas:focus-visible {
   outline: 2px dotted #ffe477;
   outline-offset: -3px;
 }
 
-#site-canvas {
+.camera-window canvas {
   display: block;
   width: 100%;
   height: auto;

@@ -45,6 +45,21 @@ export function pawnCues(
     return [];
   const responder =
     perspective === "world" ? state.combat.responders[personId] : null;
+  const recovery =
+    perspective === "world" &&
+    state.expeditions.active?.site?.world.map.id === state.world.map.id
+      ? state.expeditions.active.recoveryOrders.find(
+          (order) => order.personId === personId && order.phase !== "delivered",
+        )
+      : null;
+  if (recovery && !responder?.incapacitated)
+    return [
+      {
+        icon: recovery.blockedReason ? "alert" : "box",
+        kind: "action",
+        label: `${recovery.phase === "carrying" ? "Carrying recovery cargo to extraction" : "Securing recovery cargo"}${recovery.blockedReason ? ` / ${recovery.blockedReason}` : ""}`,
+      },
+    ];
   const recordedActivity =
     perspective === "recorded"
       ? state.observations.entities[personId]?.activity

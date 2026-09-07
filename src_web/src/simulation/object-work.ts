@@ -96,7 +96,11 @@ export function objectPlacementIssue(
   const footprint = install
     ? objectFootprint({ ...object, orientation }, destination)
     : [destination];
-  if (object.kind === "vessel" && install) return "invalid-position";
+  if (
+    ["vessel", "archive-case", "anomaly-case"].includes(object.kind) &&
+    install
+  )
+    return "invalid-position";
   if (footprint.some((position) => vesselReservesTile(state, position)))
     return "occupied";
   if (

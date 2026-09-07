@@ -12,6 +12,7 @@ import {
 import type { PlacementRequest } from "./placement";
 import type { TilePosition } from "../../simulation/world";
 import type { MapPerspective } from "./map-settings";
+import { expeditionMember } from "../../simulation/expeditions";
 
 const messages: Record<TacticalCode, string> = {
   accepted: "Order accepted.",
@@ -179,9 +180,16 @@ export function createCombatWindow(
         roster.append(row);
       }
       const status = combat.responders[entry.id] ?? readyResponder();
+      const assigned = expeditionMember(snapshot.game, entry.id);
       const values = [
         entry.name,
-        recorded ? "Not recorded" : status.drafted ? "Drafted" : "Routine",
+        assigned
+          ? "Expedition"
+          : recorded
+            ? "Not recorded"
+            : status.drafted
+              ? "Drafted"
+              : "Routine",
         recorded
           ? "Not recorded"
           : status.incapacitated
@@ -249,7 +257,23 @@ export function createCombatWindow(
       button(action).disabled =
         recorded || !responder.drafted || responder.incapacitated;
     button("draft").disabled =
-      recorded || responder.drafted || responder.incapacitated;
+      recorded ||
+      responder.drafted ||
+      responder.incapacitated ||
+      expeditionMember(snapshot.game, selected);
+    if (expeditionMember(snapshot.game, selected)) {
+      for (const action of [
+        "release",
+        "move",
+        "hold",
+        "retreat",
+        "engage",
+        "stabilize",
+      ])
+        button(action).disabled = true;
+      element.querySelector("[data-tactical-readings]")!.textContent =
+        "Assigned to expedition; use Expedition Operations for field orders and supplies.";
+    }
     button("engage").disabled ||=
       combat.status !== "active" ||
       !combat.participants.includes(selected) ||

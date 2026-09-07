@@ -69,7 +69,8 @@ export function createObjectsWindow(
     const item = selectedObject();
     if (!item || item.location.kind !== "ground") return;
     const install =
-      item.kind !== "vessel" && !OBJECT_DEFINITIONS[item.kind].stackable;
+      !["vessel", "archive-case", "anomaly-case"].includes(item.kind) &&
+      !OBJECT_DEFINITIONS[item.kind].stackable;
     const direction = orientation.value as ObjectOrientation;
     const count = Number(quantity.value);
     if (!Number.isInteger(count) || count < 1 || count > item.quantity) {

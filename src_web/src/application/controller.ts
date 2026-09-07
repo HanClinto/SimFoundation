@@ -6,6 +6,18 @@ import {
 } from "../simulation/observations";
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import {
+  enlistExpedition,
+  cancelExpedition,
+  dispatchExpedition,
+  recallExpedition,
+  recoverExpeditionObject,
+  cancelRecovery,
+  fieldState,
+  storeFieldState,
+  expeditionMember,
+  type ExpeditionCode,
+} from "../simulation/expeditions";
+import {
   draftResponder,
   orderResponder,
   startEncounter,
@@ -85,6 +97,47 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  enlistExpedition(
+    noticeId: string,
+    team: readonly string[],
+    loadouts?: Readonly<
+      Record<
+        string,
+        { readonly ammunition: number; readonly medicalSupplies: number }
+      >
+    >,
+  ): { code: ExpeditionCode; snapshot: ControllerSnapshot };
+  cancelExpedition(): { code: ExpeditionCode; snapshot: ControllerSnapshot };
+  dispatchExpedition(): { code: ExpeditionCode; snapshot: ControllerSnapshot };
+  recallExpedition(): { code: ExpeditionCode; snapshot: ControllerSnapshot };
+  cancelRecovery(
+    expeditionId: string,
+    personId: string,
+  ): { code: ExpeditionCode; snapshot: ControllerSnapshot };
+  recoverExpeditionObject(
+    expeditionId: string,
+    personId: string,
+    objectId: string,
+  ): { code: ExpeditionCode; snapshot: ControllerSnapshot };
+  orderFieldResponder(
+    expeditionId: string,
+    id: string,
+    order: TacticalOrder,
+    destination?: TilePosition,
+    targetId?: string,
+  ): { code: TacticalCode; snapshot: ControllerSnapshot };
+  previewFieldOrder(
+    expeditionId: string,
+    id: string,
+    order: TacticalOrder,
+    destination?: TilePosition,
+    targetId?: string,
+  ): TacticalCode;
+  setFieldDoorPolicy(
+    expeditionId: string,
+    position: TilePosition,
+    policy: DoorPolicy,
+  ): ControllerSnapshot;
   draftResponder(
     id: string,
     drafted: boolean,
@@ -255,17 +308,108 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    enlistExpedition(noticeId, team, loadouts) {
+      const result = enlistExpedition(state, noticeId, team, loadouts);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    cancelExpedition() {
+      const result = cancelExpedition(state);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    dispatchExpedition() {
+      const result = dispatchExpedition(state);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    recallExpedition() {
+      const result = recallExpedition(state);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    cancelRecovery(expeditionId, personId) {
+      if (state.expeditions.active?.id !== expeditionId)
+        return { code: "not-found", snapshot: getSnapshot() };
+      const result = cancelRecovery(state, personId);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    recoverExpeditionObject(expeditionId, personId, objectId) {
+      if (state.expeditions.active?.id !== expeditionId)
+        return { code: "not-found", snapshot: getSnapshot() };
+      const result = recoverExpeditionObject(state, personId, objectId);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    previewFieldOrder(expeditionId, id, order, destination, targetId) {
+      const field = fieldState(state);
+      if (
+        !field ||
+        state.expeditions.active?.id !== expeditionId ||
+        state.expeditions.active.phase !== "field" ||
+        state.expeditions.active.recoveryOrders.some(
+          (entry) => entry.personId === id && entry.phase !== "delivered",
+        )
+      )
+        return "busy";
+      return orderResponder(field, id, order, destination, targetId).code;
+    },
+    orderFieldResponder(expeditionId, id, order, destination, targetId) {
+      const field = fieldState(state);
+      if (
+        !field ||
+        state.expeditions.active?.id !== expeditionId ||
+        state.expeditions.active.phase !== "field" ||
+        state.expeditions.active.recoveryOrders.some(
+          (entry) => entry.personId === id && entry.phase !== "delivered",
+        )
+      )
+        return { code: "busy", snapshot: getSnapshot() };
+      const result = orderResponder(field, id, order, destination, targetId);
+      state = storeFieldState(state, result.state);
+      return { code: result.code, snapshot: publish() };
+    },
+    setFieldDoorPolicy(expeditionId, position, policy) {
+      const field = fieldState(state);
+      if (
+        !field ||
+        state.expeditions.active?.id !== expeditionId ||
+        !["field", "regrouping"].includes(state.expeditions.active.phase)
+      )
+        return getSnapshot();
+      const obstructions = field.objects.items.flatMap((item) =>
+        item.location.kind === "ground" ? [item.location.position] : [],
+      );
+      if (field.combat.adversary)
+        obstructions.push(field.combat.adversary.position);
+      state = storeFieldState(
+        state,
+        observeCombat(
+          observeSite({
+            ...field,
+            world: setDoorPolicy(field.world, position, policy, obstructions),
+          }),
+        ),
+      );
+      return publish();
+    },
     draftResponder(id, drafted) {
+      if (expeditionMember(state, id))
+        return { code: "busy", snapshot: getSnapshot() };
       const result = draftResponder(state, id, drafted);
       state = observeCombat(observeSite(result.state));
       return { code: result.code, snapshot: publish() };
     },
     orderResponder(id, order, destination, targetId) {
+      if (expeditionMember(state, id))
+        return { code: "busy", snapshot: getSnapshot() };
       const result = orderResponder(state, id, order, destination, targetId);
       state = result.state;
       return { code: result.code, snapshot: publish() };
     },
     previewTacticalOrder(id, order, destination, targetId) {
+      if (expeditionMember(state, id)) return "busy";
       return orderResponder(state, id, order, destination, targetId).code;
     },
     startEncounter(position) {

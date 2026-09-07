@@ -152,6 +152,7 @@ export function requestAssessment(
 ): GameState {
   const patient = state.personnel.find(({ id }) => id === patientId);
   if (!patient) throw new Error(`Unknown person: ${patientId}`);
+  if (!state.world.positions[patientId]) return state;
   if (
     state.combat.responders[patientId]?.drafted ||
     state.combat.responders[patientId]?.incapacitated

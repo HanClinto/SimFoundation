@@ -28,7 +28,26 @@ export function drawObjectGlyph(
   context.save();
   context.strokeStyle = "#35443e";
   context.lineWidth = 1.5;
-  if (item.kind === "generator") {
+  if (item.kind === "archive-case" || item.kind === "anomaly-case") {
+    context.fillStyle = item.kind === "archive-case" ? "#829eb1" : "#ad9bb3";
+    context.fillRect(-14, -23, 28, 21);
+    context.strokeRect(-14, -23, 28, 21);
+    context.strokeRect(-6, -28, 12, 5);
+    context.fillStyle = "#e4dec4";
+    context.fillRect(-11, -21, 22, 4);
+    context.fillStyle = "#374b46";
+    if (item.kind === "archive-case") {
+      context.fillRect(-8, -13, 16, 2);
+      context.fillRect(-8, -9, 10, 2);
+    } else {
+      context.beginPath();
+      context.moveTo(0, -15);
+      context.lineTo(7, -6);
+      context.lineTo(-7, -6);
+      context.closePath();
+      context.stroke();
+    }
+  } else if (item.kind === "generator") {
     context.fillStyle = "#749392";
     context.fillRect(-16, -25, 32, 23);
     context.strokeRect(-16, -25, 32, 23);

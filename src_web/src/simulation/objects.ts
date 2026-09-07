@@ -3,6 +3,20 @@ import type { RoutineStation } from "./routines";
 import type { MaterialId } from "./materials";
 
 export const OBJECT_DEFINITIONS = {
+  "archive-case": {
+    name: "Recovered archive case",
+    width: 1,
+    height: 1,
+    activity: null,
+    stackable: false,
+  },
+  "anomaly-case": {
+    name: "Portable anomalous specimen",
+    width: 1,
+    height: 1,
+    activity: null,
+    stackable: false,
+  },
   generator: {
     name: "Generator",
     width: 1,

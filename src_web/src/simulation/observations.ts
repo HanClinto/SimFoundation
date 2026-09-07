@@ -157,6 +157,7 @@ export function observeSite(state: GameState): GameState {
     ...state.personnel
       .filter(
         (person) =>
+          !!state.world.positions[person.id] &&
           !state.combat.responders[person.id]?.incapacitated &&
           !(
             state.routines.activities[person.id]?.kind === "sleep" &&

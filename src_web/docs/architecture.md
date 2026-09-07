@@ -114,6 +114,16 @@ Browser code reads immutable snapshots and domain events. It never mutates entit
 
 ## State Model
 
+### Expeditions (Schema 38)
+
+`expeditions.ts` owns notices, an active manifest, supply reserves, lifecycle deadlines, recovery orders and bounded return history. The active field site holds its own world, objects, observations, combat and environment; global personnel are referenced by ID. Away staff have no base position or base responder state. A base-only roster is used for local simulation, then the global roster is reconciled and field systems advance on the same clock. This excludes away staff from home jobs and observation without deleting their schedules, clinical history, equipment or identity.
+
+`fieldState` is an ephemeral simulation view, not independently serialized state. `storeFieldState` writes back only field-owned slices and changed personnel. Field movement, doors, combat, observation and exposure reuse existing rules. Cargo handling uses reserved physical objects, with a six-step securing phase and actual carrying to extraction. It can be cancelled at the carrier's position. Recall requires stable, recoverable staff; new injury during regrouping returns control to field operations. Successful return transfers manifested cargo and attached emission sources once, restores base positions/supplies, then removes the field map. A blocked arrival retains the operation until its prerequisites recover.
+
+Application commands explicitly scope field actions with the expedition ID. Base draft/order commands reject enlisted staff. Field doors never target the base map, and UI map focus is not a source of authority. `expedition-controller.ts` supplies a browser map projection; root snapshots alone are autosaved. Shared canvas CSS is class-based to support multiple independently sized map windows.
+
+The depot map factory and objective validation are deliberately authored for one mission. No nested full GameState, copy of global personnel, generated material rewards or alternate time source is stored in the field. See [decision 003](decisions/003-expedition-location-ownership.md) and the [expedition guide](expeditions.md).
+
 ### Tactical Response (Schema 37)
 
 `combat.ts` owns drafted responders, positional orders, preparation/recovery counters, finite response supplies, functional injuries/incapacitation/stabilization, a bounded optional adversary, its sight memory, terminal encounter status and a 40-entry event history. It uses existing routing, door movement and line-of-sight rules. No browser clock, DOM, or randomized rendering state enters combat resolution. See [decision 002](decisions/002-tactical-response.md).
