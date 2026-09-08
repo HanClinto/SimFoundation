@@ -5,7 +5,10 @@ import type {
 import type { ActionIntent } from "../../simulation/action-queue";
 import { mapObjects } from "./map-objects";
 import { targetThumbnail } from "./target-thumbnail";
-import { automaticAction } from "../../simulation/person-actions";
+import {
+  automaticAction,
+  personCurrentAction,
+} from "../../simulation/person-actions";
 
 const verbs = {
   move: "Go Here",
@@ -90,7 +93,7 @@ export function createActionQueueView(
   automaticRow.append(automaticTile);
   automaticCancel.addEventListener("click", () => {
     if (!actorId || !enabled || automaticCancel.disabled) return;
-    const result = controller.cancelAutomatic(
+    const result = controller.cancelCurrentAction(
       mapId,
       actorId,
       automaticTile.dataset.actionKey!,
@@ -153,7 +156,10 @@ export function createActionQueueView(
       mapId = snapshot.game.world.map.id;
       enabled = world && !placement;
       const queue = id ? snapshot.game.actionQueues[id] : null;
-      const automatic = world && id ? automaticAction(snapshot.game, id) : null;
+      const automatic =
+        world && id ? personCurrentAction(snapshot.game, id) : null;
+      retry.hidden = !queue;
+      clear.hidden = !queue;
       root.hidden =
         !world ||
         (!automatic && (!queue || queue.current.intent.mapId !== mapId));
@@ -177,6 +183,11 @@ export function createActionQueueView(
           schedule: "Schedule",
           need: "Need",
           autonomy: "Autonomy",
+          idle: "Available",
+          waiting: "Blocked",
+          tactical: "Tactical",
+          mission: "Mission",
+          condition: "Condition",
         }[automatic.source];
         const source = targetThumbnail(
           snapshot.game,
@@ -185,12 +196,13 @@ export function createActionQueueView(
         );
         if (automaticImage.getAttribute("src") !== source)
           automaticImage.src = source;
-        const issue = controller.previewCancelAutomatic(
+        const issue = controller.previewCancelCurrentAction(
           mapId,
           id!,
           automatic.key,
         );
         automaticCancel.disabled = !enabled || !!issue;
+        automaticCancel.hidden = automatic.source === "idle";
         automaticCancel.setAttribute(
           "aria-label",
           `Cancel current ${automatic.label}`,

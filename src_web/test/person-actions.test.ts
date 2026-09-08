@@ -3,6 +3,8 @@ import { createInitialState } from "../src/simulation/state";
 import {
   automaticAction,
   cancelAutomaticAction,
+  personCurrentAction,
+  cancelPersonAction,
 } from "../src/simulation/person-actions";
 import { submitAction } from "../src/simulation/action-queue";
 import { advanceSimulation } from "../src/simulation/tick";
@@ -15,9 +17,59 @@ import {
 } from "../src/simulation/routines";
 import { orderSurfaceWork } from "../src/simulation/environment";
 import { requestAssessment } from "../src/simulation/clinical";
+import { draftResponder } from "../src/simulation/combat";
+import { createController } from "../src/application/controller";
+import { fieldState } from "../src/simulation/expeditions";
+import { expeditionMapController } from "../src/adapters/browser/expedition-controller";
 
 const loaded = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });
+
+it("projects Idle without creating a commitment and keeps Waiting distinct from Hold", () => {
+  const state = createInitialState();
+  const actorId = state.personnel[0]!.id;
+  const before = structuredClone(state);
+  const idle = personCurrentAction(state, actorId)!;
+  expect(idle).toMatchObject({
+    source: "idle",
+    label: "Idle",
+    cancellation: null,
+  });
+  expect(state).toEqual(before);
+  expect(
+    cancelPersonAction(state, state.world.map.id, actorId, idle.key).state,
+  ).toBe(state);
+  const move = submitAction(state, {
+    mapId: state.world.map.id,
+    actorId,
+    action: "move",
+    destination: { x: 60, y: 59 },
+  }).state;
+  expect(move.actionQueues[actorId]!.current.started).toBe(true);
+  expect(personCurrentAction(move, actorId)).toBeNull();
+  const blocked = {
+    ...state,
+    routines: {
+      ...state.routines,
+      blockedReasons: { [actorId]: "No meals available in the pantry." },
+    },
+  };
+  expect(personCurrentAction(blocked, actorId)).toMatchObject({
+    label: "Waiting",
+    detail: "No meals available in the pantry.",
+  });
+  const drafted = draftResponder(state, actorId, true).state;
+  const hold = personCurrentAction(drafted, actorId)!;
+  expect(hold).toMatchObject({
+    label: "Hold Position",
+    source: "tactical",
+    cancellation: "release",
+  });
+  expect(
+    cancelPersonAction(drafted, drafted.world.map.id, actorId, hold.key).state
+      .combat.responders[actorId]!.drafted,
+  ).toBe(false);
+});
 
 function eating(): ReturnType<typeof createInitialState> {
   const state = createInitialState();
@@ -55,6 +107,141 @@ function eating(): ReturnType<typeof createInitialState> {
     },
   };
 }
+
+it("reports mission phases and legacy field recovery without granting personal cancellation of mission ownership", () => {
+  const controller = createController(createInitialState());
+  const actorId = "person-caleb-ward";
+  controller.enlistExpedition("notice-depot", [actorId, "person-lena-ortiz"]);
+  const assembly = controller.getSnapshot().game;
+  const assembling = personCurrentAction(assembly, actorId)!;
+  expect(assembling).toMatchObject({
+    source: "mission",
+    label: "Assemble",
+    cancellation: null,
+  });
+  expect(
+    controller.cancelCurrentAction(
+      assembly.world.map.id,
+      actorId,
+      assembling.key,
+    ).reason,
+  ).toContain("Expedition Operations");
+  controller.advance(100);
+  controller.dispatchExpedition();
+  const outbound = controller.getSnapshot().game;
+  expect(personCurrentAction(outbound, actorId)).toBeNull();
+  expect(personCurrentAction(fieldState(outbound)!, actorId)).toMatchObject({
+    label: "Travel to site",
+    source: "mission",
+  });
+  controller.advance(30);
+  const local = expeditionMapController(controller);
+  const field = local.getSnapshot().game;
+  const hold = personCurrentAction(field, actorId)!;
+  expect(hold).toMatchObject({ label: "Hold Position", cancellation: null });
+  expect(
+    local.cancelCurrentAction(field.world.map.id, actorId, hold.key).reason,
+  ).toContain("remain drafted");
+  const expedition = controller.getSnapshot().game.expeditions.active!;
+  controller.recoverExpeditionObject(
+    expedition.id,
+    actorId,
+    `${expedition.id}-archive`,
+  );
+  const recovery = personCurrentAction(local.getSnapshot().game, actorId)!;
+  expect(recovery).toMatchObject({
+    label: "Recover cargo",
+    source: "mission",
+    cancellation: "order",
+  });
+  const cancelled = local.cancelCurrentAction(
+    field.world.map.id,
+    actorId,
+    recovery.key,
+  );
+  expect(cancelled.reason).toBeNull();
+  expect(cancelled.snapshot.game.world.map.id).toBe(field.world.map.id);
+  expect(
+    controller.getSnapshot().game.expeditions.active!.recoveryOrders,
+  ).toEqual([]);
+  controller.recallExpedition();
+  expect(personCurrentAction(local.getSnapshot().game, actorId)).toMatchObject({
+    source: "mission",
+    label: "Regroup",
+  });
+  for (
+    let step = 0;
+    step < 10 &&
+    controller.getSnapshot().game.expeditions.active?.phase !== "inbound";
+    step += 1
+  )
+    controller.advance();
+  expect(personCurrentAction(local.getSnapshot().game, actorId)).toMatchObject({
+    source: "mission",
+    label: "Return to base",
+  });
+  expect(loaded(controller.getSnapshot().game).status).toBe("loaded");
+});
+
+it("retains tactical cooldowns and exposes incapacity rather than Idle", () => {
+  const controller = createController(createInitialState());
+  const actorId = controller.getSnapshot().game.personnel[0]!.id;
+  controller.draftResponder(actorId, true);
+  controller.orderResponder(actorId, "move", { x: 60, y: 59 });
+  const state = controller.getSnapshot().game;
+  const recovering = {
+    ...state,
+    combat: {
+      ...state.combat,
+      responders: {
+        ...state.combat.responders,
+        [actorId]: {
+          ...state.combat.responders[actorId]!,
+          phase: "recovering" as const,
+          remaining: 3,
+          ammunition: 7,
+        },
+      },
+    },
+  };
+  const action = personCurrentAction(recovering, actorId)!;
+  expect(action).toMatchObject({ label: "Go Here", source: "tactical" });
+  const result = cancelPersonAction(
+    recovering,
+    state.world.map.id,
+    actorId,
+    action.key,
+  );
+  expect(result.reason).toBeNull();
+  expect(result.state.combat.responders[actorId]).toMatchObject({
+    order: "hold",
+    phase: "recovering",
+    remaining: 3,
+    ammunition: 7,
+  });
+  const casualty = {
+    ...recovering,
+    combat: {
+      ...recovering.combat,
+      responders: {
+        ...recovering.combat.responders,
+        [actorId]: {
+          ...recovering.combat.responders[actorId]!,
+          health: 0,
+          incapacitated: true,
+        },
+      },
+    },
+  };
+  expect(personCurrentAction(casualty, actorId)).toMatchObject({
+    label: "Incapacitated",
+    source: "condition",
+    cancellation: null,
+  });
+  expect(
+    cancelPersonAction(state, "stale-map", actorId, action.key).state,
+  ).toBe(state);
+});
 
 it("waits behind an existing meal, then hands control to the manual queue without restarting autonomy", () => {
   let state = eating();

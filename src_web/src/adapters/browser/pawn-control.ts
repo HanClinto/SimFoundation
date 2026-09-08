@@ -9,7 +9,10 @@ import { targetThumbnail } from "./target-thumbnail";
 import { mapObjects } from "./map-objects";
 import { observedSnapshot } from "./observed-view";
 import { createActionQueueView } from "./action-queue-view";
-import { automaticAction } from "../../simulation/person-actions";
+import {
+  automaticAction,
+  personCurrentAction,
+} from "../../simulation/person-actions";
 import type { ActionIntent } from "../../simulation/action-queue";
 import {
   currentPersonAction,
@@ -248,7 +251,8 @@ export function createPawnControl(
   }
   function select(id: string) {
     if (
-      !current.game.world.positions[id] ||
+      (!current.game.world.positions[id] &&
+        personCurrentAction(current.game, id)?.source !== "mission") ||
       !current.game.personnel.some((person) => person.id === id) ||
       busyPlacement
     )
@@ -351,9 +355,9 @@ export function createPawnControl(
   }
   cancel.addEventListener("click", () => {
     if (!activeId || cancel.disabled || perspective !== "world") return;
-    const automatic = automaticAction(current.game, activeId);
+    const automatic = personCurrentAction(current.game, activeId);
     const result = automatic
-      ? controller.cancelAutomatic(mapId, activeId, automatic.key)
+      ? controller.cancelCurrentAction(mapId, activeId, automatic.key)
       : current.game.actionQueues[activeId]
         ? controller.editQueue(mapId, activeId, "cancel")
         : controller.interact({ mapId, actorId: activeId, action: "cancel" });
@@ -444,7 +448,11 @@ export function createPawnControl(
     if (view !== perspective || placement) close();
     perspective = view;
     for (const button of modes) button.disabled = placement || view !== "world";
-    if (activeId && !snapshot.game.world.positions[activeId]) {
+    if (
+      activeId &&
+      !snapshot.game.world.positions[activeId] &&
+      personCurrentAction(snapshot.game, activeId)?.source !== "mission"
+    ) {
       activeId = null;
       close();
     }
@@ -468,7 +476,9 @@ export function createPawnControl(
         portraits.append(button);
         buttons.set(person.id, button);
       }
-      const present = !!snapshot.game.world.positions[person.id];
+      const present =
+        !!snapshot.game.world.positions[person.id] ||
+        personCurrentAction(snapshot.game, person.id)?.source === "mission";
       button.disabled = !present || placement;
       button.title = `${person.name}${present ? "" : " / Away from this map"}`;
       button.setAttribute(
@@ -481,7 +491,7 @@ export function createPawnControl(
     const queue = activeId ? snapshot.game.actionQueues[activeId] : null;
     const automatic =
       perspective === "world" && activeId
-        ? automaticAction(snapshot.game, activeId)
+        ? personCurrentAction(snapshot.game, activeId)
         : null;
     name.textContent = person ? person.name : "No active person";
     action.textContent = !person
@@ -501,7 +511,11 @@ export function createPawnControl(
         : !activeId
           ? "Select a person first."
           : automatic
-            ? controller.previewCancelAutomatic(mapId, activeId, automatic.key)
+            ? controller.previewCancelCurrentAction(
+                mapId,
+                activeId,
+                automatic.key,
+              )
             : queue
               ? null
               : controller.previewInteraction({

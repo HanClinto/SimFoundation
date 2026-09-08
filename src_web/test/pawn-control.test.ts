@@ -4,6 +4,7 @@ import { createController } from "../src/application/controller";
 import { createInitialState } from "../src/simulation/state";
 import { createPawnControl } from "../src/adapters/browser/pawn-control";
 import { advanceSimulation } from "../src/simulation/tick";
+import { fieldSnapshot } from "../src/adapters/browser/expedition-controller";
 
 afterEach(() => vi.unstubAllGlobals());
 function setup(initial = createInitialState()) {
@@ -102,6 +103,100 @@ it("shows a real automatic meal and appends player movement behind it without fi
   );
   view.render(controller.getSnapshot(), "recorded", false);
   expect(tray.hidden).toBe(true);
+});
+
+it("shows Idle without a queue and reflects legacy tactical orders with safe current cancellation", () => {
+  const { controller, view } = setup();
+  const initial = controller.getSnapshot();
+  const actorId = initial.game.personnel[0]!.id;
+  view.select(actorId);
+  const tray = document.querySelector<HTMLElement>(".pawn-action-queue")!;
+  expect(tray.hidden).toBe(false);
+  expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Idle",
+  );
+  expect(
+    tray.querySelector<HTMLButtonElement>(".pawn-current-action button")!
+      .hidden,
+  ).toBe(true);
+  expect(controller.getSnapshot()).toEqual(initial);
+  controller.draftResponder(actorId, true);
+  controller.orderResponder(actorId, "move", { x: 60, y: 59 });
+  view.render(controller.getSnapshot(), "world", false);
+  expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Go Here",
+  );
+  tray.querySelector<HTMLButtonElement>(".pawn-current-action button")!.click();
+  view.render(controller.getSnapshot(), "world", false);
+  expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Hold Position",
+  );
+  tray.querySelector<HTMLButtonElement>(".pawn-current-action button")!.click();
+  view.render(controller.getSnapshot(), "world", false);
+  expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Idle",
+  );
+  expect(controller.getSnapshot().game.actionQueues).toEqual({});
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(tray.hidden).toBe(true);
+});
+
+it("keeps transit status inspectable in the field window without a map position or actionable orders", () => {
+  const { controller, view } = setup();
+  const actorId = "person-caleb-ward";
+  controller.enlistExpedition("notice-depot", [actorId, "person-lena-ortiz"]);
+  controller.setRunning(true);
+  controller.advance(100);
+  controller.dispatchExpedition();
+  controller.setRunning(false);
+  const field = fieldSnapshot(controller.getSnapshot())!;
+  expect(field.game.world.positions[actorId]).toBeUndefined();
+  view.render(field, "world", false);
+  const portrait = document.querySelector<HTMLButtonElement>(
+    `[data-active-person="${actorId}"]`,
+  )!;
+  expect(portrait.disabled).toBe(false);
+  portrait.click();
+  expect(view.activeId).toBe(actorId);
+  expect(document.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Travel to site",
+  );
+  expect(
+    document.querySelector<HTMLButtonElement>(".pawn-current-action button")!
+      .disabled,
+  ).toBe(true);
+  expect(
+    document.querySelector<HTMLButtonElement>(
+      '[aria-label="Cancel Current Action"]',
+    )!.disabled,
+  ).toBe(true);
+  view.render(field, "recorded", false);
+  expect(
+    document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,
+  ).toBe(true);
+});
+
+it("does not replace a blocked manual intention with Idle", () => {
+  const { controller, view } = setup();
+  const state = controller.getSnapshot().game;
+  const actorId = state.personnel[0]!.id;
+  controller.queueAction({
+    mapId: state.world.map.id,
+    actorId,
+    action: "stabilize",
+    targetId: state.personnel[1]!.id,
+  });
+  view.render(controller.getSnapshot(), "world", false);
+  view.select(actorId);
+  expect(document.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Stabilize",
+  );
+  expect(
+    document.querySelector(".pawn-current-action small")!.textContent,
+  ).toBe("Blocked");
+  expect(
+    document.querySelector(".pawn-action-queue")!.textContent,
+  ).not.toContain("Idle");
 });
 
 it("selects an actor without drafting, issues immediate Go Here and retains the actor during inspection", () => {

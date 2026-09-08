@@ -6,7 +6,10 @@ import {
 } from "../simulation/observations";
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import { goHere } from "../simulation/direct-control";
-import { cancelAutomaticAction } from "../simulation/person-actions";
+import {
+  cancelAutomaticAction,
+  cancelPersonAction,
+} from "../simulation/person-actions";
 import {
   submitAction,
   queueEligibility,
@@ -113,6 +116,16 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  cancelCurrentAction(
+    mapId: string,
+    actorId: string,
+    key: string,
+  ): { reason: string | null; snapshot: ControllerSnapshot };
+  previewCancelCurrentAction(
+    mapId: string,
+    actorId: string,
+    key: string,
+  ): string | null;
   cancelAutomatic(
     mapId: string,
     actorId: string,
@@ -370,6 +383,14 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    cancelCurrentAction(mapId, actorId, key) {
+      const result = cancelPersonAction(state, mapId, actorId, key);
+      state = result.state;
+      return { reason: result.reason, snapshot: publish() };
+    },
+    previewCancelCurrentAction(mapId, actorId, key) {
+      return cancelPersonAction(state, mapId, actorId, key).reason;
+    },
     cancelAutomatic(mapId, actorId, key) {
       const result = cancelAutomaticAction(state, mapId, actorId, key);
       state = result.state;
