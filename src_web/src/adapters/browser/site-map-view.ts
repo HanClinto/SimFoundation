@@ -102,7 +102,8 @@ export function createSiteMap(
     (snapshot) => render(snapshot),
     openRecord,
     (id) => {
-      camera = { ...camera, selectedId: id };
+      if (id !== null || camera.selectedId === pawnControl.activeId)
+        camera = { ...camera, selectedId: id };
     },
     selectionHost,
   );

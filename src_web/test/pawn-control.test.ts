@@ -394,9 +394,9 @@ it("keeps transit status inspectable in the field window without a map position 
   ).toBe(true);
   expect(
     document.querySelector<HTMLButtonElement>(
-      '[aria-label="Cancel Current Action"]',
+      '[aria-label="Deselect active pawn"]',
     )!.disabled,
-  ).toBe(true);
+  ).toBe(false);
   view.render(field, "recorded", false);
   expect(
     document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,
@@ -557,7 +557,7 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
   });
   view.render(controller.getSnapshot(), "world", false);
   const cancel = document.querySelector<HTMLButtonElement>(
-    '[aria-label="Cancel Current Action"]',
+    ".pawn-current-action button",
   )!;
   expect(cancel.disabled).toBe(false);
   cancel.click();
@@ -568,7 +568,49 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
   view.render(controller.getSnapshot(), "recorded", false);
   view.ground(origin, actor.id, { x: 80, y: 80 });
   expect(document.querySelector('[data-interaction="stabilize"]')).toBeNull();
-  expect(cancel.disabled).toBe(true);
+  expect(
+    document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,
+  ).toBe(true);
+});
+
+it("deselects without changing work and allows inspection without a command recipient", () => {
+  const { controller, view, inspect } = setup();
+  const state = controller.getSnapshot().game;
+  const actorId = state.personnel[0]!.id;
+  controller.queueAction({
+    mapId: state.world.map.id,
+    actorId,
+    action: "move",
+    destination: { x: 60, y: 59 },
+  });
+  view.render(controller.getSnapshot(), "world", false);
+  view.select(actorId);
+  const before = controller.getSnapshot();
+  const deselect = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Deselect active pawn"]',
+  )!;
+  deselect.click();
+  expect(view.activeId).toBeNull();
+  expect(controller.getSnapshot()).toEqual(before);
+  expect(
+    document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,
+  ).toBe(true);
+  expect(deselect.disabled).toBe(true);
+  view.ground({ x: 60, y: 59 }, "tile:60,59:floor", { x: 50, y: 50 });
+  expect(
+    document.querySelector<HTMLButtonElement>('[data-interaction="move"]')!
+      .parentElement!.hidden,
+  ).toBe(true);
+  expect(document.querySelector('[data-interaction="hold"]')).toBeNull();
+  document
+    .querySelector<HTMLButtonElement>('[data-interaction="inspect"]')!
+    .click();
+  expect(inspect).toHaveBeenCalledWith("tile:60,59:floor", "world");
+  view.select(actorId);
+  view.render(controller.getSnapshot(), "recorded", false);
+  deselect.click();
+  expect(view.activeId).toBeNull();
+  expect(controller.getSnapshot()).toEqual(before);
 });
 
 it("retains the subject header without a duplicate label and returns from verbs to target branches", () => {

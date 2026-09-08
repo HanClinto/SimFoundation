@@ -34,7 +34,7 @@ export function createPawnControl(
   controller: GameController,
   changed: (snapshot: ControllerSnapshot) => void,
   inspect: (id: string, perspective: MapPerspective) => void,
-  selected?: (id: string) => void,
+  selected?: (id: string | null) => void,
   selectionHost?: HTMLElement | null,
 ) {
   const document = canvas.ownerDocument;
@@ -51,12 +51,12 @@ export function createPawnControl(
   const action = document.createElement("span");
   action.setAttribute("role", "status");
   detail.append(name, action);
-  const cancel = document.createElement("button");
-  cancel.type = "button";
-  cancel.className = "pawn-action-cancel";
-  cancel.textContent = "X";
-  cancel.setAttribute("aria-label", "Cancel Current Action");
-  strip.append(portraits, detail, cancel);
+  const deselectButton = document.createElement("button");
+  deselectButton.type = "button";
+  deselectButton.className = "pawn-action-cancel";
+  deselectButton.textContent = "X";
+  deselectButton.setAttribute("aria-label", "Deselect active pawn");
+  strip.append(portraits, detail, deselectButton);
   const surface = document.createElement("section");
   surface.className = "pawn-selection-area";
   surface.setAttribute("aria-label", "Selection and orders");
@@ -281,7 +281,7 @@ export function createPawnControl(
       target.actorId &&
       submissionMode() === "append" &&
       automaticAction(current.game, target.actorId);
-    moveRow.hidden = !target.id.startsWith("tile:");
+    moveRow.hidden = !target.actorId || !target.id.startsWith("tile:");
     chooseRow.hidden = !current.game.personnel.some(
       (person) => person.id === target!.id,
     );
@@ -311,7 +311,7 @@ export function createPawnControl(
       `Move ${current.game.personnel.find((person) => person.id === target!.actorId)?.name} here`;
     const issues: string[] = moveRow.hidden || !issue ? [] : [issue];
     const options =
-      perspective === "world"
+      perspective === "world" && target.actorId
         ? controller.interactions(target.mapId, target.actorId, target.id)
         : [];
     for (const option of options) {
@@ -363,17 +363,13 @@ export function createPawnControl(
     reason.textContent = [...new Set(issues)].join(" ");
     explanation.hidden = issues.length === 0;
   }
-  cancel.addEventListener("click", () => {
-    if (!activeId || cancel.disabled || perspective !== "world") return;
-    const automatic = personCurrentAction(current.game, activeId);
-    const result = automatic
-      ? controller.cancelCurrentAction(mapId, activeId, automatic.key)
-      : current.game.actionQueues[activeId]
-        ? controller.editQueue(mapId, activeId, "cancel")
-        : controller.interact({ mapId, actorId: activeId, action: "cancel" });
+  deselectButton.addEventListener("click", () => {
+    if (!activeId) return;
     close();
-    changed(result.snapshot);
-    if (result.reason) action.textContent = result.reason;
+    selected?.(null);
+    activeId = null;
+    render(current, perspective, busyPlacement);
+    changed(current);
     canvas.focus();
   });
   choose.addEventListener("click", () => {
@@ -514,27 +510,8 @@ export function createPawnControl(
             (queue && !queue.current.started
               ? "Waiting for action recovery"
               : currentPersonAction(snapshot.game, person.id)));
-    const cancellationIssue = placement
-      ? "Finish or cancel placement first."
-      : perspective !== "world"
-        ? "Recorded view is inspection-only."
-        : !activeId
-          ? "Select a person first."
-          : automatic
-            ? controller.previewCancelCurrentAction(
-                mapId,
-                activeId,
-                automatic.key,
-              )
-            : queue
-              ? null
-              : controller.previewInteraction({
-                  mapId,
-                  actorId: activeId,
-                  action: "cancel",
-                });
-    cancel.disabled = !!cancellationIssue;
-    cancel.title = cancellationIssue ?? "Cancel Current Action";
+    deselectButton.disabled = !activeId;
+    deselectButton.title = "Deselect active pawn; queued actions continue";
     action.title = action.textContent ?? "";
     strip.dataset.activePawn = activeId ?? "";
     queueView.render(snapshot, activeId, perspective === "world", placement);

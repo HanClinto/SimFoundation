@@ -141,4 +141,27 @@ it("keeps actor selection through ground inspection and panning, and submits onl
       .getAttribute("data-active-target"),
   ).toBe("true");
   expect(controller.getSnapshot()).toEqual(beforeSwitch);
+  const deselect = root.querySelector<HTMLButtonElement>(
+    '[aria-label="Deselect active pawn"]',
+  )!;
+  deselect.click();
+  expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
+    selectedId: null,
+    activePawnId: null,
+  });
+  expect(controller.getSnapshot()).toEqual(beforeSwitch);
+  root
+    .querySelector<HTMLButtonElement>(`[data-active-person="${id}"]`)!
+    .click();
+  dropdown.value = "object:spare-bed";
+  dropdown.dispatchEvent(new window.Event("change", { bubbles: true }));
+  deselect.click();
+  expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
+    selectedId: "object:spare-bed",
+    activePawnId: null,
+  });
+  expect(root.querySelector("[data-selection-name]")!.textContent).toContain(
+    "spare-bed",
+  );
+  expect(controller.getSnapshot()).toEqual(beforeSwitch);
 });
