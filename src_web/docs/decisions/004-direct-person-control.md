@@ -1,6 +1,6 @@
 # Direct Person Control And Action Ownership
 
-Status: M0 contract and M1 implementation, 2026-09-08. Parent: [#23](https://github.com/HanClinto/SimFoundation/issues/23).
+Status: M0 contract and M1/M2 implementation, 2026-09-08. Parent: [#23](https://github.com/HanClinto/SimFoundation/issues/23).
 
 ## Principles
 
@@ -10,9 +10,9 @@ Keep the 98.css modeless desktop, existing object/dossier inspection, physical e
 
 ## Input Contract
 
-- With no actor, clicking a present pawn selects them. Clicking their portrait always selects them. With an actor already selected, clicking another person changes only the inspection target until an explicit portrait selection (future contextual Select Person may also do this).
-- Clicking ground opens a menu; Go Here submits once, without preview/confirmation or opening an operations window. Inspect remains a separate command. A double-click only inspects: first-click menu creation must never itself execute an action.
-- Dragging pans, wheel zooms, and construction placement takes input precedence. Escape closes an interaction menu before considering placement cancellation. It does not cancel movement. Enter on an inspected tile opens its interaction menu; Shift+F10 or the context-menu key opens ground interactions at map center. Arrow menu navigation and Enter activate commands without pointer input.
+- With no actor, clicking a present pawn selects them. Clicking their portrait always selects them. With an actor already selected, clicking another person changes only the inspection target until explicit portrait selection or contextual Select Person.
+- Clicking a target opens its applicable interactions; Go Here on ground submits once, without preview/confirmation or opening an operations window. Inspect remains a separate command. A double-click only inspects: first-click menu creation must never itself execute an action.
+- Dragging pans, wheel zooms, and construction placement takes input precedence. Escape closes an interaction menu before considering placement cancellation. It does not cancel movement. Enter on an inspected tile opens its interaction menu; Shift+F10 or the context-menu key opens interactions for the inspected target, falling back to ground at map center. Arrow menu navigation and Enter activate commands without pointer input.
 - Actor selection persists within a map's browser lifetime and is cleared when the actor leaves or the location changes. It is not serialized as gameplay state. Follow is pinned to the target selected when Follow is enabled; inspecting another target does not retarget it. Existing explicit navigation still releases Follow.
 - Recorded controls are inspection-only. No direct movement command is inferred from an unknown tile or remembered person. World mode requests authoritative eligibility and revalidates at submission.
 
@@ -23,6 +23,16 @@ M1 uses the existing single tactical movement executor. `goHere(mapId, personId,
 After physical arrival and any retained action recovery, temporary ownership returns to routine autonomy on the next tick if the normal release checks permit it. Already-drafted staff remain drafted and hold after arrival. Replacing a temporary Go Here retains temporary ownership. Explicit tactical or expedition orders take ownership and clear the temporary-release flag. No supplies, equipment, injuries or cooldowns are reset. A newly blocked route keeps the current command with its reason; it does not silently resume work elsewhere.
 
 Schema 39 records the optional temporary-ownership flag. Old development saves are not migrated. This is not a queue implementation. M1 replaces a single current action and must not show fictitious pending entries or advertise queue commands.
+
+## Contextual Actions (M2)
+
+`interactions.ts` supplies presentation-independent action descriptors, authoritative eligibility and execution. The controller exposes `interactions`, `previewInteraction` and `interact`; requests include map identity, actor, verb and target. Preview runs the same immutable decision path as execution without publishing or retaining reservations. Submission revalidates against current state. Field results are projected through the existing field adapter; only root state is saved.
+
+The map reuses the existing 98.css `ul.menu` extension. This is a provisional presentation choice, not a dependency on a list or radial layout. Keyed buttons retain identity while an open menu updates disabled reasons. Ground/self offers Hold Position; another person offers Stabilize; the live adversary offers Engage From Here; recoverable field objects offer Recover to Extraction. Every target retains Inspect, with Select Person where applicable. Unsupported personal object-use verbs are not invented. Recorded mode exposes no live target-action descriptors.
+
+Hold and Engage From Here explicitly take drafted ownership. Stabilize temporarily drafts an otherwise autonomous person and returns them to autonomy after physical treatment and recovery when normal release rules permit; existing drafted staff remain drafted. Engage From Here does not approach: range/LOS block reasons remain visible on the current action, and Attack approach belongs to M3.
+
+The pawn strip describes the actual current action, preparation/recovery and blocked reason. Cancel Current Action stops movement, engagement or treatment through the tactical owner without resetting recovery or refunding ammunition/kits. Temporary ownership is retained for normal release; explicit draft mode is retained. Idle explicit Hold has no active execution to cancel, and release remains in Orders until the autonomy milestone. Field recovery cancellation releases its reservation and puts carried cargo on the actor's actual tile. Ordinary reserved deliveries, active clinical appointments, incapacitation and mission-owned phases remain protected with reasons. There is no speculative queue, new cargo state or schema version in M2; schema 39 validation now permits temporary stabilization as well as movement/hold.
 
 ## Queue Contract For Later Milestones
 

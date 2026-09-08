@@ -7,6 +7,12 @@ import {
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import { goHere } from "../simulation/direct-control";
 import {
+  interactionOptions,
+  performInteraction,
+  type InteractionOption,
+  type InteractionRequest,
+} from "../simulation/interactions";
+import {
   enlistExpedition,
   cancelExpedition,
   dispatchExpedition,
@@ -98,6 +104,16 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  interactions(
+    mapId: string,
+    actorId: string | null,
+    targetId: string,
+  ): readonly InteractionOption[];
+  previewInteraction(request: InteractionRequest): string | null;
+  interact(request: InteractionRequest): {
+    reason: string | null;
+    snapshot: ControllerSnapshot;
+  };
   goHere(
     mapId: string,
     personId: string,
@@ -319,6 +335,17 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    interactions(mapId, actorId, targetId) {
+      return interactionOptions(state, mapId, actorId, targetId);
+    },
+    previewInteraction(request) {
+      return performInteraction(state, request).reason;
+    },
+    interact(request) {
+      const result = performInteraction(state, request);
+      state = result.state;
+      return { reason: result.reason, snapshot: publish() };
+    },
     goHere(mapId, personId, destination) {
       const result = goHere(state, mapId, personId, destination);
       state = result.state;

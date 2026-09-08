@@ -49,7 +49,7 @@ it("selects an actor without drafting, issues immediate Go Here and retains the 
   expect(controller.getSnapshot().game.world.positions[id]).toEqual(origin);
   view.ground(target, "tile:55,55:structure", { x: 30, y: 30 });
   document
-    .querySelectorAll<HTMLButtonElement>(".pawn-context-menu button")[1]!
+    .querySelector<HTMLButtonElement>('[data-interaction="inspect"]')!
     .click();
   expect(inspect).toHaveBeenCalledWith("tile:55,55:structure", "world");
   expect(view.activeId).toBe(id);
@@ -93,4 +93,65 @@ it("withholds Recorded commands, disables controls for placement, and clears mis
     false,
   );
   expect(view.activeId).toBeNull();
+});
+
+it("keeps target action rows stable, selects people explicitly, and cancels the active order", () => {
+  const { controller, view, window } = setup();
+  const snapshot = controller.getSnapshot();
+  const actor = snapshot.game.personnel[0]!;
+  const patient = snapshot.game.personnel[1]!;
+  view.select(actor.id);
+  view.ground(
+    snapshot.game.world.positions[patient.id]!,
+    patient.id,
+    { x: 80, y: 80 },
+    true,
+  );
+  expect(view.activeId).toBe(actor.id);
+  const stabilize = document.querySelector<HTMLButtonElement>(
+    '[data-interaction="stabilize"]',
+  )!;
+  expect(stabilize.disabled).toBe(true);
+  expect(stabilize.title).toContain("No casualty");
+  expect(document.querySelector("ul.menu.pawn-context-menu")).not.toBeNull();
+  view.render(snapshot, "world", false);
+  expect(document.querySelector('[data-interaction="stabilize"]')).toBe(
+    stabilize,
+  );
+  const choose = [
+    ...document.querySelectorAll<HTMLButtonElement>(
+      ".pawn-context-menu button",
+    ),
+  ].find((button) => button.textContent === "Select Person")!;
+  expect(document.activeElement).toBe(choose);
+  document
+    .querySelector(".pawn-context-menu")!
+    .dispatchEvent(
+      new window.KeyboardEvent("keydown", { key: "End", bubbles: true }),
+    );
+  expect(document.activeElement).toBe(
+    document.querySelector('[data-interaction="inspect"]'),
+  );
+  choose.click();
+  expect(view.activeId).toBe(patient.id);
+  expect(controller.getSnapshot()).toEqual(snapshot);
+  const origin = snapshot.game.world.positions[patient.id]!;
+  controller.goHere(snapshot.game.world.map.id, patient.id, {
+    x: origin.x + 1,
+    y: origin.y,
+  });
+  view.render(controller.getSnapshot(), "world", false);
+  const cancel = document.querySelector<HTMLButtonElement>(
+    '[aria-label="Cancel Current Action"]',
+  )!;
+  expect(cancel.disabled).toBe(false);
+  cancel.click();
+  expect(
+    controller.getSnapshot().game.combat.responders[patient.id],
+  ).toMatchObject({ order: "hold", returnToAutonomy: true });
+  expect(view.activeId).toBe(patient.id);
+  view.render(controller.getSnapshot(), "recorded", false);
+  view.ground(origin, actor.id, { x: 80, y: 80 });
+  expect(document.querySelector('[data-interaction="stabilize"]')).toBeNull();
+  expect(cancel.disabled).toBe(true);
 });

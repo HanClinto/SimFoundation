@@ -39,7 +39,8 @@ export function combatStateValid(state: GameState): boolean {
       (responder.returnToAutonomy !== undefined &&
         typeof responder.returnToAutonomy !== "boolean") ||
       (responder.returnToAutonomy === true &&
-        (!responder.drafted || !["move", "hold"].includes(responder.order))) ||
+        (!responder.drafted ||
+          !["move", "hold", "stabilize"].includes(responder.order))) ||
       !["drafted", "incapacitated", "stabilized"].every(
         (key) => typeof responder[key] === "boolean",
       ) ||

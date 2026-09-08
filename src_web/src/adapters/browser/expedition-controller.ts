@@ -27,6 +27,13 @@ export function expeditionMapController(
     ...controller,
     getSnapshot: () =>
       fieldSnapshot(controller.getSnapshot()) ?? controller.getSnapshot(),
+    interact(request) {
+      const result = controller.interact(request);
+      return {
+        ...result,
+        snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
+      };
+    },
     goHere(mapId, personId, destination) {
       const result = controller.goHere(mapId, personId, destination);
       return {

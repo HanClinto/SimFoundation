@@ -339,6 +339,7 @@ textarea {
 }
 .pawn-control-detail {
   min-width: 0;
+  flex: 1;
   display: grid;
   gap: 3px;
 }
@@ -349,24 +350,29 @@ textarea {
   text-overflow: ellipsis;
   font-size: 11px;
 }
-.pawn-context-menu {
+.pawn-action-cancel {
+  flex: 0 0 24px;
+  min-width: 24px;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+ul.menu.pawn-context-menu {
   position: absolute;
   z-index: 5;
+  display: block;
   box-sizing: border-box;
-  width: 210px;
-  padding: 4px;
-  background: #c0c0c0;
-  border: 2px outset #eee;
-  box-shadow: 2px 2px #323d38;
+  width: 240px;
+  max-height: calc(100% - 8px);
+  overflow-y: auto;
 }
-.pawn-context-menu[hidden] {
+ul.menu.pawn-context-menu[hidden],
+ul.menu.pawn-context-menu > li[hidden] {
   display: none;
 }
-.pawn-context-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  margin: 0 0 3px;
+ul.menu.pawn-context-menu > li > button {
+  padding: 5px 16px;
+  white-space: normal;
 }
 .pawn-context-menu p {
   margin: 4px;

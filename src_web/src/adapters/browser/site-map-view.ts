@@ -505,8 +505,7 @@ export function createSiteMap(
           !pawnControl.activeId
         )
           pawnControl.select(id);
-        else if (id?.startsWith("tile:"))
-          pawnControl.ground(tileAtPoint(point), id, point);
+        else if (id) pawnControl.ground(tileAtPoint(point), id, point);
       }
       render(current);
     }
@@ -557,7 +556,8 @@ export function createSiteMap(
       const position = tileAtPoint(point);
       pawnControl.ground(
         position,
-        `tile:${position.x},${position.y}:${camera.surfaceLayer ?? "structure"}`,
+        camera.selectedId ??
+          `tile:${position.x},${position.y}:${camera.surfaceLayer ?? "structure"}`,
         point,
         true,
       );

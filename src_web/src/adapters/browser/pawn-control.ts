@@ -5,6 +5,10 @@ import type {
 import type { MapPerspective } from "./map-settings";
 import type { TilePosition } from "../../simulation/world";
 import { pawnPortrait } from "./pawn-art";
+import {
+  currentPersonAction,
+  type PersonInteraction,
+} from "../../simulation/interactions";
 
 const reasons = {
   accepted: "",
@@ -36,13 +40,18 @@ export function createPawnControl(
   const action = document.createElement("span");
   action.setAttribute("role", "status");
   detail.append(name, action);
-  strip.append(portraits, detail);
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.className = "pawn-action-cancel";
+  cancel.textContent = "X";
+  cancel.setAttribute("aria-label", "Cancel Current Action");
+  strip.append(portraits, detail, cancel);
   canvas.parentElement!.after(strip);
-  const menu = document.createElement("div");
-  menu.className = "pawn-context-menu";
+  const menu = document.createElement("ul");
+  menu.className = "menu pawn-context-menu";
   menu.hidden = true;
   menu.setAttribute("role", "menu");
-  menu.setAttribute("aria-label", "Ground interactions");
+  menu.setAttribute("aria-label", "Target interactions");
   const move = document.createElement("button");
   move.type = "button";
   move.textContent = "Go Here";
@@ -50,11 +59,32 @@ export function createPawnControl(
   const record = document.createElement("button");
   record.type = "button";
   record.textContent = "Inspect";
+  record.dataset.interaction = "inspect";
   record.setAttribute("role", "menuitem");
   const reason = document.createElement("p");
   reason.id = `${canvas.id || "map"}-move-reason`;
   move.setAttribute("aria-describedby", reason.id);
-  menu.append(move, record, reason);
+  function row(button: HTMLButtonElement) {
+    const item = document.createElement("li");
+    item.setAttribute("role", "none");
+    item.append(button);
+    return item;
+  }
+  const choose = document.createElement("button");
+  choose.type = "button";
+  choose.textContent = "Select Person";
+  choose.setAttribute("role", "menuitem");
+  const moveRow = row(move);
+  const chooseRow = row(choose);
+  const recordRow = row(record);
+  const divider = document.createElement("li");
+  divider.className = "divider";
+  divider.setAttribute("role", "separator");
+  const explanation = document.createElement("li");
+  explanation.setAttribute("role", "none");
+  explanation.append(reason);
+  menu.append(moveRow, divider, chooseRow, recordRow, explanation);
+  const entries = new Map<PersonInteraction, HTMLButtonElement>();
   canvas.parentElement!.append(menu);
   let current = controller.getSnapshot();
   let perspective: MapPerspective = "world";
@@ -71,6 +101,8 @@ export function createPawnControl(
   function close() {
     menu.hidden = true;
     target = null;
+    for (const button of entries.values()) button.parentElement!.remove();
+    entries.clear();
   }
   function select(id: string) {
     if (
@@ -86,6 +118,12 @@ export function createPawnControl(
   }
   function updateMenu() {
     if (!target) return;
+    moveRow.hidden = !target.id.startsWith("tile:");
+    chooseRow.hidden = !current.game.personnel.some(
+      (person) => person.id === target!.id,
+    );
+    choose.disabled =
+      !current.game.world.positions[target.id] || target.id === activeId;
     const issue =
       perspective !== "world"
         ? "Recorded view is inspection-only."
@@ -102,8 +140,75 @@ export function createPawnControl(
     move.title =
       issue ||
       `Move ${current.game.personnel.find((person) => person.id === target!.actorId)?.name} here`;
-    reason.textContent = issue;
-    reason.hidden = !issue;
+    const issues: string[] = moveRow.hidden || !issue ? [] : [issue];
+    const options =
+      perspective === "world"
+        ? controller.interactions(target.mapId, target.actorId, target.id)
+        : [];
+    for (const option of options) {
+      let button = entries.get(option.action);
+      if (!button) {
+        button = document.createElement("button");
+        button.type = "button";
+        button.setAttribute("role", "menuitem");
+        button.dataset.interaction = option.action;
+        button.setAttribute("aria-describedby", reason.id);
+        button.textContent = option.label;
+        button.addEventListener("click", () => {
+          if (!target?.actorId || perspective !== "world" || button!.disabled)
+            return;
+          const result = controller.interact({
+            mapId: target.mapId,
+            actorId: target.actorId,
+            targetId: target.id,
+            action: option.action,
+          });
+          close();
+          changed(result.snapshot);
+          if (result.reason) action.textContent = result.reason;
+          canvas.focus();
+        });
+        entries.set(option.action, button);
+        menu.insertBefore(row(button), divider);
+      }
+      const unavailable =
+        perspective !== "world"
+          ? "Recorded view is inspection-only."
+          : option.reason;
+      button.disabled = !!unavailable;
+      button.title = unavailable ?? option.label;
+      if (unavailable) issues.push(`${option.label}: ${unavailable}`);
+    }
+    for (const [key, button] of entries) {
+      if (!options.some((option) => option.action === key)) {
+        button.disabled = true;
+        button.title = "This target is no longer available.";
+        issues.push(button.title);
+      }
+    }
+    divider.hidden = moveRow.hidden && entries.size === 0;
+    reason.textContent = [...new Set(issues)].join(" ");
+    explanation.hidden = issues.length === 0;
+  }
+  cancel.addEventListener("click", () => {
+    if (!activeId || cancel.disabled || perspective !== "world") return;
+    const result = controller.interact({
+      mapId,
+      actorId: activeId,
+      action: "cancel",
+    });
+    close();
+    changed(result.snapshot);
+    if (result.reason) action.textContent = result.reason;
+    canvas.focus();
+  });
+  choose.addEventListener("click", () => {
+    if (target && !choose.disabled) select(target.id);
+  });
+  function availableButtons() {
+    return [...menu.querySelectorAll<HTMLButtonElement>("button")].filter(
+      (button) => !button.disabled && !button.parentElement!.hidden,
+    );
   }
   move.addEventListener("click", () => {
     if (!target?.actorId || perspective !== "world" || move.disabled) return;
@@ -131,7 +236,7 @@ export function createPawnControl(
     }
     if (["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
       event.preventDefault();
-      const available = [move, record].filter((button) => !button.disabled);
+      const available = availableButtons();
       const index = available.indexOf(
         document.activeElement as HTMLButtonElement,
       );
@@ -202,20 +307,24 @@ export function createPawnControl(
     }
     const person = people.find((person) => person.id === activeId);
     name.textContent = person ? person.name : "No active person";
-    const responder = activeId
-      ? snapshot.game.combat.responders[activeId]
-      : null;
     action.textContent = !person
       ? ""
       : perspective === "recorded"
         ? "Recorded / inspection only"
-        : responder?.incapacitated
-          ? "Incapacitated"
-          : responder?.order === "move" && responder.destination
-            ? `Go Here: ${responder.destination.x}, ${responder.destination.y}${responder.blockedReason ? ` / ${responder.blockedReason}` : ""}`
-            : responder?.drafted
-              ? `${responder.returnToAutonomy ? "Returning to routine" : "Drafted"} / ${responder.order} / ${responder.phase}`
-              : person.activity;
+        : currentPersonAction(snapshot.game, person.id);
+    const cancellationIssue = placement
+      ? "Finish or cancel placement first."
+      : perspective !== "world"
+        ? "Recorded view is inspection-only."
+        : !activeId
+          ? "Select a person first."
+          : controller.previewInteraction({
+              mapId,
+              actorId: activeId,
+              action: "cancel",
+            });
+    cancel.disabled = !!cancellationIssue;
+    cancel.title = cancellationIssue ?? "Cancel Current Action";
     action.title = action.textContent ?? "";
     strip.dataset.activePawn = activeId ?? "";
     updateMenu();
@@ -237,13 +346,16 @@ export function createPawnControl(
       keyboard = false,
     ) {
       if (busyPlacement) return;
+      close();
       target = { position, id, mapId, actorId: activeId };
       menu.hidden = false;
       updateMenu();
       menu.style.maxWidth = `${Math.max(120, canvas.clientWidth - 8)}px`;
+      menu.style.maxHeight = `${Math.max(0, canvas.clientHeight - 8)}px`;
       menu.style.left = `${Math.max(4, Math.min(canvas.clientWidth - menu.offsetWidth - 4, point.x + 8))}px`;
       menu.style.top = `${Math.max(4, Math.min(canvas.clientHeight - menu.offsetHeight - 4, point.y + 8))}px`;
-      if (keyboard) (move.disabled ? record : move).focus();
+      menu.style.maxHeight = `${Math.max(0, canvas.clientHeight - parseFloat(menu.style.top) - 4)}px`;
+      if (keyboard) availableButtons()[0]?.focus();
     },
   };
 }

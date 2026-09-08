@@ -64,13 +64,13 @@ ul.menu > li > button {
 ul.menu > li > button:not(:disabled):hover,
 ul.menu > li > button:not(:disabled):focus {
   color: #fff;
-  background: var(--dialog-blue);
+  background: var(--dialog-blue, #000080);
   outline: none;
 }
 
 ul.menu > li > button:disabled {
-  color: var(--button-shadow);
-  text-shadow: 1px 1px var(--button-highlight);
+  color: var(--button-shadow, #808080);
+  text-shadow: 1px 1px var(--button-highlight, #fff);
 }
 
 ul.menu li.divider {
