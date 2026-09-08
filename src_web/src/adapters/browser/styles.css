@@ -475,7 +475,7 @@ ul.menu.pawn-context-menu button[data-menu-target] span {
 .pawn-action-tile {
   position: relative;
   width: 86px;
-  height: 108px;
+  height: 132px;
   box-sizing: border-box;
   display: grid;
   grid-template-rows: 40px 42px 12px;
@@ -507,6 +507,33 @@ ul.menu.pawn-context-menu button[data-menu-target] span {
 }
 .pawn-action-tile small {
   font-size: 9px;
+}
+.pawn-action-progress {
+  position: absolute;
+  bottom: 4px;
+  left: 5px;
+  right: 5px;
+  height: 22px;
+}
+.pawn-action-progress[hidden] {
+  display: none;
+}
+.pawn-action-progress-bar {
+  height: 6px;
+  overflow: hidden;
+  background: #eee;
+  box-shadow:
+    inset 1px 1px #808080,
+    inset -1px -1px #fff;
+}
+.pawn-action-progress-bar > div {
+  height: 100%;
+  background: #226b59;
+}
+.pawn-action-remaining {
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
 }
 [data-current="true"] > .pawn-action-tile {
   border: 2px solid #226b59;

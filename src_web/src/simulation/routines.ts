@@ -6,6 +6,7 @@ import {
   orderResponder,
 } from "./combat";
 import type { PersonnelRecord } from "./personnel";
+import { REST_DECAY_PER_TICK } from "./personnel";
 import { mealCollectionPoint, refreshMealSummary } from "./storage";
 import { findRoute, sameTile, stepWorld, type TilePosition } from "./world";
 import {
@@ -18,6 +19,65 @@ import {
 
 export type ScheduleBlock = "work" | "free" | "sleep";
 export type RoutineKind = "meal" | "sleep" | "break";
+export const SLEEP_REST_GAIN = 0.35;
+export const SLEEP_REST_TARGET = 95;
+export const MEAL_DURATION = 12;
+export const RELAX_DURATION = 30;
+
+export interface RoutineProgress {
+  readonly fraction: number;
+  readonly remainingMinutes: number;
+  readonly label: string;
+}
+
+export function routineProgress(
+  state: GameState,
+  actorId: string,
+): RoutineProgress | null {
+  const activity = state.routines.activities[actorId];
+  const person = state.personnel.find((entry) => entry.id === actorId);
+  const station = state.routines.stations.find(
+    (entry) => entry.id === activity?.stationId,
+  );
+  const position = state.world.positions[actorId];
+  if (
+    !activity ||
+    !person ||
+    !station ||
+    !position ||
+    activity.progress <= 0 ||
+    !sameTile(position, station.position) ||
+    state.combat.responders[actorId]?.incapacitated ||
+    state.routines.blockedReasons[actorId]
+  )
+    return null;
+  const remainingMinutes =
+    activity.kind === "sleep"
+      ? Math.max(
+          0,
+          Math.ceil(
+            (SLEEP_REST_TARGET - person.needs.rest) /
+              (SLEEP_REST_GAIN - REST_DECAY_PER_TICK) -
+              1e-8,
+          ),
+        )
+      : Math.max(
+          0,
+          (activity.kind === "meal" ? MEAL_DURATION : RELAX_DURATION) -
+            activity.progress,
+        );
+  const total = activity.progress + remainingMinutes;
+  return {
+    fraction: total > 0 ? Math.min(1, activity.progress / total) : 1,
+    remainingMinutes,
+    label:
+      activity.kind === "sleep"
+        ? "Sleep"
+        : activity.kind === "meal"
+          ? "Eat"
+          : "Relax",
+  };
+}
 export const PERSONAL_ROUTINE_KINDS = {
   eat: "meal",
   sleep: "sleep",
@@ -452,7 +512,7 @@ export function advanceRoutines(state: GameState): GameState {
       ),
       rest: Math.min(
         100,
-        person.needs.rest + (activity.kind === "sleep" ? 0.35 : 0),
+        person.needs.rest + (activity.kind === "sleep" ? SLEEP_REST_GAIN : 0),
       ),
     };
     const stress = Math.max(
@@ -466,10 +526,10 @@ export function advanceRoutines(state: GameState): GameState {
     );
     const finished =
       activity.kind === "meal"
-        ? progress >= 12
+        ? progress >= MEAL_DURATION
         : activity.kind === "break"
-          ? progress >= 30
-          : needs.rest >= 95;
+          ? progress >= RELAX_DURATION
+          : needs.rest >= SLEEP_REST_TARGET;
     people.set(id, {
       ...person,
       needs,

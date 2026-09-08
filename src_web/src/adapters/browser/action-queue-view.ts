@@ -6,6 +6,10 @@ import type { ActionIntent } from "../../simulation/action-queue";
 import { mapObjects } from "./map-objects";
 import { targetThumbnail } from "./target-thumbnail";
 import {
+  routineProgress,
+  type RoutineProgress,
+} from "../../simulation/routines";
+import {
   automaticAction,
   personCurrentAction,
 } from "../../simulation/person-actions";
@@ -40,6 +44,44 @@ export function createActionQueueView(
   changed: (snapshot: ControllerSnapshot) => void,
 ) {
   const document = strip.ownerDocument;
+  function updateProgress(
+    tile: HTMLElement,
+    progress: RoutineProgress | null,
+    running: boolean,
+  ) {
+    let meter = tile.querySelector<HTMLElement>(".pawn-action-progress");
+    if (!meter) {
+      meter = document.createElement("div");
+      meter.className = "pawn-action-progress";
+      const bar = document.createElement("div");
+      bar.className = "pawn-action-progress-bar";
+      bar.setAttribute("role", "progressbar");
+      bar.setAttribute("aria-valuemin", "0");
+      bar.setAttribute("aria-valuemax", "100");
+      const fill = document.createElement("div");
+      bar.append(fill);
+      const remaining = document.createElement("div");
+      remaining.className = "pawn-action-remaining";
+      meter.append(bar, remaining);
+      tile.append(meter);
+    }
+    meter.hidden = !progress;
+    if (!progress) return;
+    const percentage = Math.min(
+      100,
+      Math.max(0, Math.round(progress.fraction * 100)),
+    );
+    const estimate = `About ${progress.remainingMinutes} in-game minutes remaining if uninterrupted${running ? "" : " / Paused"}`;
+    meter.title = estimate;
+    const bar = meter.querySelector<HTMLElement>('[role="progressbar"]')!;
+    bar.setAttribute("aria-label", `${progress.label} progress`);
+    bar.setAttribute("aria-valuenow", String(percentage));
+    bar.setAttribute("aria-valuetext", `${percentage}% / ${estimate}`);
+    (bar.firstElementChild as HTMLElement).style.width =
+      `${progress.fraction * 100}%`;
+    meter.querySelector(".pawn-action-remaining")!.textContent =
+      `~${progress.remainingMinutes} min`;
+  }
   const root = document.createElement("section");
   root.className = "pawn-action-queue";
   root.setAttribute("aria-label", "Action queue");
@@ -161,6 +203,7 @@ export function createActionQueueView(
       const queue = id ? snapshot.game.actionQueues[id] : null;
       const automatic =
         world && id ? personCurrentAction(snapshot.game, id) : null;
+      const progress = world && id ? routineProgress(snapshot.game, id) : null;
       retry.hidden = !queue;
       clear.hidden = !queue;
       root.hidden =
@@ -180,6 +223,7 @@ export function createActionQueueView(
           `Current: ${automatic.label} / ${automatic.source}`,
         );
         automaticTile.title = `${automatic.label} / ${automatic.source} / ${automatic.detail}`;
+        updateProgress(automaticTile, progress, snapshot.running);
         automaticLabel.textContent = automatic.label;
         automaticSource.textContent = {
           job: "Job",
@@ -419,6 +463,11 @@ export function createActionQueueView(
           "Alt+ArrowLeft Alt+ArrowRight Alt+Home Alt+End",
         );
         tile.title = `${label}${isCurrent ? " / Current player action" : waitingFirst ? " / Next player action" : " / Drag to reorder; Alt+Left/Right to move"}`;
+        updateProgress(
+          tile,
+          isCurrent && queue.current.started ? progress : null,
+          snapshot.running,
+        );
         row.dataset.current = String(isCurrent);
         row.querySelector("span")!.textContent = verbs[intent.action];
         row.querySelector("small")!.textContent = isCurrent

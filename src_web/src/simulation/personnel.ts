@@ -1140,6 +1140,8 @@ export function projectPsychology(
   };
 }
 
+export const REST_DECAY_PER_TICK = 0.05;
+
 export function advancePersonnel(
   person: PersonnelRecord,
   currentTick: number,
@@ -1166,7 +1168,7 @@ export function advancePersonnel(
     fear: round(clamp(person.fear - 0.01)),
     needs: {
       satiety: round(clamp(person.needs.satiety - 0.09)),
-      rest: round(clamp(person.needs.rest - 0.05)),
+      rest: round(clamp(person.needs.rest - REST_DECAY_PER_TICK)),
     },
     effects: activeEffects,
   };

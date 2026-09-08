@@ -5,6 +5,8 @@ import { createInitialState } from "../src/simulation/state";
 import { createPawnControl } from "../src/adapters/browser/pawn-control";
 import { advanceSimulation } from "../src/simulation/tick";
 import { fieldSnapshot } from "../src/adapters/browser/expedition-controller";
+import { submitAction } from "../src/simulation/action-queue";
+import { routineProgress } from "../src/simulation/routines";
 
 afterEach(() => vi.unstubAllGlobals());
 function setup(initial = createInitialState()) {
@@ -26,6 +28,58 @@ function setup(initial = createInitialState()) {
   view.render(controller.getSnapshot(), "world", false);
   return { window, controller, changed, inspect, view };
 }
+it("shows paused routine progress only on the executing tile and clears it on cancellation", () => {
+  let state = createInitialState();
+  const actorId = state.personnel[0]!.id;
+  state = submitAction(state, {
+    mapId: state.world.map.id,
+    actorId,
+    action: "sleep",
+    targetId: "object:bed-1",
+  }).state;
+  state = submitAction(state, {
+    mapId: state.world.map.id,
+    actorId,
+    action: "relax",
+    targetId: "object:break-seat-1",
+  }).state;
+  for (let step = 0; step < 100 && !routineProgress(state, actorId); step += 1)
+    state = advanceSimulation(state);
+  const { controller, view } = setup(state);
+  view.select(actorId);
+  const bar = document.querySelector<HTMLElement>(
+    '.pawn-current-action [role="progressbar"]',
+  )!;
+  expect(bar.getAttribute("aria-label")).toBe("Sleep progress");
+  expect(bar.getAttribute("aria-valuetext")).toContain("in-game minutes");
+  expect(bar.getAttribute("aria-valuetext")).toContain("Paused");
+  expect(bar.parentElement!.hidden).toBe(false);
+  expect(
+    document.querySelector<HTMLElement>(
+      ".pawn-pending-actions .pawn-action-progress",
+    )!.hidden,
+  ).toBe(true);
+  const value = bar.getAttribute("aria-valuenow");
+  view.render(controller.getSnapshot(), "world", false);
+  expect(
+    document.querySelector('.pawn-current-action [role="progressbar"]'),
+  ).toBe(bar);
+  expect(bar.getAttribute("aria-valuenow")).toBe(value);
+  document
+    .querySelector<HTMLButtonElement>(".pawn-current-action button")!
+    .click();
+  view.render(controller.getSnapshot(), "world", false);
+  expect(
+    document.querySelector<HTMLElement>(
+      ".pawn-current-action .pawn-action-progress",
+    )!.hidden,
+  ).toBe(true);
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(
+    document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,
+  ).toBe(true);
+});
+
 it.each([
   ["object:bed-1", "sleep", "Sleep"],
   ["object:meal-seat-1", "eat", "Eat"],
