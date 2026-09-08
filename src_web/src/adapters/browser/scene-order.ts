@@ -34,6 +34,7 @@ export function sceneOrder(
         first.position.y -
         second.position.x -
         second.position.y ||
+      Number(!first.object) - Number(!second.object) ||
       Number(first.id === selectedId) - Number(second.id === selectedId) ||
       first.id.localeCompare(second.id),
   );

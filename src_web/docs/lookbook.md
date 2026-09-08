@@ -118,6 +118,8 @@ Double-clicking or following a link opens the relevant object without closing un
 
 ## Interaction Rules
 
+Scene depth remains physical rather than selection-driven: at equal depth, ground objects draw before pawns, so selecting a bed or seat cannot cover its occupant. Selection priority applies only within the object or pawn group; nearer entities still occlude farther ones normally.
+
 ### Direct Person Control
 
 For normal clicks without a subject, the floor beneath a lone pawn or object does not count as ambiguity: that entity is selected or inspected directly. Multiple entity hits still open the chooser with the floor included. Shift+F10 explicitly opens the full chooser, preserving access to the underlying floor even when there is only one entity. With an active subject, the floor remains a normal command target for Go Here.

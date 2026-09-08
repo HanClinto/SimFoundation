@@ -5,7 +5,7 @@ import {
   foregroundWallOpacity,
 } from "../src/adapters/browser/scene-order";
 
-it("interleaves ground objects and pawns by depth, keeping a same-tile selection visible", () => {
+it("keeps same-depth pawns above ground objects regardless of which is selected", () => {
   const initial = createInitialState();
   const object = initial.objects.items.find((item) => item.id === "spare-bed")!;
   const state = {
@@ -33,7 +33,18 @@ it("interleaves ground objects and pawns by depth, keeping a same-tile selection
   ]);
   expect(
     sceneOrder(state, positions, "object:spare-bed").map(({ id }) => id),
-  ).toEqual(["rear", "worker", "object:spare-bed", "front"]);
+  ).toEqual(["rear", "object:spare-bed", "worker", "front"]);
+  expect(sceneOrder(state, positions, "worker").map(({ id }) => id)).toEqual([
+    "rear",
+    "object:spare-bed",
+    "worker",
+    "front",
+  ]);
+  expect(
+    sceneOrder(state, { ...positions, other: positions.worker }, "worker").map(
+      ({ id }) => id,
+    ),
+  ).toEqual(["rear", "object:spare-bed", "other", "worker", "front"]);
   expect(
     sceneOrder(initial, {}, null).some(
       (entry) => entry.object?.kind === "cable" && entry.object.installed,
