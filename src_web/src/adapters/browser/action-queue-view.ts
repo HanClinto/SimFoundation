@@ -48,6 +48,24 @@ export function createActionQueueView(
   changed: (snapshot: ControllerSnapshot) => void,
 ) {
   const document = strip.ownerDocument;
+  function updateSource(badge: HTMLElement, source: string) {
+    const symbols: Record<string, string> = {
+      Player: "P",
+      Job: "J",
+      Schedule: "S",
+      Need: "N",
+      Autonomy: "A",
+      Available: "-",
+      Blocked: "!",
+      Tactical: "T",
+      Mission: "M",
+      Condition: "C",
+      Next: "P",
+    };
+    badge.textContent = symbols[source] ?? source;
+    badge.title = source === "Next" ? "Player: next action" : source;
+    badge.setAttribute("aria-label", badge.title);
+  }
   function updateStep(tile: HTMLElement, step: ActionExecutionStep | null) {
     let caption = tile.querySelector<HTMLElement>(".pawn-action-step");
     if (!caption) {
@@ -286,17 +304,20 @@ export function createActionQueueView(
         updateStep(automaticTile, step);
         updateProgress(automaticTile, progress, snapshot.running);
         automaticLabel.textContent = automatic.label;
-        automaticSource.textContent = {
-          job: "Job",
-          schedule: "Schedule",
-          need: "Need",
-          autonomy: "Autonomy",
-          idle: "Available",
-          waiting: "Blocked",
-          tactical: "Tactical",
-          mission: "Mission",
-          condition: "Condition",
-        }[automatic.source];
+        updateSource(
+          automaticSource,
+          {
+            job: "Job",
+            schedule: "Schedule",
+            need: "Need",
+            autonomy: "Autonomy",
+            idle: "Available",
+            waiting: "Blocked",
+            tactical: "Tactical",
+            mission: "Mission",
+            condition: "Condition",
+          }[automatic.source],
+        );
         const source = targetThumbnail(
           snapshot.game,
           automatic.targetId,
@@ -528,13 +549,16 @@ export function createActionQueueView(
         updateProgress(tile, isCurrent ? progress : null, snapshot.running);
         row.dataset.current = String(isCurrent);
         row.querySelector("span")!.textContent = verbs[intent.action];
-        row.querySelector("small")!.textContent = isCurrent
-          ? queue.current.blockedReason
-            ? "Blocked"
-            : "Player"
-          : waitingFirst
-            ? "Next"
-            : "Player";
+        updateSource(
+          row.querySelector("small")!,
+          isCurrent
+            ? queue.current.blockedReason
+              ? "Blocked"
+              : "Player"
+            : waitingFirst
+              ? "Next"
+              : "Player",
+        );
         const image = row.querySelector("img")!;
         const targetId = intent.destination
           ? `tile:${intent.destination.x},${intent.destination.y}:floor`

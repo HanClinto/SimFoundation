@@ -107,7 +107,6 @@ it("keeps actor selection through ground inspection and panning, and submits onl
   expect(controller.getSnapshot()).toEqual(initial);
   pointer("pointerdown");
   pointer("pointerup");
-  root.querySelector<HTMLButtonElement>(".pawn-context-menu button")!.click();
   expect(controller.getSnapshot()).toEqual(initial);
   root.querySelector<HTMLButtonElement>('[data-interaction="move"]')!.click();
   expect(

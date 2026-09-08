@@ -25,7 +25,7 @@ export function createMapSelection(
   element.className = "map-selection-panel";
   element.setAttribute("aria-label", "Map selection");
   element.innerHTML =
-    '<img data-selection-portrait alt="" hidden/><div class="map-selection-detail"><strong data-selection-name>No selection</strong><p data-selection-state></p><div class="map-selection-needs" data-selection-needs hidden><label>Rest <meter data-selection-rest min="0" max="100" low="30" high="70" optimum="100"></meter></label><label>Satiety <meter data-selection-satiety min="0" max="100" low="40" high="70" optimum="100"></meter></label></div></div><div class="map-selection-actions"><button type="button" data-selection-inspect>Inspect</button><button type="button" data-selection-move>Move</button><label data-selection-door hidden>Door <select aria-label="Selected door policy"><option value="automatic">Automatic</option><option value="held-open">Held open</option><option value="held-closed">Held closed</option></select></label></div><p role="status" data-selection-feedback></p>';
+    '<img data-selection-portrait alt="" hidden/><div class="map-selection-detail"><button type="button" class="selection-inspect-link" data-selection-name>No selection</button><p data-selection-state></p><div class="map-selection-needs" data-selection-needs hidden><label>Rest <meter data-selection-rest min="0" max="100" low="30" high="70" optimum="100"></meter></label><label>Satiety <meter data-selection-satiety min="0" max="100" low="40" high="70" optimum="100"></meter></label></div></div><div class="map-selection-actions"><button type="button" data-selection-move>Move</button><label data-selection-door hidden>Door <select aria-label="Selected door policy"><option value="automatic">Automatic</option><option value="held-open">Held open</option><option value="held-closed">Held closed</option></select></label></div><p role="status" data-selection-feedback></p>';
   host.append(element);
   const portrait = element.querySelector<HTMLImageElement>(
     "[data-selection-portrait]",
@@ -35,7 +35,7 @@ export function createMapSelection(
     "[data-selection-state]",
   )!;
   const inspectButton = element.querySelector<HTMLButtonElement>(
-    "[data-selection-inspect]",
+    "[data-selection-name]",
   )!;
   const moveButton = element.querySelector<HTMLButtonElement>(
     "[data-selection-move]",
@@ -214,6 +214,9 @@ export function createMapSelection(
             ? "Object must be on the ground."
             : "Choose a destination; workers perform the move.";
     inspectButton.disabled = !id || (!entry && !id.startsWith("tile:"));
+    inspectButton.title = inspectButton.disabled
+      ? "No inspection target"
+      : `Inspect ${name.textContent?.replace(/^Target: /, "")}`;
     element.dataset.perspective = view;
   }
   render(current, null, "world");

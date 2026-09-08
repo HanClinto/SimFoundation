@@ -236,7 +236,9 @@ it.each([
       document.querySelector(".pawn-current-action span")!.textContent,
     ).toBe(label);
     expect(
-      document.querySelector(".pawn-current-action small")!.textContent,
+      document
+        .querySelector(".pawn-current-action small")!
+        .getAttribute("title"),
     ).toBe("Player");
     document
       .querySelector<HTMLButtonElement>(".pawn-current-action button")!
@@ -281,9 +283,9 @@ it("shows a real automatic meal and appends player movement behind it without fi
   expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
     "Eat",
   );
-  expect(tray.querySelector(".pawn-current-action small")!.textContent).toBe(
-    "Need",
-  );
+  expect(
+    tray.querySelector(".pawn-current-action small")!.getAttribute("title"),
+  ).toBe("Need");
   expect(
     tray.querySelector<HTMLButtonElement>(".pawn-current-action button")!
       .disabled,
@@ -322,9 +324,9 @@ it("shows a real automatic meal and appends player movement behind it without fi
   expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
     "Go Here",
   );
-  expect(tray.querySelector(".pawn-current-action small")!.textContent).toBe(
-    "Player",
-  );
+  expect(
+    tray.querySelector(".pawn-current-action small")!.getAttribute("title"),
+  ).toBe("Player");
   expect(tray.querySelector(".pawn-current-action .pawn-action-tile")).toBe(
     waitingTile,
   );
@@ -419,11 +421,67 @@ it("does not replace a blocked manual intention with Idle", () => {
     "Stabilize",
   );
   expect(
-    document.querySelector(".pawn-current-action small")!.textContent,
+    document.querySelector(".pawn-current-action small")!.getAttribute("title"),
   ).toBe("Blocked");
   expect(
     document.querySelector(".pawn-action-queue")!.textContent,
   ).not.toContain("Idle");
+});
+
+it("toggles only portrait activation and keeps explicit selection idempotent", () => {
+  const { controller, view, inspect } = setup();
+  const actor = controller.getSnapshot().game.personnel[0]!;
+  view.select(actor.id);
+  view.select(actor.id);
+  expect(view.activeId).toBe(actor.id);
+  const before = controller.getSnapshot();
+  document
+    .querySelector<HTMLButtonElement>(
+      ".pawn-control-detail .selection-inspect-link",
+    )!
+    .click();
+  expect(inspect).toHaveBeenCalledWith(actor.id, "world");
+  document
+    .querySelector<HTMLButtonElement>(`[data-active-person="${actor.id}"]`)!
+    .click();
+  expect(view.activeId).toBeNull();
+  expect(controller.getSnapshot()).toEqual(before);
+});
+
+it("chooses targets without hover activation and inspects a chosen row even after keyboard collapse", () => {
+  const { controller, view, inspect, window } = setup();
+  const before = controller.getSnapshot();
+  const actor = before.game.personnel[0]!;
+  const other = before.game.personnel[1]!;
+  view.select(actor.id);
+  view.ground(before.game.world.positions[other.id]!, other.id, {
+    x: 80,
+    y: 80,
+  });
+  const target = document.querySelector<HTMLButtonElement>(
+    '[data-menu-target^="tile:"]',
+  )!;
+  const targetId = target.dataset.menuTarget!;
+  expect(target.title).toMatch(/^Choose target:/);
+  target.dispatchEvent(new window.MouseEvent("mouseenter", { bubbles: true }));
+  expect(target.getAttribute("aria-expanded")).toBe("false");
+  target.click();
+  expect(inspect).not.toHaveBeenCalled();
+  expect(target.getAttribute("aria-expanded")).toBe("true");
+  expect(target.title).toBe(`Inspect ${target.dataset.targetLabel}`);
+  expect(document.querySelector('[data-interaction="inspect"]')).toBeNull();
+  target.focus();
+  target.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+  );
+  document.activeElement!.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+  );
+  expect(target.getAttribute("aria-expanded")).toBe("false");
+  target.click();
+  expect(inspect).toHaveBeenCalledWith(targetId, "world");
+  expect(view.menuOpen).toBe(false);
+  expect(controller.getSnapshot()).toEqual(before);
 });
 
 it("selects an actor without drafting, issues immediate Go Here and retains the actor during inspection", () => {
@@ -441,7 +499,6 @@ it("selects an actor without drafting, issues immediate Go Here and retains the 
     x: 490,
     y: 290,
   });
-  document.querySelector<HTMLButtonElement>("[data-menu-target]")!.click();
   expect(controller.getSnapshot().game.combat.responders[id]).toBeUndefined();
   document
     .querySelector<HTMLButtonElement>('[data-interaction="move"]')!
@@ -453,7 +510,9 @@ it("selects an actor without drafting, issues immediate Go Here and retains the 
   expect(controller.getSnapshot().game.world.positions[id]).toEqual(origin);
   view.ground(target, "tile:55,55:structure", { x: 30, y: 30 });
   document
-    .querySelector<HTMLButtonElement>('[data-interaction="inspect"]')!
+    .querySelector<HTMLButtonElement>(
+      '[data-menu-target="tile:55,55:structure"]',
+    )!
     .click();
   expect(inspect).toHaveBeenCalledWith("tile:55,55:structure", "world");
   expect(view.activeId).toBe(id);
@@ -544,9 +603,7 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
     .dispatchEvent(
       new window.KeyboardEvent("keydown", { key: "End", bubbles: true }),
     );
-  expect(document.activeElement).toBe(
-    document.querySelector('[data-interaction="inspect"]'),
-  );
+  expect(document.activeElement).toBe(choose);
   choose.click();
   expect(view.activeId).toBe(patient.id);
   expect(controller.getSnapshot()).toEqual(snapshot);
@@ -603,7 +660,7 @@ it("deselects without changing work and allows inspection without a command reci
   ).toBe(true);
   expect(document.querySelector('[data-interaction="hold"]')).toBeNull();
   document
-    .querySelector<HTMLButtonElement>('[data-interaction="inspect"]')!
+    .querySelector<HTMLButtonElement>('[data-menu-target="tile:60,59:floor"]')!
     .click();
   expect(inspect).toHaveBeenCalledWith("tile:60,59:floor", "world");
   view.select(actorId);
@@ -646,7 +703,10 @@ it("retains the subject header without a duplicate label and returns from verbs 
   );
   expect(document.activeElement).toBe(floor);
   expect(floor.getAttribute("aria-expanded")).toBe("false");
-  floor.click();
+  expect(floor.title).toMatch(/^Inspect /);
+  floor.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+  );
   document
     .querySelector<HTMLButtonElement>('[data-interaction="move"]')!
     .click();
@@ -665,9 +725,11 @@ it("appends through the hierarchy, shows stable pending controls, and supports e
     const position = { x: origin.x + offset, y: origin.y };
     const targetId = `tile:${position.x},${position.y}:floor`;
     view.ground(position, targetId, { x: 100, y: 100 });
-    document
-      .querySelector<HTMLButtonElement>(`[data-menu-target="${targetId}"]`)!
-      .click();
+    const targetButton = document.querySelector<HTMLButtonElement>(
+      `[data-menu-target="${targetId}"]`,
+    )!;
+    if (targetButton.getAttribute("aria-expanded") !== "true")
+      targetButton.click();
     document
       .querySelector<HTMLButtonElement>(`[data-order-mode="${mode}"]`)!
       .click();

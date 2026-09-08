@@ -30,7 +30,7 @@ it("shows needs only in World view and routes object actions without directly mo
   expect(move).toHaveBeenCalledWith("spare-bed", snapshot);
   expect(controller.getSnapshot().game.objects).toEqual(snapshot.game.objects);
   panel.element
-    .querySelector<HTMLButtonElement>("[data-selection-inspect]")!
+    .querySelector<HTMLButtonElement>("[data-selection-name]")!
     .click();
   expect(inspect).toHaveBeenCalledWith("object:spare-bed", "world");
   panel.render(snapshot, "object:spare-bed", "recorded");
@@ -57,7 +57,7 @@ it("changes an actual selected door policy and keeps observed controls read-only
   expect(door.disabled).toBe(true);
   panel.render(controller.getSnapshot(), null, "world");
   expect(
-    panel.element.querySelector<HTMLButtonElement>("[data-selection-inspect]")!
+    panel.element.querySelector<HTMLButtonElement>("[data-selection-name]")!
       .disabled,
   ).toBe(true);
 });

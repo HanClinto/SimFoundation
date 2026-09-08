@@ -47,7 +47,12 @@ export function createPawnControl(
   portraits.setAttribute("aria-label", "Choose active person");
   const detail = document.createElement("div");
   detail.className = "pawn-control-detail";
-  const name = document.createElement("strong");
+  const name = document.createElement("button");
+  name.type = "button";
+  name.className = "selection-inspect-link";
+  name.addEventListener("click", () => {
+    if (activeId) inspect(activeId, perspective);
+  });
   const action = document.createElement("span");
   action.setAttribute("role", "status");
   detail.append(name, action);
@@ -156,11 +161,6 @@ export function createPawnControl(
   move.textContent = "Go Here";
   move.dataset.interaction = "move";
   move.setAttribute("role", "menuitem");
-  const record = document.createElement("button");
-  record.type = "button";
-  record.textContent = "Inspect";
-  record.dataset.interaction = "inspect";
-  record.setAttribute("role", "menuitem");
   const reason = document.createElement("p");
   reason.id = `${canvas.id || "map"}-move-reason`;
   move.setAttribute("aria-describedby", reason.id);
@@ -176,7 +176,6 @@ export function createPawnControl(
   choose.setAttribute("role", "menuitem");
   const moveRow = row(move);
   const chooseRow = row(choose);
-  const recordRow = row(record);
   const divider = document.createElement("li");
   divider.className = "divider";
   divider.setAttribute("role", "separator");
@@ -184,9 +183,8 @@ export function createPawnControl(
   explanation.setAttribute("role", "none");
   explanation.append(reason);
   verbs.append(moveRow, explanation);
-  menu.append(subject, divider, chooseRow, recordRow);
+  menu.append(subject, divider, chooseRow);
   const targets = new Map<string, HTMLButtonElement>();
-  let targetLabel = "";
   let anchor = { x: 0, y: 0 };
   function fitMenu() {
     menu.style.maxWidth = `${Math.max(0, canvas.clientWidth - 8)}px`;
@@ -203,15 +201,16 @@ export function createPawnControl(
       x: Number(button.dataset.targetX),
       y: Number(button.dataset.targetY),
     };
-    targetLabel = button.dataset.targetLabel!;
-    for (const entry of targets.values())
+    for (const entry of targets.values()) {
       entry.setAttribute("aria-expanded", String(entry === button));
+      entry.dataset.chosen = String(entry === button);
+      entry.title = `${entry === button ? "Inspect" : "Choose target:"} ${entry.dataset.targetLabel}`;
+    }
     button.parentElement!.append(verbs);
     verbs.hidden = false;
     for (const entry of entries.values()) entry.parentElement!.remove();
     entries.clear();
     updateMenu();
-    fitMenu();
     if (keyboard)
       verbs
         .querySelector<HTMLButtonElement>(
@@ -287,7 +286,6 @@ export function createPawnControl(
     );
     choose.disabled =
       !current.game.world.positions[target.id] || target.id === activeId;
-    record.textContent = `Inspect ${targetLabel}`;
     const issue =
       perspective !== "world"
         ? "Recorded view is inspection-only."
@@ -359,11 +357,11 @@ export function createPawnControl(
         issues.push(button.title);
       }
     }
-    divider.hidden = false;
+    divider.hidden = chooseRow.hidden;
     reason.textContent = [...new Set(issues)].join(" ");
     explanation.hidden = issues.length === 0;
   }
-  deselectButton.addEventListener("click", () => {
+  function deselect() {
     if (!activeId) return;
     close();
     selected?.(null);
@@ -371,7 +369,8 @@ export function createPawnControl(
     render(current, perspective, busyPlacement);
     changed(current);
     canvas.focus();
-  });
+  }
+  deselectButton.addEventListener("click", deselect);
   choose.addEventListener("click", () => {
     if (target && !choose.disabled) select(target.id);
   });
@@ -387,11 +386,6 @@ export function createPawnControl(
     changed(result.snapshot);
     if (result.reason) action.textContent = result.reason;
     canvas.focus();
-  });
-  record.addEventListener("click", () => {
-    const id = target?.id;
-    close();
-    if (id) inspect(id, perspective);
   });
   menu.addEventListener("keydown", (event) => {
     if (
@@ -478,7 +472,10 @@ export function createPawnControl(
         image.alt = "";
         image.src = pawnPortrait(person.id);
         button.append(image);
-        button.addEventListener("click", () => select(person.id));
+        button.addEventListener("click", () => {
+          if (activeId === person.id) deselect();
+          else select(person.id);
+        });
         portraits.append(button);
         buttons.set(person.id, button);
       }
@@ -486,7 +483,7 @@ export function createPawnControl(
         !!snapshot.game.world.positions[person.id] ||
         personCurrentAction(snapshot.game, person.id)?.source === "mission";
       button.disabled = !present || placement;
-      button.title = `${person.name}${present ? "" : " / Away from this map"}`;
+      button.title = `${activeId === person.id ? "Deselect " : "Select "}${person.name}${present ? "" : " / Away from this map"}`;
       button.setAttribute(
         "aria-label",
         `Select ${person.name}${present ? "" : " (away)"}`,
@@ -500,6 +497,8 @@ export function createPawnControl(
         ? personCurrentAction(snapshot.game, activeId)
         : null;
     name.textContent = person ? person.name : "No active person";
+    name.disabled = !person;
+    name.title = person ? `Inspect ${person.name}` : "No active person";
     action.textContent = !person
       ? ""
       : perspective === "recorded"
@@ -576,8 +575,6 @@ export function createPawnControl(
         "No active person";
       subjectPortrait.hidden = !activeId;
       if (activeId) subjectPortrait.src = pawnPortrait(activeId);
-      targetLabel =
-        candidates.find((candidate) => candidate.id === id)?.name ?? id;
       for (const candidate of candidates) {
         const button = document.createElement("button");
         button.type = "button";
@@ -598,16 +595,22 @@ export function createPawnControl(
         button.setAttribute("role", "menuitem");
         button.setAttribute("aria-haspopup", "menu");
         button.setAttribute("aria-expanded", "false");
-        button.addEventListener("click", () => openTarget(candidate.id));
+        button.title = `Choose target: ${candidate.name}`;
+        button.addEventListener("click", () => {
+          if (button.dataset.chosen === "true") {
+            close();
+            inspect(candidate.id, perspective);
+          } else openTarget(candidate.id);
+        });
         targets.set(candidate.id, button);
         menu.insertBefore(row(button), divider);
       }
       menu.hidden = false;
       updateMenu();
       anchor = point;
-      fitMenu();
       if (candidates.length === 1) openTarget(candidates[0]!.id, keyboard);
       else if (keyboard) availableButtons()[0]?.focus();
+      fitMenu();
     },
   };
 }
