@@ -63,7 +63,9 @@ it("offers only implemented target interactions with authoritative disabled reas
     interactionOptions(state, state.world.map.id, id, "object:spare-bed"),
   ).toEqual([]);
   expect(
-    interactionOptions(state, state.world.map.id, id, "SCP-049-2")[0],
+    interactionOptions(state, state.world.map.id, id, "SCP-049-2").find(
+      (option) => option.action === "engage",
+    ),
   ).toMatchObject({
     action: "engage",
     reason: "No active adversary at this location.",

@@ -80,7 +80,8 @@ export function pawnCues(
       {
         icon: responder.incapacitated
           ? "medical"
-          : responder.order === "engage"
+          : responder.order === "engage" ||
+              (responder.order === "attack" && responder.phase !== "ready")
             ? "guard"
             : responder.order === "stabilize"
               ? "medical"

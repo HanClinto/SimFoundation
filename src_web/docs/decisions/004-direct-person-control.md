@@ -1,6 +1,6 @@
 # Direct Person Control And Action Ownership
 
-Status: M0 contract and M1/M2 implementation, 2026-09-08. Parent: [#23](https://github.com/HanClinto/SimFoundation/issues/23).
+Status: M0 contract and M1/M2/M3 implementation, 2026-09-08. Parent: [#23](https://github.com/HanClinto/SimFoundation/issues/23).
 
 ## Principles
 
@@ -36,7 +36,9 @@ The pawn strip describes the actual current action, preparation/recovery and blo
 
 ## Queue Contract For Later Milestones
 
-M2 adds target-specific interactions and visible current-action cancellation. M3 adds Attack approach with distinct hold-position engagement. M4 adds a bounded manual queue; default interaction appends, with explicit Do Now (safe replacement) and Clear Pending. Queued entries acquire no speculative long-lived reservations. The active entry delegates to its existing domain owner and stores only the identity needed to track completion, not duplicate execution progress or cargo.
+M3 is implemented as the serializable `attack` tactical order in schema 40. The target menu offers Attack alongside Engage From Here. Attack approaches a reachable tile within response range and current line of sight, using existing pathfinding and automatic-door movement, then shares the existing engagement preparation, hit and recovery executor. Candidate firing tiles are bounded by response range and chosen by shortest route with deterministic row/column ties; no tactical cover or retreat optimization is implied. Current geometry and target position are reconsidered each tick. No reachable firing tile keeps the order blocked with a reason. Movement during approach consumes no ammunition; Attack waits out action recovery before approaching again. Target defeat completes Attack into drafted Hold while preserving recovery. Cancelling delegates to M2's safe cancellation. Engage From Here never approaches. World target knowledge remains explicit player knowledge, not an extension to adversary perception.
+
+M2 adds target-specific interactions and visible current-action cancellation; M3 adds Attack approach with distinct hold-position engagement. M4 will add a bounded manual queue; default interaction appends, with explicit Do Now (safe replacement) and Clear Pending. Queued entries acquire no speculative long-lived reservations. The active entry delegates to its existing domain owner and stores only the identity needed to track completion, not duplicate execution progress or cargo.
 
 Go Here completes at physical arrival. Attack repeats until target defeat, cancellation or terminal failure. Stabilize completes after actual treatment; Recover completes after delivery. Hold is persistent: a newly requested action explicitly replaces the idle Hold posture rather than waiting forever behind it. A failed or blocked active interaction must expose Retry/Skip/Cancel as appropriate, not silently execute a potentially hazardous next action. Recovery/cargo cancellation follows the owning system's safe boundary and cannot refund spent resources or bypass action recovery.
 

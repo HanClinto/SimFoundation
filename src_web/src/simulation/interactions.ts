@@ -11,6 +11,7 @@ import { OBJECT_DEFINITIONS } from "./objects";
 
 export type PersonInteraction =
   | "hold"
+  | "attack"
   | "engage"
   | "stabilize"
   | "recover"
@@ -138,7 +139,7 @@ export function performInteraction(
             : "This recovery cannot start now.",
         );
   }
-  if (action === "engage") {
+  if (action === "engage" || action === "attack") {
     if (
       !local.combat.adversary ||
       targetId !== local.combat.adversary.id ||
@@ -212,7 +213,10 @@ export function interactionOptions(
   if (targetId.startsWith("tile:") || targetId === actorId)
     actions.push({ action: "hold", label: "Hold Position" });
   if (targetId === "SCP-049-2")
-    actions.push({ action: "engage", label: "Engage From Here" });
+    actions.push(
+      { action: "attack", label: "Attack" },
+      { action: "engage", label: "Engage From Here" },
+    );
   if (
     local.personnel.some((person) => person.id === targetId) &&
     targetId !== actorId
@@ -267,14 +271,16 @@ export function currentPersonAction(local: GameState, actorId: string): string {
   const label =
     responder.order === "move"
       ? `Go Here: ${responder.destination?.x}, ${responder.destination?.y}`
-      : responder.order === "engage"
-        ? `Engage from here: ${target}`
-        : responder.order === "stabilize"
-          ? `Stabilize: ${target}`
-          : responder.order === "retreat"
-            ? "Retreat"
-            : responder.returnToAutonomy
-              ? "Returning to routine"
-              : "Hold position";
+      : responder.order === "attack"
+        ? `Attack: ${target}`
+        : responder.order === "engage"
+          ? `Engage from here: ${target}`
+          : responder.order === "stabilize"
+            ? `Stabilize: ${target}`
+            : responder.order === "retreat"
+              ? "Retreat"
+              : responder.returnToAutonomy
+                ? "Returning to routine"
+                : "Hold position";
   return `${label}${responder.phase !== "ready" ? ` / ${responder.phase} ${responder.remaining}` : ""}${responder.blockedReason ? ` / ${responder.blockedReason}` : ""}`;
 }

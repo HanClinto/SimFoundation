@@ -180,7 +180,7 @@ export function drawResponseStatus(
   if (
     responder?.drafted &&
     !responder.incapacitated &&
-    responder.order === "engage"
+    (responder.order === "engage" || responder.order === "attack")
   ) {
     context.fillStyle = "#3b4949";
     context.fillRect(2, -21, 14, 3);

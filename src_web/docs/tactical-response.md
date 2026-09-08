@@ -1,6 +1,6 @@
 # Tactical Response
 
-Implemented first encounter, tracked in [#21](https://github.com/HanClinto/SimFoundation/issues/21). Save schema 37 requires a fresh development site.
+Implemented first encounter, tracked in [#21](https://github.com/HanClinto/SimFoundation/issues/21), with direct map interactions from [#23](https://github.com/HanClinto/SimFoundation/issues/23). Save schema 40 requires a fresh development site.
 
 ## Orders
 
@@ -16,6 +16,8 @@ Drafting interrupts ordinary work without discarding progress or material reserv
 4. Withdraw to 60,55 and nearby tiles beyond the response boundary, or neutralize the instance and assist injured colleagues. Release responders when it is safe to resume routine work.
 
 ## Action Rules
+
+The map's **Attack** order includes physical approach to a reachable firing position. Select the actor's portrait, click the adversary, and choose Attack. **Engage From Here** is a separate stationary order; the older inspector Engage controls retain that stationary behavior. Attack uses current target position and geometry, passes through real automatic doors, and waits with a visible reason if no firing position is reachable. It does not spend ammunition while approaching. Losing line of sight resets preparation; recovery cannot be skipped and Attack waits for it before further approach. Neutralization completes Attack into drafted Hold without erasing the last shot's recovery. The current-action strip can cancel Attack safely. Position choice is shortest reachable firing route, not cover-seeking or automatic withdrawal.
 
 Layers > Tactical shows the selected drafted responder's five-tile range, clear versus blocked line of sight, destination lines, health, and yellow preparation / blue recovery bars. Response fire has three preparation steps and three recovery steps, consumes one of 12 initial rounds, and applies 24 damage against the 120-integrity test instance. Range and sight are rechecked on resolution; changing orders or losing sight interrupts preparation. New orders cannot erase recovery, although movement during recovery is allowed.
 

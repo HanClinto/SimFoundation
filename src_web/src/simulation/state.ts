@@ -22,7 +22,7 @@ import { installStartingPower } from "./power-setup";
 import { createCombatState, type CombatState } from "./combat";
 import { createExpeditions, type ExpeditionState } from "./expeditions";
 
-export const GAME_STATE_VERSION = 39;
+export const GAME_STATE_VERSION = 40;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

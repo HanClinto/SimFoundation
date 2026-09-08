@@ -12,6 +12,7 @@ export type TacticalOrder =
   | "hold"
   | "move"
   | "retreat"
+  | "attack"
   | "engage"
   | "stabilize";
 export interface ResponderState {
@@ -202,7 +203,11 @@ export function orderResponder(
   const responder = state.combat.responders[id];
   if (!responder?.drafted) return { state, code: "not-drafted" };
   if (responder.incapacitated) return { state, code: "incapacitated" };
-  if (!["hold", "move", "retreat", "engage", "stabilize"].includes(order))
+  if (
+    !["hold", "move", "retreat", "attack", "engage", "stabilize"].includes(
+      order,
+    )
+  )
     return { state, code: "invalid-order" };
   const moving = order === "move" || order === "retreat";
   if (
@@ -215,7 +220,7 @@ export function orderResponder(
   )
     return { state, code: "unreachable" };
   if (
-    order === "engage" &&
+    (order === "engage" || order === "attack") &&
     (state.combat.status !== "active" ||
       targetId !== "SCP-049-2" ||
       !state.combat.participants.includes(id))
@@ -245,7 +250,9 @@ export function orderResponder(
             returnToAutonomy: false,
             destination: moving ? { ...destination! } : null,
             targetId:
-              order === "engage" || order === "stabilize" ? targetId! : null,
+              order === "engage" || order === "attack" || order === "stabilize"
+                ? targetId!
+                : null,
             phase: responder.phase === "recovering" ? "recovering" : "ready",
             remaining:
               responder.phase === "recovering" ? responder.remaining : 0,
@@ -405,6 +412,50 @@ export function engagementIssue(state: GameState, id: string): string | null {
   return null;
 }
 
+function attackRoute(
+  state: GameState,
+  id: string,
+): readonly TilePosition[] | null {
+  const origin = state.world.positions[id]!;
+  const target = state.combat.adversary!.position;
+  const candidates: TilePosition[] = [];
+  for (
+    let row = target.y - RESPONSE_RANGE;
+    row <= target.y + RESPONSE_RANGE;
+    row += 1
+  ) {
+    for (
+      let column = target.x - RESPONSE_RANGE;
+      column <= target.x + RESPONSE_RANGE;
+      column += 1
+    ) {
+      const position = { x: column, y: row };
+      if (
+        !sameTile(position, target) &&
+        isWalkable(state.world.map, position) &&
+        distance(position, target) <= RESPONSE_RANGE &&
+        canObserve(state.world.map, position, target, RESPONSE_RANGE)
+      )
+        candidates.push(position);
+    }
+  }
+  const minimumSteps = (position: TilePosition) =>
+    Math.abs(position.x - origin.x) + Math.abs(position.y - origin.y);
+  candidates.sort(
+    (first, second) =>
+      minimumSteps(first) - minimumSteps(second) ||
+      first.y - second.y ||
+      first.x - second.x,
+  );
+  let best: readonly TilePosition[] | null = null;
+  for (const position of candidates) {
+    if (best && minimumSteps(position) >= best.length) break;
+    const route = findRoute(state.world.map, origin, position);
+    if (route && (!best || route.length < best.length)) best = route;
+  }
+  return best;
+}
+
 export function advanceCombat(state: GameState): GameState {
   for (const [id, responder] of Object.entries(state.combat.responders)) {
     if (
@@ -480,14 +531,30 @@ export function advanceCombat(state: GameState): GameState {
       };
       continue;
     }
-    if (responder.order === "engage") {
+    if (responder.order === "engage" || responder.order === "attack") {
       const issue = engagementIssue(working(), id);
       if (issue) {
+        let blockedReason = issue;
+        if (
+          responder.order === "attack" &&
+          adversary &&
+          adversary.health > 0 &&
+          state.combat.status === "active" &&
+          state.combat.participants.includes(id) &&
+          responder.ammunition > 0
+        ) {
+          const route = attackRoute(working(), id);
+          if (route?.[0])
+            state = { ...state, world: stepWorld(state.world, id, route[0]) };
+          blockedReason = route
+            ? "Approaching firing position."
+            : "No reachable firing position.";
+        }
         responders[id] = {
           ...responder,
           phase: "ready",
           remaining: 0,
-          blockedReason: issue,
+          blockedReason,
         };
         continue;
       }
@@ -780,6 +847,19 @@ export function advanceCombat(state: GameState): GameState {
           "Response team withdrawn; encounter suspended with 049-2 remaining in the area.",
         );
       }
+    }
+  }
+  if (status === "neutralized") {
+    for (const [id, responder] of Object.entries(responders)) {
+      if (responder.order === "attack")
+        responders[id] = {
+          ...responder,
+          order: "hold",
+          targetId: null,
+          blockedReason: null,
+          phase: responder.phase === "recovering" ? "recovering" : "ready",
+          remaining: responder.phase === "recovering" ? responder.remaining : 0,
+        };
     }
   }
   return {

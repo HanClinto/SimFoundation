@@ -54,7 +54,7 @@ export function combatStateValid(state: GameState): boolean {
         integer(responder.lastShotTick, state.tick)
       ) ||
       !phase(responder) ||
-      !["hold", "move", "retreat", "engage", "stabilize"].includes(
+      !["hold", "move", "retreat", "attack", "engage", "stabilize"].includes(
         responder.order,
       ) ||
       !(
@@ -75,7 +75,7 @@ export function combatStateValid(state: GameState): boolean {
       return false;
     if (
       responder.phase === "preparing" &&
-      !["engage", "stabilize"].includes(responder.order)
+      !["attack", "engage", "stabilize"].includes(responder.order)
     )
       return false;
     if (
@@ -85,7 +85,7 @@ export function combatStateValid(state: GameState): boolean {
     )
       return false;
     if (
-      responder.order === "engage"
+      responder.order === "engage" || responder.order === "attack"
         ? responder.targetId !== "SCP-049-2"
         : responder.order === "stabilize"
           ? !ids.includes(responder.targetId!) || responder.targetId === id
