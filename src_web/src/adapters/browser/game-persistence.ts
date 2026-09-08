@@ -2180,6 +2180,19 @@ function isGameState(value: unknown): value is GameState {
   const state = value as unknown as GameState;
   const personIds = state.personnel.map(({ id }) => id);
   if (!expeditionsValid(state)) return false;
+  if (
+    !isRecord(state.actionTimings) ||
+    Object.entries(state.actionTimings).some(
+      ([id, timing]) =>
+        !personIds.includes(id) ||
+        !isRecord(timing) ||
+        !isNonEmptyString(timing.key) ||
+        !isIntegerInRange(timing.startedTick, 0, state.tick) ||
+        (timing.mapId !== state.world.map.id &&
+          timing.mapId !== state.expeditions.active?.site?.world.map.id),
+    )
+  )
+    return false;
   const away = awayPersonnel(state);
   const entityIds = [
     ...personIds.filter((id) => !away.includes(id)),

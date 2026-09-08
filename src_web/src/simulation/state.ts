@@ -23,8 +23,9 @@ import { createCombatState, type CombatState } from "./combat";
 import { createExpeditions, type ExpeditionState } from "./expeditions";
 
 import type { ActionQueues } from "./action-queue";
+import type { ActionTiming } from "./action-progress";
 
-export const GAME_STATE_VERSION = 43;
+export const GAME_STATE_VERSION = 44;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -34,6 +35,7 @@ export interface IncidentState {
 }
 
 export interface GameState {
+  readonly actionTimings: Readonly<Record<string, ActionTiming>>;
   readonly actionQueues: ActionQueues;
   readonly expeditions: ExpeditionState;
   readonly combat: CombatState;
@@ -76,6 +78,7 @@ export function createInitialState(seed = 9620): GameState {
     map: { ...world.map, objectBlocks: objectBlocks(objects, world.map.width) },
   };
   return observeSite({
+    actionTimings: {},
     actionQueues: {},
     expeditions: createExpeditions(),
     combat: createCombatState(),

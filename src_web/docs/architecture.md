@@ -114,6 +114,12 @@ Browser code reads immutable snapshots and domain events. It never mutates entit
 
 ## State Model
 
+### Action Progress (Schema 44)
+
+`action-progress.ts` defines a shared `ActionProgress` projection: kind, label, compact text, detailed explanation, optional completion fraction, and elapsed simulation minutes. Routine duration and route distance override generic elapsed time. Route length comes from the existing A\* planner, including traversable automatic doors but not the additional time needed to open them. Movement, routine collection/seating, job work-site travel and field recovery use their current executor destinations. Unsupported/open-ended actions retain elapsed time without inventing a percentage or ETA.
+
+Root `actionTimings` maps a person to the active map, stable action key and started tick. Controller publication and root tick boundaries reconcile timers across queue changes, automatic handoffs and field transfer. Repeated updates to one identity retain its clock; a changed action or map resets it. Existing routine start ticks supply exact elapsed time where available. Automatic work takes display priority over pending manual intentions; those intentions do not accumulate active time while waiting behind it. Timing records are validated for person/map identity and bounded integer ticks on load. No timer is tied to browser selection or wall-clock time, and no execution resource/progress is duplicated.
+
 ### Personal Action Ownership (Schema 42)
 
 `person-actions.ts` identifies the actual current routine or job by a stable owner key and projects source, verb, target and activity detail. Routine producers record Schedule, Need or Autonomy when choosing sleep, meals or discretionary breaks; work/clinical commitments report Job. Player intentions use the existing manual queue. These sources share the current-action tray and a coordinator handoff without duplicating execution progress or reservations. This is an adapter over implemented producers, not a second meal/job executor or a speculative schedule expansion.

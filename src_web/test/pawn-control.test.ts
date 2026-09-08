@@ -28,6 +28,65 @@ function setup(initial = createInitialState()) {
   view.render(controller.getSnapshot(), "world", false);
   return { window, controller, changed, inspect, view };
 }
+it("shows generic elapsed and route readouts only on the current action, without percentage bars", () => {
+  const { controller, view } = setup();
+  const state = controller.getSnapshot().game;
+  const actorId = state.personnel[0]!.id;
+  view.select(actorId);
+  expect(
+    document.querySelector(".pawn-current-action .pawn-action-remaining")!
+      .textContent,
+  ).toBe("0 min elapsed");
+  expect(
+    document.querySelector<HTMLElement>(
+      ".pawn-current-action .pawn-action-progress-bar",
+    )!.hidden,
+  ).toBe(true);
+  controller.queueAction({
+    mapId: state.world.map.id,
+    actorId,
+    action: "hold",
+  });
+  controller.setRunning(true);
+  controller.advance(4);
+  controller.setRunning(false);
+  view.render(controller.getSnapshot(), "world", false);
+  expect(
+    document.querySelector(".pawn-current-action .pawn-action-remaining")!
+      .textContent,
+  ).toBe("4 min elapsed");
+  controller.queueAction({
+    mapId: state.world.map.id,
+    actorId,
+    action: "move",
+    destination: { x: 60, y: 59 },
+  });
+  controller.queueAction({
+    mapId: state.world.map.id,
+    actorId,
+    action: "hold",
+  });
+  view.render(controller.getSnapshot(), "world", false);
+  expect(
+    document.querySelector(".pawn-current-action .pawn-action-remaining")!
+      .textContent,
+  ).toContain("tiles left");
+  expect(
+    document.querySelector<HTMLElement>(
+      ".pawn-current-action .pawn-action-progress-bar",
+    )!.hidden,
+  ).toBe(true);
+  expect(
+    document.querySelector<HTMLElement>(
+      ".pawn-pending-actions .pawn-action-progress",
+    )!.hidden,
+  ).toBe(true);
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(
+    document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,
+  ).toBe(true);
+});
+
 it("shows paused routine progress only on the executing tile and clears it on cancellation", () => {
   let state = createInitialState();
   const actorId = state.personnel[0]!.id;
@@ -71,9 +130,13 @@ it("shows paused routine progress only on the executing tile and clears it on ca
   view.render(controller.getSnapshot(), "world", false);
   expect(
     document.querySelector<HTMLElement>(
-      ".pawn-current-action .pawn-action-progress",
+      ".pawn-current-action .pawn-action-progress-bar",
     )!.hidden,
   ).toBe(true);
+  expect(
+    document.querySelector(".pawn-current-action .pawn-action-remaining")!
+      .textContent,
+  ).toContain("tiles left");
   view.render(controller.getSnapshot(), "recorded", false);
   expect(
     document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,

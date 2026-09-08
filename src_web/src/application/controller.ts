@@ -6,6 +6,7 @@ import {
 } from "../simulation/observations";
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import { goHere } from "../simulation/direct-control";
+import { trackActionTimes } from "../simulation/action-progress";
 import { isPersonalRoutineAction } from "../simulation/routines";
 import {
   cancelAutomaticAction,
@@ -355,7 +356,7 @@ export function createController(initialState: GameState): GameController {
   }
 
   function publish(): ControllerSnapshot {
-    state = invalidateActionQueues(state);
+    state = trackActionTimes(invalidateActionQueues(state));
     const snapshot = getSnapshot();
     for (const listener of listeners) listener(snapshot);
     return snapshot;

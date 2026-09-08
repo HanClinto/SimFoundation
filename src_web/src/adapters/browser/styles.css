@@ -518,6 +518,9 @@ ul.menu.pawn-context-menu button[data-menu-target] span {
 .pawn-action-progress[hidden] {
   display: none;
 }
+.pawn-action-progress-bar[hidden] {
+  display: none;
+}
 .pawn-action-progress-bar {
   height: 6px;
   overflow: hidden;
