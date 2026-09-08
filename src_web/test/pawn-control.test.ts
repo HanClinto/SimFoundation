@@ -26,6 +26,54 @@ function setup(initial = createInitialState()) {
   view.render(controller.getSnapshot(), "world", false);
   return { window, controller, changed, inspect, view };
 }
+it.each([
+  ["object:bed-1", "sleep", "Sleep"],
+  ["object:meal-seat-1", "eat", "Eat"],
+  ["object:break-seat-1", "relax", "Relax"],
+])(
+  "queues the implemented routine on %s without movement at menu submission",
+  (targetId, action, label) => {
+    const { controller, view } = setup();
+    const state = controller.getSnapshot().game;
+    const actorId = state.personnel[0]!.id;
+    view.select(actorId);
+    view.ground({ x: 0, y: 0 }, targetId, { x: 80, y: 80 });
+    document
+      .querySelector<HTMLButtonElement>(`[data-menu-target="${targetId}"]`)!
+      .click();
+    const button = document.querySelector<HTMLButtonElement>(
+      `[data-interaction="${action}"]`,
+    )!;
+    expect(button.disabled).toBe(false);
+    button.click();
+    const next = controller.getSnapshot();
+    expect(next.game.world).toEqual(state.world);
+    expect(next.game.actionQueues[actorId]!.current.intent).toMatchObject({
+      action,
+      targetId,
+    });
+    view.render(next, "world", false);
+    expect(
+      document.querySelector(".pawn-current-action span")!.textContent,
+    ).toBe(label);
+    expect(
+      document.querySelector(".pawn-current-action small")!.textContent,
+    ).toBe("Player");
+    document
+      .querySelector<HTMLButtonElement>(".pawn-current-action button")!
+      .click();
+    expect(
+      controller.getSnapshot().game.routines.activities[actorId],
+    ).toBeUndefined();
+    view.render(controller.getSnapshot(), "recorded", false);
+    view.ground({ x: 0, y: 0 }, targetId, { x: 80, y: 80 });
+    document
+      .querySelector<HTMLButtonElement>(`[data-menu-target="${targetId}"]`)!
+      .click();
+    expect(document.querySelector(`[data-interaction="${action}"]`)).toBeNull();
+  },
+);
+
 it("shows a real automatic meal and appends player movement behind it without fighting for control", () => {
   const actorId = "person-lena-ortiz";
   let state = createInitialState();

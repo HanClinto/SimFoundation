@@ -93,12 +93,21 @@ export function combatStateValid(state: GameState): boolean {
     )
       return false;
     if (responder.drafted || responder.incapacitated) {
+      const routine = state.routines.activities[id];
+      const playerRoutine =
+        routine?.source === "player" && responder.order === "hold";
       if (
-        state.routines.activities[id] ||
+        (routine && !playerRoutine) ||
         state.personnel.find((person) => person.id === id)?.currentJobId ||
         state.objects.items.some(
           (item) =>
-            item.location.kind === "carried" && item.location.personId === id,
+            item.location.kind === "carried" &&
+            item.location.personId === id &&
+            !(
+              playerRoutine &&
+              item.id === routine.mealObjectId &&
+              item.reservedBy === `routine-${id}`
+            ),
         ) ||
         state.jobs.some(
           (job) =>

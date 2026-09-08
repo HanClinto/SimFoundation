@@ -24,7 +24,7 @@ import { createExpeditions, type ExpeditionState } from "./expeditions";
 
 import type { ActionQueues } from "./action-queue";
 
-export const GAME_STATE_VERSION = 42;
+export const GAME_STATE_VERSION = 43;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 

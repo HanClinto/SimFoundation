@@ -5,6 +5,7 @@ import { goHere } from "./direct-control";
 import { performInteraction, type PersonInteraction } from "./interactions";
 import { expeditionMember, fieldState, storeFieldState } from "./expeditions";
 import { automaticAction } from "./person-actions";
+import { isPersonalRoutineAction, PERSONAL_ROUTINE_KINDS } from "./routines";
 
 export const ACTION_QUEUE_LIMIT = 8;
 export interface ActionIntent {
@@ -213,9 +214,17 @@ export function queueEligibility(
   const issue = ownership(state, intent);
   if (issue) return issue;
   if (
-    !["move", "hold", "attack", "engage", "stabilize", "recover"].includes(
-      intent.action,
-    )
+    ![
+      "move",
+      "hold",
+      "attack",
+      "engage",
+      "stabilize",
+      "recover",
+      "eat",
+      "sleep",
+      "relax",
+    ].includes(intent.action)
   )
     return "Unknown action.";
   if (
@@ -226,6 +235,21 @@ export function queueEligibility(
   if (intent.action !== "move" && intent.destination !== undefined)
     return "This action does not take a destination.";
   const local = location(state, intent.mapId)!;
+  if (
+    isPersonalRoutineAction(intent.action) &&
+    (local !== state ||
+      !local.objects.items.some(
+        (item) =>
+          `object:${item.id}` === intent.targetId &&
+          item.kind ===
+            (intent.action === "eat"
+              ? "meal-seat"
+              : intent.action === "sleep"
+                ? "bed"
+                : "break-seat"),
+      ))
+  )
+    return "Choose a matching bed or seat at the base.";
   if (
     intent.action === "move" &&
     (!intent.destination ||
@@ -473,6 +497,16 @@ export function advanceActionQueues(state: GameState): GameState {
       continue;
     }
     if (responder.incapacitated) {
+      if (
+        isPersonalRoutineAction(intent.action) &&
+        local.routines.activities[actorId]?.mealObjectId
+      )
+        continue;
+      if (isPersonalRoutineAction(intent.action)) {
+        const activities = { ...state.routines.activities };
+        delete activities[actorId];
+        state = { ...state, routines: { ...state.routines, activities } };
+      }
       if (intent.action !== "recover")
         state = {
           ...state,
@@ -489,6 +523,34 @@ export function advanceActionQueues(state: GameState): GameState {
             },
           },
         };
+      continue;
+    }
+    if (isPersonalRoutineAction(intent.action)) {
+      const routine = local.routines.activities[actorId];
+      if (
+        routine?.source === "player" &&
+        `object:${routine.stationId}` === intent.targetId &&
+        routine.kind === PERSONAL_ROUTINE_KINDS[intent.action]
+      )
+        continue;
+      const issue = local.routines.blockedReasons[actorId];
+      if (issue)
+        state = {
+          ...state,
+          actionQueues: {
+            ...state.actionQueues,
+            [actorId]: {
+              ...queue,
+              current: {
+                ...queue.current,
+                started: false,
+                blockedReason: issue,
+              },
+            },
+          },
+        };
+      else if (!routine) state = finish(state, actorId);
+      else state = release(state, actorId, false);
       continue;
     }
     const recovered =

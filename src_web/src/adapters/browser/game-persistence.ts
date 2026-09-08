@@ -765,7 +765,12 @@ function isRoutineState(value: unknown): boolean {
         isIntegerInRange(activity.progress, 0) &&
         isIntegerInRange(activity.startedTick, 0) &&
         (activity.source === undefined ||
-          isLiteral(activity.source, ["schedule", "need", "autonomy"])) &&
+          isLiteral(activity.source, [
+            "schedule",
+            "need",
+            "autonomy",
+            "player",
+          ])) &&
         typeof activity.mealConsumed === "boolean",
     ) &&
     isRecord(value.blockedReasons) &&
@@ -815,6 +820,16 @@ function routineReferencesValid(state: GameState): boolean {
     )
       return false;
     if (activity.kind !== "meal" && activity.mealConsumed) return false;
+    if (activity.source === "player") {
+      const current = state.actionQueues?.[id]?.current;
+      if (
+        !current?.started ||
+        !["eat", "sleep", "relax"].includes(current.intent.action) ||
+        current.intent.targetId !== `object:${activity.stationId}` ||
+        !state.combat.responders[id]?.drafted
+      )
+        return false;
+    }
     if (
       activity.kind === "meal" &&
       activity.progress > 0 &&

@@ -222,6 +222,7 @@ export function automaticAction(
   )
     return null;
   const routine = state.routines.activities[actorId];
+  if (routine?.source === "player") return null;
   if (routine) {
     const station = state.routines.stations.find(
       (entry) => entry.id === routine.stationId,

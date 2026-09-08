@@ -5,6 +5,10 @@ import {
 } from "../../simulation/action-queue";
 import { fieldState, expeditionMember } from "../../simulation/expeditions";
 import { tileAt, sameTile } from "../../simulation/world";
+import {
+  isPersonalRoutineAction,
+  PERSONAL_ROUTINE_KINDS,
+} from "../../simulation/routines";
 
 const record = (value: unknown): value is Record<string, unknown> =>
   !!value && typeof value === "object" && !Array.isArray(value);
@@ -44,9 +48,17 @@ export function actionQueuesValid(state: GameState): boolean {
         !record(value) ||
         value.actorId !== actorId ||
         typeof value.mapId !== "string" ||
-        !["move", "hold", "attack", "engage", "stabilize", "recover"].includes(
-          value.action as string,
-        )
+        ![
+          "move",
+          "hold",
+          "attack",
+          "engage",
+          "stabilize",
+          "recover",
+          "eat",
+          "sleep",
+          "relax",
+        ].includes(value.action as string)
       )
         return false;
       if (
@@ -62,6 +74,21 @@ export function actionQueuesValid(state: GameState): boolean {
             ? fieldState(state)
             : null;
       if (!local || !local.world.positions[actorId]) return false;
+      if (
+        isPersonalRoutineAction(value.action as string) &&
+        (local !== state ||
+          !local.objects.items.some(
+            (item) =>
+              `object:${item.id}` === value.targetId &&
+              item.kind ===
+                (value.action === "eat"
+                  ? "meal-seat"
+                  : value.action === "sleep"
+                    ? "bed"
+                    : "break-seat"),
+          ))
+      )
+        return false;
       if (
         local === state
           ? expeditionMember(state, actorId)
@@ -131,6 +158,18 @@ export function actionQueuesValid(state: GameState): boolean {
     if (queue.current.started) {
       const intent = queue.current.intent;
       const responder = local.combat.responders[actorId]!;
+      if (isPersonalRoutineAction(intent.action)) {
+        const routine = local.routines.activities[actorId];
+        if (
+          !routine ||
+          routine.source !== "player" ||
+          routine.kind !== PERSONAL_ROUTINE_KINDS[intent.action] ||
+          `object:${routine.stationId}` !== intent.targetId ||
+          responder.order !== "hold"
+        )
+          return false;
+        continue;
+      }
       const matches =
         intent.action === "recover"
           ? state.expeditions.active?.recoveryOrders.some(

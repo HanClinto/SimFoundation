@@ -61,7 +61,12 @@ it("offers only implemented target interactions with authoritative disabled reas
   const id = state.personnel[0]!.id;
   expect(
     interactionOptions(state, state.world.map.id, id, "object:spare-bed"),
-  ).toEqual([]);
+  ).toMatchObject([
+    {
+      action: "sleep",
+      reason: "Choose an installed, serviceable bed or seat.",
+    },
+  ]);
   expect(
     interactionOptions(state, state.world.map.id, id, "SCP-049-2").find(
       (option) => option.action === "engage",

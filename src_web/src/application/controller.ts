@@ -6,6 +6,7 @@ import {
 } from "../simulation/observations";
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import { goHere } from "../simulation/direct-control";
+import { isPersonalRoutineAction } from "../simulation/routines";
 import {
   cancelAutomaticAction,
   cancelPersonAction,
@@ -426,6 +427,15 @@ export function createController(initialState: GameState): GameController {
       return performInteraction(state, request).reason;
     },
     interact(request) {
+      if (isPersonalRoutineAction(request.action)) {
+        const result = submitAction(
+          state,
+          { ...request, action: request.action },
+          "now",
+        );
+        state = result.state;
+        return { reason: result.reason, snapshot: publish() };
+      }
       const result = performInteraction(state, request);
       state = result.reason
         ? result.state
@@ -540,8 +550,10 @@ export function createController(initialState: GameState): GameController {
       if (expeditionMember(state, id))
         return { code: "busy", snapshot: getSnapshot() };
       const result = draftResponder(state, id, drafted);
+      const changedOwnership = result.state !== state;
       state = observeCombat(observeSite(result.state));
-      if (result.code === "accepted") state = discardActionQueue(state, id);
+      if (result.code === "accepted" && changedOwnership)
+        state = discardActionQueue(state, id);
       return { code: result.code, snapshot: publish() };
     },
     orderResponder(id, order, destination, targetId) {

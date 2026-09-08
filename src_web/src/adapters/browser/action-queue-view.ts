@@ -11,6 +11,9 @@ import {
 } from "../../simulation/person-actions";
 
 const verbs = {
+  eat: "Eat",
+  sleep: "Sleep",
+  relax: "Relax",
   move: "Go Here",
   hold: "Hold Position",
   attack: "Attack",

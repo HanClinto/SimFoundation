@@ -8,8 +8,16 @@ import {
   storeFieldState,
 } from "./expeditions";
 import { OBJECT_DEFINITIONS } from "./objects";
+import {
+  orderPersonalRoutine,
+  cancelPersonalRoutine,
+  isPersonalRoutineAction,
+  PERSONAL_ROUTINE_KINDS,
+  type PersonalRoutineAction,
+} from "./routines";
 
 export type PersonInteraction =
+  | PersonalRoutineAction
   | "hold"
   | "attack"
   | "engage"
@@ -91,6 +99,8 @@ export function performInteraction(
   )
     return fail("Finish the active clinical appointment first.");
   if (action === "cancel") {
+    if (local.routines.activities[actorId]?.source === "player")
+      return cancelPersonalRoutine(state, actorId);
     if (
       !responder?.drafted ||
       (responder.order === "hold" &&
@@ -115,6 +125,16 @@ export function performInteraction(
       },
     };
     return { state: field ? storeFieldState(state, next) : next, reason: null };
+  }
+  if (isPersonalRoutineAction(action)) {
+    if (field || !targetId?.startsWith("object:"))
+      return fail("Personal routines require a bed or seat at the base.");
+    return orderPersonalRoutine(
+      state,
+      actorId,
+      PERSONAL_ROUTINE_KINDS[action],
+      targetId.slice(7),
+    );
   }
   if (action === "recover") {
     if (!field || !targetId?.startsWith("object:"))
@@ -225,6 +245,14 @@ export function interactionOptions(
   const object = targetId.startsWith("object:")
     ? local.objects.items.find((item) => item.id === targetId.slice(7))
     : null;
+  if (object && local.world.map.id === state.world.map.id) {
+    if (object.kind === "bed")
+      actions.push({ action: "sleep", label: "Sleep" });
+    if (object.kind === "meal-seat")
+      actions.push({ action: "eat", label: "Eat" });
+    if (object.kind === "break-seat")
+      actions.push({ action: "relax", label: "Relax" });
+  }
   if (
     object &&
     ["archive-case", "anomaly-case"].includes(object.kind) &&
@@ -248,6 +276,9 @@ export function currentPersonAction(local: GameState, actorId: string): string {
   const person = local.personnel.find((person) => person.id === actorId);
   if (!person) return "Person unavailable";
   const responder = local.combat.responders[actorId];
+  const routine = local.routines.activities[actorId];
+  if (routine?.source === "player" && !responder?.incapacitated)
+    return `${person.activity} / Player ${routine.kind === "meal" ? "meal" : routine.kind === "sleep" ? "rest" : "relaxation"}`;
   if (responder?.incapacitated)
     return responder.stabilized
       ? "Stabilized / recovering"

@@ -1,6 +1,10 @@
 import type { GameState } from "./state";
 import { manualActionWaiting } from "./person-actions";
-import { tacticallyUnavailable } from "./combat";
+import {
+  tacticallyUnavailable,
+  draftResponder,
+  orderResponder,
+} from "./combat";
 import type { PersonnelRecord } from "./personnel";
 import { mealCollectionPoint, refreshMealSummary } from "./storage";
 import { findRoute, sameTile, stepWorld, type TilePosition } from "./world";
@@ -14,13 +18,24 @@ import {
 
 export type ScheduleBlock = "work" | "free" | "sleep";
 export type RoutineKind = "meal" | "sleep" | "break";
+export const PERSONAL_ROUTINE_KINDS = {
+  eat: "meal",
+  sleep: "sleep",
+  relax: "break",
+} as const;
+export type PersonalRoutineAction = keyof typeof PERSONAL_ROUTINE_KINDS;
+export function isPersonalRoutineAction(
+  action: string,
+): action is PersonalRoutineAction {
+  return Object.hasOwn(PERSONAL_ROUTINE_KINDS, action);
+}
 export interface RoutineStation {
   readonly id: string;
   readonly kind: RoutineKind;
   readonly position: TilePosition;
 }
 export interface RoutineActivity {
-  readonly source?: "schedule" | "need" | "autonomy";
+  readonly source?: "schedule" | "need" | "autonomy" | "player";
   readonly kind: RoutineKind;
   readonly stationId: string;
   readonly progress: number;
@@ -168,7 +183,12 @@ export function advanceRoutines(state: GameState): GameState {
   );
 
   for (const id of [...people.keys()].sort()) {
-    if (tacticallyUnavailable(state, id)) continue;
+    const playerRoutine = activities[id]?.source === "player";
+    if (
+      state.combat.responders[id]?.incapacitated ||
+      (tacticallyUnavailable(state, id) && !playerRoutine)
+    )
+      continue;
     let person = people.get(id)!;
     const schedule = scheduleAt(state, id);
     let activity = activities[id];
@@ -210,6 +230,7 @@ export function advanceRoutines(state: GameState): GameState {
 
     if (
       activity &&
+      !playerRoutine &&
       ((activity.kind === "sleep" &&
         schedule !== "sleep" &&
         person.needs.rest >= 70) ||
@@ -485,4 +506,118 @@ export function advanceRoutines(state: GameState): GameState {
       blockedReasons,
     },
   });
+}
+
+export function orderPersonalRoutine(
+  state: GameState,
+  actorId: string,
+  kind: RoutineKind,
+  stationId: string,
+): { state: GameState; reason: string | null } {
+  const fail = (reason: string) => ({ state, reason });
+  const station = state.routines.stations.find(
+    (entry) => entry.id === stationId && entry.kind === kind,
+  );
+  const item = state.objects.items.find((entry) => entry.id === stationId);
+  const origin = state.world.positions[actorId];
+  if (!origin || !state.personnel.some((person) => person.id === actorId))
+    return fail("This person is not present.");
+  if (
+    !station ||
+    !item ||
+    !item.installed ||
+    item.condition <= 0 ||
+    item.location.kind !== "ground"
+  )
+    return fail("Choose an installed, serviceable bed or seat.");
+  if (
+    item.reservedBy ||
+    Object.entries(state.routines.activities).some(
+      ([id, activity]) => id !== actorId && activity.stationId === stationId,
+    )
+  )
+    return fail("This bed or seat is already in use or reserved.");
+  if (findRoute(state.world.map, origin, station.position) === null)
+    return fail("No reachable route to this bed or seat.");
+  if (kind === "meal" && !mealCollectionPoint(state, origin))
+    return fail("No reachable meal supply is available.");
+  if (state.combat.responders[actorId]?.phase === "recovering")
+    return fail("Wait for action recovery before starting a personal routine.");
+  if (
+    state.combat.status === "active" &&
+    state.combat.participants.includes(actorId)
+  )
+    return fail("Finish or withdraw from the active encounter first.");
+  if (
+    state.objects.items.some(
+      (entry) =>
+        entry.location.kind === "carried" &&
+        entry.location.personId === actorId,
+    )
+  )
+    return fail("Finish the current cargo delivery first.");
+  const drafted = draftResponder(state, actorId, true);
+  if (drafted.code !== "accepted")
+    return fail("This person cannot leave their current commitment.");
+  const held = orderResponder(drafted.state, actorId, "hold");
+  if (held.code !== "accepted")
+    return fail("This person cannot start a personal routine.");
+  return {
+    reason: null,
+    state: {
+      ...held.state,
+      personnel: held.state.personnel.map((person) =>
+        person.id === actorId
+          ? {
+              ...person,
+              activity:
+                kind === "meal"
+                  ? "Preparing to eat"
+                  : kind === "sleep"
+                    ? "Going to sleep"
+                    : "Going to relax",
+            }
+          : person,
+      ),
+      routines: {
+        ...held.state.routines,
+        activities: {
+          ...held.state.routines.activities,
+          [actorId]: {
+            source: "player",
+            kind,
+            stationId,
+            progress: 0,
+            startedTick: state.tick,
+            mealConsumed: false,
+          },
+        },
+      },
+    },
+  };
+}
+
+export function cancelPersonalRoutine(
+  state: GameState,
+  actorId: string,
+): { state: GameState; reason: string | null } {
+  const activity = state.routines.activities[actorId];
+  if (activity?.source !== "player")
+    return { state, reason: "No player routine is active." };
+  if (
+    state.objects.items.some(
+      (item) =>
+        item.location.kind === "carried" && item.location.personId === actorId,
+    )
+  )
+    return {
+      state,
+      reason: "Finish carrying the meal to its seat before cancelling.",
+    };
+  const activities = { ...state.routines.activities };
+  delete activities[actorId];
+  return {
+    reason: null,
+    state: { ...state, routines: { ...state.routines, activities } },
+  };
 }

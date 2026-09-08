@@ -75,7 +75,11 @@ export function pawnCues(
         label: recordedActivity,
       },
     ];
-  if (responder?.drafted || responder?.incapacitated)
+  if (
+    responder?.incapacitated ||
+    (responder?.drafted &&
+      state.routines.activities[personId]?.source !== "player")
+  )
     return [
       {
         icon: responder.incapacitated

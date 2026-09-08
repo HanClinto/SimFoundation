@@ -204,6 +204,14 @@ export function orderResponder(
   if (!responder?.drafted) return { state, code: "not-drafted" };
   if (responder.incapacitated) return { state, code: "incapacitated" };
   if (
+    state.routines.activities[id]?.source === "player" &&
+    state.objects.items.some(
+      (item) =>
+        item.location.kind === "carried" && item.location.personId === id,
+    )
+  )
+    return { state, code: "busy" };
+  if (
     !["hold", "move", "retreat", "attack", "engage", "stabilize"].includes(
       order,
     )
@@ -236,10 +244,13 @@ export function orderResponder(
       responder.medicalSupplies <= 0)
   )
     return { state, code: "invalid-order" };
+  const activities = { ...state.routines.activities };
+  if (activities[id]?.source === "player") delete activities[id];
   return {
     code: "accepted",
     state: {
       ...state,
+      routines: { ...state.routines, activities },
       combat: {
         ...state.combat,
         responders: {
@@ -334,6 +345,9 @@ export function startEncounter(
     state.combat.status === "active" ||
     participants.length < 2 ||
     participants.length > 3 ||
+    participants.some(
+      (id) => state.routines.activities[id]?.source === "player",
+    ) ||
     Object.values(state.combat.responders).some(
       (responder) => responder.incapacitated,
     )
