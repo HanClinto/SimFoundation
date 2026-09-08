@@ -34,7 +34,7 @@ export function createPawnControl(
   controller: GameController,
   changed: (snapshot: ControllerSnapshot) => void,
   inspect: (id: string, perspective: MapPerspective) => void,
-  selected?: (id: string | null) => void,
+  selected?: (id: string | null, centerCamera?: boolean) => void,
   selectionHost?: HTMLElement | null,
 ) {
   const document = canvas.ownerDocument;
@@ -257,7 +257,7 @@ export function createPawnControl(
     for (const button of targets.values()) button.parentElement!.remove();
     targets.clear();
   }
-  function select(id: string) {
+  function select(id: string, centerCamera = false) {
     if (
       (!current.game.world.positions[id] &&
         personCurrentAction(current.game, id)?.source !== "mission") ||
@@ -267,7 +267,7 @@ export function createPawnControl(
       return;
     activeId = id;
     close();
-    selected?.(id);
+    selected?.(id, centerCamera);
     render(current, perspective, busyPlacement);
     changed(current);
   }
@@ -474,7 +474,7 @@ export function createPawnControl(
         button.append(image);
         button.addEventListener("click", () => {
           if (activeId === person.id) deselect();
-          else select(person.id);
+          else select(person.id, true);
         });
         portraits.append(button);
         buttons.set(person.id, button);

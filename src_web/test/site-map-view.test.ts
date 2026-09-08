@@ -287,7 +287,7 @@ it("follows only the selected perspective's position and releases the camera for
   select.value = personId;
   select.dispatchEvent(new window.Event("change", { bubbles: true }));
   follow.click();
-  const moved = {
+  const moved: typeof initial = {
     ...initial,
     game: {
       ...initial.game,
@@ -310,9 +310,37 @@ it("follows only the selected perspective's position and releases the camera for
   expect(camera()).toMatchObject({
     selectedId: "person-lena-ortiz",
     activePawnId: "person-lena-ortiz",
-    center: { x: 60, y: 58 },
+    center: moved.game.world.positions["person-lena-ortiz"],
   });
   expect(follow.checked).toBe(true);
+  const lenaMoved: typeof initial = {
+    ...moved,
+    game: {
+      ...moved.game,
+      world: {
+        ...moved.game.world,
+        positions: {
+          ...moved.game.world.positions,
+          "person-lena-ortiz": { x: 70, y: 70 },
+        },
+      },
+    },
+  };
+  view.render(lenaMoved);
+  expect(camera().center).toEqual({ x: 70, y: 70 });
+  follow.click();
+  root
+    .querySelector<HTMLButtonElement>(`[data-active-person="${personId}"]`)!
+    .click();
+  expect(follow.checked).toBe(false);
+  expect(camera().center).toEqual(moved.game.world.positions[personId]);
+  const snappedCenter = camera().center;
+  view.render(initial);
+  expect(camera().center).toEqual(snappedCenter);
+  view.render(moved);
+  select.value = personId;
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  follow.click();
   select.value = "person-lena-ortiz";
   select.dispatchEvent(new window.Event("change", { bubbles: true }));
   expect(camera().center).toEqual({ x: 60, y: 58 });
@@ -374,6 +402,27 @@ it("follows only the selected perspective's position and releases the camera for
     initial.game.observations.entities[personId]!.position,
   );
   expect(camera().center).not.toEqual(moved.game.world.positions[personId]);
+  follow.click();
+  view.focus({ x: 10, y: 10 });
+  root
+    .querySelector<HTMLButtonElement>(
+      '[data-active-person="person-lena-ortiz"]',
+    )!
+    .click();
+  view.focus({ x: 10, y: 10 });
+  root
+    .querySelector<HTMLButtonElement>(`[data-active-person="${personId}"]`)!
+    .click();
+  expect(camera().center).toEqual(
+    initial.game.observations.entities[personId]!.position,
+  );
+  expect(camera().center).not.toEqual(moved.game.world.positions[personId]);
+  expect(follow.checked).toBe(false);
+  const recordedCenter = camera().center;
+  root
+    .querySelector<HTMLButtonElement>(`[data-active-person="${personId}"]`)!
+    .click();
+  expect(camera().center).toEqual(recordedCenter);
   view.beginPlacement({
     label: "Placement",
     origin: { x: 65, y: 68 },

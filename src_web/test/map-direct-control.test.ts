@@ -52,6 +52,7 @@ it("keeps actor selection through ground inspection and panning, and submits onl
   expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
     selectedId: id,
     activePawnId: id,
+    center: initial.game.world.positions[id],
   });
   expect(
     root.querySelector(".pawn-selection-area [data-map-selection]"),
@@ -73,6 +74,7 @@ it("keeps actor selection through ground inspection and panning, and submits onl
         bubbles: true,
       }),
     );
+  view.focus({ x: 60, y: 59 });
   pointer("pointerdown");
   pointer("pointerup");
   pointer("pointerdown");

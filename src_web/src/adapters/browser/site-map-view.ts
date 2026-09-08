@@ -101,9 +101,21 @@ export function createSiteMap(
     controller,
     (snapshot) => render(snapshot),
     openRecord,
-    (id) => {
+    (id, centerCamera) => {
       if (id !== null || camera.selectedId === pawnControl.activeId)
         camera = { ...camera, selectedId: id };
+      if (id && centerCamera) {
+        const person = mapObjects(displayed().game, camera.perspective).find(
+          (object) => object.id === id,
+        );
+        if (person) {
+          if (following) followId = id;
+          camera = {
+            ...camera,
+            center: visualPosition(id, person.position),
+          };
+        }
+      }
     },
     selectionHost,
   );
