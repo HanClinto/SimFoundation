@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { recordDoorOpening } from "./action-progress";
 import { manualActionWaiting } from "./person-actions";
 import {
   tacticallyUnavailable,
@@ -222,12 +223,23 @@ export function routineUnavailableIds(state: GameState): readonly string[] {
 }
 
 export function advanceRoutines(state: GameState): GameState {
+  let actionTimings = state.actionTimings;
   let objects = state.objects;
   const people = new Map(state.personnel.map((person) => [person.id, person]));
   const positions = { ...state.world.positions };
   let map = state.world.map;
   const move = (id: string, destination: TilePosition) => {
-    const next = stepWorld({ map, positions }, id, destination);
+    const next = stepWorld({ map, positions }, id, destination, (position) => {
+      actionTimings = recordDoorOpening(
+        {
+          ...state,
+          actionTimings,
+          routines: { ...state.routines, activities },
+        },
+        id,
+        position,
+      ).actionTimings;
+    });
     const opened = next.map !== map;
     map = next.map;
     positions[id] = next.positions[id]!;
@@ -549,6 +561,7 @@ export function advanceRoutines(state: GameState): GameState {
   }
   return refreshMealSummary({
     ...state,
+    actionTimings,
     objects,
     jobs,
     personnel: [...people.values()],

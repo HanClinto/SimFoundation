@@ -87,7 +87,13 @@ export function createSiteMap(
     "[data-map-selection]",
   );
   const selectionPanel = selectionHost
-    ? createMapSelection(selectionHost, controller, openRecord, moveObject)
+    ? createMapSelection(
+        selectionHost,
+        controller,
+        openRecord,
+        moveObject,
+        (id) => pawnControl.select(id),
+      )
     : null;
   let objectSignature = "";
   const pawnControl = createPawnControl(
@@ -95,6 +101,10 @@ export function createSiteMap(
     controller,
     (snapshot) => render(snapshot),
     openRecord,
+    (id) => {
+      camera = { ...camera, selectedId: id };
+    },
+    selectionHost,
   );
   let bubbles: readonly PawnBubble[] = [];
   let hoverPoint: TilePosition | null = null;
@@ -198,6 +208,7 @@ export function createSiteMap(
       snapshot,
       placement ? null : camera.selectedId,
       camera.perspective ?? "world",
+      pawnControl.activeId,
     );
     const preview = placement?.preview(current);
     camera = {

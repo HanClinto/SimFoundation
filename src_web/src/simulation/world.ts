@@ -91,6 +91,7 @@ export function stepWorld(
   world: SiteWorld,
   id: string,
   destination: TilePosition,
+  openedDoor?: (position: TilePosition) => void,
 ): SiteWorld {
   const origin = world.positions[id];
   if (
@@ -101,6 +102,7 @@ export function stepWorld(
   )
     return world;
   if (tileAt(world.map, destination) === "closed-door") {
+    openedDoor?.({ ...destination });
     const surface =
       world.map.surfaces[destination.y * world.map.width + destination.x]!
         .structure!;

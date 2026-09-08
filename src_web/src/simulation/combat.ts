@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { recordDoorOpening } from "./action-progress";
 import {
   findRoute,
   sameTile,
@@ -301,7 +302,10 @@ export function advanceTacticalMovement(state: GameState): GameState {
       activities.set(id, "Drafted: route blocked");
       continue;
     }
-    if (route[0]) world = stepWorld(world, id, route[0]);
+    if (route[0])
+      world = stepWorld(world, id, route[0], (position) => {
+        state = recordDoorOpening(state, id, position);
+      });
     const arrived = sameTile(world.positions[id]!, responder.destination);
     responders[id] = {
       ...responder,
@@ -558,8 +562,12 @@ export function advanceCombat(state: GameState): GameState {
           responder.ammunition > 0
         ) {
           const route = attackRoute(working(), id);
-          if (route?.[0])
-            state = { ...state, world: stepWorld(state.world, id, route[0]) };
+          if (route?.[0]) {
+            const world = stepWorld(state.world, id, route[0], (position) => {
+              state = recordDoorOpening(state, id, position);
+            });
+            state = { ...state, world };
+          }
           blockedReason = route
             ? "Approaching firing position."
             : "No reachable firing position.";
@@ -626,8 +634,12 @@ export function advanceCombat(state: GameState): GameState {
           .map((position) => findRoute(state.world.map, origin, position))
           .filter((route): route is readonly TilePosition[] => route !== null)
           .sort((first, second) => first.length - second.length)[0];
-        if (route?.[0])
-          state = { ...state, world: stepWorld(state.world, id, route[0]) };
+        if (route?.[0]) {
+          const world = stepWorld(state.world, id, route[0], (position) => {
+            state = recordDoorOpening(state, id, position);
+          });
+          state = { ...state, world };
+        }
         responders[id] = {
           ...responder,
           phase: "ready",

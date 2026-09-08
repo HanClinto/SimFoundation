@@ -6,6 +6,10 @@ import type { ActionIntent } from "../../simulation/action-queue";
 import { mapObjects } from "./map-objects";
 import { targetThumbnail } from "./target-thumbnail";
 import {
+  actionExecutionStep,
+  type ActionExecutionStep,
+} from "../../simulation/action-steps";
+import {
   actionProgress,
   type ActionProgress,
 } from "../../simulation/action-progress";
@@ -44,6 +48,19 @@ export function createActionQueueView(
   changed: (snapshot: ControllerSnapshot) => void,
 ) {
   const document = strip.ownerDocument;
+  function updateStep(tile: HTMLElement, step: ActionExecutionStep | null) {
+    let caption = tile.querySelector<HTMLElement>(".pawn-action-step");
+    if (!caption) {
+      caption = document.createElement("div");
+      caption.className = "pawn-action-step";
+      tile.insertBefore(caption, tile.querySelector("small"));
+    }
+    caption.textContent = step?.label ?? "";
+    caption.title = step ? `${step.path.join(" > ")} / ${step.detail}` : "";
+    caption.setAttribute("aria-hidden", String(!step));
+    if (step) caption.dataset.parentAction = step.parentKey;
+    else delete caption.dataset.parentAction;
+  }
   function updateProgress(
     tile: HTMLElement,
     progress: ActionProgress | null,
@@ -111,8 +128,22 @@ export function createActionQueueView(
   const controls = document.createElement("div");
   controls.className = "pawn-queue-controls";
   controls.append(current, retry, clear);
+  const execution = document.createElement("details");
+  execution.className = "pawn-execution-details";
+  execution.hidden = true;
+  const executionSummary = document.createElement("summary");
+  executionSummary.textContent = "Execution details";
+  const executionParent = document.createElement("p");
+  const executionPath = document.createElement("ol");
+  const executionDetail = document.createElement("p");
+  execution.append(
+    executionSummary,
+    executionParent,
+    executionPath,
+    executionDetail,
+  );
   tray.append(active, list);
-  root.append(tray, controls);
+  root.append(tray, controls, execution);
   strip.after(root);
   let actorId: string | null = null;
   let mapId = "";
@@ -202,6 +233,7 @@ export function createActionQueueView(
         active.replaceChildren();
         list.replaceChildren();
         endDrag();
+        execution.open = false;
       }
       actorId = id;
       mapId = snapshot.game.world.map.id;
@@ -210,6 +242,28 @@ export function createActionQueueView(
       const automatic =
         world && id ? personCurrentAction(snapshot.game, id) : null;
       const progress = world && id ? actionProgress(snapshot.game, id) : null;
+      const step = world && id ? actionExecutionStep(snapshot.game, id) : null;
+      execution.hidden = !step;
+      if (step) {
+        executionParent.textContent = `${automatic?.label ?? (queue ? actionIntentLabel(snapshot, queue.current.intent) : "")} / ${step.source}`;
+        executionDetail.textContent = step.detail;
+        const pathKey = JSON.stringify(step.path);
+        if (executionPath.dataset.path !== pathKey) {
+          executionPath.dataset.path = pathKey;
+          executionPath.replaceChildren();
+          let path = executionPath;
+          for (const [index, label] of step.path.entries()) {
+            const entry = document.createElement("li");
+            entry.textContent = label;
+            path.append(entry);
+            if (index < step.path.length - 1) {
+              const nested = document.createElement("ol");
+              entry.append(nested);
+              path = nested;
+            }
+          }
+        }
+      }
       retry.hidden = !queue;
       clear.hidden = !queue;
       root.hidden =
@@ -229,6 +283,7 @@ export function createActionQueueView(
           `Current: ${automatic.label} / ${automatic.source}`,
         );
         automaticTile.title = `${automatic.label} / ${automatic.source} / ${automatic.detail}`;
+        updateStep(automaticTile, step);
         updateProgress(automaticTile, progress, snapshot.running);
         automaticLabel.textContent = automatic.label;
         automaticSource.textContent = {
@@ -469,6 +524,7 @@ export function createActionQueueView(
           "Alt+ArrowLeft Alt+ArrowRight Alt+Home Alt+End",
         );
         tile.title = `${label}${isCurrent ? " / Current player action" : waitingFirst ? " / Next player action" : " / Drag to reorder; Alt+Left/Right to move"}`;
+        updateStep(tile, isCurrent ? step : null);
         updateProgress(tile, isCurrent ? progress : null, snapshot.running);
         row.dataset.current = String(isCurrent);
         row.querySelector("span")!.textContent = verbs[intent.action];

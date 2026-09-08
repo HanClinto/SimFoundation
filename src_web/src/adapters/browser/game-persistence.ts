@@ -2188,6 +2188,28 @@ function isGameState(value: unknown): value is GameState {
         !isRecord(timing) ||
         !isNonEmptyString(timing.key) ||
         !isIntegerInRange(timing.startedTick, 0, state.tick) ||
+        (timing.doorStep !== undefined &&
+          (!isRecord(timing.doorStep) ||
+            !isIntegerInRange(
+              timing.doorStep.tick,
+              timing.startedTick as number,
+              state.tick,
+            ) ||
+            !isRecord(timing.doorStep.position) ||
+            !isIntegerInRange(
+              timing.doorStep.position.x,
+              0,
+              (timing.mapId === state.world.map.id
+                ? state.world.map.width
+                : (state.expeditions.active?.site?.world.map.width ?? 0)) - 1,
+            ) ||
+            !isIntegerInRange(
+              timing.doorStep.position.y,
+              0,
+              (timing.mapId === state.world.map.id
+                ? state.world.map.height
+                : (state.expeditions.active?.site?.world.map.height ?? 0)) - 1,
+            ))) ||
         (timing.mapId !== state.world.map.id &&
           timing.mapId !== state.expeditions.active?.site?.world.map.id),
     )

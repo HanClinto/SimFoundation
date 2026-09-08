@@ -1,5 +1,5 @@
 import { observeSite } from "./observations";
-import { trackActionTimes } from "./action-progress";
+import { trackActionTimes, recordDoorOpening } from "./action-progress";
 import { advanceActionQueues } from "./action-queue";
 import { advanceExpedition, awayPersonnel } from "./expeditions";
 import { advanceCombat, observeCombat, tacticallyUnavailable } from "./combat";
@@ -90,6 +90,14 @@ function advanceSiteSimulation(state: GameState): GameState {
           : [],
       ),
     ),
+    (actorId, position, jobId) => {
+      state = recordDoorOpening(
+        state,
+        actorId,
+        position,
+        `job:${jobId}:${actorId}`,
+      );
+    },
   );
   const scp999Result = advanceScp999(
     state.scp999,

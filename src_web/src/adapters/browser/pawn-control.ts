@@ -34,6 +34,8 @@ export function createPawnControl(
   controller: GameController,
   changed: (snapshot: ControllerSnapshot) => void,
   inspect: (id: string, perspective: MapPerspective) => void,
+  selected?: (id: string) => void,
+  selectionHost?: HTMLElement | null,
 ) {
   const document = canvas.ownerDocument;
   const strip = document.createElement("section");
@@ -55,8 +57,15 @@ export function createPawnControl(
   cancel.textContent = "X";
   cancel.setAttribute("aria-label", "Cancel Current Action");
   strip.append(portraits, detail, cancel);
-  canvas.parentElement!.after(strip);
+  const surface = document.createElement("section");
+  surface.className = "pawn-selection-area";
+  surface.setAttribute("aria-label", "Selection and orders");
+  if (canvas.parentElement!.querySelector("[data-camera-entity]"))
+    canvas.after(surface);
+  else canvas.parentElement!.after(surface);
+  surface.append(strip);
   const queueView = createActionQueueView(strip, controller, changed);
+  if (selectionHost) strip.after(selectionHost);
   const menu = document.createElement("ul");
   menu.className = "menu pawn-context-menu";
   menu.hidden = true;
@@ -259,6 +268,7 @@ export function createPawnControl(
       return;
     activeId = id;
     close();
+    selected?.(id);
     render(current, perspective, busyPlacement);
     changed(current);
   }

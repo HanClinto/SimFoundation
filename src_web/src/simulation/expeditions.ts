@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { recordDoorOpening } from "./action-progress";
 import { draftResponder, orderResponder } from "./combat";
 import { sameTile, type TilePosition } from "./world";
 import {
@@ -275,6 +276,14 @@ export function storeFieldState(state: GameState, field: GameState): GameState {
   };
   return {
     ...state,
+    actionTimings: {
+      ...state.actionTimings,
+      ...Object.fromEntries(
+        Object.entries(field.actionTimings).filter(([id]) =>
+          active.team.includes(id),
+        ),
+      ),
+    },
     personnel: state.personnel.map(
       (person) =>
         field.personnel.find((other) => other.id === person.id) ?? person,
@@ -698,11 +707,17 @@ export function advanceExpedition(state: GameState): GameState {
     if (!sameTile(origin, destination)) {
       const route = findRoute(field.world.map, origin, destination);
       if (!route) return { ...order, blockedReason: "Recovery route blocked." };
-      if (route[0])
-        field = {
-          ...field,
-          world: stepWorld(field.world, order.personId, route[0]),
-        };
+      if (route[0]) {
+        const world = stepWorld(
+          field.world,
+          order.personId,
+          route[0],
+          (position) => {
+            field = recordDoorOpening(field, order.personId, position);
+          },
+        );
+        field = { ...field, world };
+      }
       return { ...order, blockedReason: null };
     }
     if (order.phase === "collecting" && order.progress < 6)

@@ -924,6 +924,13 @@ fieldWindow
 fieldWindow.querySelector("[data-map-selection]")!.replaceChildren();
 fieldWindow.querySelector(".pawn-control-strip")?.remove();
 fieldWindow.querySelector(".pawn-action-queue")?.remove();
+const clonedSelectionArea = fieldWindow.querySelector(".pawn-selection-area");
+if (clonedSelectionArea) {
+  clonedSelectionArea.before(
+    fieldWindow.querySelector("[data-map-selection]")!,
+  );
+  clonedSelectionArea.remove();
+}
 fieldWindow.querySelector(".pawn-order-settings")?.remove();
 fieldWindow.querySelector(".pawn-context-menu")?.remove();
 fieldWindow.querySelector('[role="tooltip"]')?.remove();

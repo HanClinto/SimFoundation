@@ -10,6 +10,40 @@ export interface ActionTiming {
   readonly mapId: string;
   readonly key: string;
   readonly startedTick: number;
+  readonly doorStep?: {
+    readonly tick: number;
+    readonly position: TilePosition;
+  };
+}
+
+export function recordDoorOpening(
+  state: GameState,
+  actorId: string,
+  position: TilePosition,
+  parentKey?: string,
+): GameState {
+  const identity = currentActionIdentity(state, actorId);
+  const key = parentKey ?? identity?.key;
+  if (!key) return state;
+  const previous = state.actionTimings[actorId];
+  const timing =
+    previous?.key === key && previous.mapId === state.world.map.id
+      ? previous
+      : {
+          key,
+          mapId: state.world.map.id,
+          startedTick: identity?.startedTick ?? state.tick,
+        };
+  return {
+    ...state,
+    actionTimings: {
+      ...state.actionTimings,
+      [actorId]: {
+        ...timing,
+        doorStep: { tick: state.tick, position: { ...position } },
+      },
+    },
+  };
 }
 export interface ActionProgress {
   readonly kind: "duration" | "travel" | "elapsed" | "blocked";

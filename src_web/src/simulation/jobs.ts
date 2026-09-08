@@ -176,12 +176,15 @@ export function advanceJobs(
   clinicianIds: readonly string[] = [],
   unavailablePersonIds: readonly string[] = [],
   cargoOwners: Readonly<Record<string, string>> = {},
+  openedDoor?: (actorId: string, position: TilePosition, jobId: string) => void,
 ): JobAdvanceResult {
   const people = new Map(personnel.map((person) => [person.id, person]));
   const positions = { ...world.positions };
   let map = world.map;
-  const move = (id: string, destination: TilePosition) => {
-    const next = stepWorld({ map, positions }, id, destination);
+  const move = (id: string, destination: TilePosition, jobId: string) => {
+    const next = stepWorld({ map, positions }, id, destination, (position) =>
+      openedDoor?.(id, position, jobId),
+    );
     const opened = next.map !== map;
     map = next.map;
     positions[id] = next.positions[id]!;
@@ -396,7 +399,7 @@ export function advanceJobs(
     if (patient) {
       const opening =
         patientTravelling && patientRoute?.[0]
-          ? move(patient.id, patientRoute[0])
+          ? move(patient.id, patientRoute[0], job.id)
           : false;
       people.set(patient.id, {
         ...patient,
@@ -409,7 +412,9 @@ export function advanceJobs(
       });
     }
     if (workerTravelling || patientTravelling) {
-      const opening = workerTravelling ? move(worker.id, route[0]!) : false;
+      const opening = workerTravelling
+        ? move(worker.id, route[0]!, job.id)
+        : false;
       people.set(worker.id, {
         ...worker,
         currentJobId: job.id,

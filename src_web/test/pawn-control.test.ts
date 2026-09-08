@@ -7,6 +7,7 @@ import { advanceSimulation } from "../src/simulation/tick";
 import { fieldSnapshot } from "../src/adapters/browser/expedition-controller";
 import { submitAction } from "../src/simulation/action-queue";
 import { routineProgress } from "../src/simulation/routines";
+import { setSurface } from "../src/simulation/materials";
 
 afterEach(() => vi.unstubAllGlobals());
 function setup(initial = createInitialState()) {
@@ -28,6 +29,67 @@ function setup(initial = createInitialState()) {
   view.render(controller.getSnapshot(), "world", false);
   return { window, controller, changed, inspect, view };
 }
+it("renders a door step beneath Move and hides execution details from pending actions and Recorded view", () => {
+  const initial = createInitialState();
+  const actorId = initial.personnel[0]!.id;
+  const door = { x: 58, y: 55 };
+  let state = {
+    ...initial,
+    world: {
+      ...initial.world,
+      map: setSurface(initial.world.map, door, "structure", {
+        kind: "closed-door" as const,
+        material: "steel" as const,
+        integrity: 100,
+      }),
+      positions: { ...initial.world.positions, [actorId]: { x: 57, y: 55 } },
+    },
+  };
+  state = submitAction(state, {
+    mapId: state.world.map.id,
+    actorId,
+    action: "move",
+    destination: { x: 59, y: 55 },
+  }).state;
+  state = submitAction(state, {
+    mapId: state.world.map.id,
+    actorId,
+    action: "hold",
+  }).state;
+  state = advanceSimulation(state);
+  const { controller, view } = setup(state);
+  view.select(actorId);
+  const step = document.querySelector(
+    ".pawn-current-action .pawn-action-step",
+  )!;
+  expect(step.textContent).toBe("Open door");
+  expect(step.getAttribute("data-parent-action")).toBe(
+    state.actionTimings[actorId]!.key,
+  );
+  expect(document.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Go Here",
+  );
+  expect(
+    document.querySelector(".pawn-pending-actions .pawn-action-step")!
+      .textContent,
+  ).toBe("");
+  const details = document.querySelector<HTMLDetailsElement>(
+    ".pawn-execution-details",
+  )!;
+  details.open = true;
+  expect(details.querySelector("ol ol")!.textContent).toBe("Open door");
+  view.render(controller.getSnapshot(), "world", false);
+  expect(details.open).toBe(true);
+  expect(document.querySelector(".pawn-current-action .pawn-action-step")).toBe(
+    step,
+  );
+  expect(
+    controller.getSnapshot().game.actionQueues[actorId]!.pending,
+  ).toHaveLength(1);
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(details.hidden).toBe(true);
+});
+
 it("shows generic elapsed and route readouts only on the current action, without percentage bars", () => {
   const { controller, view } = setup();
   const state = controller.getSnapshot().game;

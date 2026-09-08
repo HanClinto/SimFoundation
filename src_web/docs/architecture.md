@@ -114,6 +114,12 @@ Browser code reads immutable snapshots and domain events. It never mutates entit
 
 ## State Model
 
+### Execution Steps
+
+`action-steps.ts` projects the current executor phase as `ActionExecutionStep` with parent key, inherited source, kind, label, nested path, target/location and progress detail. It is read-only and does not schedule work. Routine collection/carry/eating, movement, jobs, recovery and tactical preparation/recovery are projected from their owning state. `stepWorld` provides an optional door-opening callback; routine, job, tactical and field-recovery owners stamp actual events on the parent's `ActionTiming.doorStep`. The stamp is valid only on its recorded simulation tick and matching parent/map, so paused readback is stable without creating historical or speculative steps. Field storage merges only its team's timing updates. Optional tick/position metadata is validated under schema44. Parent timing, ordering, cancellation and resource accounting are unchanged.
+
+The map's `.pawn-selection-area` contains its existing portrait control, inline target details and queue. An explicit pawn selection synchronizes active-person and camera selected identities; ordinary target selection does not change the actor. Follow remains independently pinned. Self-target details suppress repeated identity/status content, while another pawn exposes explicit Control. Field map cloning removes the base area's generated contents before constructing its own instance.
+
 ### Action Progress (Schema 44)
 
 `action-progress.ts` defines a shared `ActionProgress` projection: kind, label, compact text, detailed explanation, optional completion fraction, and elapsed simulation minutes. Routine duration and route distance override generic elapsed time. Route length comes from the existing A\* planner, including traversable automatic doors but not the additional time needed to open them. Movement, routine collection/seating, job work-site travel and field recovery use their current executor destinations. Unsupported/open-ended actions retain elapsed time without inventing a percentage or ETA.

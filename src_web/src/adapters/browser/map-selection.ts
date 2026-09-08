@@ -19,6 +19,7 @@ export function createMapSelection(
   controller: GameController,
   inspect: (id: string, perspective: MapPerspective) => void,
   move?: (id: string, snapshot: ControllerSnapshot) => void,
+  control?: (id: string) => void,
 ) {
   const element = document.createElement("section");
   element.className = "map-selection-panel";
@@ -52,12 +53,22 @@ export function createMapSelection(
   ordersButton.textContent = "Orders";
   ordersButton.hidden = true;
   element.querySelector(".map-selection-actions")!.append(ordersButton);
+  const controlButton = document.createElement("button");
+  controlButton.type = "button";
+  controlButton.textContent = "Control";
+  controlButton.dataset.selectionControl = "";
+  controlButton.hidden = true;
+  element.querySelector(".map-selection-actions")!.prepend(controlButton);
+  controlButton.addEventListener("click", () => {
+    if (selected && !controlButton.disabled) control?.(selected);
+  });
   ordersButton.addEventListener("click", () => {
     if (selected) inspect(`tactical:${selected}`, perspective);
   });
   let current = controller.getSnapshot();
   let selected: string | null = null;
   let perspective: MapPerspective = "world";
+  let activePersonId: string | null = null;
   let doorPosition: TilePosition | null = null;
   inspectButton.addEventListener("click", () => {
     if (selected) inspect(selected, perspective);
@@ -74,7 +85,7 @@ export function createMapSelection(
     if (!doorPosition || perspective !== "world") return;
     const requested = door.value as DoorPolicy;
     const result = controller.setDoorPolicy(doorPosition, requested);
-    render(result, selected, perspective);
+    render(result, selected, perspective, activePersonId);
     feedback.textContent =
       result.game.world.map.doorPolicies?.[
         doorPosition.y * result.game.world.map.width + doorPosition.x
@@ -86,15 +97,28 @@ export function createMapSelection(
     snapshot: ControllerSnapshot,
     id: string | null,
     view: MapPerspective,
+    actorId: string | null = null,
   ) {
     if (selected !== id || perspective !== view) feedback.textContent = "";
     current = snapshot;
     selected = id;
     perspective = view;
+    activePersonId = actorId;
+    element.dataset.activeTarget = String(!!id && id === actorId);
+    element.dataset.hasTarget = String(!!id);
+    element.setAttribute(
+      "aria-label",
+      id === actorId && id ? "Active person details" : "Interaction target",
+    );
     const state =
       view === "recorded" ? observedSnapshot(snapshot).game : snapshot.game;
     const entry = mapObjects(state, view).find((item) => item.id === id);
     const person = state.personnel.find((person) => person.id === id);
+    controlButton.hidden = !control || !person || !entry || id === actorId;
+    controlButton.disabled = !snapshot.game.world.positions[id ?? ""];
+    controlButton.title = person
+      ? `Control ${person.name}`
+      : "Control selected person";
     ordersButton.hidden = !person || !entry;
     const object = id?.startsWith("object:")
       ? state.objects.items.find((item) => item.id === id.slice(7))
@@ -111,6 +135,8 @@ export function createMapSelection(
       (id?.startsWith("tile:")
         ? `Tile ${id.slice(5).split(":")[0]!.replace(",", ", ")}`
         : "No selection");
+    if (actorId && id && id !== actorId)
+      name.textContent = `Target: ${name.textContent}`;
     stateText.textContent =
       person && entry
         ? pawnCues(state, person.id, view)

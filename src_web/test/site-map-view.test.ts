@@ -302,6 +302,17 @@ it("follows only the selected perspective's position and releases the camera for
   };
   view.render(moved);
   expect(camera().center).toEqual({ x: 60, y: 58 });
+  root
+    .querySelector<HTMLButtonElement>(
+      '[data-active-person="person-lena-ortiz"]',
+    )!
+    .click();
+  expect(camera()).toMatchObject({
+    selectedId: "person-lena-ortiz",
+    activePawnId: "person-lena-ortiz",
+    center: { x: 60, y: 58 },
+  });
+  expect(follow.checked).toBe(true);
   select.value = "person-lena-ortiz";
   select.dispatchEvent(new window.Event("change", { bubbles: true }));
   expect(camera().center).toEqual({ x: 60, y: 58 });
