@@ -18,9 +18,13 @@ On arrival, **Open field map** opens a second modeless map window for the 28x24 
 
 The operation desk is World-state inspection. The field map independently supports World and Recorded perspectives, with unknown tiles and remembered sightings in Recorded. Orders from the operation desk intentionally act on field World state; it is not a fog-limited mission-selection game yet. Field doors are edited on the field map and cannot change same-coordinate doors in Site 828.
 
+Double-clicking personnel opens their dossier. Objects, sources, tiles, doors and 049-2 open a selection-specific Field Record with location, condition and relevant properties; only the explicit Orders button routes to Expedition Operations. Field Records retain their perspective and expedition identity, and become unavailable when that temporary location closes.
+
 ## Encounter And Recovery
 
 One already-provoked 049-2 occupies the records store. The existing [tactical rules](tactical-response.md) apply, including preparation, recovery, finite ammunition, line of sight, injury and stabilization. Unlike the standalone sandbox, merely remaining outside its response radius does not end the field operation; extraction controls the mission lifecycle. The existing pursuit boundary remains a first-slice limitation.
+
+When no responder is visible and no last sighting remains, 049-2 patrols reachable waypoints around its origin. It moves at its normal one-tile-per-two-steps cadence and can open automatic doors. Patrol direction is deterministic and does not depend on hidden staff positions. Sightings override patrol; adjacent attacks require clear reach, including through doorways. Held-closed doors still block it. Selecting 049-2 shows its behavior and pause state; its Field Record explains detection, pursuit and action timing. Patrol is a game-specific behavior for this already-provoked instance, not a claim that all canonical 049-2 instances roam continuously.
 
 For a straightforward approach, move responders to the office side of the inner door around 16,10 and 16,11. Select the door at 17,10 on the field map and change its policy if needed. Positioning matters: a responder behind the neighboring wall will not fire through it. Engage holds position rather than automatically advancing on a target. Use additional movement orders to establish another firing line.
 

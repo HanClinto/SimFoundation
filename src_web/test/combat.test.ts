@@ -13,9 +13,67 @@ import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { setSurface } from "../src/simulation/materials";
 import { orderSurfaceWork } from "../src/simulation/environment";
 import { requestAssessment } from "../src/simulation/clinical";
+import { createController } from "../src/application/controller";
+import { advanceCombat } from "../src/simulation/combat";
+import { fieldState } from "../src/simulation/expeditions";
 
 const first = "person-caleb-ward";
 const second = "person-lena-ortiz";
+it("patrols the depot without hidden target knowledge, opens doors and attacks a visible responder", () => {
+  const controller = createController(createInitialState());
+  controller.enlistExpedition("notice-depot", [first, second]);
+  controller.advance(100);
+  controller.dispatchExpedition();
+  const arrival = controller.advance(30).game;
+  let field = fieldState(arrival)!;
+  const start = field.combat.adversary!.position;
+  let alternate: ReturnType<typeof createInitialState> = {
+    ...field,
+    world: {
+      ...field.world,
+      positions: { [first]: { x: 3, y: 12 }, [second]: { x: 3, y: 13 } },
+    },
+  };
+  const visited = new Set<string>();
+  for (let tick = 0; tick < 64; tick += 1) {
+    field = advanceCombat({ ...field, tick: field.tick + 1 });
+    alternate = advanceCombat({ ...alternate, tick: alternate.tick + 1 });
+    expect(field.combat.adversary!.position).toEqual(
+      alternate.combat.adversary!.position,
+    );
+    expect(field.combat.adversary!.targetId).toBeNull();
+    visited.add(JSON.stringify(field.combat.adversary!.position));
+  }
+  expect(visited.size).toBeGreaterThan(6);
+  expect([...visited].some((position) => JSON.parse(position).x < 17)).toBe(
+    true,
+  );
+  expect(
+    [...visited].some((position) => position !== JSON.stringify(start)),
+  ).toBe(true);
+  const expeditionId = arrival.expeditions.active!.id;
+  controller.orderFieldResponder(expeditionId, first, "move", { x: 16, y: 10 });
+  controller.orderFieldResponder(expeditionId, second, "move", {
+    x: 16,
+    y: 11,
+  });
+  let state = arrival;
+  for (let tick = 0; tick < 160; tick += 1) {
+    state = controller.advance().game;
+    if (
+      Object.values(state.expeditions.active!.site!.combat.responders).some(
+        (responder) => responder.injuries > 0,
+      )
+    )
+      break;
+  }
+  expect(
+    Object.values(state.expeditions.active!.site!.combat.responders).some(
+      (responder) => responder.injuries > 0,
+    ),
+  ).toBe(true);
+  expect(load(state).status).toBe("loaded");
+});
 function encounter() {
   let state = createInitialState();
   state = {

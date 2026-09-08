@@ -57,6 +57,18 @@ export const RESPONSE_RANGE = 5;
 export const RESPONSE_PREPARATION = 3;
 export const RESPONSE_RECOVERY = 3;
 export const ENCOUNTER_RADIUS = 10;
+export function adversaryBehavior(combat: CombatState): string {
+  const actor = combat.adversary;
+  if (!actor) return "No adversary";
+  if (actor.health <= 0) return "Neutralized";
+  if (combat.status !== "active") return "Encounter suspended";
+  if (actor.phase === "preparing") return "Preparing adjacent attack";
+  if (actor.phase === "recovering") return "Recovering from action";
+  if (actor.targetId) return "Pursuing visible responder";
+  return actor.lastKnown
+    ? "Investigating last sighting"
+    : "Patrolling; no visible target";
+}
 export type TacticalCode =
   | "accepted"
   | "not-found"
@@ -643,7 +655,11 @@ export function advanceCombat(state: GameState): GameState {
             `${state.personnel.find((person) => person.id === targetId)!.name} injured${health === 0 ? " and incapacitated" : ""}.`,
           );
         }
-      } else if (target && distance(adversary.position, target) <= 1)
+      } else if (
+        target &&
+        distance(adversary.position, target) <= 1 &&
+        canObserve(state.world.map, adversary.position, target, 1)
+      )
         adversary = {
           ...adversary,
           targetId,
@@ -652,7 +668,37 @@ export function advanceCombat(state: GameState): GameState {
           remaining: 3,
         };
       else {
-        const destination = target ?? adversary.lastKnown;
+        const patrolOffsets = [
+          [-6, 1],
+          [0, 6],
+          [6, 0],
+          [0, -4],
+        ] as const;
+        const patrolIndex = Math.floor(state.tick / 32) % patrolOffsets.length;
+        const patrol =
+          !target && !adversary.lastKnown
+            ? patrolOffsets
+                .map((_, offset) => {
+                  const [horizontal, vertical] =
+                    patrolOffsets[
+                      (patrolIndex + offset) % patrolOffsets.length
+                    ]!;
+                  return {
+                    x: adversary!.origin.x + horizontal,
+                    y: adversary!.origin.y + vertical,
+                  };
+                })
+                .find(
+                  (position) =>
+                    isWalkable(state.world.map, position) &&
+                    findRoute(
+                      state.world.map,
+                      adversary!.position,
+                      position,
+                    ) !== null,
+                )
+            : null;
+        const destination = target ?? adversary.lastKnown ?? patrol;
         adversary = {
           ...adversary,
           targetId,

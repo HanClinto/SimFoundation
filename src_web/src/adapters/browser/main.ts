@@ -45,6 +45,7 @@ import { createObjectsWindow } from "./objects-view";
 import { createPowerWindow } from "./power-view";
 import { createCombatWindow } from "./combat-view";
 import { createExpeditionsWindow } from "./expeditions-view";
+import { createFieldInspector, fieldInspectionTarget } from "./field-inspector";
 import {
   expeditionMapController,
   fieldSnapshot,
@@ -937,11 +938,31 @@ const fieldCamera = createSiteMap(
   fieldWindow.querySelector<HTMLCanvasElement>("canvas")!,
   fieldWindow,
   fieldController,
-  (id) => {
-    expeditionsView.select(id.startsWith("tactical:") ? id.slice(9) : id);
-    windowManager.open("expeditions-window");
+  (id, perspective) => {
+    const target = fieldInspectionTarget(id);
+    if (target.kind === "orders") {
+      expeditionsView.select(target.id);
+      windowManager.open("expeditions-window");
+    } else if (target.kind === "personnel") openPersonnelInspector(target.id);
+    else {
+      fieldInspector.select(target.id, controller.getSnapshot(), perspective);
+      windowManager.open("field-inspector-window");
+    }
   },
 );
+const fieldInspector = createFieldInspector(app, (position) => {
+  windowManager.open("expedition-map-window");
+  fieldCamera.focus(position);
+});
+windowManager.register(fieldInspector.element, {
+  id: "field-inspector-window",
+  title: "Field Record",
+  iconUrl: recordsIconUrl,
+  defaultRect: { left: 210, top: 90, width: 450, height: 510 },
+  defaultOpen: false,
+  minimumWidth: 300,
+  minimumHeight: 240,
+});
 const showField = () => {
   const snapshot = fieldSnapshot(controller.getSnapshot());
   if (
@@ -1274,6 +1295,7 @@ function setSimulationSpeed(speed: SimulationSpeed): void {
 }
 
 function render(snapshot: ControllerSnapshot): void {
+  fieldInspector.render(snapshot);
   expeditionsView.render(snapshot);
   const field = fieldSnapshot(snapshot);
   const fieldTime =

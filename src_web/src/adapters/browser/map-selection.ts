@@ -12,6 +12,7 @@ import type { MapPerspective } from "./map-settings";
 import { pawnPortrait } from "./pawn-art";
 import residentUrl from "./assets/site-999.svg";
 import { isElectrical, powerNetwork } from "../../simulation/power";
+import { adversaryBehavior } from "../../simulation/combat";
 
 export function createMapSelection(
   host: HTMLElement,
@@ -122,6 +123,8 @@ export function createMapSelection(
             : source
               ? `${source.kind} source / ${source.enabled === false ? "disabled" : "enabled"}`
               : "";
+    if (id === "SCP-049-2" && entry)
+      stateText.textContent = `${adversaryBehavior(state.combat)}${view === "recorded" ? " / Last observed" : snapshot.running ? "" : " / Paused"}`;
     needs.hidden = !person || !entry || view !== "world";
     if (person && !needs.hidden)
       for (const key of ["rest", "satiety"] as const) {
