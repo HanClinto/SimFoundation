@@ -78,6 +78,8 @@ it("keeps actor selection through ground inspection and panning, and submits onl
   pointer("pointerdown");
   pointer("pointerup");
   root.querySelector<HTMLButtonElement>(".pawn-context-menu button")!.click();
+  expect(controller.getSnapshot()).toEqual(initial);
+  root.querySelector<HTMLButtonElement>('[data-interaction="move"]')!.click();
   expect(
     controller.getSnapshot().game.combat.responders[id]!.destination,
   ).toEqual({ x: 60, y: 59 });

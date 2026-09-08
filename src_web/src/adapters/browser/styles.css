@@ -362,15 +362,16 @@ ul.menu.pawn-context-menu {
   z-index: 5;
   display: block;
   box-sizing: border-box;
-  width: 240px;
+  width: 310px;
   max-height: calc(100% - 8px);
   overflow-y: auto;
 }
 ul.menu.pawn-context-menu[hidden],
-ul.menu.pawn-context-menu > li[hidden] {
+ul.menu.pawn-context-menu li[hidden],
+ul.menu.pawn-verb-menu[hidden] {
   display: none;
 }
-ul.menu.pawn-context-menu > li > button {
+ul.menu.pawn-context-menu button {
   padding: 5px 16px;
   white-space: normal;
 }
@@ -378,6 +379,41 @@ ul.menu.pawn-context-menu > li > button {
   margin: 4px;
   font-size: 11px;
   overflow-wrap: anywhere;
+}
+.pawn-menu-subject {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #c0c0c0;
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 4px 8px;
+}
+.pawn-menu-subject img {
+  width: 28px;
+  height: 38px;
+  object-fit: contain;
+}
+.pawn-menu-subject strong {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.pawn-command-path {
+  grid-column: 1 / -1;
+  min-height: 32px;
+  padding: 4px;
+  border-bottom: 1px solid #808080;
+}
+ul.menu.pawn-verb-menu {
+  position: static;
+  display: block;
+  width: auto;
+  min-width: 0;
+  margin: 0 6px 4px 18px;
+  border-left: 1px solid #808080;
+  box-shadow: none;
 }
 
 #expeditions-window h3 {

@@ -394,9 +394,8 @@ export function createSiteMap(
     );
     return { x: Math.round(position.x), y: Math.round(position.y) };
   };
-  function selectionAt(point: TilePosition) {
+  function selectionsAt(point: TilePosition) {
     const bubble = bubbleAt(bubbles, point);
-    if (bubble) return bubble.personId;
     const position = tileAtPoint(point);
     if (
       position.x < 0 ||
@@ -404,7 +403,7 @@ export function createSiteMap(
       position.x >= current.game.world.map.width ||
       position.y >= current.game.world.map.height
     )
-      return null;
+      return [];
     const object = camera.overlays?.objects
       ? mapObjects(displayed().game, camera.perspective)
           .filter((object) => !object.id.startsWith("storage:"))
@@ -438,18 +437,24 @@ export function createSiteMap(
             (first, second) =>
               first.distance - second.distance ||
               first.id.localeCompare(second.id),
-          )[0]
-      : null;
+          )
+      : [];
     const storage = camera.overlays?.storage
       ? current.game.storage.areas.find((area) =>
           storageContains(area, position),
         )
       : undefined;
-    return (
-      object?.id ??
-      (storage ? `storage:${storage.id}` : null) ??
-      `tile:${position.x},${position.y}:${camera.surfaceLayer ?? "structure"}`
-    );
+    return [
+      ...new Set([
+        ...(bubble ? [bubble.personId] : []),
+        ...object.map((entry) => entry.id),
+        ...(storage ? [`storage:${storage.id}`] : []),
+        `tile:${position.x},${position.y}:${camera.surfaceLayer ?? "structure"}`,
+      ]),
+    ];
+  }
+  function selectionAt(point: TilePosition) {
+    return selectionsAt(point)[0] ?? null;
   }
   let drag: {
     start: TilePosition;
@@ -505,7 +510,14 @@ export function createSiteMap(
           !pawnControl.activeId
         )
           pawnControl.select(id);
-        else if (id) pawnControl.ground(tileAtPoint(point), id, point);
+        else if (id)
+          pawnControl.ground(
+            tileAtPoint(point),
+            id,
+            point,
+            false,
+            selectionsAt(point),
+          );
       }
       render(current);
     }

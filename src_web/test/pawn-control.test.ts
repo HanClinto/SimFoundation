@@ -39,8 +39,10 @@ it("selects an actor without drafting, issues immediate Go Here and retains the 
     x: 490,
     y: 290,
   });
+  document.querySelector<HTMLButtonElement>("[data-menu-target]")!.click();
+  expect(controller.getSnapshot().game.combat.responders[id]).toBeUndefined();
   document
-    .querySelector<HTMLButtonElement>(".pawn-context-menu button")!
+    .querySelector<HTMLButtonElement>('[data-interaction="move"]')!
     .click();
   expect(changed).toHaveBeenCalledOnce();
   expect(
@@ -66,8 +68,13 @@ it("withholds Recorded commands, disables controls for placement, and clears mis
     { x: 100, y: 100 },
     true,
   );
+  document
+    .querySelector<HTMLButtonElement>(
+      '[data-menu-target="tile:54,55:structure"]',
+    )!
+    .click();
   expect(
-    document.querySelector<HTMLButtonElement>(".pawn-context-menu button")!
+    document.querySelector<HTMLButtonElement>('[data-interaction="move"]')!
       .disabled,
   ).toBe(true);
   document
@@ -108,6 +115,9 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
     true,
   );
   expect(view.activeId).toBe(actor.id);
+  document
+    .querySelector<HTMLButtonElement>(`[data-menu-target="${patient.id}"]`)!
+    .click();
   const stabilize = document.querySelector<HTMLButtonElement>(
     '[data-interaction="stabilize"]',
   )!;
@@ -123,7 +133,9 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
       ".pawn-context-menu button",
     ),
   ].find((button) => button.textContent === "Select Person")!;
-  expect(document.activeElement).toBe(choose);
+  expect(document.querySelector(".pawn-command-path")!.textContent).toBe(
+    `${actor.name} > ${patient.name}`,
+  );
   document
     .querySelector(".pawn-context-menu")!
     .dispatchEvent(
@@ -154,4 +166,47 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
   view.ground(origin, actor.id, { x: 80, y: 80 });
   expect(document.querySelector('[data-interaction="stabilize"]')).toBeNull();
   expect(cancel.disabled).toBe(true);
+});
+
+it("keeps subject, object and focused verb visible and returns from verbs to target branches", () => {
+  const { controller, view, window } = setup();
+  const snapshot = controller.getSnapshot();
+  const actor = snapshot.game.personnel[0]!;
+  const other = snapshot.game.personnel[1]!;
+  const position = snapshot.game.world.positions[other.id]!;
+  view.select(actor.id);
+  view.ground({ x: 0, y: 0 }, other.id, { x: 80, y: 80 }, true);
+  expect(document.querySelector(".pawn-menu-subject strong")!.textContent).toBe(
+    actor.name,
+  );
+  expect(
+    document.querySelector(".pawn-menu-subject img")!.getAttribute("src"),
+  ).toContain("data:image");
+  const floor = document.querySelector<HTMLButtonElement>(
+    `[data-menu-target="tile:${position.x},${position.y}:floor"]`,
+  )!;
+  expect(floor).not.toBeNull();
+  floor.focus();
+  floor.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+  );
+  expect(document.activeElement).toBe(
+    document.querySelector('[data-interaction="move"]'),
+  );
+  expect(document.querySelector(".pawn-command-path")!.textContent).toBe(
+    `${actor.name} > Floor Tile (${position.x}, ${position.y}) > Go Here`,
+  );
+  expect(controller.getSnapshot()).toEqual(snapshot);
+  document.activeElement!.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
+  );
+  expect(document.activeElement).toBe(floor);
+  expect(floor.getAttribute("aria-expanded")).toBe("false");
+  floor.click();
+  document
+    .querySelector<HTMLButtonElement>('[data-interaction="move"]')!
+    .click();
+  expect(
+    controller.getSnapshot().game.combat.responders[actor.id]!.destination,
+  ).toEqual(position);
 });

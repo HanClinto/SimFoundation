@@ -11,10 +11,12 @@ Keep the 98.css modeless desktop, existing object/dossier inspection, physical e
 ## Input Contract
 
 - With no actor, clicking a present pawn selects them. Clicking their portrait always selects them. With an actor already selected, clicking another person changes only the inspection target until explicit portrait selection or contextual Select Person.
-- Clicking a target opens its applicable interactions; Go Here on ground submits once, without preview/confirmation or opening an operations window. Inspect remains a separate command. A double-click only inspects: first-click menu creation must never itself execute an action.
+- Clicking a target opens Subject > Object > Verb: the captured actor's portrait/name, explicit branches for visible overlapping targets and their floor, then the chosen target's verbs. A pinned path retains the subject/object and hovered or focused verb. Branch expansion never submits work. Go Here submits once when chosen, without preview/confirmation. Inspect and Select Person sit outside the command hierarchy. A double-click only inspects: first-click menu creation must never itself execute an action.
 - Dragging pans, wheel zooms, and construction placement takes input precedence. Escape closes an interaction menu before considering placement cancellation. It does not cancel movement. Enter on an inspected tile opens its interaction menu; Shift+F10 or the context-menu key opens interactions for the inspected target, falling back to ground at map center. Arrow menu navigation and Enter activate commands without pointer input.
 - Actor selection persists within a map's browser lifetime and is cleared when the actor leaves or the location changes. It is not serialized as gameplay state. Follow is pinned to the target selected when Follow is enabled; inspecting another target does not retarget it. Existing explicit navigation still releases Follow.
 - Recorded controls are inspection-only. No direct movement command is inferred from an unknown tile or remembered person. World mode requests authoritative eligibility and revalidates at submission.
+
+The hierarchy may extend to Subject > Object > Verb > Adjective (optional modifier). Only real domain choices should create modifier branches; weapons, conversation topics and capture methods are not implemented by this presentation change. Arrow Right enters a target's verbs and Arrow Left returns to its branch; the existing Up/Down/Home/End and Escape behavior remains. The compact expanding tree keeps the full path inside narrow map windows without cascading off-screen.
 
 ## Manual Ownership
 

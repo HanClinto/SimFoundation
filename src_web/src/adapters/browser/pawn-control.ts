@@ -5,6 +5,8 @@ import type {
 import type { MapPerspective } from "./map-settings";
 import type { TilePosition } from "../../simulation/world";
 import { pawnPortrait } from "./pawn-art";
+import { mapObjects } from "./map-objects";
+import { observedSnapshot } from "./observed-view";
 import {
   currentPersonAction,
   type PersonInteraction,
@@ -52,9 +54,25 @@ export function createPawnControl(
   menu.hidden = true;
   menu.setAttribute("role", "menu");
   menu.setAttribute("aria-label", "Target interactions");
+  const subject = document.createElement("li");
+  subject.className = "pawn-menu-subject";
+  subject.setAttribute("role", "none");
+  const subjectPortrait = document.createElement("img");
+  subjectPortrait.alt = "";
+  const subjectName = document.createElement("strong");
+  subject.append(subjectPortrait, subjectName);
+  const commandPath = document.createElement("p");
+  commandPath.className = "pawn-command-path";
+  commandPath.setAttribute("role", "status");
+  subject.append(commandPath);
+  const verbs = document.createElement("ul");
+  verbs.className = "menu pawn-verb-menu";
+  verbs.setAttribute("role", "menu");
+  verbs.hidden = true;
   const move = document.createElement("button");
   move.type = "button";
   move.textContent = "Go Here";
+  move.dataset.interaction = "move";
   move.setAttribute("role", "menuitem");
   const record = document.createElement("button");
   record.type = "button";
@@ -83,7 +101,48 @@ export function createPawnControl(
   const explanation = document.createElement("li");
   explanation.setAttribute("role", "none");
   explanation.append(reason);
-  menu.append(moveRow, divider, chooseRow, recordRow, explanation);
+  verbs.append(moveRow, explanation);
+  menu.append(subject, divider, chooseRow, recordRow);
+  const targets = new Map<string, HTMLButtonElement>();
+  let targetLabel = "";
+  let anchor = { x: 0, y: 0 };
+  function fitMenu() {
+    menu.style.maxWidth = `${Math.max(0, canvas.clientWidth - 8)}px`;
+    menu.style.maxHeight = `${Math.max(0, canvas.clientHeight - 8)}px`;
+    menu.style.left = `${Math.max(4, Math.min(canvas.clientWidth - menu.offsetWidth - 4, anchor.x + 8))}px`;
+    menu.style.top = `${Math.max(4, Math.min(canvas.clientHeight - menu.offsetHeight - 4, anchor.y + 8))}px`;
+    menu.style.maxHeight = `${Math.max(0, canvas.clientHeight - parseFloat(menu.style.top) - 4)}px`;
+  }
+  function showPath(verb?: string) {
+    commandPath.textContent = [subjectName.textContent, targetLabel, verb]
+      .filter(Boolean)
+      .join(" > ");
+  }
+  function openTarget(id: string, keyboard = false) {
+    const button = targets.get(id);
+    if (!target || !button) return;
+    target.id = id;
+    target.position = {
+      x: Number(button.dataset.targetX),
+      y: Number(button.dataset.targetY),
+    };
+    targetLabel = button.dataset.targetLabel!;
+    for (const entry of targets.values())
+      entry.setAttribute("aria-expanded", String(entry === button));
+    button.parentElement!.append(verbs);
+    verbs.hidden = false;
+    for (const entry of entries.values()) entry.parentElement!.remove();
+    entries.clear();
+    updateMenu();
+    showPath();
+    fitMenu();
+    if (keyboard)
+      verbs
+        .querySelector<HTMLButtonElement>(
+          "li:not([hidden]) > button:not(:disabled)",
+        )
+        ?.focus();
+  }
   const entries = new Map<PersonInteraction, HTMLButtonElement>();
   canvas.parentElement!.append(menu);
   let current = controller.getSnapshot();
@@ -103,6 +162,10 @@ export function createPawnControl(
     target = null;
     for (const button of entries.values()) button.parentElement!.remove();
     entries.clear();
+    verbs.hidden = true;
+    verbs.remove();
+    for (const button of targets.values()) button.parentElement!.remove();
+    targets.clear();
   }
   function select(id: string) {
     if (
@@ -124,6 +187,7 @@ export function createPawnControl(
     );
     choose.disabled =
       !current.game.world.positions[target.id] || target.id === activeId;
+    record.textContent = `Inspect ${targetLabel}`;
     const issue =
       perspective !== "world"
         ? "Recorded view is inspection-only."
@@ -169,7 +233,7 @@ export function createPawnControl(
           canvas.focus();
         });
         entries.set(option.action, button);
-        menu.insertBefore(row(button), divider);
+        verbs.insertBefore(row(button), explanation);
       }
       const unavailable =
         perspective !== "world"
@@ -186,7 +250,7 @@ export function createPawnControl(
         issues.push(button.title);
       }
     }
-    divider.hidden = moveRow.hidden && entries.size === 0;
+    divider.hidden = false;
     reason.textContent = [...new Set(issues)].join(" ");
     explanation.hidden = issues.length === 0;
   }
@@ -206,9 +270,9 @@ export function createPawnControl(
     if (target && !choose.disabled) select(target.id);
   });
   function availableButtons() {
-    return [...menu.querySelectorAll<HTMLButtonElement>("button")].filter(
-      (button) => !button.disabled && !button.parentElement!.hidden,
-    );
+    return [...menu.querySelectorAll<HTMLButtonElement>("button")]
+      .filter((button) => !button.disabled && !button.parentElement!.hidden)
+      .filter((button) => !button.closest("[hidden]"));
   }
   move.addEventListener("click", () => {
     if (!target?.actorId || perspective !== "world" || move.disabled) return;
@@ -228,6 +292,21 @@ export function createPawnControl(
     if (id) inspect(id, perspective);
   });
   menu.addEventListener("keydown", (event) => {
+    if (
+      event.key === "ArrowRight" &&
+      (event.target as HTMLElement).dataset.menuTarget
+    ) {
+      event.preventDefault();
+      openTarget((event.target as HTMLElement).dataset.menuTarget!, true);
+    }
+    if (event.key === "ArrowLeft" && verbs.contains(event.target as Node)) {
+      event.preventDefault();
+      verbs.hidden = true;
+      const button = target ? targets.get(target.id) : null;
+      button?.setAttribute("aria-expanded", "false");
+      button?.focus();
+      showPath();
+    }
     if (event.key === "Escape") {
       event.preventDefault();
       event.stopPropagation();
@@ -250,6 +329,15 @@ export function createPawnControl(
       ]?.focus();
     }
   });
+  for (const eventName of ["focusin", "pointerover"] as const)
+    menu.addEventListener(eventName, (event) => {
+      const button = (event.target as HTMLElement).closest<HTMLButtonElement>(
+        "button",
+      );
+      if (!button) return;
+      if (verbs.contains(button)) showPath(button.textContent ?? undefined);
+      else showPath();
+    });
   document.addEventListener("pointerdown", (event) => {
     if (
       !menu.hidden &&
@@ -344,17 +432,71 @@ export function createPawnControl(
       id: string,
       point: TilePosition,
       keyboard = false,
+      hitIds: readonly string[] = [],
     ) {
       if (busyPlacement) return;
       close();
       target = { position, id, mapId, actorId: activeId };
+      const displayed =
+        perspective === "recorded" ? observedSnapshot(current) : current;
+      const objects = mapObjects(displayed.game, perspective);
+      const selected = objects.find((object) => object.id === id);
+      const groundPosition = selected?.position ?? position;
+      target.position = { ...groundPosition };
+      const floorId = id.startsWith("tile:")
+        ? id
+        : `tile:${groundPosition.x},${groundPosition.y}:floor`;
+      const candidates = [
+        ...(selected ? [selected] : []),
+        ...objects.filter(
+          (object) =>
+            object.id !== id &&
+            (hitIds.includes(object.id) ||
+              (!object.id.startsWith("storage:") &&
+                object.position.x === groundPosition.x &&
+                object.position.y === groundPosition.y &&
+                !current.game.objects.items.some(
+                  (item) =>
+                    object.id === `object:${item.id}` &&
+                    item.kind === "cable" &&
+                    item.installed,
+                ))),
+        ),
+        {
+          id: floorId,
+          name: `Floor Tile (${groundPosition.x}, ${groundPosition.y})`,
+          position: groundPosition,
+        },
+      ];
+      if (!selected && !id.startsWith("tile:"))
+        candidates.unshift({ id, name: id, position });
+      subjectName.textContent =
+        current.game.personnel.find((person) => person.id === activeId)?.name ??
+        "No active person";
+      subjectPortrait.hidden = !activeId;
+      if (activeId) subjectPortrait.src = pawnPortrait(activeId);
+      targetLabel =
+        candidates.find((candidate) => candidate.id === id)?.name ?? id;
+      showPath();
+      for (const candidate of candidates) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = `${candidate.name} >`;
+        button.dataset.menuTarget = candidate.id;
+        button.dataset.targetLabel = candidate.name;
+        button.dataset.targetX = String(candidate.position.x);
+        button.dataset.targetY = String(candidate.position.y);
+        button.setAttribute("role", "menuitem");
+        button.setAttribute("aria-haspopup", "menu");
+        button.setAttribute("aria-expanded", "false");
+        button.addEventListener("click", () => openTarget(candidate.id));
+        targets.set(candidate.id, button);
+        menu.insertBefore(row(button), divider);
+      }
       menu.hidden = false;
       updateMenu();
-      menu.style.maxWidth = `${Math.max(120, canvas.clientWidth - 8)}px`;
-      menu.style.maxHeight = `${Math.max(0, canvas.clientHeight - 8)}px`;
-      menu.style.left = `${Math.max(4, Math.min(canvas.clientWidth - menu.offsetWidth - 4, point.x + 8))}px`;
-      menu.style.top = `${Math.max(4, Math.min(canvas.clientHeight - menu.offsetHeight - 4, point.y + 8))}px`;
-      menu.style.maxHeight = `${Math.max(0, canvas.clientHeight - parseFloat(menu.style.top) - 4)}px`;
+      anchor = point;
+      fitMenu();
       if (keyboard) availableButtons()[0]?.focus();
     },
   };
