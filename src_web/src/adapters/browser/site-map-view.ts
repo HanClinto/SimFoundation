@@ -523,13 +523,7 @@ export function createSiteMap(
         const point = localPoint(event);
         const id = selectionAt(point);
         camera = { ...camera, selectedId: id };
-        if (
-          id &&
-          current.game.personnel.some((person) => person.id === id) &&
-          !pawnControl.activeId
-        )
-          pawnControl.select(id);
-        else if (id)
+        if (id)
           pawnControl.ground(
             tileAtPoint(point),
             id,

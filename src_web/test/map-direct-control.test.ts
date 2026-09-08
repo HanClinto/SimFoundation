@@ -163,4 +163,32 @@ it("keeps actor selection through ground inspection and panning, and submits onl
     "spare-bed",
   );
   expect(controller.getSnapshot()).toEqual(beforeSwitch);
+  inspect.mockClear();
+  view.focus({ x: 60, y: 59 });
+  pointer("pointerdown");
+  pointer("pointerup");
+  expect(inspect).toHaveBeenCalledExactlyOnceWith(
+    "tile:60,59:structure",
+    "world",
+  );
+  expect(root.querySelector<HTMLElement>(".pawn-context-menu")!.hidden).toBe(
+    true,
+  );
+  inspect.mockClear();
+  view.focus(beforeSwitch.game.world.positions[id]!);
+  pointer("pointerdown");
+  pointer("pointerup");
+  expect(root.querySelector<HTMLElement>(".pawn-context-menu")!.hidden).toBe(
+    false,
+  );
+  expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
+    activePawnId: null,
+  });
+  expect(inspect).not.toHaveBeenCalled();
+  root.querySelector<HTMLButtonElement>(`[data-menu-target="${id}"]`)!.click();
+  expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
+    selectedId: id,
+    activePawnId: id,
+  });
+  expect(controller.getSnapshot()).toEqual(beforeSwitch);
 });

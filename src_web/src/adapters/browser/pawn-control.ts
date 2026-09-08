@@ -195,7 +195,7 @@ export function createPawnControl(
   }
   function openTarget(id: string, keyboard = false) {
     const button = targets.get(id);
-    if (!target || !button) return;
+    if (!target?.actorId || !button) return;
     target.id = id;
     target.position = {
       x: Number(button.dataset.targetX),
@@ -281,9 +281,9 @@ export function createPawnControl(
       submissionMode() === "append" &&
       automaticAction(current.game, target.actorId);
     moveRow.hidden = !target.actorId || !target.id.startsWith("tile:");
-    chooseRow.hidden = !current.game.personnel.some(
-      (person) => person.id === target!.id,
-    );
+    chooseRow.hidden =
+      !target.actorId ||
+      !current.game.personnel.some((person) => person.id === target!.id);
     choose.disabled =
       !current.game.world.positions[target.id] || target.id === activeId;
     const issue =
@@ -540,14 +540,14 @@ export function createPawnControl(
       const displayed =
         perspective === "recorded" ? observedSnapshot(current) : current;
       const objects = mapObjects(displayed.game, perspective);
-      const selected = objects.find((object) => object.id === id);
-      const groundPosition = selected?.position ?? position;
+      const selectedObject = objects.find((object) => object.id === id);
+      const groundPosition = selectedObject?.position ?? position;
       target.position = { ...groundPosition };
       const floorId = id.startsWith("tile:")
         ? id
         : `tile:${groundPosition.x},${groundPosition.y}:floor`;
       const candidates = [
-        ...(selected ? [selected] : []),
+        ...(selectedObject ? [selectedObject] : []),
         ...objects.filter(
           (object) =>
             object.id !== id &&
@@ -568,11 +568,39 @@ export function createPawnControl(
           position: groundPosition,
         },
       ];
-      if (!selected && !id.startsWith("tile:"))
+      if (!selectedObject && !id.startsWith("tile:"))
         candidates.unshift({ id, name: id, position });
+      const choosingSubject = !activeId;
+      function chooseSubject(candidateId: string) {
+        const person = current.game.personnel.find(
+          (entry) => entry.id === candidateId,
+        );
+        if (
+          person &&
+          (current.game.world.positions[candidateId] ||
+            personCurrentAction(current.game, candidateId)?.source ===
+              "mission")
+        ) {
+          select(candidateId);
+        } else {
+          close();
+          selected?.(candidateId);
+          changed(current);
+          inspect(candidateId, perspective);
+        }
+      }
+      if (choosingSubject && candidates.length === 1) {
+        chooseSubject(candidates[0]!.id);
+        return;
+      }
+      menu.setAttribute(
+        "aria-label",
+        choosingSubject ? "Select subject or inspect" : "Target interactions",
+      );
+      subject.hidden = choosingSubject;
       subjectName.textContent =
         current.game.personnel.find((person) => person.id === activeId)?.name ??
-        "No active person";
+        "";
       subjectPortrait.hidden = !activeId;
       if (activeId) subjectPortrait.src = pawnPortrait(activeId);
       for (const candidate of candidates) {
@@ -586,18 +614,25 @@ export function createPawnControl(
           candidate.position,
         );
         const label = document.createElement("span");
-        label.textContent = `${candidate.name} >`;
+        label.textContent = choosingSubject
+          ? candidate.name
+          : `${candidate.name} >`;
         button.append(icon, label);
         button.dataset.menuTarget = candidate.id;
         button.dataset.targetLabel = candidate.name;
         button.dataset.targetX = String(candidate.position.x);
         button.dataset.targetY = String(candidate.position.y);
         button.setAttribute("role", "menuitem");
-        button.setAttribute("aria-haspopup", "menu");
-        button.setAttribute("aria-expanded", "false");
-        button.title = `Choose target: ${candidate.name}`;
+        if (!choosingSubject) {
+          button.setAttribute("aria-haspopup", "menu");
+          button.setAttribute("aria-expanded", "false");
+        }
+        button.title = choosingSubject
+          ? `${current.game.personnel.some((person) => person.id === candidate.id) ? "Select" : "Inspect"} ${candidate.name}`
+          : `Choose target: ${candidate.name}`;
         button.addEventListener("click", () => {
-          if (button.dataset.chosen === "true") {
+          if (choosingSubject) chooseSubject(candidate.id);
+          else if (button.dataset.chosen === "true") {
             close();
             inspect(candidate.id, perspective);
           } else openTarget(candidate.id);

@@ -654,19 +654,76 @@ it("deselects without changing work and allows inspection without a command reci
   ).toBe(true);
   expect(deselect.disabled).toBe(true);
   view.ground({ x: 60, y: 59 }, "tile:60,59:floor", { x: 50, y: 50 });
-  expect(
-    document.querySelector<HTMLButtonElement>('[data-interaction="move"]')!
-      .parentElement!.hidden,
-  ).toBe(true);
+  expect(view.menuOpen).toBe(false);
+  expect(document.querySelector('[data-interaction="move"]')).toBeNull();
   expect(document.querySelector('[data-interaction="hold"]')).toBeNull();
-  document
-    .querySelector<HTMLButtonElement>('[data-menu-target="tile:60,59:floor"]')!
-    .click();
   expect(inspect).toHaveBeenCalledWith("tile:60,59:floor", "world");
   view.select(actorId);
   view.render(controller.getSnapshot(), "recorded", false);
   deselect.click();
   expect(view.activeId).toBeNull();
+  expect(controller.getSnapshot()).toEqual(before);
+});
+
+it.each(["world", "recorded"] as const)(
+  "directly inspects a sole selection without a subject in %s view",
+  (perspective) => {
+    const { controller, view, inspect } = setup();
+    const before = controller.getSnapshot();
+    view.render(before, perspective, false);
+    view.ground({ x: 60, y: 59 }, "tile:60,59:floor", { x: 50, y: 50 }, true);
+    expect(inspect).toHaveBeenCalledExactlyOnceWith(
+      "tile:60,59:floor",
+      perspective,
+    );
+    expect(view.menuOpen).toBe(false);
+    expect(view.activeId).toBeNull();
+    expect(controller.getSnapshot()).toEqual(before);
+  },
+);
+
+it("chooses a subject or inspection directly from ambiguous rows without a subject header or verbs", () => {
+  const { controller, view, inspect, window } = setup();
+  const before = controller.getSnapshot();
+  const actor = before.game.personnel[0]!;
+  view.ground(
+    before.game.world.positions[actor.id]!,
+    actor.id,
+    { x: 80, y: 80 },
+    true,
+  );
+  const menu = document.querySelector<HTMLElement>(".pawn-context-menu")!;
+  expect(menu.getAttribute("aria-label")).toBe("Select subject or inspect");
+  expect(menu.querySelector<HTMLElement>(".pawn-menu-subject")!.hidden).toBe(
+    true,
+  );
+  expect(menu.textContent).not.toContain("No active person");
+  const pawn = menu.querySelector<HTMLButtonElement>(
+    `[data-menu-target="${actor.id}"]`,
+  )!;
+  expect(pawn.getAttribute("aria-haspopup")).toBeNull();
+  pawn.dispatchEvent(
+    new window.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+  );
+  expect(menu.querySelector(".pawn-verb-menu")).toBeNull();
+  expect(view.activeId).toBeNull();
+  pawn.click();
+  expect(view.activeId).toBe(actor.id);
+  expect(view.menuOpen).toBe(false);
+  expect(inspect).not.toHaveBeenCalled();
+  expect(controller.getSnapshot()).toEqual(before);
+  document
+    .querySelector<HTMLButtonElement>('[aria-label="Deselect active pawn"]')!
+    .click();
+  view.ground({ x: 0, y: 0 }, "object:spare-bed", { x: 80, y: 80 });
+  const object = menu.querySelector<HTMLButtonElement>(
+    '[data-menu-target="object:spare-bed"]',
+  )!;
+  expect(object.title).toMatch(/^Inspect /);
+  object.click();
+  expect(inspect).toHaveBeenCalledExactlyOnceWith("object:spare-bed", "world");
+  expect(view.activeId).toBeNull();
+  expect(view.menuOpen).toBe(false);
   expect(controller.getSnapshot()).toEqual(before);
 });
 
