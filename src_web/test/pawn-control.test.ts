@@ -3,9 +3,10 @@ import { afterEach, expect, it, vi } from "vitest";
 import { createController } from "../src/application/controller";
 import { createInitialState } from "../src/simulation/state";
 import { createPawnControl } from "../src/adapters/browser/pawn-control";
+import { advanceSimulation } from "../src/simulation/tick";
 
 afterEach(() => vi.unstubAllGlobals());
-function setup() {
+function setup(initial = createInitialState()) {
   const window = new JSDOM(
     '<section><div><canvas id="test-map"></canvas></div></section>',
   ).window;
@@ -16,7 +17,7 @@ function setup() {
     clientWidth: { value: 500 },
     clientHeight: { value: 300 },
   });
-  const controller = createController(createInitialState());
+  const controller = createController(initial);
   controller.setRunning(false);
   const changed = vi.fn();
   const inspect = vi.fn();
@@ -24,6 +25,85 @@ function setup() {
   view.render(controller.getSnapshot(), "world", false);
   return { window, controller, changed, inspect, view };
 }
+it("shows a real automatic meal and appends player movement behind it without fighting for control", () => {
+  const actorId = "person-lena-ortiz";
+  let state = createInitialState();
+  state = {
+    ...state,
+    personnel: state.personnel.map((person) => ({
+      ...person,
+      stress: 0,
+      needs: { rest: 100, satiety: person.id === actorId ? 20 : 100 },
+    })),
+  };
+  for (
+    let step = 0;
+    step < 100 &&
+    !state.objects.items.some(
+      (item) =>
+        item.location.kind === "carried" && item.location.personId === actorId,
+    );
+    step += 1
+  )
+    state = advanceSimulation(state);
+  const { controller, view } = setup(state);
+  view.select(actorId);
+  const tray = document.querySelector<HTMLElement>(".pawn-action-queue")!;
+  expect(tray.hidden).toBe(false);
+  expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Eat",
+  );
+  expect(tray.querySelector(".pawn-current-action small")!.textContent).toBe(
+    "Need",
+  );
+  expect(
+    tray.querySelector<HTMLButtonElement>(".pawn-current-action button")!
+      .disabled,
+  ).toBe(true);
+  expect(controller.getSnapshot().game.actionQueues[actorId]).toBeUndefined();
+  view.ground({ x: 60, y: 59 }, "tile:60,59:floor", { x: 80, y: 80 });
+  const move = document.querySelector<HTMLButtonElement>(
+    '[data-interaction="move"]',
+  )!;
+  expect(move.disabled).toBe(false);
+  move.click();
+  view.render(controller.getSnapshot(), "world", false);
+  expect(
+    controller.getSnapshot().game.actionQueues[actorId]!.current.started,
+  ).toBe(false);
+  expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Eat",
+  );
+  expect(tray.querySelector(".pawn-pending-actions span")!.textContent).toBe(
+    "Go Here",
+  );
+  const waitingTile = tray.querySelector(
+    ".pawn-pending-actions .pawn-action-tile",
+  )!;
+  expect(waitingTile.getAttribute("data-reorderable")).toBe("true");
+  controller.setRunning(true);
+  for (
+    let step = 0;
+    step < 100 &&
+    !controller.getSnapshot().game.actionQueues[actorId]!.current.started;
+    step += 1
+  )
+    controller.advance();
+  controller.setRunning(false);
+  view.render(controller.getSnapshot(), "world", false);
+  expect(tray.querySelector(".pawn-current-action span")!.textContent).toBe(
+    "Go Here",
+  );
+  expect(tray.querySelector(".pawn-current-action small")!.textContent).toBe(
+    "Player",
+  );
+  expect(tray.querySelector(".pawn-current-action .pawn-action-tile")).toBe(
+    waitingTile,
+  );
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(tray.hidden).toBe(true);
+});
+
 it("selects an actor without drafting, issues immediate Go Here and retains the actor during inspection", () => {
   const { controller, view, changed, inspect } = setup();
   const id = controller.getSnapshot().game.personnel[0]!.id;

@@ -4,6 +4,7 @@ import { sameTile, tileAt } from "./world";
 import { goHere } from "./direct-control";
 import { performInteraction, type PersonInteraction } from "./interactions";
 import { expeditionMember, fieldState, storeFieldState } from "./expeditions";
+import { automaticAction } from "./person-actions";
 
 export const ACTION_QUEUE_LIMIT = 8;
 export interface ActionIntent {
@@ -15,6 +16,7 @@ export interface ActionIntent {
   readonly destination?: TilePosition;
 }
 export interface QueuedAction {
+  readonly waitingFor?: string;
   readonly intent: ActionIntent;
   readonly started: boolean;
   readonly blockedReason: string | null;
@@ -127,6 +129,12 @@ function start(state: GameState, actorId: string): GameState {
   if (queue.current.started || queue.current.blockedReason) return state;
   const intent = queue.current.intent;
   const local = location(state, intent.mapId);
+  if (
+    queue.current.waitingFor &&
+    local &&
+    automaticAction(local, actorId)?.key === queue.current.waitingFor
+  )
+    return state;
   if (local?.combat.responders[actorId]?.phase === "recovering") return state;
   const result = execute(state, intent);
   if (result.reason)
@@ -136,7 +144,11 @@ function start(state: GameState, actorId: string): GameState {
         ...state.actionQueues,
         [actorId]: {
           ...queue,
-          current: { ...queue.current, blockedReason: result.reason },
+          current: {
+            ...queue.current,
+            waitingFor: undefined,
+            blockedReason: result.reason,
+          },
         },
       },
     };
@@ -177,7 +189,14 @@ function finish(state: GameState, actorId: string): GameState {
         ...state.actionQueues,
         [actorId]: {
           ...queue,
-          current: { intent: next, started: false, blockedReason: null },
+          current: {
+            intent: next,
+            started: false,
+            blockedReason: null,
+            ...(queue.current.waitingFor
+              ? { waitingFor: queue.current.waitingFor }
+              : {}),
+          },
           pending,
         },
       },
@@ -241,7 +260,7 @@ export function queueEligibility(
   if (
     mode === "append" &&
     queue &&
-    queue.current.intent.action !== "hold" &&
+    !(queue.current.intent.action === "hold" && queue.current.started) &&
     queue.pending.length + 1 >= ACTION_QUEUE_LIMIT
   )
     return "Action queue is full (8 actions).";
@@ -261,7 +280,7 @@ export function submitAction(
   if (
     existing &&
     mode === "append" &&
-    existing.current.intent.action !== "hold"
+    !(existing.current.intent.action === "hold" && existing.current.started)
   )
     return {
       state: {
@@ -288,7 +307,17 @@ export function submitAction(
   const responder = location(state, intent.mapId)!.combat.responders[actorId];
   const queue: PersonActionQueue = {
     nextSequence: sequence + 1,
-    current: { intent: scheduled, started: false, blockedReason: null },
+    current: {
+      intent: scheduled,
+      started: false,
+      blockedReason: null,
+      ...(mode === "append" && !existing
+        ? {
+            waitingFor: automaticAction(location(state, intent.mapId)!, actorId)
+              ?.key,
+          }
+        : {}),
+    },
     pending: existing?.pending ?? [],
     returnToAutonomy:
       existing?.returnToAutonomy ??
@@ -313,6 +342,12 @@ export function editActionQueue(
   const queue = state.actionQueues[actorId];
   if (!queue || queue.current.intent.mapId !== mapId)
     return { state, reason: "No action queue at this location." };
+  const local = location(state, mapId);
+  const automaticCurrent =
+    !queue.current.started &&
+    !!queue.current.waitingFor &&
+    !!local &&
+    automaticAction(local, actorId)?.key === queue.current.waitingFor;
   if (
     operation === "cancel" &&
     index !== undefined &&
@@ -320,15 +355,18 @@ export function editActionQueue(
   )
     return { state, reason: "This current action no longer exists." };
   if (operation === "reorder") {
-    const moving = queue.pending.find((intent) => intent.sequence === index);
+    const reorderable = automaticCurrent
+      ? [queue.current.intent, ...queue.pending]
+      : queue.pending;
+    const moving = reorderable.find((intent) => intent.sequence === index);
     if (
       !moving ||
       (beforeSequence !== undefined &&
-        !queue.pending.some((intent) => intent.sequence === beforeSequence))
+        !reorderable.some((intent) => intent.sequence === beforeSequence))
     )
       return { state, reason: "This pending action no longer exists." };
     if (index === beforeSequence) return { state, reason: null };
-    const pending = queue.pending.filter((intent) => intent !== moving);
+    const pending = reorderable.filter((intent) => intent !== moving);
     const insertion =
       beforeSequence === undefined
         ? pending.length
@@ -339,12 +377,20 @@ export function editActionQueue(
         ...state,
         actionQueues: {
           ...state.actionQueues,
-          [actorId]: { ...queue, pending },
+          [actorId]: automaticCurrent
+            ? {
+                ...queue,
+                current: { ...queue.current, intent: pending[0]! },
+                pending: pending.slice(1),
+              }
+            : { ...queue, pending },
         },
       },
       reason: null,
     };
   }
+  if (operation === "clear" && automaticCurrent)
+    return { state: release(state, actorId, false), reason: null };
   if (operation === "clear")
     return {
       state: {

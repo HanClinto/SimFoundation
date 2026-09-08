@@ -9,6 +9,7 @@ import { targetThumbnail } from "./target-thumbnail";
 import { mapObjects } from "./map-objects";
 import { observedSnapshot } from "./observed-view";
 import { createActionQueueView } from "./action-queue-view";
+import { automaticAction } from "../../simulation/person-actions";
 import type { ActionIntent } from "../../simulation/action-queue";
 import {
   currentPersonAction,
@@ -262,6 +263,10 @@ export function createPawnControl(
     const queued = target.actorId
       ? current.game.actionQueues[target.actorId]
       : null;
+    const waitingBehindAutomatic =
+      target.actorId &&
+      submissionMode() === "append" &&
+      automaticAction(current.game, target.actorId);
     moveRow.hidden = !target.id.startsWith("tile:");
     chooseRow.hidden = !current.game.personnel.some(
       (person) => person.id === target!.id,
@@ -274,7 +279,7 @@ export function createPawnControl(
         ? "Recorded view is inspection-only."
         : !target.actorId
           ? "Select a person first."
-          : queued
+          : queued || waitingBehindAutomatic
             ? (controller.previewQueuedAction(
                 intentFor("move"),
                 submissionMode(),
@@ -323,7 +328,7 @@ export function createPawnControl(
       const unavailable =
         perspective !== "world"
           ? "Recorded view is inspection-only."
-          : queued && option.action !== "cancel"
+          : (queued || waitingBehindAutomatic) && option.action !== "cancel"
             ? controller.previewQueuedAction(
                 intentFor(option.action),
                 submissionMode(),
@@ -346,9 +351,12 @@ export function createPawnControl(
   }
   cancel.addEventListener("click", () => {
     if (!activeId || cancel.disabled || perspective !== "world") return;
-    const result = current.game.actionQueues[activeId]
-      ? controller.editQueue(mapId, activeId, "cancel")
-      : controller.interact({ mapId, actorId: activeId, action: "cancel" });
+    const automatic = automaticAction(current.game, activeId);
+    const result = automatic
+      ? controller.cancelAutomatic(mapId, activeId, automatic.key)
+      : current.game.actionQueues[activeId]
+        ? controller.editQueue(mapId, activeId, "cancel")
+        : controller.interact({ mapId, actorId: activeId, action: "cancel" });
     close();
     changed(result.snapshot);
     if (result.reason) action.textContent = result.reason;
@@ -471,28 +479,36 @@ export function createPawnControl(
     }
     const person = people.find((person) => person.id === activeId);
     const queue = activeId ? snapshot.game.actionQueues[activeId] : null;
+    const automatic =
+      perspective === "world" && activeId
+        ? automaticAction(snapshot.game, activeId)
+        : null;
     name.textContent = person ? person.name : "No active person";
     action.textContent = !person
       ? ""
       : perspective === "recorded"
         ? "Recorded / inspection only"
-        : (queue?.current.blockedReason ??
-          (queue && !queue.current.started
-            ? "Waiting for action recovery"
-            : currentPersonAction(snapshot.game, person.id)));
+        : automatic
+          ? automatic.detail
+          : (queue?.current.blockedReason ??
+            (queue && !queue.current.started
+              ? "Waiting for action recovery"
+              : currentPersonAction(snapshot.game, person.id)));
     const cancellationIssue = placement
       ? "Finish or cancel placement first."
       : perspective !== "world"
         ? "Recorded view is inspection-only."
         : !activeId
           ? "Select a person first."
-          : queue
-            ? null
-            : controller.previewInteraction({
-                mapId,
-                actorId: activeId,
-                action: "cancel",
-              });
+          : automatic
+            ? controller.previewCancelAutomatic(mapId, activeId, automatic.key)
+            : queue
+              ? null
+              : controller.previewInteraction({
+                  mapId,
+                  actorId: activeId,
+                  action: "cancel",
+                });
     cancel.disabled = !!cancellationIssue;
     cancel.title = cancellationIssue ?? "Cancel Current Action";
     action.title = action.textContent ?? "";

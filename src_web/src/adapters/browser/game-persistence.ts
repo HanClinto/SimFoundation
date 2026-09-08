@@ -764,6 +764,8 @@ function isRoutineState(value: unknown): boolean {
         isNonEmptyString(activity.stationId) &&
         isIntegerInRange(activity.progress, 0) &&
         isIntegerInRange(activity.startedTick, 0) &&
+        (activity.source === undefined ||
+          isLiteral(activity.source, ["schedule", "need", "autonomy"])) &&
         typeof activity.mealConsumed === "boolean",
     ) &&
     isRecord(value.blockedReasons) &&

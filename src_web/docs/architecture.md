@@ -114,7 +114,15 @@ Browser code reads immutable snapshots and domain events. It never mutates entit
 
 ## State Model
 
-### Personal Action Queues (Schema 41)
+### Personal Action Ownership (Schema 42)
+
+`person-actions.ts` identifies the actual current routine or job by a stable owner key and projects source, verb, target and activity detail. Routine producers record Schedule, Need or Autonomy when choosing sleep, meals or discretionary breaks; work/clinical commitments report Job. Player intentions use the existing manual queue. These sources share the current-action tray and a coordinator handoff without duplicating execution progress or reservations. This is an adapter over implemented producers, not a second meal/job executor or a speculative schedule expansion.
+
+Add to Queue behind an automatic action stores its owner key in `current.waitingFor`. The executor continues until that commitment ends; the coordinator starts player work at the next safe boundary before routine/job discovery can claim the pawn again. Cargo-bound job phases preserve their claim across pickup/delivery transitions. Do Now uses existing draft/interruption checks instead: ordinary work retains progress, while cargo and active clinical appointments remain protected. Automatic cancellation is keyed/revalidated and follows the same safe owner; it never refunds consumed meals or spent supplies. After manual work drains, autonomous proposals are reconsidered from current needs/schedule, not resumed from a duplicated stale action.
+
+The tray shows an automatic current tile even with no player queue, source-labelled as Job, Schedule, Need or Autonomy. Player entries waiting behind it are all pending, reorderable and clearable without affecting that current commitment. Automatic actions are not draggable. Recorded mode hides live plans and disables cancellation. Existing producers still choose one actual automatic commitment at a time; random preference changes, refusals and speculative multi-step autonomous plans are not introduced here. Schema42 persists routine source and the manual handoff key.
+
+### Manual Intentions
 
 `action-queue.ts` owns root-level per-person queues across base and field maps. Each stores one current intention, up to seven pending intentions, stable sequence IDs and whether manual ownership should eventually return to autonomy. Intentions name map, actor, verb and target or destination; progress, cargo, preparation and costs remain with the existing tactical/recovery owners. Root tick processing starts eligible work, observes completion/recovery and advances the next entry. Failed starts wait for explicit Retry/Cancel; blocked running actions retain their executor and reason. Pending intentions acquire no reservations. Queue state and current executor references are validated on load.
 

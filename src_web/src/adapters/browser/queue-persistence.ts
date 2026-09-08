@@ -29,6 +29,14 @@ export function actionQueuesValid(state: GameState): boolean {
       return false;
     if (queue.current.started && queue.current.blockedReason !== null)
       return false;
+    if (
+      queue.current.waitingFor !== undefined &&
+      (typeof queue.current.waitingFor !== "string" ||
+        !/^(routine|job):/.test(queue.current.waitingFor) ||
+        queue.current.started ||
+        queue.current.blockedReason !== null)
+    )
+      return false;
     if (!Number.isSafeInteger(queue.nextSequence) || queue.nextSequence < 2)
       return false;
     const valid = (value: unknown): value is ActionIntent => {

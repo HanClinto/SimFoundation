@@ -5,6 +5,7 @@ import type {
 import type { ActionIntent } from "../../simulation/action-queue";
 import { mapObjects } from "./map-objects";
 import { targetThumbnail } from "./target-thumbnail";
+import { automaticAction } from "../../simulation/person-actions";
 
 const verbs = {
   move: "Go Here",
@@ -66,6 +67,37 @@ export function createActionQueueView(
   let snapshot: ControllerSnapshot;
   let dragging: { identity: string; sequence: number } | null = null;
   const rows = new Map<number, HTMLLIElement>();
+  const automaticRow = document.createElement("li");
+  automaticRow.dataset.current = "true";
+  const automaticTile = document.createElement("div");
+  automaticTile.className = "pawn-action-tile";
+  automaticTile.setAttribute("role", "group");
+  automaticTile.tabIndex = 0;
+  const automaticImage = document.createElement("img");
+  automaticImage.alt = "";
+  const automaticLabel = document.createElement("span");
+  const automaticSource = document.createElement("small");
+  const automaticCancel = document.createElement("button");
+  automaticCancel.type = "button";
+  automaticCancel.className = "pawn-queued-cancel";
+  automaticCancel.textContent = "X";
+  automaticTile.append(
+    automaticImage,
+    automaticLabel,
+    automaticSource,
+    automaticCancel,
+  );
+  automaticRow.append(automaticTile);
+  automaticCancel.addEventListener("click", () => {
+    if (!actorId || !enabled || automaticCancel.disabled) return;
+    const result = controller.cancelAutomatic(
+      mapId,
+      actorId,
+      automaticTile.dataset.actionKey!,
+    );
+    changed(result.snapshot);
+    if (result.reason) current.textContent = result.reason;
+  });
   function edit(
     operation: "cancel" | "retry" | "clear" | "remove" | "reorder",
     sequence?: number,
@@ -85,7 +117,14 @@ export function createActionQueueView(
   retry.addEventListener("click", () => edit("retry"));
   clear.addEventListener("click", () => edit("clear"));
   function pending() {
-    return actorId ? (snapshot.game.actionQueues[actorId]?.pending ?? []) : [];
+    const queue = actorId ? snapshot.game.actionQueues[actorId] : null;
+    if (!queue) return [];
+    return queue.current.waitingFor &&
+      !queue.current.started &&
+      actorId &&
+      automaticAction(snapshot.game, actorId)?.key === queue.current.waitingFor
+      ? [queue.current.intent, ...queue.pending]
+      : queue.pending;
   }
   function endDrag() {
     dragging = null;
@@ -114,23 +153,71 @@ export function createActionQueueView(
       mapId = snapshot.game.world.map.id;
       enabled = world && !placement;
       const queue = id ? snapshot.game.actionQueues[id] : null;
-      root.hidden = !world || !queue || queue.current.intent.mapId !== mapId;
-      if (root.hidden || !queue) {
+      const automatic = world && id ? automaticAction(snapshot.game, id) : null;
+      root.hidden =
+        !world ||
+        (!automatic && (!queue || queue.current.intent.mapId !== mapId));
+      if (root.hidden) {
         rows.clear();
         active.replaceChildren();
         list.replaceChildren();
         endDrag();
         return;
       }
-      current.textContent =
-        queue.current.blockedReason ??
-        (!queue.current.started
-          ? "Waiting for action recovery"
-          : `${queue.pending.length} pending`);
+      if (automatic) {
+        automaticTile.dataset.actionKey = automatic.key;
+        automaticTile.setAttribute(
+          "aria-label",
+          `Current: ${automatic.label} / ${automatic.source}`,
+        );
+        automaticTile.title = `${automatic.label} / ${automatic.source} / ${automatic.detail}`;
+        automaticLabel.textContent = automatic.label;
+        automaticSource.textContent = {
+          job: "Job",
+          schedule: "Schedule",
+          need: "Need",
+          autonomy: "Autonomy",
+        }[automatic.source];
+        const source = targetThumbnail(
+          snapshot.game,
+          automatic.targetId,
+          automatic.position,
+        );
+        if (automaticImage.getAttribute("src") !== source)
+          automaticImage.src = source;
+        const issue = controller.previewCancelAutomatic(
+          mapId,
+          id!,
+          automatic.key,
+        );
+        automaticCancel.disabled = !enabled || !!issue;
+        automaticCancel.setAttribute(
+          "aria-label",
+          `Cancel current ${automatic.label}`,
+        );
+        automaticCancel.title = issue ?? `Cancel current ${automatic.label}`;
+        if (active.firstElementChild !== automaticRow)
+          active.prepend(automaticRow);
+      } else automaticRow.remove();
+      if (!queue) {
+        for (const row of rows.values()) row.remove();
+        rows.clear();
+        current.textContent = automatic!.detail;
+        current.title = current.textContent;
+        retry.disabled = true;
+        clear.disabled = true;
+        return;
+      }
+      current.textContent = automatic
+        ? `${automatic.detail}${queue.current.blockedReason ? ` / ${queue.current.blockedReason}` : " / Player orders waiting"}`
+        : (queue.current.blockedReason ??
+          (!queue.current.started
+            ? "Waiting for action recovery"
+            : `${queue.pending.length} pending`));
       current.title = current.textContent;
       retry.disabled =
         !enabled || queue.current.started || !queue.current.blockedReason;
-      clear.disabled = !enabled || !queue.pending.length;
+      clear.disabled = !enabled || !pending().length;
       for (const [sequence, row] of rows)
         if (
           queue.current.intent.sequence !== sequence &&
@@ -146,7 +233,10 @@ export function createActionQueueView(
         endDrag();
       for (const intent of [queue.current.intent, ...queue.pending]) {
         const sequence = intent.sequence!;
-        const isCurrent: boolean = intent === queue.current.intent;
+        const isCurrent: boolean =
+          !automatic && intent === queue.current.intent;
+        const waitingFirst: boolean =
+          !!automatic && intent === queue.current.intent;
         let row = rows.get(sequence);
         if (!row) {
           row = document.createElement("li");
@@ -300,7 +390,11 @@ export function createActionQueueView(
         const label = actionIntentLabel(snapshot, intent);
         const tile = row.querySelector<HTMLElement>(".pawn-action-tile")!;
         tile.draggable = false;
-        tile.dataset.reorderable = String(enabled && !isCurrent);
+        tile.dataset.reorderable = String(
+          enabled &&
+            !isCurrent &&
+            pending().some((entry) => entry.sequence === sequence),
+        );
         tile.setAttribute(
           "aria-label",
           `${isCurrent ? "Current" : "Pending"}: ${label}`,
@@ -309,14 +403,16 @@ export function createActionQueueView(
           "aria-keyshortcuts",
           "Alt+ArrowLeft Alt+ArrowRight Alt+Home Alt+End",
         );
-        tile.title = `${label}${isCurrent ? " / Current action" : " / Drag to reorder; Alt+Left/Right to move"}`;
+        tile.title = `${label}${isCurrent ? " / Current player action" : waitingFirst ? " / Next player action" : " / Drag to reorder; Alt+Left/Right to move"}`;
         row.dataset.current = String(isCurrent);
         row.querySelector("span")!.textContent = verbs[intent.action];
         row.querySelector("small")!.textContent = isCurrent
           ? queue.current.blockedReason
             ? "Blocked"
-            : "Current"
-          : "";
+            : "Player"
+          : waitingFirst
+            ? "Next"
+            : "Player";
         const image = row.querySelector("img")!;
         const targetId = intent.destination
           ? `tile:${intent.destination.x},${intent.destination.y}:floor`
@@ -332,7 +428,11 @@ export function createActionQueueView(
         cancel.title = `Cancel ${isCurrent ? "current" : "pending"} ${label}`;
         cancel.setAttribute("aria-label", cancel.title);
         const container = isCurrent ? active : list;
-        const index = isCurrent ? 0 : queue.pending.indexOf(intent);
+        const index = isCurrent
+          ? 0
+          : waitingFirst
+            ? 0
+            : queue.pending.indexOf(intent) + (automatic ? 1 : 0);
         if (container.children[index] !== row)
           container.insertBefore(row, container.children[index] ?? null);
       }

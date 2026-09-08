@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import { manualActionWaiting } from "./person-actions";
 import { tacticallyUnavailable } from "./combat";
 import type { PersonnelRecord } from "./personnel";
 import { mealCollectionPoint, refreshMealSummary } from "./storage";
@@ -19,6 +20,7 @@ export interface RoutineStation {
   readonly position: TilePosition;
 }
 export interface RoutineActivity {
+  readonly source?: "schedule" | "need" | "autonomy";
   readonly kind: RoutineKind;
   readonly stationId: string;
   readonly progress: number;
@@ -128,6 +130,13 @@ export function routineUnavailableIds(state: GameState): readonly string[] {
     .filter(
       (person) =>
         tacticallyUnavailable(state, person.id) ||
+        (manualActionWaiting(state, person.id) &&
+          person.currentJobId === null &&
+          !state.objects.items.some(
+            (item) =>
+              item.location.kind === "carried" &&
+              item.location.personId === person.id,
+          )) ||
         state.routines.activities[person.id] ||
         (person.currentJobId === null &&
           (scheduleAt(state, person.id) !== "work" ||
@@ -214,6 +223,7 @@ export function advanceRoutines(state: GameState): GameState {
       activity = undefined;
     }
     if (!activity) {
+      if (manualActionWaiting(state, id)) continue;
       const kind: RoutineKind | null =
         person.needs.satiety < 40
           ? "meal"
@@ -275,6 +285,12 @@ export function advanceRoutines(state: GameState): GameState {
         continue;
       }
       activity = {
+        source:
+          kind === "meal" || person.needs.rest < 30 || person.stress > 55
+            ? "need"
+            : schedule === "sleep"
+              ? "schedule"
+              : "autonomy",
         kind,
         stationId: chosen.station.id,
         progress: 0,

@@ -1,6 +1,6 @@
 # Direct Person Control And Action Ownership
 
-Status: M0 contract and M1-M4 implementation, 2026-09-08. Parent: [#23](https://github.com/HanClinto/SimFoundation/issues/23).
+Status: M0 contract, M1-M4 implementation and routine/job ownership integration, 2026-09-08. Parent: [#23](https://github.com/HanClinto/SimFoundation/issues/23).
 
 ## Principles
 
@@ -19,6 +19,12 @@ Keep the 98.css modeless desktop, existing object/dossier inspection, physical e
 The hierarchy may extend to Subject > Object > Verb > Adjective (optional modifier). Only real domain choices should create modifier branches; weapons, conversation topics and capture methods are not implemented by this presentation change. Arrow Right enters a target's verbs and Arrow Left returns to its branch; the existing Up/Down/Home/End and Escape behavior remains. The compact expanding tree keeps the full path inside narrow map windows without cascading off-screen.
 
 ## Manual Ownership
+
+Schema42 integrates existing automatic producers with manual intentions. The action tray displays the actual routine/job as current, with source Schedule, Need, Autonomy or Job, even when there are no player commands. Player actions carry the Player badge. `person-actions.ts` supplies stable owner keys shared by presentation, queue handoff and cancellation, while routine/job executors retain progress, cargo and resource accounting.
+
+Add to Queue waits behind an existing automatic commitment, recording `waitingFor`; it does not silently draft a person out of a meal or assigned job. Completion or release of that owner permits the next manual entry before new automatic discovery. The same cargo-carrying job keeps its key across executor stage transitions. Do Now interrupts at existing safe boundaries; active cargo and clinical commitments can refuse it. Cancel automatic work uses a revalidated owner key, releases ordinary assignments with progress intact, and leaves consumed meals/supplies consumed. Once manual work ends, schedules and needs are reconsidered normally, rather than restoring obsolete cached intentions. Cancelling an automatic activity with no player follow-up does not permanently suppress the underlying need.
+
+While automatic work is current, all waiting player entries are pending and can be reordered, cancelled or cleared without interrupting it. This preserves the eight-player-intention cap; an adopted automatic current tile is additional. A waiting Hold is not an idle executed Hold and cannot be silently replaced by append. Random/finicky preference behavior, refusal policy and speculative future automatic plans remain future producers; the current change reuses the existing deterministic need/schedule/leisure selection rules.
 
 M1 uses the existing single tactical movement executor. `goHere(mapId, personId, destination)` validates map identity, physical presence, field phase and recovery ownership. It atomically drafts an undrafted base person, issues physical movement, and marks temporary ownership with `returnToAutonomy`. Invalid destinations cannot draft or interrupt someone as a side effect. Cargo carriers, clinical commitments, incapacitation and expedition assembly retain their existing protections.
 

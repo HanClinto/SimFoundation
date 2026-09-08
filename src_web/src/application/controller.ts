@@ -6,6 +6,7 @@ import {
 } from "../simulation/observations";
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import { goHere } from "../simulation/direct-control";
+import { cancelAutomaticAction } from "../simulation/person-actions";
 import {
   submitAction,
   queueEligibility,
@@ -112,6 +113,16 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  cancelAutomatic(
+    mapId: string,
+    actorId: string,
+    key: string,
+  ): { reason: string | null; snapshot: ControllerSnapshot };
+  previewCancelAutomatic(
+    mapId: string,
+    actorId: string,
+    key: string,
+  ): string | null;
   queueAction(
     intent: ActionIntent,
     mode?: "append" | "now",
@@ -359,6 +370,14 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    cancelAutomatic(mapId, actorId, key) {
+      const result = cancelAutomaticAction(state, mapId, actorId, key);
+      state = result.state;
+      return { reason: result.reason, snapshot: publish() };
+    },
+    previewCancelAutomatic(mapId, actorId, key) {
+      return cancelAutomaticAction(state, mapId, actorId, key).reason;
+    },
     queueAction(intent, mode) {
       const result = submitAction(state, intent, mode);
       state = result.state;

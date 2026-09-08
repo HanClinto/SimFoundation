@@ -27,6 +27,13 @@ export function expeditionMapController(
     ...controller,
     getSnapshot: () =>
       fieldSnapshot(controller.getSnapshot()) ?? controller.getSnapshot(),
+    cancelAutomatic(mapId, actorId, key) {
+      const result = controller.cancelAutomatic(mapId, actorId, key);
+      return {
+        ...result,
+        snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
+      };
+    },
     queueAction(intent, mode) {
       const result = controller.queueAction(intent, mode);
       return {
