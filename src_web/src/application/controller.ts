@@ -123,8 +123,9 @@ export interface GameController {
   editQueue(
     mapId: string,
     actorId: string,
-    operation: "cancel" | "retry" | "clear" | "remove",
+    operation: "cancel" | "retry" | "clear" | "remove" | "reorder",
     index?: number,
+    beforeSequence?: number,
   ): { reason: string | null; snapshot: ControllerSnapshot };
   interactions(
     mapId: string,
@@ -366,8 +367,15 @@ export function createController(initialState: GameState): GameController {
     previewQueuedAction(intent, mode) {
       return queueEligibility(state, intent, mode);
     },
-    editQueue(mapId, actorId, operation, index) {
-      const result = editActionQueue(state, mapId, actorId, operation, index);
+    editQueue(mapId, actorId, operation, index, beforeSequence) {
+      const result = editActionQueue(
+        state,
+        mapId,
+        actorId,
+        operation,
+        index,
+        beforeSequence,
+      );
       state = result.state;
       return { reason: result.reason, snapshot: publish() };
     },

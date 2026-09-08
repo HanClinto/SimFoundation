@@ -304,14 +304,47 @@ export function editActionQueue(
   state: GameState,
   mapId: string,
   actorId: string,
-  operation: "cancel" | "retry" | "clear" | "remove",
+  operation: "cancel" | "retry" | "clear" | "remove" | "reorder",
   index?: number,
+  beforeSequence?: number,
 ): QueueResult {
-  if (!["cancel", "retry", "clear", "remove"].includes(operation))
+  if (!["cancel", "retry", "clear", "remove", "reorder"].includes(operation))
     return { state, reason: "Unknown queue operation." };
   const queue = state.actionQueues[actorId];
   if (!queue || queue.current.intent.mapId !== mapId)
     return { state, reason: "No action queue at this location." };
+  if (
+    operation === "cancel" &&
+    index !== undefined &&
+    index !== queue.current.intent.sequence
+  )
+    return { state, reason: "This current action no longer exists." };
+  if (operation === "reorder") {
+    const moving = queue.pending.find((intent) => intent.sequence === index);
+    if (
+      !moving ||
+      (beforeSequence !== undefined &&
+        !queue.pending.some((intent) => intent.sequence === beforeSequence))
+    )
+      return { state, reason: "This pending action no longer exists." };
+    if (index === beforeSequence) return { state, reason: null };
+    const pending = queue.pending.filter((intent) => intent !== moving);
+    const insertion =
+      beforeSequence === undefined
+        ? pending.length
+        : pending.findIndex((intent) => intent.sequence === beforeSequence);
+    pending.splice(insertion, 0, moving);
+    return {
+      state: {
+        ...state,
+        actionQueues: {
+          ...state.actionQueues,
+          [actorId]: { ...queue, pending },
+        },
+      },
+      reason: null,
+    };
+  }
   if (operation === "clear")
     return {
       state: {

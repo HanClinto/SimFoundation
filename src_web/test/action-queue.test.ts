@@ -12,6 +12,72 @@ import { draftResponder } from "../src/simulation/combat";
 const load = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });
 
+it("reorders pending IDs without interrupting execution, reserving resources, or accepting stale IDs", () => {
+  const initial = createInitialState();
+  const actorId = initial.personnel[0]!.id;
+  const intent = {
+    mapId: initial.world.map.id,
+    actorId,
+    action: "move" as const,
+    destination: { x: 60, y: 59 },
+  };
+  let state = submitAction(initial, intent).state;
+  for (let offset = 0; offset < 3; offset += 1)
+    state = submitAction(state, {
+      ...intent,
+      destination: { x: 60 + offset, y: 59 },
+    }).state;
+  const queue = state.actionQueues[actorId]!;
+  const [first, second, third] = queue.pending;
+  const result = editActionQueue(
+    state,
+    intent.mapId,
+    actorId,
+    "reorder",
+    third!.sequence,
+    first!.sequence,
+  );
+  expect(result.reason).toBeNull();
+  expect(result.state.actionQueues[actorId]!.pending).toEqual([
+    third,
+    first,
+    second,
+  ]);
+  expect(result.state.actionQueues[actorId]!.current).toBe(queue.current);
+  expect(result.state.world).toBe(state.world);
+  expect(result.state.combat).toBe(state.combat);
+  expect(result.state.objects).toBe(state.objects);
+  expect(load(result.state).status).toBe("loaded");
+  expect(
+    editActionQueue(
+      state,
+      intent.mapId,
+      actorId,
+      "reorder",
+      queue.current.intent.sequence,
+    ).state,
+  ).toBe(state);
+  expect(
+    editActionQueue(
+      state,
+      intent.mapId,
+      actorId,
+      "reorder",
+      first!.sequence,
+      999,
+    ).reason,
+  ).toContain("no longer");
+  expect(
+    editActionQueue(
+      result.state,
+      intent.mapId,
+      actorId,
+      "reorder",
+      third!.sequence,
+    ).state.actionQueues[actorId]!.pending,
+  ).toEqual(queue.pending);
+});
+
 it("appends movement without replacing the current order and starts the next only after arrival", () => {
   const initial = createInitialState();
   const actorId = initial.personnel[0]!.id;

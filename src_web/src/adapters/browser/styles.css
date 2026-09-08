@@ -400,51 +400,155 @@ ul.menu.pawn-context-menu button {
   font-size: 12px;
   overflow-wrap: anywhere;
 }
-.pawn-command-path {
-  grid-column: 1 / -1;
-  min-height: 32px;
-  padding: 4px;
-  border-bottom: 1px solid #808080;
+.pawn-order-settings {
+  position: relative;
 }
-.pawn-queue-policy {
-  margin: 4px 8px;
+.pawn-order-settings summary {
+  cursor: pointer;
 }
-.pawn-queue-policy select {
-  width: 100%;
+.pawn-order-settings[open] > ul.menu {
+  display: block;
+  right: 0;
+  z-index: 10;
+}
+.pawn-order-settings button[aria-checked="true"]::before {
+  content: "\2713";
+  position: absolute;
+  left: 5px;
+}
+ul.menu.pawn-context-menu button[data-menu-target] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
+}
+ul.menu.pawn-context-menu button[data-menu-target] img {
+  width: 26px;
+  height: 28px;
+  object-fit: contain;
+  flex: 0 0 26px;
+}
+ul.menu.pawn-context-menu button[data-menu-target] span {
+  float: none;
+  margin: 0;
+  overflow-wrap: anywhere;
 }
 .pawn-action-queue {
   flex: 0 0 auto;
-  padding: 4px 8px;
+  min-width: 0;
+  padding: 4px 6px;
   border-bottom: 1px solid #808080;
-  max-height: 140px;
-  overflow-y: auto;
   font-size: 11px;
 }
 .pawn-action-queue[hidden] {
   display: none;
 }
-.pawn-action-queue summary {
-  cursor: pointer;
+.pawn-action-tray {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 2px;
+  scrollbar-gutter: stable;
 }
-.pawn-action-queue p {
-  margin: 4px 0;
-  overflow-wrap: anywhere;
-}
-.pawn-action-queue ol {
-  margin: 4px 0;
-  padding-left: 18px;
-}
-.pawn-action-queue li {
-  padding: 2px 0;
-}
-.pawn-action-queue li span {
-  overflow-wrap: anywhere;
-}
-.pawn-action-queue li button {
-  min-width: 22px;
-  min-height: 22px;
-  margin-left: 6px;
+.pawn-action-tray ol {
+  display: flex;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
   padding: 0;
+  flex: 0 0 auto;
+}
+.pawn-action-tray .pawn-current-action {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: #c0c0c0;
+  padding-right: 6px;
+  border-right: 1px solid #808080;
+}
+.pawn-action-tray .pawn-pending-actions {
+  min-width: 30px;
+  flex-grow: 1;
+  padding-right: 24px;
+}
+.pawn-action-tile {
+  position: relative;
+  width: 86px;
+  height: 108px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: 40px 42px 12px;
+  justify-items: center;
+  padding: 5px 3px;
+  background: #d8d8d8;
+  border: 1px solid #888;
+}
+.pawn-action-tile:focus {
+  outline: 1px dotted #222;
+  outline-offset: -3px;
+}
+.pawn-action-tile[data-reorderable="true"] {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.pawn-action-tile img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  pointer-events: none;
+}
+.pawn-action-tile span {
+  font-size: 10px;
+  line-height: 13px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.pawn-action-tile small {
+  font-size: 9px;
+}
+[data-current="true"] > .pawn-action-tile {
+  border: 2px solid #226b59;
+  background: #c7e0d4;
+}
+[data-dragging="true"] > .pawn-action-tile {
+  opacity: 0.5;
+}
+.pawn-action-tray li[data-drop="before"] {
+  box-shadow: -3px 0 #226b59;
+}
+.pawn-action-tray li[data-drop="after"] {
+  box-shadow: 3px 0 #226b59;
+}
+.pawn-action-tile .pawn-queued-cancel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0;
+  font-size: 10px;
+}
+.pawn-queue-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-top: 3px;
+}
+.pawn-queue-controls p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.pawn-queue-controls button {
+  min-height: 20px;
+  padding: 0 6px;
 }
 ul.menu.pawn-verb-menu {
   position: static;

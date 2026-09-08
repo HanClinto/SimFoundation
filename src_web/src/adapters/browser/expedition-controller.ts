@@ -34,8 +34,14 @@ export function expeditionMapController(
         snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
       };
     },
-    editQueue(mapId, actorId, operation, index) {
-      const result = controller.editQueue(mapId, actorId, operation, index);
+    editQueue(mapId, actorId, operation, index, beforeSequence) {
+      const result = controller.editQueue(
+        mapId,
+        actorId,
+        operation,
+        index,
+        beforeSequence,
+      );
       return {
         ...result,
         snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,

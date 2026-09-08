@@ -460,14 +460,21 @@ export function createSiteMap(
     start: TilePosition;
     center: TilePosition;
     moved: boolean;
+    dismissOnly: boolean;
   } | null = null;
   canvas.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
+    const dismissOnly = pawnControl.menuOpen;
     pawnControl.close();
     hoverPoint = null;
     updateTooltip();
     canvas.focus();
-    drag = { start: localPoint(event), center: camera.center, moved: false };
+    drag = {
+      start: localPoint(event),
+      center: camera.center,
+      moved: false,
+      dismissOnly,
+    };
     canvas.setPointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointermove", (event) => {
@@ -498,7 +505,7 @@ export function createSiteMap(
       });
   });
   canvas.addEventListener("pointerup", (event) => {
-    if (drag && !drag.moved) {
+    if (drag && !drag.moved && !drag.dismissOnly) {
       if (placement) placement.move(tileAtPoint(localPoint(event)), true);
       else {
         const point = localPoint(event);

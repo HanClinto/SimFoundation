@@ -133,8 +133,9 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
       ".pawn-context-menu button",
     ),
   ].find((button) => button.textContent === "Select Person")!;
-  expect(document.querySelector(".pawn-command-path")!.textContent).toBe(
-    `${actor.name} > ${patient.name}`,
+  expect(document.querySelector(".pawn-command-path")).toBeNull();
+  expect(document.querySelector(".pawn-menu-subject strong")!.textContent).toBe(
+    actor.name,
   );
   document
     .querySelector(".pawn-context-menu")!
@@ -168,7 +169,7 @@ it("keeps target action rows stable, selects people explicitly, and cancels the 
   expect(cancel.disabled).toBe(true);
 });
 
-it("keeps subject, object and focused verb visible and returns from verbs to target branches", () => {
+it("retains the subject header without a duplicate label and returns from verbs to target branches", () => {
   const { controller, view, window } = setup();
   const snapshot = controller.getSnapshot();
   const actor = snapshot.game.personnel[0]!;
@@ -193,9 +194,8 @@ it("keeps subject, object and focused verb visible and returns from verbs to tar
   expect(document.activeElement).toBe(
     document.querySelector('[data-interaction="move"]'),
   );
-  expect(document.querySelector(".pawn-command-path")!.textContent).toBe(
-    `${actor.name} > Floor Tile (${position.x}, ${position.y}) > Go Here`,
-  );
+  expect(document.querySelector(".pawn-command-path")).toBeNull();
+  expect(floor.getAttribute("aria-expanded")).toBe("true");
   expect(controller.getSnapshot()).toEqual(snapshot);
   document.activeElement!.dispatchEvent(
     new window.KeyboardEvent("keydown", { key: "ArrowLeft", bubbles: true }),
@@ -212,7 +212,7 @@ it("keeps subject, object and focused verb visible and returns from verbs to tar
 });
 
 it("appends through the hierarchy, shows stable pending controls, and supports explicit Do Now", () => {
-  const { controller, view, window } = setup();
+  const { controller, view } = setup();
   const state = controller.getSnapshot().game;
   const actorId = state.personnel[0]!.id;
   const origin = state.world.positions[actorId]!;
@@ -224,11 +224,9 @@ it("appends through the hierarchy, shows stable pending controls, and supports e
     document
       .querySelector<HTMLButtonElement>(`[data-menu-target="${targetId}"]`)!
       .click();
-    const policy = document.querySelector<HTMLSelectElement>(
-      '[aria-label="Action submission"]',
-    )!;
-    policy.value = mode;
-    policy.dispatchEvent(new window.Event("change", { bubbles: true }));
+    document
+      .querySelector<HTMLButtonElement>(`[data-order-mode="${mode}"]`)!
+      .click();
     document
       .querySelector<HTMLButtonElement>('[data-interaction="move"]')!
       .click();
@@ -239,15 +237,14 @@ it("appends through the hierarchy, shows stable pending controls, and supports e
   expect(
     controller.getSnapshot().game.combat.responders[actorId]!.destination,
   ).toEqual({ x: origin.x + 1, y: origin.y });
-  const panel =
-    document.querySelector<HTMLDetailsElement>(".pawn-action-queue")!;
+  const panel = document.querySelector<HTMLElement>(".pawn-action-queue")!;
   expect(panel.hidden).toBe(false);
-  expect(panel.querySelector("summary")!.textContent).toBe(
-    "Actions: 1 current, 1 pending",
-  );
-  const remove = panel.querySelector<HTMLButtonElement>("li button")!;
+  expect(panel.querySelectorAll(".pawn-action-tile")).toHaveLength(2);
+  const remove = panel.querySelector<HTMLButtonElement>(
+    ".pawn-pending-actions li button",
+  )!;
   view.render(controller.getSnapshot(), "world", false);
-  expect(panel.querySelector("li button")).toBe(remove);
+  expect(panel.querySelector(".pawn-pending-actions li button")).toBe(remove);
   order(3, "now");
   expect(
     controller.getSnapshot().game.combat.responders[actorId]!.destination,
@@ -261,4 +258,141 @@ it("appends through the hierarchy, shows stable pending controls, and supports e
   ).toHaveLength(0);
   view.render(controller.getSnapshot(), "recorded", false);
   expect(panel.hidden).toBe(true);
+});
+
+it("auto-expands only a sole target, renders icons and keeps order mode outside the popup across openings", () => {
+  const { view, controller } = setup();
+  const state = controller.getSnapshot().game;
+  view.select(state.personnel[0]!.id);
+  const openFloor = () =>
+    view.ground({ x: 60, y: 59 }, "tile:60,59:floor", { x: 80, y: 80 });
+  openFloor();
+  expect(document.querySelectorAll("[data-menu-target]")).toHaveLength(1);
+  expect(
+    document.querySelector("[data-menu-target]")!.getAttribute("aria-expanded"),
+  ).toBe("true");
+  expect(document.querySelector<HTMLElement>(".pawn-verb-menu")!.hidden).toBe(
+    false,
+  );
+  expect(document.querySelector(".pawn-context-menu select")).toBeNull();
+  expect(document.querySelector(".pawn-command-path")).toBeNull();
+  expect(
+    document.querySelector("[data-menu-target] img")!.getAttribute("src"),
+  ).toBeTruthy();
+  document.querySelector<HTMLButtonElement>('[data-order-mode="now"]')!.click();
+  view.close();
+  openFloor();
+  expect(
+    document
+      .querySelector('[data-order-mode="now"]')!
+      .getAttribute("aria-checked"),
+  ).toBe("true");
+  view.close();
+  const other = state.personnel[1]!;
+  view.ground(state.world.positions[other.id]!, other.id, { x: 80, y: 80 });
+  expect(
+    document.querySelectorAll("[data-menu-target]").length,
+  ).toBeGreaterThan(1);
+  expect(
+    document.querySelectorAll('[data-menu-target][aria-expanded="true"]'),
+  ).toHaveLength(0);
+  expect(document.querySelector(".pawn-verb-menu")).toBeNull();
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(
+    document.querySelector<HTMLButtonElement>('[data-order-mode="now"]')!
+      .disabled,
+  ).toBe(true);
+});
+
+it("reorders pending tray tiles with drag and keyboard while keeping the current action pinned", () => {
+  const { view, controller, window } = setup();
+  const state = controller.getSnapshot().game;
+  const actorId = state.personnel[0]!.id;
+  view.select(actorId);
+  for (let offset = 0; offset < 4; offset += 1)
+    controller.queueAction({
+      mapId: state.world.map.id,
+      actorId,
+      action: "move",
+      destination: { x: 60 + offset, y: 59 },
+    });
+  view.render(controller.getSnapshot(), "world", false);
+  const before = controller.getSnapshot().game;
+  const [first, second, third] = before.actionQueues[actorId]!.pending;
+  const tiles = () => [
+    ...document.querySelectorAll<HTMLElement>(
+      ".pawn-pending-actions .pawn-action-tile",
+    ),
+  ];
+  const source = tiles()[2]!;
+  const target = tiles()[0]!;
+  expect(
+    document.querySelector<HTMLElement>(
+      ".pawn-current-action .pawn-action-tile",
+    )!.draggable,
+  ).toBe(false);
+  expect(source.dataset.reorderable).toBe("true");
+  Object.assign(source, {
+    setPointerCapture: () => {},
+    hasPointerCapture: () => false,
+  });
+  vi.spyOn(target.parentElement!, "getBoundingClientRect").mockReturnValue({
+    left: 100,
+    right: 186,
+    top: 0,
+    bottom: 108,
+    width: 86,
+    height: 108,
+  } as DOMRect);
+  vi.spyOn(
+    document.querySelector(".pawn-pending-actions")!,
+    "getBoundingClientRect",
+  ).mockReturnValue({
+    left: 100,
+    right: 400,
+    top: 0,
+    bottom: 108,
+    width: 300,
+    height: 108,
+  } as DOMRect);
+  for (const [type, clientX] of [
+    ["pointerdown", 320],
+    ["pointermove", 110],
+    ["pointerup", 110],
+  ] as const)
+    source.dispatchEvent(
+      new window.MouseEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        clientX,
+        clientY: 25,
+        button: 0,
+      }),
+    );
+  expect(controller.getSnapshot().game.actionQueues[actorId]!.pending).toEqual([
+    third,
+    first,
+    second,
+  ]);
+  view.render(controller.getSnapshot(), "world", false);
+  expect(tiles()[0]).toBe(source);
+  source.dispatchEvent(
+    new window.KeyboardEvent("keydown", {
+      key: "ArrowRight",
+      altKey: true,
+      bubbles: true,
+    }),
+  );
+  expect(controller.getSnapshot().game.actionQueues[actorId]!.pending).toEqual([
+    first,
+    third,
+    second,
+  ]);
+  expect(controller.getSnapshot().game.combat).toEqual(before.combat);
+  expect(controller.getSnapshot().game.objects).toEqual(before.objects);
+  view.render(controller.getSnapshot(), "world", true);
+  expect(source.dataset.reorderable).toBe("false");
+  expect(source.querySelector<HTMLButtonElement>("button")!.disabled).toBe(
+    true,
+  );
 });

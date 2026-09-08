@@ -77,6 +77,17 @@ it("keeps actor selection through ground inspection and panning, and submits onl
   view.focus({ x: 60, y: 59 });
   pointer("pointerdown");
   pointer("pointerup");
+  expect(root.querySelector<HTMLElement>(".pawn-context-menu")!.hidden).toBe(
+    false,
+  );
+  pointer("pointerdown", 430, 220);
+  pointer("pointerup", 430, 220);
+  expect(root.querySelector<HTMLElement>(".pawn-context-menu")!.hidden).toBe(
+    true,
+  );
+  expect(controller.getSnapshot()).toEqual(initial);
+  pointer("pointerdown");
+  pointer("pointerup");
   root.querySelector<HTMLButtonElement>(".pawn-context-menu button")!.click();
   expect(controller.getSnapshot()).toEqual(initial);
   root.querySelector<HTMLButtonElement>('[data-interaction="move"]')!.click();

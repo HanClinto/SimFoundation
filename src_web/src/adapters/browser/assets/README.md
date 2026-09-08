@@ -11,6 +11,8 @@ These files follow SCPSiteManager's SCP/CC BY-SA licensing direction. They are n
 
 ## Facility Markers
 
+On 2026-09-08, `../target-thumbnail.ts` added cached 48px menu/tray thumbnails that reuse existing pawn portraits, object glyphs, adversary artwork and camera/resident icons. Its floor thumbnail is an original Canvas diamond using the existing material palette, authored by GitHub Copilot for SimFoundation under CC BY-SA 3.0. No external artwork or paid generation was used.
+
 Pawn action and outward-mood glyphs are original 9x9 pixel patterns in `../pawn-bubbles.ts`, authored for SimFoundation by GitHub Copilot on 2026-09-05. They are drawn inside action, thought, speech, and mood bubbles by the Canvas renderer. Source: the editable pixel grids and bubble geometry in that module. License: CC BY-SA 3.0, consistent with the project. They use no emoji font or third-party game artwork. The medical glyph uses a green cross.
 
 `an-001-chamber.svg` is original artwork authored by GitHub Copilot for SimFoundation on 2026-09-05, licensed CC BY-SA 3.0. Source: the editable SVG in this directory. Initial depiction of the original AN-001 specimen and bench-scale test chamber. No third-party imagery or canonical SCP entry was used for the specimen. Its gameplay and provenance are documented in `docs/anomaly-catalog.md`.
