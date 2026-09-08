@@ -923,6 +923,7 @@ fieldWindow
   .setAttribute("title", "Center on expedition site");
 fieldWindow.querySelector("[data-map-selection]")!.replaceChildren();
 fieldWindow.querySelector(".pawn-control-strip")?.remove();
+fieldWindow.querySelector(".pawn-action-queue")?.remove();
 fieldWindow.querySelector(".pawn-context-menu")?.remove();
 fieldWindow.querySelector('[role="tooltip"]')?.remove();
 app.append(fieldWindow);

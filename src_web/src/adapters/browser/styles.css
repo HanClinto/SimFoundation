@@ -406,6 +406,46 @@ ul.menu.pawn-context-menu button {
   padding: 4px;
   border-bottom: 1px solid #808080;
 }
+.pawn-queue-policy {
+  margin: 4px 8px;
+}
+.pawn-queue-policy select {
+  width: 100%;
+}
+.pawn-action-queue {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-bottom: 1px solid #808080;
+  max-height: 140px;
+  overflow-y: auto;
+  font-size: 11px;
+}
+.pawn-action-queue[hidden] {
+  display: none;
+}
+.pawn-action-queue summary {
+  cursor: pointer;
+}
+.pawn-action-queue p {
+  margin: 4px 0;
+  overflow-wrap: anywhere;
+}
+.pawn-action-queue ol {
+  margin: 4px 0;
+  padding-left: 18px;
+}
+.pawn-action-queue li {
+  padding: 2px 0;
+}
+.pawn-action-queue li span {
+  overflow-wrap: anywhere;
+}
+.pawn-action-queue li button {
+  min-width: 22px;
+  min-height: 22px;
+  margin-left: 6px;
+  padding: 0;
+}
 ul.menu.pawn-verb-menu {
   position: static;
   display: block;

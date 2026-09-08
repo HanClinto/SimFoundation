@@ -210,3 +210,55 @@ it("keeps subject, object and focused verb visible and returns from verbs to tar
     controller.getSnapshot().game.combat.responders[actor.id]!.destination,
   ).toEqual(position);
 });
+
+it("appends through the hierarchy, shows stable pending controls, and supports explicit Do Now", () => {
+  const { controller, view, window } = setup();
+  const state = controller.getSnapshot().game;
+  const actorId = state.personnel[0]!.id;
+  const origin = state.world.positions[actorId]!;
+  view.select(actorId);
+  const order = (offset: number, mode = "append") => {
+    const position = { x: origin.x + offset, y: origin.y };
+    const targetId = `tile:${position.x},${position.y}:floor`;
+    view.ground(position, targetId, { x: 100, y: 100 });
+    document
+      .querySelector<HTMLButtonElement>(`[data-menu-target="${targetId}"]`)!
+      .click();
+    const policy = document.querySelector<HTMLSelectElement>(
+      '[aria-label="Action submission"]',
+    )!;
+    policy.value = mode;
+    policy.dispatchEvent(new window.Event("change", { bubbles: true }));
+    document
+      .querySelector<HTMLButtonElement>('[data-interaction="move"]')!
+      .click();
+    view.render(controller.getSnapshot(), "world", false);
+  };
+  order(1);
+  order(2);
+  expect(
+    controller.getSnapshot().game.combat.responders[actorId]!.destination,
+  ).toEqual({ x: origin.x + 1, y: origin.y });
+  const panel =
+    document.querySelector<HTMLDetailsElement>(".pawn-action-queue")!;
+  expect(panel.hidden).toBe(false);
+  expect(panel.querySelector("summary")!.textContent).toBe(
+    "Actions: 1 current, 1 pending",
+  );
+  const remove = panel.querySelector<HTMLButtonElement>("li button")!;
+  view.render(controller.getSnapshot(), "world", false);
+  expect(panel.querySelector("li button")).toBe(remove);
+  order(3, "now");
+  expect(
+    controller.getSnapshot().game.combat.responders[actorId]!.destination,
+  ).toEqual({ x: origin.x + 3, y: origin.y });
+  expect(
+    controller.getSnapshot().game.actionQueues[actorId]!.pending,
+  ).toHaveLength(1);
+  remove.click();
+  expect(
+    controller.getSnapshot().game.actionQueues[actorId]!.pending,
+  ).toHaveLength(0);
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(panel.hidden).toBe(true);
+});

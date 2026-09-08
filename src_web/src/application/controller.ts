@@ -7,6 +7,14 @@ import {
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
 import { goHere } from "../simulation/direct-control";
 import {
+  submitAction,
+  queueEligibility,
+  editActionQueue,
+  discardActionQueue,
+  invalidateActionQueues,
+  type ActionIntent,
+} from "../simulation/action-queue";
+import {
   interactionOptions,
   performInteraction,
   type InteractionOption,
@@ -104,6 +112,20 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  queueAction(
+    intent: ActionIntent,
+    mode?: "append" | "now",
+  ): { reason: string | null; snapshot: ControllerSnapshot };
+  previewQueuedAction(
+    intent: ActionIntent,
+    mode?: "append" | "now",
+  ): string | null;
+  editQueue(
+    mapId: string,
+    actorId: string,
+    operation: "cancel" | "retry" | "clear" | "remove",
+    index?: number,
+  ): { reason: string | null; snapshot: ControllerSnapshot };
   interactions(
     mapId: string,
     actorId: string | null,
@@ -307,6 +329,7 @@ export function createController(initialState: GameState): GameController {
   }
 
   function publish(): ControllerSnapshot {
+    state = invalidateActionQueues(state);
     const snapshot = getSnapshot();
     for (const listener of listeners) listener(snapshot);
     return snapshot;
@@ -335,6 +358,19 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    queueAction(intent, mode) {
+      const result = submitAction(state, intent, mode);
+      state = result.state;
+      return { reason: result.reason, snapshot: publish() };
+    },
+    previewQueuedAction(intent, mode) {
+      return queueEligibility(state, intent, mode);
+    },
+    editQueue(mapId, actorId, operation, index) {
+      const result = editActionQueue(state, mapId, actorId, operation, index);
+      state = result.state;
+      return { reason: result.reason, snapshot: publish() };
+    },
     interactions(mapId, actorId, targetId) {
       return interactionOptions(state, mapId, actorId, targetId);
     },
@@ -343,12 +379,17 @@ export function createController(initialState: GameState): GameController {
     },
     interact(request) {
       const result = performInteraction(state, request);
-      state = result.state;
+      state = result.reason
+        ? result.state
+        : discardActionQueue(result.state, request.actorId);
       return { reason: result.reason, snapshot: publish() };
     },
     goHere(mapId, personId, destination) {
       const result = goHere(state, mapId, personId, destination);
-      state = result.state;
+      state =
+        result.code === "accepted"
+          ? discardActionQueue(result.state, personId)
+          : result.state;
       return { code: result.code, snapshot: publish() };
     },
     previewGoHere(mapId, personId, destination) {
@@ -378,14 +419,20 @@ export function createController(initialState: GameState): GameController {
       if (state.expeditions.active?.id !== expeditionId)
         return { code: "not-found", snapshot: getSnapshot() };
       const result = cancelRecovery(state, personId);
-      state = result.state;
+      state =
+        result.code === "accepted"
+          ? discardActionQueue(result.state, personId)
+          : result.state;
       return { code: result.code, snapshot: publish() };
     },
     recoverExpeditionObject(expeditionId, personId, objectId) {
       if (state.expeditions.active?.id !== expeditionId)
         return { code: "not-found", snapshot: getSnapshot() };
       const result = recoverExpeditionObject(state, personId, objectId);
-      state = result.state;
+      state =
+        result.code === "accepted"
+          ? discardActionQueue(result.state, personId)
+          : result.state;
       return { code: result.code, snapshot: publish() };
     },
     previewFieldOrder(expeditionId, id, order, destination, targetId) {
@@ -414,6 +461,7 @@ export function createController(initialState: GameState): GameController {
         return { code: "busy", snapshot: getSnapshot() };
       const result = orderResponder(field, id, order, destination, targetId);
       state = storeFieldState(state, result.state);
+      if (result.code === "accepted") state = discardActionQueue(state, id);
       return { code: result.code, snapshot: publish() };
     },
     setFieldDoorPolicy(expeditionId, position, policy) {
@@ -445,13 +493,17 @@ export function createController(initialState: GameState): GameController {
         return { code: "busy", snapshot: getSnapshot() };
       const result = draftResponder(state, id, drafted);
       state = observeCombat(observeSite(result.state));
+      if (result.code === "accepted") state = discardActionQueue(state, id);
       return { code: result.code, snapshot: publish() };
     },
     orderResponder(id, order, destination, targetId) {
       if (expeditionMember(state, id))
         return { code: "busy", snapshot: getSnapshot() };
       const result = orderResponder(state, id, order, destination, targetId);
-      state = result.state;
+      state =
+        result.code === "accepted"
+          ? discardActionQueue(result.state, id)
+          : result.state;
       return { code: result.code, snapshot: publish() };
     },
     previewTacticalOrder(id, order, destination, targetId) {

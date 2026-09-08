@@ -27,6 +27,20 @@ export function expeditionMapController(
     ...controller,
     getSnapshot: () =>
       fieldSnapshot(controller.getSnapshot()) ?? controller.getSnapshot(),
+    queueAction(intent, mode) {
+      const result = controller.queueAction(intent, mode);
+      return {
+        ...result,
+        snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
+      };
+    },
+    editQueue(mapId, actorId, operation, index) {
+      const result = controller.editQueue(mapId, actorId, operation, index);
+      return {
+        ...result,
+        snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
+      };
+    },
     interact(request) {
       const result = controller.interact(request);
       return {

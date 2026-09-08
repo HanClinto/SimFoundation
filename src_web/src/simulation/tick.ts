@@ -1,4 +1,5 @@
 import { observeSite } from "./observations";
+import { advanceActionQueues } from "./action-queue";
 import { advanceExpedition, awayPersonnel } from "./expeditions";
 import { advanceCombat, observeCombat, tacticallyUnavailable } from "./combat";
 import { closeAutomaticDoors } from "./world";
@@ -21,20 +22,24 @@ import { discoverClinicalWork } from "./clinical";
 import { advanceRoutines, routineUnavailableIds } from "./routines";
 
 export function advanceSimulation(state: GameState): GameState {
+  state = advanceActionQueues(state);
   const away = awayPersonnel(state);
-  if (!away.length) return advanceExpedition(advanceSiteSimulation(state));
+  if (!away.length)
+    return advanceActionQueues(advanceExpedition(advanceSiteSimulation(state)));
   const roster = state.personnel;
   const local = advanceSiteSimulation({
     ...state,
     personnel: roster.filter((person) => !away.includes(person.id)),
   });
-  return advanceExpedition({
-    ...local,
-    personnel: roster.map(
-      (person) =>
-        local.personnel.find((other) => other.id === person.id) ?? person,
-    ),
-  });
+  return advanceActionQueues(
+    advanceExpedition({
+      ...local,
+      personnel: roster.map(
+        (person) =>
+          local.personnel.find((other) => other.id === person.id) ?? person,
+      ),
+    }),
+  );
 }
 
 function advanceSiteSimulation(state: GameState): GameState {

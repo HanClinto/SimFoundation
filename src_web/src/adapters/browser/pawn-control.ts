@@ -7,6 +7,8 @@ import type { TilePosition } from "../../simulation/world";
 import { pawnPortrait } from "./pawn-art";
 import { mapObjects } from "./map-objects";
 import { observedSnapshot } from "./observed-view";
+import { createActionQueueView } from "./action-queue-view";
+import type { ActionIntent } from "../../simulation/action-queue";
 import {
   currentPersonAction,
   type PersonInteraction,
@@ -49,6 +51,7 @@ export function createPawnControl(
   cancel.setAttribute("aria-label", "Cancel Current Action");
   strip.append(portraits, detail, cancel);
   canvas.parentElement!.after(strip);
+  const queueView = createActionQueueView(strip, controller, changed);
   const menu = document.createElement("ul");
   menu.className = "menu pawn-context-menu";
   menu.hidden = true;
@@ -65,6 +68,21 @@ export function createPawnControl(
   commandPath.className = "pawn-command-path";
   commandPath.setAttribute("role", "status");
   subject.append(commandPath);
+  const policyRow = document.createElement("li");
+  policyRow.className = "pawn-queue-policy";
+  policyRow.setAttribute("role", "none");
+  const policy = document.createElement("select");
+  policy.setAttribute("aria-label", "Action submission");
+  for (const [value, label] of [
+    ["append", "Add to Queue"],
+    ["now", "Do Now"],
+  ]) {
+    const option = document.createElement("option");
+    option.value = value!;
+    option.textContent = label!;
+    policy.append(option);
+  }
+  policyRow.append(policy);
   const verbs = document.createElement("ul");
   verbs.className = "menu pawn-verb-menu";
   verbs.setAttribute("role", "menu");
@@ -102,7 +120,7 @@ export function createPawnControl(
   explanation.setAttribute("role", "none");
   explanation.append(reason);
   verbs.append(moveRow, explanation);
-  menu.append(subject, divider, chooseRow, recordRow);
+  menu.append(subject, policyRow, divider, chooseRow, recordRow);
   const targets = new Map<string, HTMLButtonElement>();
   let targetLabel = "";
   let anchor = { x: 0, y: 0 };
@@ -157,6 +175,22 @@ export function createPawnControl(
     actorId: string | null;
   } | null = null;
   const buttons = new Map<string, HTMLButtonElement>();
+  function intentFor(action: ActionIntent["action"]): ActionIntent {
+    return {
+      mapId: target!.mapId,
+      actorId: target!.actorId!,
+      action,
+      ...(action === "move"
+        ? { destination: target!.position }
+        : action === "hold"
+          ? {}
+          : { targetId: target!.id }),
+    };
+  }
+  function submissionMode() {
+    return policy.value === "now" ? ("now" as const) : ("append" as const);
+  }
+  policy.addEventListener("change", () => updateMenu());
   function close() {
     menu.hidden = true;
     target = null;
@@ -181,6 +215,10 @@ export function createPawnControl(
   }
   function updateMenu() {
     if (!target) return;
+    policy.disabled = perspective !== "world" || !target.actorId;
+    const queued = target.actorId
+      ? current.game.actionQueues[target.actorId]
+      : null;
     moveRow.hidden = !target.id.startsWith("tile:");
     chooseRow.hidden = !current.game.personnel.some(
       (person) => person.id === target!.id,
@@ -193,13 +231,18 @@ export function createPawnControl(
         ? "Recorded view is inspection-only."
         : !target.actorId
           ? "Select a person first."
-          : reasons[
-              controller.previewGoHere(
-                target.mapId,
-                target.actorId,
-                target.position,
-              )
-            ];
+          : queued
+            ? (controller.previewQueuedAction(
+                intentFor("move"),
+                submissionMode(),
+              ) ?? "")
+            : reasons[
+                controller.previewGoHere(
+                  target.mapId,
+                  target.actorId,
+                  target.position,
+                )
+              ];
     move.disabled = !!issue;
     move.title =
       issue ||
@@ -221,12 +264,11 @@ export function createPawnControl(
         button.addEventListener("click", () => {
           if (!target?.actorId || perspective !== "world" || button!.disabled)
             return;
-          const result = controller.interact({
-            mapId: target.mapId,
-            actorId: target.actorId,
-            targetId: target.id,
-            action: option.action,
-          });
+          if (option.action === "cancel") return;
+          const result = controller.queueAction(
+            intentFor(option.action),
+            submissionMode(),
+          );
           close();
           changed(result.snapshot);
           if (result.reason) action.textContent = result.reason;
@@ -238,7 +280,12 @@ export function createPawnControl(
       const unavailable =
         perspective !== "world"
           ? "Recorded view is inspection-only."
-          : option.reason;
+          : queued && option.action !== "cancel"
+            ? controller.previewQueuedAction(
+                intentFor(option.action),
+                submissionMode(),
+              )
+            : option.reason;
       button.disabled = !!unavailable;
       button.title = unavailable ?? option.label;
       if (unavailable) issues.push(`${option.label}: ${unavailable}`);
@@ -256,11 +303,9 @@ export function createPawnControl(
   }
   cancel.addEventListener("click", () => {
     if (!activeId || cancel.disabled || perspective !== "world") return;
-    const result = controller.interact({
-      mapId,
-      actorId: activeId,
-      action: "cancel",
-    });
+    const result = current.game.actionQueues[activeId]
+      ? controller.editQueue(mapId, activeId, "cancel")
+      : controller.interact({ mapId, actorId: activeId, action: "cancel" });
     close();
     changed(result.snapshot);
     if (result.reason) action.textContent = result.reason;
@@ -276,14 +321,10 @@ export function createPawnControl(
   }
   move.addEventListener("click", () => {
     if (!target?.actorId || perspective !== "world" || move.disabled) return;
-    const result = controller.goHere(
-      target.mapId,
-      target.actorId,
-      target.position,
-    );
+    const result = controller.queueAction(intentFor("move"), submissionMode());
     close();
     changed(result.snapshot);
-    if (result.code !== "accepted") action.textContent = reasons[result.code];
+    if (result.reason) action.textContent = result.reason;
     canvas.focus();
   });
   record.addEventListener("click", () => {
@@ -292,6 +333,7 @@ export function createPawnControl(
     if (id) inspect(id, perspective);
   });
   menu.addEventListener("keydown", (event) => {
+    if (event.target === policy && event.key !== "Escape") return;
     if (
       event.key === "ArrowRight" &&
       (event.target as HTMLElement).dataset.menuTarget
@@ -394,27 +436,34 @@ export function createPawnControl(
       button.setAttribute("aria-pressed", String(activeId === person.id));
     }
     const person = people.find((person) => person.id === activeId);
+    const queue = activeId ? snapshot.game.actionQueues[activeId] : null;
     name.textContent = person ? person.name : "No active person";
     action.textContent = !person
       ? ""
       : perspective === "recorded"
         ? "Recorded / inspection only"
-        : currentPersonAction(snapshot.game, person.id);
+        : (queue?.current.blockedReason ??
+          (queue && !queue.current.started
+            ? "Waiting for action recovery"
+            : currentPersonAction(snapshot.game, person.id)));
     const cancellationIssue = placement
       ? "Finish or cancel placement first."
       : perspective !== "world"
         ? "Recorded view is inspection-only."
         : !activeId
           ? "Select a person first."
-          : controller.previewInteraction({
-              mapId,
-              actorId: activeId,
-              action: "cancel",
-            });
+          : queue
+            ? null
+            : controller.previewInteraction({
+                mapId,
+                actorId: activeId,
+                action: "cancel",
+              });
     cancel.disabled = !!cancellationIssue;
     cancel.title = cancellationIssue ?? "Cancel Current Action";
     action.title = action.textContent ?? "";
     strip.dataset.activePawn = activeId ?? "";
+    queueView.render(snapshot, activeId, perspective === "world", placement);
     updateMenu();
   }
   return {
@@ -436,6 +485,7 @@ export function createPawnControl(
     ) {
       if (busyPlacement) return;
       close();
+      policy.value = "append";
       target = { position, id, mapId, actorId: activeId };
       const displayed =
         perspective === "recorded" ? observedSnapshot(current) : current;

@@ -114,6 +114,12 @@ Browser code reads immutable snapshots and domain events. It never mutates entit
 
 ## State Model
 
+### Personal Action Queues (Schema 41)
+
+`action-queue.ts` owns root-level per-person queues across base and field maps. Each stores one current intention, up to seven pending intentions, stable sequence IDs and whether manual ownership should eventually return to autonomy. Intentions name map, actor, verb and target or destination; progress, cargo, preparation and costs remain with the existing tactical/recovery owners. Root tick processing starts eligible work, observes completion/recovery and advances the next entry. Failed starts wait for explicit Retry/Cancel; blocked running actions retain their executor and reason. Pending intentions acquire no reservations. Queue state and current executor references are validated on load.
+
+The controller exposes queue submission and edit commands separately from legacy immediate tactical commands. Accepted immediate commands discard that person's competing queue; expedition phase/location changes invalidate location-bound intentions. Browser queue rows are keyed by persistent sequence ID so stale cancellation cannot remove a different pending action. The menu's Subject > Object > Verb path is presentation-only; neither the active browser pawn nor optional future modifier branches create separate authoritative actors or execution progress.
+
 ### Expeditions (Schema 38)
 
 `expeditions.ts` owns notices, an active manifest, supply reserves, lifecycle deadlines, recovery orders and bounded return history. The active field site holds its own world, objects, observations, combat and environment; global personnel are referenced by ID. Away staff have no base position or base responder state. A base-only roster is used for local simulation, then the global roster is reconciled and field systems advance on the same clock. This excludes away staff from home jobs and observation without deleting their schedules, clinical history, equipment or identity.

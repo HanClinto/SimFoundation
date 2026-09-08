@@ -22,7 +22,9 @@ import { installStartingPower } from "./power-setup";
 import { createCombatState, type CombatState } from "./combat";
 import { createExpeditions, type ExpeditionState } from "./expeditions";
 
-export const GAME_STATE_VERSION = 40;
+import type { ActionQueues } from "./action-queue";
+
+export const GAME_STATE_VERSION = 41;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -32,6 +34,7 @@ export interface IncidentState {
 }
 
 export interface GameState {
+  readonly actionQueues: ActionQueues;
   readonly expeditions: ExpeditionState;
   readonly combat: CombatState;
   readonly version: typeof GAME_STATE_VERSION;
@@ -73,6 +76,7 @@ export function createInitialState(seed = 9620): GameState {
     map: { ...world.map, objectBlocks: objectBlocks(objects, world.map.width) },
   };
   return observeSite({
+    actionQueues: {},
     expeditions: createExpeditions(),
     combat: createCombatState(),
     version: GAME_STATE_VERSION,

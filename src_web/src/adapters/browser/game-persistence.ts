@@ -1,5 +1,6 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
 import { combatStateValid } from "./combat-persistence";
+import { actionQueuesValid } from "./queue-persistence";
 import {
   awayPersonnel,
   fieldState,
@@ -2169,6 +2170,7 @@ function isGameState(value: unknown): value is GameState {
   ];
   return (
     combatStateValid(state) &&
+    actionQueuesValid(state) &&
     new Set(state.clinicalCare.clinicianIds).size ===
       state.clinicalCare.clinicianIds.length &&
     state.clinicalCare.clinicianIds.every((id) =>
