@@ -27,6 +27,13 @@ export function expeditionMapController(
     ...controller,
     getSnapshot: () =>
       fieldSnapshot(controller.getSnapshot()) ?? controller.getSnapshot(),
+    goHere(mapId, personId, destination) {
+      const result = controller.goHere(mapId, personId, destination);
+      return {
+        ...result,
+        snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
+      };
+    },
     setDoorPolicy(position, policy) {
       const current = controller.getSnapshot();
       const active = current.game.expeditions.active;

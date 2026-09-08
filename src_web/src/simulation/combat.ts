@@ -15,6 +15,7 @@ export type TacticalOrder =
   | "engage"
   | "stabilize";
 export interface ResponderState {
+  readonly returnToAutonomy?: boolean;
   readonly drafted: boolean;
   readonly order: TacticalOrder;
   readonly destination: TilePosition | null;
@@ -155,6 +156,7 @@ export function draftResponder(
           [id]: {
             ...responder,
             drafted,
+            returnToAutonomy: false,
             order: "hold",
             destination: null,
             targetId: null,
@@ -240,6 +242,7 @@ export function orderResponder(
           [id]: {
             ...responder,
             order,
+            returnToAutonomy: false,
             destination: moving ? { ...destination! } : null,
             targetId:
               order === "engage" || order === "stabilize" ? targetId! : null,
@@ -403,6 +406,14 @@ export function engagementIssue(state: GameState, id: string): string | null {
 }
 
 export function advanceCombat(state: GameState): GameState {
+  for (const [id, responder] of Object.entries(state.combat.responders)) {
+    if (
+      responder.returnToAutonomy &&
+      responder.order === "hold" &&
+      responder.phase === "ready"
+    )
+      state = draftResponder(state, id, false).state;
+  }
   state = advanceTacticalMovement(state);
   let responders = { ...state.combat.responders };
   let adversary = state.combat.adversary;

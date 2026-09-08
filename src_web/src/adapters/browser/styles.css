@@ -301,6 +301,79 @@ textarea {
   flex-direction: column;
 }
 
+.pawn-control-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 60px;
+  min-height: 60px;
+  min-width: 0;
+  border-bottom: 1px solid #808080;
+}
+.pawn-control-portraits {
+  display: flex;
+  gap: 3px;
+  max-width: 60%;
+  overflow-x: auto;
+  flex-shrink: 0;
+}
+.pawn-control-portraits button {
+  min-width: 36px;
+  width: 36px;
+  height: 46px;
+  padding: 2px;
+}
+.pawn-control-portraits button[aria-pressed="true"] {
+  outline: 2px solid #226b59;
+  outline-offset: -3px;
+  background: #c7e0d4;
+}
+.pawn-control-portraits img {
+  width: 28px;
+  height: 38px;
+  object-fit: contain;
+  pointer-events: none;
+}
+.pawn-control-portraits button:disabled img {
+  opacity: 0.4;
+}
+.pawn-control-detail {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+.pawn-control-detail strong,
+.pawn-control-detail span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+.pawn-context-menu {
+  position: absolute;
+  z-index: 5;
+  box-sizing: border-box;
+  width: 210px;
+  padding: 4px;
+  background: #c0c0c0;
+  border: 2px outset #eee;
+  box-shadow: 2px 2px #323d38;
+}
+.pawn-context-menu[hidden] {
+  display: none;
+}
+.pawn-context-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0 0 3px;
+}
+.pawn-context-menu p {
+  margin: 4px;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
 #expeditions-window h3 {
   font-size: 14px;
   margin: 8px 0 4px;
@@ -311,7 +384,7 @@ textarea {
   flex: 1 1 auto;
 }
 
-.camera-body canvas {
+.camera-window .camera-body canvas {
   height: 100%;
   aspect-ratio: auto;
   cursor: grab;

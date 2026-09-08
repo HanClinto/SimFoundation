@@ -5,6 +5,7 @@ import {
   type CameraPlacementCode,
 } from "../simulation/observations";
 import { isElectrical, setUtilityEnabled } from "../simulation/power";
+import { goHere } from "../simulation/direct-control";
 import {
   enlistExpedition,
   cancelExpedition,
@@ -97,6 +98,16 @@ export interface ControllerSnapshot {
 export type ControllerListener = (snapshot: ControllerSnapshot) => void;
 
 export interface GameController {
+  goHere(
+    mapId: string,
+    personId: string,
+    destination: TilePosition,
+  ): { code: TacticalCode; snapshot: ControllerSnapshot };
+  previewGoHere(
+    mapId: string,
+    personId: string,
+    destination: TilePosition,
+  ): TacticalCode;
   enlistExpedition(
     noticeId: string,
     team: readonly string[],
@@ -308,6 +319,14 @@ export function createController(initialState: GameState): GameController {
 
   return {
     getSnapshot,
+    goHere(mapId, personId, destination) {
+      const result = goHere(state, mapId, personId, destination);
+      state = result.state;
+      return { code: result.code, snapshot: publish() };
+    },
+    previewGoHere(mapId, personId, destination) {
+      return goHere(state, mapId, personId, destination).code;
+    },
     enlistExpedition(noticeId, team, loadouts) {
       const result = enlistExpedition(state, noticeId, team, loadouts);
       state = result.state;

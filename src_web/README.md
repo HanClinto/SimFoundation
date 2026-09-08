@@ -21,13 +21,15 @@ Run the complete local validation pipeline with `npm run check`. This formats-ch
 
 ### Current Physical-Site Checkpoint
 
+**Direct person control (issue #23, M1):** select a person using the map's portrait strip, click ground, and choose **Go Here**. No movement confirmation or separate orders window is needed. Clicking another target or opening an inspector does not change the active person. Undrafted base staff resume autonomy after arrival; already-drafted staff hold position. Protected cargo, appointments and expedition commitments still prevent conflicting movement. This is one replaceable movement action, not a pending-action queue. Construction previews and double-click inspection are unchanged. On the focused map, Enter opens a selected tile's interactions; Shift+F10 opens them at map center. **Save schema 39 requires a fresh development site.**
+
 The Camera Feed displays a 128x128 map, a compact starting facility, six personnel, and the functioning SCP-999 resident simulation. Pan with a pointer drag or arrow keys, zoom with the wheel or toolbar, and select objects or tiles to inspect them. Work requires workers to reach physical sites; blocked access prevents progress. Travel and work continue deterministically after save/load.
 
 Pawns show small activity/intent bubbles and outward-mood badges at normal map zoom. Hover a bubble for its meaning, click to select the pawn, or double-click for their record. Sleeping, meals, breaks, work, hauling, travel, social contact, and blocked routines have distinct icons. **Layers > Activity** toggles the bubbles; they also hide with Objects or at distant zoom. Recorded view shows no current bubbles for unseen pawns and does not reveal hidden needs or diagnoses.
 
 Single-click map selection now opens a compact inline strip with the selected name and state. Staff show Rest and Satiety meters in World view only. **Move** starts the existing worker-driven placement preview for an object without requiring its inspector first; **Move stack** selects the whole stack, while the detailed inspector retains quantity and orientation controls. Doors expose their policy in World view, with occupied-doorway checks still enforced. **Inspect** opens the full record. The strip stays fixed-height so selection does not shift the map, and Recorded mode keeps movement and door edits read-only.
 
-**Follow** keeps the selected pawn or object centered, including objects being carried. World view follows the physical position; Recorded view follows only its last observed position. Zoom preserves following, while panning, Home, locating another destination, placement, or switching perspectives releases the camera. The checkbox turns off when the selected item no longer has a map position, such as a case departing in transit.
+**Follow** pins the pawn or object selected when it is enabled, including objects being carried. Later target inspection or active-person selection does not retarget Follow. World view follows the physical position; Recorded view follows only its last observed position. Zoom preserves following, while panning, Home, locating another destination, placement, or switching perspectives releases the camera. The checkbox turns off when the followed item no longer has a map position, such as a case departing in transit.
 
 Fresh sites demonstrate the material palette through installed room finishes: concrete laboratory/corridors/outer walls, ceramic medical surfaces and common-room flooring, steel storage walls and utility surfaces, and composite quarters/security finishes and containment walls. Doors remain steel. These are real material records, not a display overlay; both Floors and Structures views show the mix. Existing saves retain their previous finishes.
 
@@ -63,7 +65,7 @@ The map interleaves objects and pawns by depth, brings a same-tile selected obje
 
 ### Tactical Response Checkpoint
 
-The first opt-in 049-2 encounter is implemented. **Tactical Response** and selected staff's **Orders** button expose drafting, positional orders, engagement, and stabilization. Tactical range and action phases are visible on the map. Staff continue using real routes and doors; injuries, ammunition, recovery, and the encounter survive save/load. **Schema 38 requires a fresh development site.** See the [tactical response guide](docs/tactical-response.md) for the two/three-responder workflow, withdrawal route, source attribution, and explicit sandbox limits.
+The first opt-in 049-2 encounter is implemented. **Tactical Response** and selected staff's **Orders** button expose drafting, positional orders, engagement, and stabilization. Tactical range and action phases are visible on the map. Staff continue using real routes and doors; injuries, ammunition, recovery, and the encounter survive save/load. **Schema 39 requires a fresh development site.** See the [tactical response guide](docs/tactical-response.md) for the two/three-responder workflow, withdrawal route, source attribution, and explicit sandbox limits.
 
 ### A living facility
 
@@ -115,7 +117,7 @@ Beds have a two-tile footprint; one tile is the interaction position and the rem
 
 Building materials and packaged meals are real counted stacks with ground/carrier locations and exclusive work reservations. Surface replacement and annex construction reserve, pick up, deliver, and consume those objects. Pantry replenishment transports meal stacks; individual pawns collect a portion and carry it to a seat before eating. Moving stock changes subsequent collection destinations. The displayed material and meal counters are validated summaries, not additional copies of the inventory.
 
-World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **38**, requiring a fresh development session. Vessel fabrication is available; general crafting, procurement, arbitrary nested containers, weight limits, and a universal equipment system remain deferred. Cameras retain their existing specialized device/kit workflow but now require a physical power connection.
+World view shows current objects and carried cargo; Recorded view retains observed object records. Objects remain serializable during transport. Save schema is now **39**, requiring a fresh development session. Vessel fabrication is available; general crafting, procurement, arbitrary nested containers, weight limits, and a universal equipment system remain deferred. Cameras retain their existing specialized device/kit workflow but now require a physical power connection.
 
 ### Portable Containment
 

@@ -10,6 +10,7 @@ import { layoutPawnBubbles, bubbleAt, type PawnBubble } from "./pawn-bubbles";
 import { pawnCues } from "./pawn-cues";
 import { createPawnVisuals, type PawnVisual } from "./pawn-visuals";
 import { createMapSelection } from "./map-selection";
+import { createPawnControl } from "./pawn-control";
 import {
   renderSite,
   projectPosition,
@@ -66,6 +67,7 @@ export function createSiteMap(
     "[data-camera-follow]",
   );
   let following = false;
+  let followId: string | null = null;
   const status = element.querySelector<HTMLElement>("[data-camera-status]")!;
   const zoomLabel =
     element.querySelector<HTMLOutputElement>("[data-camera-zoom]")!;
@@ -88,6 +90,12 @@ export function createSiteMap(
     ? createMapSelection(selectionHost, controller, openRecord, moveObject)
     : null;
   let objectSignature = "";
+  const pawnControl = createPawnControl(
+    canvas,
+    controller,
+    (snapshot) => render(snapshot),
+    openRecord,
+  );
   let bubbles: readonly PawnBubble[] = [];
   let hoverPoint: TilePosition | null = null;
   const tooltip = document.createElement("div");
@@ -130,9 +138,9 @@ export function createSiteMap(
       current.running,
       reducedMotion?.matches ?? false,
     );
-    if (following && camera.selectedId) {
+    if (following && followId) {
       const selected = mapObjects(displayed().game, camera.perspective).find(
-        (object) => object.id === camera.selectedId,
+        (object) => object.id === followId,
       );
       if (selected)
         camera = {
@@ -143,7 +151,7 @@ export function createSiteMap(
     renderSite(
       canvas,
       current,
-      camera,
+      { ...camera, activePawnId: pawnControl.activeId },
       reducedMotion?.matches ? 0 : visualTime,
       pawnVisuals,
     );
@@ -185,6 +193,7 @@ export function createSiteMap(
       };
     }
     current = snapshot;
+    pawnControl.render(snapshot, camera.perspective ?? "world", !!placement);
     selectionPanel?.render(
       snapshot,
       placement ? null : camera.selectedId,
@@ -219,12 +228,13 @@ export function createSiteMap(
     }
     entitySelect.value = camera.selectedId ?? "";
     const selected = objects.find((object) => object.id === camera.selectedId);
-    if (!selected || placement) following = false;
-    if (following && selected)
-      camera = { ...camera, center: selected.position };
+    const followed = objects.find((object) => object.id === followId);
+    if (!followed || placement) following = false;
+    if (following && followed)
+      camera = { ...camera, center: followed.position };
     if (followControl) {
       followControl.checked = following;
-      followControl.disabled = !selected || !!placement;
+      followControl.disabled = (!selected && !following) || !!placement;
     }
     const selectedCues = selected
       ? pawnCues(displayed().game, selected.id, camera.perspective ?? "world")
@@ -298,7 +308,10 @@ export function createSiteMap(
   }
   element.addEventListener("change", (event) => {
     const target = event.target as HTMLInputElement;
-    if (target === followControl) following = target.checked;
+    if (target === followControl) {
+      following = target.checked;
+      followId = following ? camera.selectedId : null;
+    }
     if (target.dataset.mapBase)
       camera = {
         ...camera,
@@ -445,6 +458,7 @@ export function createSiteMap(
   } | null = null;
   canvas.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
+    pawnControl.close();
     hoverPoint = null;
     updateTooltip();
     canvas.focus();
@@ -481,7 +495,19 @@ export function createSiteMap(
   canvas.addEventListener("pointerup", (event) => {
     if (drag && !drag.moved) {
       if (placement) placement.move(tileAtPoint(localPoint(event)), true);
-      else camera = { ...camera, selectedId: selectionAt(localPoint(event)) };
+      else {
+        const point = localPoint(event);
+        const id = selectionAt(point);
+        camera = { ...camera, selectedId: id };
+        if (
+          id &&
+          current.game.personnel.some((person) => person.id === id) &&
+          !pawnControl.activeId
+        )
+          pawnControl.select(id);
+        else if (id?.startsWith("tile:"))
+          pawnControl.ground(tileAtPoint(point), id, point);
+      }
       render(current);
     }
     drag = null;
@@ -489,6 +515,7 @@ export function createSiteMap(
       canvas.releasePointerCapture(event.pointerId);
   });
   canvas.addEventListener("pointercancel", () => {
+    pawnControl.close();
     drag = null;
     hoverPoint = null;
     updateTooltip();
@@ -499,6 +526,7 @@ export function createSiteMap(
   });
   canvas.addEventListener("dblclick", (event) => {
     if (placement) return;
+    pawnControl.close();
     camera = { ...camera, selectedId: selectionAt(localPoint(event)) };
     render(current);
     if (camera.selectedId)
@@ -508,11 +536,33 @@ export function createSiteMap(
     "wheel",
     (event) => {
       event.preventDefault();
+      pawnControl.close();
       zoom(event.deltaY < 0 ? 1.1 : 1 / 1.1, localPoint(event));
     },
     { passive: false },
   );
   canvas.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && pawnControl.menuOpen) {
+      event.preventDefault();
+      pawnControl.close();
+      return;
+    }
+    if (
+      (event.key === "ContextMenu" ||
+        (event.key === "F10" && event.shiftKey)) &&
+      !placement
+    ) {
+      event.preventDefault();
+      const point = { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2 };
+      const position = tileAtPoint(point);
+      pawnControl.ground(
+        position,
+        `tile:${position.x},${position.y}:${camera.surfaceLayer ?? "structure"}`,
+        point,
+        true,
+      );
+      return;
+    }
     const deltas: Record<string, TilePosition> = {
       ArrowLeft: { x: -1, y: 1 },
       ArrowRight: { x: 1, y: -1 },
@@ -522,6 +572,7 @@ export function createSiteMap(
     const delta = deltas[event.key];
     if (delta) {
       event.preventDefault();
+      pawnControl.close();
       if (placement) {
         placement.move(
           { x: placement.origin.x + delta.x, y: placement.origin.y + delta.y },
@@ -538,7 +589,25 @@ export function createSiteMap(
     if (event.key === "Enter") {
       event.preventDefault();
       if (placement) confirmPlacement();
-      else if (camera.selectedId)
+      else if (camera.selectedId?.startsWith("tile:")) {
+        const [column, row] = camera.selectedId
+          .slice(5)
+          .split(":")[0]!
+          .split(",")
+          .map(Number);
+        const position = { x: column!, y: row! };
+        pawnControl.ground(
+          position,
+          camera.selectedId,
+          projectPosition(
+            position,
+            camera,
+            canvas.clientWidth,
+            canvas.clientHeight,
+          ),
+          true,
+        );
+      } else if (camera.selectedId)
         openRecord(camera.selectedId, camera.perspective ?? "world");
     }
     if (event.key === "+" || event.key === "=") {
@@ -583,6 +652,7 @@ export function createSiteMap(
     },
     focus,
     beginPlacement(request: PlacementRequest) {
+      pawnControl.close();
       placement = createPlacementSession(request);
       focus(request.origin);
     },

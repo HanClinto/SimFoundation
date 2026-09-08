@@ -1,5 +1,5 @@
 import { JSDOM } from "jsdom";
-import { afterEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createSiteMap } from "../src/adapters/browser/site-map-view";
 import { createController } from "../src/application/controller";
 import { createInitialState } from "../src/simulation/state";
@@ -12,6 +12,11 @@ vi.mock("../src/adapters/browser/renderer", async (importOriginal) => ({
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.clearAllMocks();
+});
+beforeEach(() => {
+  const window = new JSDOM().window;
+  vi.stubGlobal("DOMParser", window.DOMParser);
+  vi.stubGlobal("XMLSerializer", window.XMLSerializer);
 });
 
 it("animates physical activity without emissions or ticking and respects pause, hidden windows, and reduced motion", () => {
@@ -297,6 +302,11 @@ it("follows only the selected perspective's position and releases the camera for
   };
   view.render(moved);
   expect(camera().center).toEqual({ x: 60, y: 58 });
+  select.value = "person-lena-ortiz";
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  expect(camera().center).toEqual({ x: 60, y: 58 });
+  select.value = personId;
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
   canvas.dispatchEvent(new window.KeyboardEvent("keydown", { key: "+" }));
   expect(follow.checked).toBe(true);
   expect(camera().center).toEqual({ x: 60, y: 58 });

@@ -52,6 +52,7 @@ export interface MapCamera {
   readonly center: TilePosition;
   readonly zoom: number;
   readonly selectedId: string | null;
+  readonly activePawnId?: string | null;
   readonly perspective?: MapPerspective;
   readonly base?: MapBase;
   readonly overlays?: Readonly<Record<MapOverlay, boolean>>;
@@ -688,6 +689,15 @@ export function renderSite(
         0,
         Math.PI * 2,
       );
+      context.stroke();
+    }
+    if (id === camera.activePawnId) {
+      context.strokeStyle = "#7de0c3";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.moveTo(point.x - 8 * camera.zoom, point.y + 6 * camera.zoom);
+      context.lineTo(point.x, point.y + 11 * camera.zoom);
+      context.lineTo(point.x + 8 * camera.zoom, point.y + 6 * camera.zoom);
       context.stroke();
     }
     const visual = pawnVisuals[id];
