@@ -589,8 +589,15 @@ export function createPawnControl(
           inspect(candidateId, perspective);
         }
       }
-      if (choosingSubject && candidates.length === 1) {
-        chooseSubject(candidates[0]!.id);
+      const entities = candidates.filter(
+        (candidate) => !candidate.id.startsWith("tile:"),
+      );
+      const directCandidates =
+        choosingSubject && !keyboard && entities.length > 0
+          ? entities
+          : candidates;
+      if (choosingSubject && directCandidates.length === 1) {
+        chooseSubject(directCandidates[0]!.id);
         return;
       }
       menu.setAttribute(

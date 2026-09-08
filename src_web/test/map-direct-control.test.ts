@@ -179,13 +179,9 @@ it("keeps actor selection through ground inspection and panning, and submits onl
   pointer("pointerdown");
   pointer("pointerup");
   expect(root.querySelector<HTMLElement>(".pawn-context-menu")!.hidden).toBe(
-    false,
+    true,
   );
-  expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
-    activePawnId: null,
-  });
   expect(inspect).not.toHaveBeenCalled();
-  root.querySelector<HTMLButtonElement>(`[data-menu-target="${id}"]`)!.click();
   expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
     selectedId: id,
     activePawnId: id,

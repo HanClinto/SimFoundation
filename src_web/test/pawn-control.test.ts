@@ -29,6 +29,78 @@ function setup(initial = createInitialState()) {
   view.render(controller.getSnapshot(), "world", false);
   return { window, controller, changed, inspect, view };
 }
+it("keeps routine intentions through inspection, subject switches and Recorded view, then cancels only the chosen pending action", () => {
+  const { controller, view, inspect } = setup();
+  const initial = controller.getSnapshot().game;
+  const actor = initial.personnel[0]!;
+  const other = initial.personnel[1]!;
+  view.select(actor.id);
+  for (const [action, targetId] of [
+    ["eat", "object:meal-seat-1"],
+    ["sleep", "object:bed-1"],
+    ["relax", "object:break-seat-1"],
+  ]) {
+    view.ground({ x: 0, y: 0 }, targetId!, { x: 80, y: 80 });
+    document
+      .querySelector<HTMLButtonElement>(`[data-menu-target="${targetId}"]`)!
+      .click();
+    document
+      .querySelector<HTMLButtonElement>(`[data-interaction="${action}"]`)!
+      .click();
+    view.render(controller.getSnapshot(), "world", false);
+  }
+  const queued = controller.getSnapshot();
+  expect(
+    queued.game.actionQueues[actor.id]!.pending.map((entry) => entry.action),
+  ).toEqual(["sleep", "relax"]);
+  view.ground({ x: 0, y: 0 }, "object:spare-bed", { x: 80, y: 80 });
+  const target = document.querySelector<HTMLButtonElement>(
+    '[data-menu-target="object:spare-bed"]',
+  )!;
+  target.click();
+  target.click();
+  expect(inspect).toHaveBeenCalledWith("object:spare-bed", "world");
+  view.select(other.id);
+  view.select(actor.id);
+  view.render(controller.getSnapshot(), "recorded", false);
+  expect(
+    document.querySelector<HTMLElement>(".pawn-action-queue")!.hidden,
+  ).toBe(true);
+  expect(controller.getSnapshot()).toEqual(queued);
+  view.render(controller.getSnapshot(), "world", false);
+  const cancelSleep = [
+    ...document.querySelectorAll<HTMLButtonElement>(
+      ".pawn-pending-actions button",
+    ),
+  ].find((button) => button.title.includes("Sleep"))!;
+  cancelSleep.click();
+  const remaining = controller.getSnapshot().game;
+  expect(remaining.actionQueues[actor.id]!.current).toEqual(
+    queued.game.actionQueues[actor.id]!.current,
+  );
+  expect(
+    remaining.actionQueues[actor.id]!.pending.map((entry) => entry.action),
+  ).toEqual(["relax"]);
+  expect(remaining.objects).toEqual(queued.game.objects);
+  expect(view.activeId).toBe(actor.id);
+  controller.setRunning(true);
+  for (
+    let step = 0;
+    step < 200 &&
+    controller.getSnapshot().game.actionQueues[actor.id]?.current.intent
+      .action === "eat";
+    step += 1
+  )
+    controller.advance(1);
+  controller.setRunning(false);
+  expect(
+    controller.getSnapshot().game.actionQueues[actor.id]!.current.intent.action,
+  ).toBe("relax");
+  expect(controller.getSnapshot().game.routines.mealsConsumed).toBeGreaterThan(
+    queued.game.routines.mealsConsumed,
+  );
+});
+
 it("renders a door step beneath Move and hides execution details from pending actions and Recorded view", () => {
   const initial = createInitialState();
   const actorId = initial.personnel[0]!.id;
@@ -715,7 +787,7 @@ it("chooses a subject or inspection directly from ambiguous rows without a subje
   document
     .querySelector<HTMLButtonElement>('[aria-label="Deselect active pawn"]')!
     .click();
-  view.ground({ x: 0, y: 0 }, "object:spare-bed", { x: 80, y: 80 });
+  view.ground({ x: 0, y: 0 }, "object:spare-bed", { x: 80, y: 80 }, true);
   const object = menu.querySelector<HTMLButtonElement>(
     '[data-menu-target="object:spare-bed"]',
   )!;
@@ -724,6 +796,51 @@ it("chooses a subject or inspection directly from ambiguous rows without a subje
   expect(inspect).toHaveBeenCalledExactlyOnceWith("object:spare-bed", "world");
   expect(view.activeId).toBeNull();
   expect(view.menuOpen).toBe(false);
+  expect(controller.getSnapshot()).toEqual(before);
+});
+
+it("prioritizes a lone entity over its floor but preserves genuine overlap and explicit floor access", () => {
+  const { controller, view, inspect } = setup();
+  const before = controller.getSnapshot();
+  const actor = before.game.personnel[0]!;
+  view.ground(before.game.world.positions[actor.id]!, actor.id, {
+    x: 80,
+    y: 80,
+  });
+  expect(view.activeId).toBe(actor.id);
+  expect(view.menuOpen).toBe(false);
+  document
+    .querySelector<HTMLButtonElement>('[aria-label="Deselect active pawn"]')!
+    .click();
+  view.ground({ x: 0, y: 0 }, "object:spare-bed", { x: 80, y: 80 });
+  expect(inspect).toHaveBeenCalledExactlyOnceWith("object:spare-bed", "world");
+  expect(view.menuOpen).toBe(false);
+  inspect.mockClear();
+  view.ground(
+    before.game.world.positions[actor.id]!,
+    actor.id,
+    { x: 80, y: 80 },
+    false,
+    ["object:spare-bed"],
+  );
+  expect(view.menuOpen).toBe(true);
+  expect(view.activeId).toBeNull();
+  expect(inspect).not.toHaveBeenCalled();
+  document
+    .querySelector<HTMLButtonElement>('[data-menu-target="object:spare-bed"]')!
+    .click();
+  expect(inspect).toHaveBeenCalledExactlyOnceWith("object:spare-bed", "world");
+  view.ground(
+    before.game.world.positions[actor.id]!,
+    actor.id,
+    { x: 80, y: 80 },
+    true,
+  );
+  const floor = document.querySelector<HTMLButtonElement>(
+    '[data-menu-target^="tile:"]',
+  )!;
+  floor.click();
+  expect(inspect).toHaveBeenLastCalledWith(floor.dataset.menuTarget, "world");
   expect(controller.getSnapshot()).toEqual(before);
 });
 
