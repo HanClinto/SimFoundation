@@ -1,11 +1,8 @@
 import type { Entity } from "../entity/Entity";
 import type { Simulation } from "../Simulation";
 import type { ActionState } from "../entity/pawn/actions/Action";
-import {
-  instantiateEntity,
-  type EntityDefinitions,
-  type EntityPlacement,
-} from "../entity/Definition";
+import type { EntityTemplates } from "../entity/EntityTemplate";
+import { instantiateEntity, type EntityPlacement } from "./EntityPlacement";
 import { floorAt, positionOf, samePosition } from "./TileMap";
 
 export interface Site {
@@ -24,7 +21,7 @@ export interface SiteTemplate {
 export function instantiateSite(
   state: Simulation,
   template: SiteTemplate,
-  definitions: EntityDefinitions,
+  definitions: EntityTemplates,
 ): { state: Simulation; siteId: string } {
   const siteId = `site-${state.nextSiteId}`;
   if (state.sites[siteId]) throw new Error("Site ID is already in use.");

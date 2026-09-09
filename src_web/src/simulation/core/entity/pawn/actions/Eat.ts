@@ -2,7 +2,7 @@ import type { Action, ActionContext, ActionResult } from "./Action";
 import type { Entity } from "../../Entity";
 import { nourishmentFor } from "../../../material/Material";
 import { distance, positionOf } from "../../../site/TileMap";
-import { route } from "../../../site/Pathfinding";
+import { interactionRoute } from "../../../site/Pathfinding";
 import { Move } from "./Move";
 
 export class Eat implements Action {
@@ -64,12 +64,8 @@ export class Eat implements Action {
     });
     return (
       candidates.find((entity) => {
-        const position = positionOf(site, entity.id);
-        return (
-          position &&
-          (distance(origin, position) <= 1 ||
-            (pawn.mobile && route(site, origin, position) !== null))
-        );
+        const path = interactionRoute(site, pawn.id, entity.id);
+        return path !== null && (pawn.mobile || path.length === 0);
       }) ?? null
     );
   }

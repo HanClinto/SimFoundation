@@ -1,7 +1,7 @@
 import type { Entity, Position } from "../entity/Entity";
 import type { Simulation } from "../Simulation";
 import { advanceNeeds } from "../entity/pawn/Needs";
-import { doorAt, floorAt, samePosition } from "./TileMap";
+import { floorAt, samePosition, traversalAt } from "./TileMap";
 
 export interface Transfer {
   id: string;
@@ -116,19 +116,14 @@ export function advanceTransfers(state: Simulation): Simulation {
     );
     const transfer = { ...original, entities };
     const destination = result.sites[transfer.destinationId];
-    const door = destination ? doorAt(destination, transfer.arrival) : null;
+    const traversal = destination
+      ? traversalAt(destination, transfer.arrival)
+      : null;
     const reason =
-      !destination ||
-      !floorAt(destination, transfer.arrival) ||
-      (door && !door.open)
+      !destination || !traversal || traversal.kind === "open-door"
         ? "Arrival tile is unavailable."
-        : Object.values(destination.entities).some(
-              (entity) =>
-                entity.kind === "pawn" &&
-                entity.location.kind === "ground" &&
-                samePosition(entity.location.position, transfer.arrival),
-            )
-          ? "Arrival tile is occupied."
+        : traversal.kind === "blocked"
+          ? traversal.reason
           : Object.keys(entities).some(
                 (entityId) => destination.entities[entityId],
               )

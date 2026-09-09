@@ -1,4 +1,4 @@
-import type { EntityDefinition } from "../../../core/entity/Definition";
+import type { EntityTemplate } from "../../../core/entity/EntityTemplate";
 import { AnimalTissue } from "../../materials/AnimalTissue";
 
 export const FieldAgent = {
@@ -9,6 +9,7 @@ export const FieldAgent = {
   defaults: {
     kind: "pawn",
     carryable: true,
+    blocksMovement: true,
     materialId: AnimalTissue.id,
     amount: 1,
     mobile: true,
@@ -23,4 +24,4 @@ export const FieldAgent = {
     queue: [],
     patrol: [],
   },
-} satisfies EntityDefinition;
+} satisfies EntityTemplate;

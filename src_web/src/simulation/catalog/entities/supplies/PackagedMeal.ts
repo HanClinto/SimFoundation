@@ -1,4 +1,4 @@
-import type { EntityDefinition } from "../../../core/entity/Definition";
+import type { EntityTemplate } from "../../../core/entity/EntityTemplate";
 import { PlantFood } from "../../materials/PlantFood";
 
 export const PackagedMeal = {
@@ -9,7 +9,8 @@ export const PackagedMeal = {
   defaults: {
     kind: "item",
     carryable: true,
+    blocksMovement: false,
     materialId: PlantFood.id,
     amount: 1,
   },
-} satisfies EntityDefinition;
+} satisfies EntityTemplate;

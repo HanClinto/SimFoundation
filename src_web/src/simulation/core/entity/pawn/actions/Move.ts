@@ -1,13 +1,12 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
 import type { Entity, Position } from "../../Entity";
 import {
-  distance,
-  doorAt,
   floorAt,
   positionOf,
   samePosition,
+  traversalAt,
 } from "../../../site/TileMap";
-import { route } from "../../../site/Pathfinding";
+import { interactionRoute, route } from "../../../site/Pathfinding";
 import { openDoor } from "../../Door";
 
 export class Move implements Action {
@@ -25,24 +24,19 @@ export class Move implements Action {
     const reason = this.canStart(context);
     if (reason) return { status: "blocked", reason };
     const origin = positionOf(site, pawn.id)!;
-    const path = route(site, origin, this.destination);
+    const destination = traversalAt(site, this.destination, pawn.id);
+    if (destination.kind === "blocked")
+      return { status: "blocked", reason: destination.reason };
+    const path = route(site, origin, this.destination, pawn.id);
     if (!path)
       return { status: "blocked", reason: "No route to the destination." };
     const step = path[0];
     if (!step) return { status: "completed" };
-    if (
-      Object.values(site.entities).some(
-        (entity) =>
-          entity.kind === "pawn" &&
-          entity.id !== pawn.id &&
-          entity.location.kind === "ground" &&
-          samePosition(entity.location.position, step),
-      )
-    )
-      return { status: "blocked", reason: "The destination is occupied." };
-    const door = doorAt(site, step);
-    if (door && !door.open) {
-      return openDoor(site, door, events)
+    const traversal = traversalAt(site, step, pawn.id);
+    if (traversal.kind === "blocked")
+      return { status: "blocked", reason: traversal.reason };
+    if (traversal.kind === "open-door") {
+      return openDoor(site, traversal.door, events)
         ? { status: "running" }
         : { status: "blocked", reason: "The door is closed." };
     }
@@ -53,15 +47,14 @@ export class Move implements Action {
   }
 
   static approach(context: ActionContext, target: Entity): ActionResult | null {
-    const origin = positionOf(context.site, context.pawn.id);
-    const destination = positionOf(context.site, target.id);
-    if (!origin || !destination)
+    const path = interactionRoute(context.site, context.pawn.id, target.id);
+    if (!path)
       return {
         status: "blocked",
         reason: "The target has no reachable location.",
       };
-    if (distance(origin, destination) <= 1) return null;
-    const result = new Move(destination).tick(context);
+    if (!path.length) return null;
+    const result = new Move(path[path.length - 1]!).tick(context);
     return result.status === "completed" ? { status: "running" } : result;
   }
 }

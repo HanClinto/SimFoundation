@@ -27,11 +27,38 @@ export function floorAt(site: Site, position: Position): boolean {
   );
 }
 
-export function doorAt(site: Site, position: Position): Door | undefined {
-  return Object.values(site.entities).find(
-    (entity): entity is Door =>
-      entity.kind === "door" &&
-      entity.location.kind === "ground" &&
-      samePosition(entity.location.position, position),
-  );
+export type Traversal =
+  | { kind: "clear" }
+  | { kind: "blocked"; reason: string }
+  | { kind: "open-door"; door: Door };
+
+export function traversalAt(
+  site: Site,
+  position: Position,
+  actorId?: string,
+): Traversal {
+  if (!floorAt(site, position))
+    return { kind: "blocked", reason: "The terrain is impassable." };
+  let doorToOpen: Door | undefined;
+  for (const entity of Object.values(site.entities)) {
+    if (
+      entity.id === actorId ||
+      entity.location.kind !== "ground" ||
+      !samePosition(entity.location.position, position)
+    )
+      continue;
+    if (entity.kind === "door") {
+      if (entity.open) continue;
+      if (entity.policy === "automatic") {
+        doorToOpen = entity;
+        continue;
+      }
+      return { kind: "blocked", reason: "The door is closed." };
+    }
+    if (entity.blocksMovement)
+      return { kind: "blocked", reason: "The destination is occupied." };
+  }
+  return doorToOpen
+    ? { kind: "open-door", door: doorToOpen }
+    : { kind: "clear" };
 }

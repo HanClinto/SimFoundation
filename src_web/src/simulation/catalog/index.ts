@@ -1,4 +1,4 @@
-import type { EntityDefinitions } from "../core/entity/Definition";
+import type { EntityTemplates } from "../core/entity/EntityTemplate";
 import type { Materials } from "../core/material/Material";
 import { FieldAgent } from "./actors/staff/FieldAgent";
 import { AutomaticSteelDoor } from "./entities/doors/AutomaticSteelDoor";
@@ -10,7 +10,7 @@ import { Stone } from "./materials/Stone";
 import { PlantFood } from "./materials/PlantFood";
 import { AnimalTissue } from "./materials/AnimalTissue";
 
-export const entities: EntityDefinitions = Object.fromEntries(
+export const entities: EntityTemplates = Object.fromEntries(
   [FieldAgent, AutomaticSteelDoor, PackagedMeal].map((entry) => [
     entry.id,
     entry,

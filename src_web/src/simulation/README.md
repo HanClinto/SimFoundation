@@ -27,7 +27,7 @@ simulation/
 		Snapshot.ts
 		entity/
 			Entity.ts
-			Definition.ts
+			EntityTemplate.ts
 			Item.ts
 			Door.ts
 			pawn/
@@ -46,6 +46,7 @@ simulation/
 			Material.ts
 		site/
 			Site.ts
+			EntityPlacement.ts
 			TileMap.ts
 			Pathfinding.ts
 			Transfer.ts
@@ -68,12 +69,12 @@ There are no redundant `entity/entities` or `action/actions` levels. Actions bel
 
 When implemented, named anomalies belong under `catalog/actors/anomalies`, ordinary authored maps under `catalog/sites`, and quests under `catalog/quests/<quest>/quest.ts`. Stage folders are useful when a stage actually has multiple files/assets. Do not create empty quest, actor, or site stubs just to fill out the proposed tree. Quest content must not own a site's lifetime. Reusable quest mechanics belong in core when needed.
 
-## Entity, Definition, Material
+## Entity, Template, Material
 
 - **Entity** is a persistent physical instance with identity, location, material, and amount. A site or transfer owns its actual record.
 - **Pawn** is an entity with agency and an action queue. Agency, independent movement, player permission, autonomy, and carryability are distinct. Staff and anomalies are definitions, not separate entity stores.
 - **Item** is a loose physical object. It has no mandatory food subtype. A **Door** has door mechanics; it is not an item just because it is made of steel.
-- **EntityDefinition** describes a named model: stable definition ID, display name, description, and initial defaults. Multiple instances share a definition ID, never an instance ID or mutable defaults.
+- **EntityTemplate** describes a named model: stable definition ID, display name, description, and initial defaults. Multiple instances share a definition ID, never an instance ID or mutable defaults. The generic contract lives in [EntityTemplate.ts](core/entity/EntityTemplate.ts); concrete models live in the catalog. There is no universal Definition abstraction.
 - **Material** describes what an entity is made of. A steel ingot and a steel door can share a material without sharing their entity kind. Instance `amount` is remaining abstract material units, not a weight simulation.
 
 Catalog entries are intentionally small, wiki-like records. For example, [FieldAgent.ts](catalog/actors/staff/FieldAgent.ts) gives its description, capabilities, needs, and diet; [AutomaticSteelDoor.ts](catalog/entities/doors/AutomaticSteelDoor.ts) selects steel and automatic operation. [Door.ts](core/entity/Door.ts) contains the mechanics. Add source/attribution/license metadata with externally sourced content; no new SCP content is authored in this slice.
@@ -82,7 +83,7 @@ Named content may eventually need unique behavior beside its catalog entry. Add 
 
 ## Actions Stay Together
 
-[Move.ts](core/entity/pawn/actions/Move.ts) owns movement eligibility, routing, occupancy checks, door opening, stepping, and arrival. Take, Drop, Eat, and Wait each own their corresponding checks and effects. Approach movement is reused, not copied into a second execution system.
+[Move.ts](core/entity/pawn/actions/Move.ts) owns movement execution: eligibility, requesting a route, checking the next step, performing required door opening, and arrival. Shared spatial queries own terrain/entity obstruction and interaction routing. Take, Drop, Eat, and Wait each own their corresponding checks and effects. Approach movement is reused, not copied into a second execution system.
 
 Each action class implements `canStart` and `tick`. [ActionQueue.ts](core/entity/pawn/actions/ActionQueue.ts) has a small constructor dispatch and generic queue advancement, not a switch containing each action's rules. Adding a new action means its class, serializable action shape, and constructor entry. Only one queued action gets a turn; the next begins on the next tick.
 
@@ -100,13 +101,25 @@ The proposal/resolver system has been deleted. [Simulation.ts](core/Simulation.t
 4. Advance transit needs and commit unblocked arrivals after all site turns.
 5. Return the finished state and events. The input remains untouched.
 
-This boundary copy is for caller isolation, not simultaneous simulation: actions do not read an old snapshot or emit proposals for a later resolver. Stable ordering makes replay reproducible but deliberately gives earlier IDs priority. First successful movement/consumption wins. Later movers can enter a tile vacated earlier in the same tick. Swaps, fairness rotation, and traffic optimization are not implemented. Pathfinding plans through other pawns; actual stepping waits for occupancy to clear.
+This boundary copy is for caller isolation, not simultaneous simulation: actions do not read an old snapshot or emit proposals for a later resolver. Stable ordering makes replay reproducible but deliberately gives earlier IDs priority. First successful movement/consumption wins. Later movers can enter a tile vacated earlier in the same tick. Swaps, fairness rotation, and traffic optimization are not implemented. Pathfinding routes around current blocking entities, including pawns. If no route exists, an active action waits and retries against the next tick's state.
 
 Opening a closed automatic door spends the opener's turn without movement. A later entity sees that door as open immediately. Door closure checks current nearby ground occupants when the door gets its own turn. There is no special end-of-tick door resolver.
 
 Pawn needs advance once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs once outside sites, and arrivals receive no extra local turn. `canAct` and `mobile` can represent inactivity/immobility but do not themselves implement injury, death, or recovery.
 
 Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) currently selects food at hunger >= 50, otherwise a configured patrol destination; it never performs a separate version of an action.
+
+## Traversal And Interaction
+
+Entities declare `blocksMovement`: true prevents sharing their ground tile, false permits it. Catalog staff block by default, loose meals do not, and any other placed item can block without being a pawn. Carried entities never independently obstruct their carrier's tile. The moving actor is excluded from its own obstruction query. All ground entities on a tile are considered; one blocking entity is enough to prevent entry.
+
+[TileMap.ts](core/site/TileMap.ts) exposes `traversalAt(site, position, actorId)`, returning clear, blocked with a reason, or an automatic door that must be opened. Door state determines its passage: open allows entry, closed automatic requires opening, and other closed doors block. An automatic door never masks another obstruction sharing its tile. The door requirement is not a third occupancy class.
+
+[Pathfinding.ts](core/site/Pathfinding.ts) and Move use that same query. A\* can plan through a door that can be opened, while actual stepping must open it first. Move rechecks before entry; no separate pawn-only occupancy rule exists. Movement orders can target currently occupied floor, since it may clear before execution; accepting an intention does not guarantee a route. Transfer arrivals require clear traversal and cannot remotely open doors. Routing allows departure from an already shared origin (for example after putting down cargo), but does not authorize entry into another obstructed tile.
+
+`interactionRoute` finds a shortest route to the target tile or a cardinally adjacent usable tile, with a fixed candidate order for ties. Take and Eat use it through `Move.approach`; food discovery uses it to test reachability. A blocking crate can therefore be approached and picked up without standing inside it. Routes and interaction positions are recomputed from current state rather than reserved in advance. The initial model has one-tile entities and cardinal interaction reach, not footprints or arbitrary interaction sockets.
+
+Crossing-only occupancy (`canTraverse` but not `canStop`) is deliberately deferred: discrete movement would otherwise need rules for temporary overlaps, interrupted crossings, and cancellation. Start with blocking/nonblocking rather than inventing those rules implicitly.
 
 ## Diets Without Food Subclasses
 
@@ -116,11 +129,13 @@ Examples: a metalivore accepts `metal`, a plastic consumer accepts `plastic`, an
 
 [Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous food selection considers acceptable, reachable items by distance then ID. Dynamic pawn obstruction can still make an action wait. Explicit orders keep their specified target and never silently substitute another. An eat action approaches, rechecks, consumes at most one unit, reduces hunger according to the diet, and removes an exhausted item. Fractional remainders are supported. Pawns with no hunger need do not search for or consume food.
 
+Future rest/comfort/entertainment discovery should expose small actor-specific interaction offers (action, target, expected benefit, availability, and interaction position). Extract that common search when a second real need action demonstrates the shared contract. There is no Provider/Consumer hierarchy or generic offer framework yet. A material becomes food relative to the consumer's diet, not through a universal food advertisement.
+
 For now, **only loose items are consumable**. Material matching alone does not authorize eating installed doors or living pawns; structural damage and predation need their own consequences. There is one material per entity, no mixtures, digestion chemistry, calories, or weight model. Extend only when actual content needs more.
 
 ## Sites, Transfers, And Saves
 
-[SharedActions.json](catalog/sites/tests/SharedActions.json) is an authored site: rectangular `.` floor / `#` wall rows plus placements naming catalog definitions, local IDs, locations, and optional instance overrides. Overrides replace supplied top-level fields; they are not a recursive patch language. `instantiateSite` clones defaults, allocates fresh site/entity IDs, and remaps carried references, queued targets, and initial action IDs. Site instantiation checks geometry/references; this is trusted developer content, not a hardened mod loader.
+[SharedActions.json](catalog/sites/tests/SharedActions.json) is an authored site: rectangular `.` floor / `#` wall rows plus placements naming catalog templates, local IDs, locations, and optional instance overrides. [EntityPlacement.ts](core/site/EntityPlacement.ts) owns placement data and instance construction beside site loading, separate from the reusable entity-template contract. Overrides replace supplied top-level fields; they are not a recursive patch language and cannot change entity kind. `instantiateSite` clones defaults, allocates fresh site/entity IDs, and remaps carried references, queued targets, and initial action IDs. Site instantiation checks geometry/references; this is trusted developer content, not a hardened mod loader.
 
 ```ts
 import { entities, materials } from "./catalog";
@@ -138,7 +153,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Definitions/handlers are supplied by code, not serialized or revived. Version 2 discards the previous experimental shape; there are no migrations or deep save validators.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 3 adds explicit entity obstruction and discards earlier experimental shapes; there are no migrations or deep save validators.
 
 ## Verification And Scope
 

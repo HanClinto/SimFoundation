@@ -16,7 +16,7 @@ import {
   advanceSimulation as advance,
 } from "../../src/simulation/core/Simulation";
 import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
-import type { EntityPlacement } from "../../src/simulation/core/entity/Definition";
+import type { EntityPlacement } from "../../src/simulation/core/site/EntityPlacement";
 import { deserialize, serialize } from "../../src/simulation/core/Snapshot";
 import { positionOf } from "../../src/simulation/core/site/TileMap";
 import { entities, materials } from "../../src/simulation/catalog";
@@ -272,4 +272,54 @@ it("keeps the replacement independent from legacy, application and browser code"
     }
   }
   check(root);
+});
+
+it("holds an arrival behind a blocking item until it is physically picked up", () => {
+  const origin = instantiateSite(createSimulation(), {
+    ...template,
+    entities: [template.entities[0]!],
+  });
+  const destination = instantiateSite(origin.state, {
+    ...template,
+    entities: [
+      {
+        ...template.entities[0]!,
+        location: { kind: "ground", position: { x: 4, y: 1 } },
+      },
+      {
+        ...template.entities[3]!,
+        location: { kind: "ground", position: { x: 5, y: 1 } },
+        overrides: { blocksMovement: true },
+      },
+    ],
+  });
+  const sent = depart(destination.state, {
+    originId: origin.siteId,
+    destinationId: destination.siteId,
+    entityIds: [`${origin.siteId}:operator`],
+    loading: { x: 1, y: 1 },
+    arrival: { x: 5, y: 1 },
+    duration: 1,
+  });
+  expect(sent.reason).toBeNull();
+  let state = advanceSimulation(sent.state).state;
+  expect(state.transfers[sent.transferId!]!.blockedReason).toContain(
+    "occupied",
+  );
+  const picked = executeCommand(state, {
+    kind: "enqueue",
+    siteId: destination.siteId,
+    entityId: `${destination.siteId}:operator`,
+    action: { kind: "take", targetId: `${destination.siteId}:meal` },
+  });
+  expect(picked.code).toBe("accepted");
+  state = advanceSimulation(picked.state).state;
+  expect(state.transfers).toEqual({});
+  expect(
+    positionOf(state.sites[destination.siteId]!, `${origin.siteId}:operator`),
+  ).toEqual({ x: 5, y: 1 });
+  expect(
+    state.sites[destination.siteId]!.entities[`${destination.siteId}:meal`]!
+      .location.kind,
+  ).toBe("carried");
 });

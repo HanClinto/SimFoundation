@@ -21,3 +21,5 @@ Movement, taking, dropping, eating and waiting can be understood locally. No res
 Stable IDs determine priority; swaps, traffic optimization and fair scheduling are deferred. Definitions are trusted authored data, not a scripting/mod interface. Autonomy currently chooses food or configured patrol; unique catalog behavior will get a narrow interface when a real feature needs it, not an anticipatory plugin framework.
 
 Snapshot version 2 discards the prior experimental state. Plain JSON root/version checks remain the entire save parser. The legacy engine and browser bindings stay untouched. The [simulation README](../../src/simulation/README.md) is the current organization, API and scope guide.
+
+The subsequent [shared traversal decision](011-shared-traversal-and-templates.md) separates EntityTemplate from site placement, adds explicit entity obstruction and interaction-position routing, and advances the disposable snapshot to version 3. Sequential ordering remains unchanged.
