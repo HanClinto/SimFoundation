@@ -49,7 +49,6 @@ simulation/
 					Research.ts
 					Read.ts
 					Exercise.ts
-					Wash.ts
 					FacilityAction.ts
 					FindTarget.ts
 		material/
@@ -70,7 +69,6 @@ simulation/
 		entities/equipment/ResearchDesk.ts
 		entities/furniture/Bookshelf.ts
 		entities/equipment/ExerciseBike.ts
-		entities/furniture/Washbasin.ts
 		materials/
 			Steel.ts
 			Wood.ts
@@ -165,17 +163,22 @@ Facilities currently occupy one blocking tile; the pawn works at an adjacent rea
 
 The next concrete activities reuse the same session, occupancy and offer mechanics without changing the selector:
 
-| Facility / Action        | Work Ticks | Reduces Per Work Tick                 | Increases Per Work Tick                 |
-| ------------------------ | ---------: | ------------------------------------- | --------------------------------------- |
-| Bookshelf / Read         |          6 | Curiosity 3, Restlessness 4, Stress 1 | none                                    |
-| Exercise bike / Exercise |          5 | Restlessness 6, Stress 2              | Fatigue 3, Hunger 1, Hygiene pressure 2 |
-| Washbasin / Wash         |          3 | Hygiene pressure 10, Stress 1         | none                                    |
+| Facility / Action        | Work Ticks | Reduces Per Work Tick                 | Increases Per Work Tick |
+| ------------------------ | ---------: | ------------------------------------- | ----------------------- |
+| Bookshelf / Read         |          6 | Curiosity 3, Restlessness 4, Stress 1 | none                    |
+| Exercise bike / Exercise |          5 | Restlessness 6, Stress 2              | Fatigue 3, Hunger 1     |
 
 **Curiosity** is the desire to learn or investigate. **Restlessness** is the desire for a change of activity, relieved by physical exercise or reading. There is no separate Boredom need: the proposed Boredom/Restlessness overlap was consolidated at the user's request. Curiosity remains distinct rather than becoming a synonym for entertainment.
 
-[Researcher.ts](catalog/actors/staff/Researcher.ts) is an optional staff template with growing Curiosity and Restlessness. It also carries experimental Hygiene pressure, where larger means more need to wash. Ordinary FieldAgent defaults remain hunger/fatigue/stress only. Hygiene is not required by the core, and actions never create it on pawns lacking it. There are no hygiene penalties, disease, mandatory washing schedules, water/drainage costs, fitness progression, or powered exercise equipment. Those systems are not implied by facility names. Hygiene remains provisional and easy to remove.
+[Researcher.ts](catalog/actors/staff/Researcher.ts) is an optional staff template with growing Curiosity and Restlessness. Ordinary FieldAgent defaults remain hunger/fatigue/stress only. Hygiene, washing, and washbasins have been removed at the user's request, not retained as optional content. No fitness progression or powered exercise equipment is implied by facility names.
 
-[DailyLife.json](catalog/sites/tests/DailyLife.json) places a researcher among ordinary study/care facilities and six meals. Tests cover a 300-tick autonomous run, research versus reading, exercise leading to washing, per-action reload continuation, and absent needs. Reading is not research and creates no desk progress.
+[DailyLife.json](catalog/sites/tests/DailyLife.json) places a researcher among ordinary study/care facilities and six meals. Tests cover a 300-tick autonomous run, research versus reading, exercise leading to sleep, per-action reload continuation, and absent needs. Reading is not research and creates no desk progress.
+
+### Original Spec Priorities
+
+The [product specification](../../README.md#needs-and-psychological-state) initially names satiety and rest, with recreation, comfort and social contact affecting stress rather than separate decaying bars. The more detailed [Personnel Model](../../docs/personnel-model.md#3-transient-needs-and-pressures) lists Food, Energy, Social, Stress and Fear. These documents disagree about a separate Social reserve; implementing social interaction is useful either way, but the representation should be settled before adding that value.
+
+Food/Energy correspond to the replacement's hunger/fatigue deficits (opposite polarity); Stress is implemented in simplified form. Social interaction and fear responses are the next spec-backed gaps. Cards/conversation can provide social contact and stress relief; comfort, poor conditions and isolation can contribute to stress. Fear should follow perceived danger and safety, not rise like hunger. Mood, sanity and composure are derived outcomes in the spec, not additional replenishable needs. Curiosity is a user-endorsed extension. Restlessness is also a later experiment, not a need specified in those original documents; it remains unchanged in the hygiene-removal pass.
 
 The current policy favors specialists when all facilities are available: research gives more immediate Curiosity relief than reading, and exercise gives more Restlessness relief. Reading is a useful fallback when either specialized option is unavailable. Multi-need side benefits do not override the highest-need-first policy. This is a visible tuning limitation, not a reason to add personality randomness or a predictive utility framework yet.
 
@@ -223,7 +226,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 5 includes reading, exercise and washing actions and discards earlier experimental shapes; there are no migrations or deep save validators.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 6 removes hygiene and washing and discards earlier experimental shapes; there are no migrations or deep save validators.
 
 ## Verification And Scope
 

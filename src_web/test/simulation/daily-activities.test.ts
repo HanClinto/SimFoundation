@@ -46,13 +46,14 @@ function choose(state: Simulation, siteId: string, actorId: string) {
 
 const need = (value: number) => ({ value, increasePerTick: 0 });
 
-it("keeps Curiosity distinct, uses only Restlessness for activity variety, and leaves hygiene optional", () => {
+it("keeps Curiosity distinct and excludes hygiene from both staff templates", () => {
   const { state, siteId, actorId } = setup();
   const pawn = state.sites[siteId]!.entities[actorId] as Pawn;
   expect(pawn.needs.curiosity).toBeDefined();
   expect(pawn.needs.restlessness).toBeDefined();
   expect(pawn.needs).not.toHaveProperty("boredom");
-  expect(pawn.needs.hygiene).toBeDefined();
+  expect(pawn.needs).not.toHaveProperty("hygiene");
+  expect(entities).not.toHaveProperty("washbasin");
   const ordinary = instantiateEntity(
     {
       id: "ordinary",
@@ -146,7 +147,7 @@ it("curiosity and restlessness have distinct preferred activities, with reading 
   expect(pawn.queue).toEqual([]);
 });
 
-it("a real workout creates fatigue, hunger and hygiene pressure, then the pawn chooses to wash", () => {
+it("a real workout creates fatigue and hunger, then the pawn chooses sleep", () => {
   const { state: initial, siteId, actorId, id } = setup();
   const pawn = initial.sites[siteId]!.entities[actorId] as Pawn;
   pawn.location = { kind: "ground", position: { x: 3, y: 4 } };
@@ -155,7 +156,6 @@ it("a real workout creates fatigue, hunger and hygiene pressure, then the pawn c
     stress: need(20),
     fatigue: need(0),
     hunger: need(0),
-    hygiene: need(35),
   };
   expect(choose(initial, siteId, actorId)).toMatchObject({ kind: "exercise" });
   let state = initial;
@@ -167,11 +167,10 @@ it("a real workout creates fatigue, hunger and hygiene pressure, then the pawn c
     stress: { value: 10 },
     fatigue: { value: 15 },
     hunger: { value: 5 },
-    hygiene: { value: 45 },
   });
   expect(choose(state, siteId, actorId)).toMatchObject({
-    kind: "wash",
-    targetId: id("basin"),
+    kind: "sleep",
+    targetId: id("bed"),
   });
   state = advanceSimulation(state, materials).state;
   state = executeCommand(
@@ -186,17 +185,17 @@ it("a real workout creates fatigue, hunger and hygiene pressure, then the pawn c
   )
     state = advanceSimulation(state, materials).state;
   expect((state.sites[siteId]!.entities[actorId] as Pawn).needs).toMatchObject({
-    hygiene: { value: 15 },
-    stress: { value: 7 },
-    fatigue: { value: 15 },
+    stress: { value: 0 },
+    fatigue: { value: 0 },
   });
-  expect(state.sites[siteId]!.entities[id("basin")]!.amount).toBe(1);
+  expect(
+    (state.sites[siteId]!.entities[actorId] as Pawn).needs,
+  ).not.toHaveProperty("hygiene");
 });
 
 it.each([
   ["read", "shelf", { x: 7, y: 6 }],
   ["exercise", "bike", { x: 3, y: 4 }],
-  ["wash", "basin", { x: 7, y: 4 }],
 ] as const)(
   "%s runs through the queue and resumes exactly from a mid-session snapshot",
   (kind, target, position) => {
@@ -208,7 +207,6 @@ it.each([
       curiosity: need(60),
       restlessness: need(60),
       stress: need(60),
-      hygiene: need(60),
       fatigue: need(10),
       hunger: need(10),
     };
@@ -270,14 +268,7 @@ it("a longer authored autonomous run alternates study and care without a scripte
   }
   expect(serialize(initial)).toBe(before);
   expect([...completed]).toEqual(
-    expect.arrayContaining([
-      "research",
-      "exercise",
-      "wash",
-      "sleep",
-      "relax",
-      "eat",
-    ]),
+    expect.arrayContaining(["research", "exercise", "sleep", "relax", "eat"]),
   );
   expect(
     (state.sites[siteId]!.entities[id("desk")] as Facility).research!.progress,

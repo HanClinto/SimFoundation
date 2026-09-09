@@ -12,7 +12,6 @@ export const Researcher = {
       ...FieldAgent.defaults.needs,
       curiosity: { value: 60, increasePerTick: 0.3 },
       restlessness: { value: 20, increasePerTick: 0.2 },
-      hygiene: { value: 10, increasePerTick: 0.1 },
     },
   },
 } satisfies EntityTemplate;

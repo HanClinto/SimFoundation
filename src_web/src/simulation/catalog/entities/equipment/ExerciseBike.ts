@@ -5,7 +5,7 @@ export const ExerciseBike = {
   id: "exercise-bike",
   name: "Exercise bike",
   description:
-    "A short workout relieves restlessness and stress but increases fatigue, hunger and hygiene pressure. No fitness statistics or powered equipment are simulated.",
+    "A short workout relieves restlessness and stress but increases fatigue and hunger. No fitness statistics or powered equipment are simulated.",
   defaults: {
     kind: "facility",
     carryable: true,
@@ -20,7 +20,6 @@ export const ExerciseBike = {
           stress: -2,
           fatigue: 3,
           hunger: 1,
-          hygiene: 2,
         },
       },
     },

@@ -14,7 +14,6 @@ import { Armchair } from "./entities/furniture/Armchair";
 import { ResearchDesk } from "./entities/equipment/ResearchDesk";
 import { Bookshelf } from "./entities/furniture/Bookshelf";
 import { ExerciseBike } from "./entities/equipment/ExerciseBike";
-import { Washbasin } from "./entities/furniture/Washbasin";
 import { Researcher } from "./actors/staff/Researcher";
 
 export const entities: EntityTemplates = Object.fromEntries(
@@ -27,7 +26,6 @@ export const entities: EntityTemplates = Object.fromEntries(
     ResearchDesk,
     Bookshelf,
     ExerciseBike,
-    Washbasin,
     Researcher,
   ].map((entry) => [entry.id, entry]),
 );

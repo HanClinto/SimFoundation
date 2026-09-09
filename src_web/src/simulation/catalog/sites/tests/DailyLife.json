@@ -43,11 +43,6 @@
       "location": { "kind": "ground", "position": { "x": 2, "y": 4 } }
     },
     {
-      "id": "basin",
-      "definitionId": "washbasin",
-      "location": { "kind": "ground", "position": { "x": 8, "y": 4 } }
-    },
-    {
       "id": "meals",
       "definitionId": "packaged-meal",
       "location": { "kind": "ground", "position": { "x": 5, "y": 2 } },

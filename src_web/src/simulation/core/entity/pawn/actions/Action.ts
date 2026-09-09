@@ -4,13 +4,7 @@ import type { Site } from "../../../site/Site";
 import type { Materials } from "../../../material/Material";
 import type { TickEvent } from "../../../Simulation";
 
-export type ActivityKind =
-  | "sleep"
-  | "relax"
-  | "research"
-  | "read"
-  | "exercise"
-  | "wash";
+export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
 export interface ActivityState {
   kind: ActivityKind;

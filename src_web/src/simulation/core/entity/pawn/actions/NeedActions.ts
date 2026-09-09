@@ -5,7 +5,6 @@ import { Relax } from "./Relax";
 import { Research } from "./Research";
 import { Read } from "./Read";
 import { Exercise } from "./Exercise";
-import { Wash } from "./Wash";
 
 export const needActions: readonly NeedActionProvider[] = [
   Eat.needAction,
@@ -14,5 +13,4 @@ export const needActions: readonly NeedActionProvider[] = [
   Research.needAction,
   Read.needAction,
   Exercise.needAction,
-  Wash.needAction,
 ];
