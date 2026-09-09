@@ -62,14 +62,18 @@ export function createCombatWindow(
     selected = person.value;
     render(current);
   });
-  button("draft").addEventListener("click", () => {
-    if (perspective === "world")
-      apply(controller.draftResponder(selected, true));
-  });
-  button("release").addEventListener("click", () => {
-    if (perspective === "world")
-      apply(controller.draftResponder(selected, false));
-  });
+  for (const [action, drafted] of [
+    ["draft", true],
+    ["release", false],
+  ] as const)
+    button(action).addEventListener("click", () => {
+      if (perspective !== "world") return;
+      const reason = controller.previewDraftResponder(selected, drafted);
+      if (reason) {
+        render(controller.getSnapshot());
+        feedback.textContent = reason;
+      } else apply(controller.draftResponder(selected, drafted));
+    });
   button("control").addEventListener("click", () => {
     if (perspective === "world" && !button("control").disabled)
       feedback.textContent = control(selected) ?? "";
@@ -201,8 +205,25 @@ export function createCombatWindow(
         return [term, description];
       }),
     );
-    button("release").disabled =
-      recorded || !responder.drafted || responder.incapacitated;
+    for (const [action, drafted] of [
+      ["draft", true],
+      ["release", false],
+    ] as const) {
+      const reason = recorded
+        ? "Recorded view is inspection-only."
+        : (controller.previewDraftResponder(selected, drafted) ??
+          (responder.drafted === drafted
+            ? drafted
+              ? "Already drafted."
+              : "Already on routine duty."
+            : null));
+      button(action).disabled = !!reason;
+      button(action).title =
+        reason ??
+        (drafted
+          ? "Take tactical duty; current personal orders are replaced."
+          : "Return to routine duty; current personal orders are cleared.");
+    }
     const controlIssue = recorded
       ? "Recorded view is inspection-only; use Locate."
       : expeditionMember(snapshot.game, selected)
@@ -214,13 +235,7 @@ export function createCombatWindow(
     button("control").title =
       controlIssue ??
       "Select and center this person on the map; existing work continues.";
-    button("draft").disabled =
-      recorded ||
-      responder.drafted ||
-      responder.incapacitated ||
-      expeditionMember(snapshot.game, selected);
     if (expeditionMember(snapshot.game, selected)) {
-      button("release").disabled = true;
       element.querySelector("[data-tactical-readings]")!.textContent =
         "Assigned to expedition; use Expedition Operations for field orders and supplies.";
     }

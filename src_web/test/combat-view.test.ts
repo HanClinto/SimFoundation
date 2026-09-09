@@ -6,6 +6,51 @@ import { createCombatWindow } from "../src/adapters/browser/combat-view";
 import type { PlacementRequest } from "../src/adapters/browser/placement";
 
 afterEach(() => vi.unstubAllGlobals());
+it("explains blocked duty changes and rechecks stale enabled controls", () => {
+  const window = new JSDOM().window;
+  vi.stubGlobal("document", window.document);
+  vi.stubGlobal("Option", window.Option);
+  const initial = createInitialState();
+  const actorId = "person-caleb-ward";
+  const carrying = {
+    ...initial,
+    objects: {
+      ...initial.objects,
+      items: initial.objects.items.map((item) =>
+        item.id === "stock-materials"
+          ? {
+              ...item,
+              location: { kind: "carried" as const, personId: actorId },
+            }
+          : item,
+      ),
+    },
+  };
+  const controller = createController(carrying);
+  const view = createCombatWindow(
+    document.body,
+    controller,
+    vi.fn(),
+    vi.fn(),
+    () => null,
+  );
+  const draft = view.element.querySelector<HTMLButtonElement>(
+    "[data-tactical-draft]",
+  )!;
+  expect(draft.disabled).toBe(true);
+  expect(draft.title).toContain("cargo");
+  const before = controller.getSnapshot();
+  draft.disabled = false;
+  draft.click();
+  expect(controller.getSnapshot()).toEqual(before);
+  expect(draft.disabled).toBe(true);
+  expect(
+    view.element.querySelector("[data-tactical-feedback]")!.textContent,
+  ).toContain("cargo");
+  view.select(actorId, before, "recorded");
+  expect(draft.title).toBe("Recorded view is inspection-only.");
+});
+
 it("hands control to the map without issuing orders and retains explicit duty controls", () => {
   const window = new JSDOM().window;
   vi.stubGlobal("document", window.document);

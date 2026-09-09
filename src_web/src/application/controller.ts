@@ -41,6 +41,7 @@ import {
 import {
   draftResponder,
   orderResponder,
+  previewDraftResponder,
   startEncounter,
   observeCombat,
   type TacticalCode,
@@ -218,6 +219,7 @@ export interface GameController {
     id: string,
     drafted: boolean,
   ): { code: TacticalCode; snapshot: ControllerSnapshot };
+  previewDraftResponder(id: string, drafted: boolean): string | null;
   orderResponder(
     id: string,
     order: TacticalOrder,
@@ -546,6 +548,11 @@ export function createController(initialState: GameState): GameController {
         ),
       );
       return publish();
+    },
+    previewDraftResponder(id, drafted) {
+      if (expeditionMember(state, id))
+        return "This responder is assigned to an expedition; duty is managed by mission operations.";
+      return previewDraftResponder(state, id, drafted).reason;
     },
     draftResponder(id, drafted) {
       if (expeditionMember(state, id))

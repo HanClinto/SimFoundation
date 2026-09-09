@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import {
   draftResponder,
+  previewDraftResponder,
   orderResponder,
   advanceTacticalMovement,
   startEncounter,
@@ -132,12 +133,59 @@ it("refuses drafting cargo carriers and rejects unreachable positional orders", 
     },
   };
   expect(draftResponder(carrying, id, true).code).toBe("busy");
+  expect(previewDraftResponder(carrying, id, true).reason).toContain("cargo");
   expect(
     orderResponder(draftResponder(initial, id, true).state, id, "retreat", {
       x: -1,
       y: 0,
     }).code,
   ).toBe("unreachable");
+});
+
+it("previews duty changes immutably with the same result as execution", () => {
+  const initial = draftResponder(createInitialState(), first, true).state;
+  const cases = [
+    {
+      patch: { phase: "recovering" as const, remaining: 2 },
+      reason: "recovery",
+    },
+    { patch: { injuries: 1, stabilized: false }, reason: "injuries" },
+    { patch: { incapacitated: true }, reason: "incapacitated" },
+  ];
+  for (const { patch, reason } of cases) {
+    const state = {
+      ...initial,
+      combat: {
+        ...initial.combat,
+        responders: {
+          ...initial.combat.responders,
+          [first]: { ...initial.combat.responders[first]!, ...patch },
+        },
+      },
+    };
+    const before = JSON.stringify(state);
+    const preview = previewDraftResponder(state, first, false);
+    expect(preview.reason).toContain(reason);
+    expect(JSON.stringify(state)).toBe(before);
+    const result = draftResponder(state, first, false);
+    expect(result.code).toBe(preview.code);
+    expect(result.state).toBe(state);
+  }
+  expect(previewDraftResponder(encounter(), first, false).reason).toContain(
+    "encounter team",
+  );
+  expect(previewDraftResponder(initial, first, false)).toEqual({
+    code: "accepted",
+    reason: null,
+  });
+  const controller = createController(initial);
+  controller.enlistExpedition("notice-depot", [first, second]);
+  const before = controller.getSnapshot();
+  expect(controller.previewDraftResponder(first, false)).toContain(
+    "expedition",
+  );
+  expect(controller.getSnapshot()).toEqual(before);
+  expect(controller.draftResponder(first, false).code).toBe("busy");
 });
 
 it("resolves a two-responder encounter with visible windup and finite ammunition, surviving reloads", () => {
@@ -343,6 +391,12 @@ it("refuses clinical participants and does not reset recovery or replenish ammun
   const job = state.jobs.find((job) => job.assessment)!;
   expect(job.status).toBe("in-progress");
   expect(draftResponder(state, first, true).code).toBe("busy");
+  expect(previewDraftResponder(state, first, true).reason).toContain(
+    "clinical appointment",
+  );
+  expect(
+    previewDraftResponder(state, job.assignedPersonId!, true).reason,
+  ).toContain("clinical appointment");
   expect(draftResponder(state, job.assignedPersonId!, true).code).toBe("busy");
   state = orderResponder(
     encounter(),

@@ -122,6 +122,8 @@ Scene depth remains physical rather than selection-driven: at equal depth, groun
 
 ### Direct Person Control
 
+Tactical Draft/Release are explicit duty transitions. Their availability uses the same immutable validation as execution, with reasons for cargo delivery, clinical appointments, incapacitation, unstable injuries, action recovery, active encounters and expedition assignment. Enabled tooltips state that personal orders are replaced or cleared. Already-current duty controls are disabled as no-ops; Recorded shows only an inspection restriction. Clicking rechecks current eligibility before attempting a transition.
+
 Find Object is an inspection-target locator, not a command-subject chooser. Choosing a person, object or utility centers its displayed position without changing the active subject. If Follow is checked it retargets to that entry; otherwise the camera snaps once. Clearing the locator clears the target and stops Follow without moving the camera or deselecting the subject. Recorded uses observed entries and positions only. The selected-name link opens inspection; Enter on the focused canvas opens the selected entity record (or the tile interaction), with no action for an empty selection. The redundant Open Record toolbar button is omitted from both map windows.
 
 For normal clicks without a subject, the floor beneath a lone pawn or object does not count as ambiguity: that entity is selected or inspected directly. Multiple entity hits still open the chooser with the floor included. Shift+F10 explicitly opens the full chooser, preserving access to the underlying floor even when there is only one entity. With an active subject, the floor remains a normal command target for Go Here.

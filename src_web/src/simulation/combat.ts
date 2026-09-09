@@ -113,30 +113,57 @@ export function tacticallyUnavailable(state: GameState, id: string): boolean {
   return !!responder && (responder.drafted || responder.incapacitated);
 }
 
-export function draftResponder(
+export function previewDraftResponder(
   state: GameState,
   id: string,
   drafted: boolean,
-): { state: GameState; code: TacticalCode } {
-  if (typeof drafted !== "boolean") return { state, code: "invalid-order" };
+): { code: TacticalCode; reason: string | null } {
+  if (typeof drafted !== "boolean")
+    return { code: "invalid-order", reason: "Choose Draft or Release." };
   if (!state.personnel.some((person) => person.id === id))
-    return { state, code: "not-found" };
+    return {
+      code: "not-found",
+      reason: "This responder is no longer available.",
+    };
   const responder = state.combat.responders[id] ?? readyResponder();
-  if (responder.incapacitated) return { state, code: "incapacitated" };
-  if (
-    !drafted &&
-    (responder.phase === "recovering" ||
-      (responder.injuries > 0 && !responder.stabilized) ||
-      (state.combat.status === "active" &&
-        state.combat.participants.includes(id)))
-  )
-    return { state, code: "busy" };
-  if (responder.drafted === drafted) return { state, code: "accepted" };
+  if (responder.incapacitated)
+    return {
+      code: "incapacitated",
+      reason:
+        "This responder is incapacitated; stabilization and recovery are required.",
+    };
+  if (!drafted) {
+    if (responder.phase === "recovering")
+      return {
+        code: "busy",
+        reason: "Wait for the current action recovery to finish.",
+      };
+    if (responder.injuries > 0 && !responder.stabilized)
+      return {
+        code: "busy",
+        reason: "Stabilize this responder's injuries before releasing them.",
+      };
+    if (
+      state.combat.status === "active" &&
+      state.combat.participants.includes(id)
+    )
+      return {
+        code: "busy",
+        reason: "This responder belongs to the active encounter team.",
+      };
+  }
+  if (responder.drafted === drafted) return { code: "accepted", reason: null };
   if (
     state.objects.items.some(
       (item) =>
         item.location.kind === "carried" && item.location.personId === id,
-    ) ||
+    )
+  )
+    return {
+      code: "busy",
+      reason: "Finish the carried cargo delivery before changing duty.",
+    };
+  if (
     state.jobs.some(
       (job) =>
         job.status === "in-progress" &&
@@ -144,7 +171,22 @@ export function draftResponder(
         (job.assignedPersonId === id || job.assessment.patientId === id),
     )
   )
-    return { state, code: "busy" };
+    return {
+      code: "busy",
+      reason: "Finish the active clinical appointment before changing duty.",
+    };
+  return { code: "accepted", reason: null };
+}
+
+export function draftResponder(
+  state: GameState,
+  id: string,
+  drafted: boolean,
+): { state: GameState; code: TacticalCode } {
+  const preview = previewDraftResponder(state, id, drafted);
+  if (preview.code !== "accepted") return { state, code: preview.code };
+  const responder = state.combat.responders[id] ?? readyResponder();
+  if (responder.drafted === drafted) return { state, code: "accepted" };
   const activities = { ...state.routines.activities };
   delete activities[id];
   return {
