@@ -1,5 +1,7 @@
 # Replacement Simulation Core
 
+The filesystem archive decision remains current. The proposal/resolver execution model described below was superseded by [decision 010](010-sequential-core-and-catalog.md) after the user's readability review. This record describes the first experimental slice, not the current folder layout or tick semantics.
+
 ## Decision
 
 On 2026-09-09 the user explicitly requested moving the existing simulation to `src/simulation_legacy` and creating a clean replacement in `src/simulation`. This supersedes earlier plans to avoid a filesystem archive or preserve the running implementation throughout incremental changes. The UI/application boundary stays; old application imports name the legacy path explicitly until replaced. No new project, branch, migration layer or compatibility re-export is introduced.

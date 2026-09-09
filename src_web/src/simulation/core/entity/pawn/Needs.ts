@@ -1,8 +1,11 @@
-import type { Need } from "../model";
+export interface Need {
+  value: number;
+  increasePerTick: number;
+}
 
 export function advanceNeeds(
-  needs: Readonly<Record<string, Need>>,
-): Readonly<Record<string, Need>> {
+  needs: Record<string, Need>,
+): Record<string, Need> {
   return Object.fromEntries(
     Object.entries(needs).map(([id, need]) => [
       id,

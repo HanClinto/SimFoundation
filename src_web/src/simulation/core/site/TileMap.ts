@@ -1,9 +1,9 @@
-import PF from "pathfinding";
-import type { Door, Position, Site } from "../model";
+import type { Position } from "../entity/Entity";
+import type { Door } from "../entity/Door";
+import type { Site } from "./Site";
 
 export const samePosition = (first: Position, second: Position): boolean =>
   first.x === second.x && first.y === second.y;
-
 export const distance = (first: Position, second: Position): number =>
   Math.abs(first.x - second.x) + Math.abs(first.y - second.y);
 
@@ -34,31 +34,4 @@ export function doorAt(site: Site, position: Position): Door | undefined {
       entity.location.kind === "ground" &&
       samePosition(entity.location.position, position),
   );
-}
-
-export function route(
-  site: Site,
-  origin: Position,
-  destination: Position,
-): readonly Position[] | null {
-  if (!floorAt(site, origin) || !floorAt(site, destination)) return null;
-  const grid = new PF.Grid(
-    site.terrain.map((row, y) =>
-      [...row].map((tile, x) => {
-        const door = doorAt(site, { x, y });
-        return tile !== "." ||
-          (door && !door.open && door.policy === "held-closed")
-          ? 1
-          : 0;
-      }),
-    ),
-  );
-  const path = new PF.AStarFinder({ allowDiagonal: false }).findPath(
-    origin.x,
-    origin.y,
-    destination.x,
-    destination.y,
-    grid,
-  );
-  return path.length ? path.slice(1).map(([x, y]) => ({ x: x!, y: y! })) : null;
 }

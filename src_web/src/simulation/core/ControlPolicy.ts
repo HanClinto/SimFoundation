@@ -1,12 +1,15 @@
-import type { Action, Entity, Simulation } from "../model";
-import { floorAt } from "../world/spatial";
+import type { ActionState } from "./entity/pawn/actions/Action";
+import { actionHandler } from "./entity/pawn/actions/ActionQueue";
+import type { Entity } from "./entity/Entity";
+import type { Simulation } from "./Simulation";
+import type { Materials } from "./material/Material";
 
 export type Command =
   | {
       readonly kind: "enqueue";
       readonly siteId: string;
       readonly entityId: string;
-      readonly action: Action;
+      readonly action: ActionState;
     }
   | {
       readonly kind: "cancel";
@@ -36,6 +39,7 @@ export interface CommandResult {
 export function executeCommand(
   state: Simulation,
   command: Command,
+  materials: Materials,
   context: CommandContext = { source: "player" },
 ): CommandResult {
   const fail = (reason: string): CommandResult => ({
@@ -67,21 +71,18 @@ export function executeCommand(
   } else {
     if (entity.queue.length >= 8) return fail("The action queue is full.");
     const action = command.action;
-    if (
-      action.kind === "move" &&
-      (!entity.mobile || !floorAt(site, action.destination))
-    )
-      return fail("Invalid movement destination or capability.");
-    if (
-      action.kind === "wait" &&
-      (!Number.isSafeInteger(action.ticks) || action.ticks < 1)
-    )
-      return fail("Wait duration must be positive whole ticks.");
-    if (
-      "targetId" in action &&
-      (!site.entities[action.targetId] || action.targetId === entity.id)
-    )
-      return fail("Choose another entity at this site.");
+    if (!entity.canAct || entity.location.kind === "carried")
+      return fail("This pawn cannot act in its current condition or location.");
+    if (entity.queue.length === 0) {
+      const reason = actionHandler(action).canStart({
+        site,
+        pawn: entity,
+        tick: state.tick,
+        materials,
+        events: [],
+      });
+      if (reason) return fail(reason);
+    }
     actionId = `action-${state.nextActionId}`;
     updated = {
       ...entity,
@@ -118,11 +119,13 @@ export function executeCommand(
 export function previewCommand(
   state: Simulation,
   command: Command,
+  materials: Materials,
   context?: CommandContext,
 ): Omit<CommandResult, "state"> {
   const { state: proposed, ...result } = executeCommand(
     state,
     command,
+    materials,
     context,
   );
   return result;

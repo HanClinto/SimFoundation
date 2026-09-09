@@ -1,6 +1,6 @@
 # SCPSiteManager Architecture
 
-Current replacement boundary: the old simulation lives in `src/simulation_legacy`, and existing UI/application bindings explicitly use it. The new headless core in `src/simulation` has no legacy dependencies and uses immutable tick inputs, entity-owned proposals and deterministic resolution. See [decision 009](decisions/009-replacement-simulation-core.md) and the [new core guide](../src/simulation/README.md). Historical implementation details below refer to the archived prototype unless stated otherwise.
+Current replacement boundary: the old simulation lives in `src/simulation_legacy`, and existing UI/application bindings explicitly use it. The replacement separates generic `src/simulation/core` mechanics from named `src/simulation/catalog` definitions. It uses deterministic sequential ticking with cohesive action classes, not proposals or a shared resolver. Core imports no catalog, legacy, application or browser code. See [decision 010](decisions/010-sequential-core-and-catalog.md) and the [new core guide](../src/simulation/README.md). Historical implementation details below refer to the archived prototype unless stated otherwise.
 
 This document defines the initial implementation boundaries for the web game. It is intentionally more stable than the folder layout: modules may move, but dependency direction and state ownership should remain explicit.
 

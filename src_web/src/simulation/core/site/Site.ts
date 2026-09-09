@@ -1,15 +1,30 @@
-import type { Action, Entity, Simulation, Site } from "../model";
-import { floorAt, positionOf, samePosition } from "../world/spatial";
+import type { Entity } from "../entity/Entity";
+import type { Simulation } from "../Simulation";
+import type { ActionState } from "../entity/pawn/actions/Action";
+import {
+  instantiateEntity,
+  type EntityDefinitions,
+  type EntityPlacement,
+} from "../entity/Definition";
+import { floorAt, positionOf, samePosition } from "./TileMap";
+
+export interface Site {
+  id: string;
+  name: string;
+  terrain: readonly string[];
+  entities: Record<string, Entity>;
+}
 
 export interface SiteTemplate {
   readonly name: string;
   readonly terrain: readonly string[];
-  readonly entities: readonly Entity[];
+  readonly entities: readonly EntityPlacement[];
 }
 
 export function instantiateSite(
   state: Simulation,
   template: SiteTemplate,
+  definitions: EntityDefinitions,
 ): { state: Simulation; siteId: string } {
   const siteId = `site-${state.nextSiteId}`;
   if (state.sites[siteId]) throw new Error("Site ID is already in use.");
@@ -24,7 +39,7 @@ export function instantiateSite(
     return target;
   };
   const entities = template.entities.map((source): Entity => {
-    const entity = structuredClone(source);
+    const entity = instantiateEntity(source, definitions);
     const location =
       entity.location.kind === "ground"
         ? entity.location
@@ -39,7 +54,7 @@ export function instantiateSite(
       id: reference(entity.id),
       location,
       queue: entity.queue.map((entry, index) => {
-        const action: Action =
+        const action: ActionState =
           "targetId" in entry.action
             ? { ...entry.action, targetId: reference(entry.action.targetId) }
             : entry.action;

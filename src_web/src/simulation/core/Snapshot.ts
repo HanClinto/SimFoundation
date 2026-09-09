@@ -1,4 +1,4 @@
-import { SIMULATION_VERSION, type Simulation } from "./model";
+import { SIMULATION_VERSION, type Simulation } from "./Simulation";
 
 export function serialize(state: Simulation): string {
   return JSON.stringify(state);

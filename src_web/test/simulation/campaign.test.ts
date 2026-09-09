@@ -1,21 +1,36 @@
 import fs from "node:fs";
 import { expect, it } from "vitest";
 import {
-  instantiateSite,
+  instantiateSite as instantiate,
   disposeSite,
   type SiteTemplate,
-} from "../../src/simulation/campaign/sites";
-import { depart } from "../../src/simulation/campaign/transfers";
-import { executeCommand } from "../../src/simulation/actions/commands";
-import { createSimulation, type Pawn } from "../../src/simulation/model";
-import { advanceSimulation } from "../../src/simulation/tick";
-import { deserialize, serialize } from "../../src/simulation/snapshot";
-import { positionOf } from "../../src/simulation/world/spatial";
+} from "../../src/simulation/core/site/Site";
+import { depart } from "../../src/simulation/core/site/Transfer";
+import {
+  executeCommand as execute,
+  type Command,
+} from "../../src/simulation/core/ControlPolicy";
+import {
+  createSimulation,
+  type Simulation,
+  advanceSimulation as advance,
+} from "../../src/simulation/core/Simulation";
+import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
+import type { EntityPlacement } from "../../src/simulation/core/entity/Definition";
+import { deserialize, serialize } from "../../src/simulation/core/Snapshot";
+import { positionOf } from "../../src/simulation/core/site/TileMap";
+import { entities, materials } from "../../src/simulation/catalog";
+
+const instantiateSite = (state: Simulation, template: SiteTemplate) =>
+  instantiate(state, template, entities);
+const advanceSimulation = (state: Simulation) => advance(state, materials);
+const executeCommand = (state: Simulation, command: Command) =>
+  execute(state, command, materials);
 
 const template: SiteTemplate = JSON.parse(
   fs.readFileSync(
     new URL(
-      "../../src/simulation/content/acceptance-site.json",
+      "../../src/simulation/catalog/sites/tests/SharedActions.json",
       import.meta.url,
     ),
     "utf8",
@@ -37,6 +52,13 @@ it("instantiates a shared JSON site definition twice without sharing mutable rec
   ).not.toBe(
     second.state.sites[second.siteId]!.entities[`${second.siteId}:operator`],
   );
+  expect(
+    second.state.sites[first.siteId]!.entities[`${first.siteId}:operator`],
+  ).toMatchObject({
+    definitionId: "field-agent",
+    materialId: "animal-tissue",
+    name: "Operator",
+  });
   const result = advanceSimulation(second.state);
   expect(serialize(second.state)).toBe(before);
   expect(result.state.tick).toBe(1);
@@ -66,7 +88,7 @@ it("instantiates a shared JSON site definition twice without sharing mutable rec
 });
 
 it("remaps queued targets and carried references without altering saved snapshot identity", () => {
-  const operator = template.entities[0] as Pawn;
+  const operator = template.entities[0]!;
   const carried = {
     ...template.entities[3]!,
     location: { kind: "carried" as const, carrierId: operator.id },
@@ -76,15 +98,17 @@ it("remaps queued targets and carried references without altering saved snapshot
     entities: [
       {
         ...operator,
-        queue: [
-          {
-            id: "initial",
-            source: "script",
-            elapsed: 0,
-            blockedReason: null,
-            action: { kind: "eat", targetId: carried.id },
-          },
-        ],
+        overrides: {
+          queue: [
+            {
+              id: "initial",
+              source: "script",
+              elapsed: 0,
+              blockedReason: null,
+              action: { kind: "eat", targetId: carried.id },
+            },
+          ],
+        },
       },
       carried,
     ],
@@ -107,12 +131,11 @@ it("remaps queued targets and carried references without altering saved snapshot
 });
 
 it("transfers one pawn and its carried pawn through a snapshot without double ticking or duplication", () => {
-  const operator = template.entities[0] as Pawn;
-  const patient: Pawn = {
+  const operator = template.entities[0]!;
+  const patient: EntityPlacement = {
     ...operator,
     id: "patient",
-    name: "Patient",
-    canAct: false,
+    overrides: { name: "Patient", canAct: false },
     location: { kind: "carried", carrierId: operator.id },
   };
   const first = instantiateSite(createSimulation(), {
@@ -172,7 +195,7 @@ it("transfers one pawn and its carried pawn through a snapshot without double ti
 });
 
 it("retains transit ownership when arrival is blocked and accepts arrival after the tile clears", () => {
-  const operator = template.entities[0] as Pawn;
+  const operator = template.entities[0]!;
   const first = instantiateSite(createSimulation(), {
     ...template,
     entities: [operator],
@@ -237,6 +260,14 @@ it("keeps the replacement independent from legacy, application and browser code"
         expect(source).not.toMatch(
           /\b(document|window|localStorage|requestAnimationFrame)\b/,
         );
+        if (url.pathname.includes("/core/")) {
+          expect(source).not.toMatch(
+            /(?:from\s*|import\s*\(|require\s*\()\s*["'][^"']*catalog/,
+          );
+          expect(source).not.toMatch(
+            /field-agent|packaged-meal|automatic-steel-door|scp-999/,
+          );
+        }
       }
     }
   }

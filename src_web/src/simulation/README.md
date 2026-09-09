@@ -1,41 +1,147 @@
-# Simulation Core
+# Simulation
 
-This is the replacement headless simulation. It imports no code from `simulation_legacy`, application controllers or browser adapters. The previous implementation remains in [../simulation_legacy](../simulation_legacy) for reference; existing UI/application callers explicitly use that directory until replaced. There is no compatibility facade in this directory.
+This is the replacement headless simulation. The previous engine remains in [../simulation_legacy](../simulation_legacy) for reference. Existing browser/application bindings still explicitly run that archive; this directory has no legacy imports or compatibility facade.
+
+The organizing principle is **open the file for a thing to understand that thing**. Core defines reusable mechanics. Catalog defines named things in the game using those mechanics. Prefer a readable local implementation over distributed switches, inheritance ladders, or speculative frameworks.
+
+## Core Versus Catalog
+
+```text
+application / headless tests
+	-> catalog (named definitions and authored sites)
+	-> core (generic mechanics, accepting supplied definitions)
+
+catalog -> core
+core -X-> catalog, legacy, application, browser
+```
+
+Core knows what a pawn, door, material, and diet are. It does not know FieldAgent, Steel, SCP-999, or Site 828. The caller supplies entity definitions to site instantiation and material definitions to ticking/commands. There is no hidden default catalog or global registration. The catalog index only lists entries; it does not implement their behavior.
 
 ## Layout
 
-- `model.ts`: plain serializable entities, pawns, sites, transfers and actions.
-- `entities/`: shared entity mechanics, currently optional need progression.
-- `behaviors/`: definition-owned tick handlers and autonomous intent selection. Handlers read the current snapshot and emit proposals, not mutations.
-- `actions/`: source-aware commands, proposals and deterministic resolution. Staff and autonomous pawns share the same executor; no combat enrollment or drafting.
-- `world/`: spatial queries and cardinal pathfinding using the existing `pathfinding` dependency.
-- `campaign/`: site instantiation/disposal and ownership transfer, independent of quests.
-- `content/`: plain JSON site definitions used by headless integration tests.
-- `tick.ts`: collect proposals, resolve each site, then advance transit/commit arrivals. It contains no door or named-anomaly rules.
-- `snapshot.ts`: JSON stringify/parse and root/version checks only.
+```text
+simulation/
+	core/
+		Simulation.ts
+		ControlPolicy.ts
+		Snapshot.ts
+		entity/
+			Entity.ts
+			Definition.ts
+			Item.ts
+			Door.ts
+			pawn/
+				Pawn.ts
+				Needs.ts
+				Autonomy.ts
+				actions/
+					Action.ts
+					ActionQueue.ts
+					Move.ts
+					Take.ts
+					Drop.ts
+					Eat.ts
+					Wait.ts
+		material/
+			Material.ts
+		site/
+			Site.ts
+			TileMap.ts
+			Pathfinding.ts
+			Transfer.ts
+	catalog/
+		actors/staff/FieldAgent.ts
+		entities/doors/AutomaticSteelDoor.ts
+		entities/supplies/PackagedMeal.ts
+		materials/
+			Steel.ts
+			Wood.ts
+			Plastic.ts
+			Stone.ts
+			PlantFood.ts
+			AnimalTissue.ts
+		sites/tests/SharedActions.json
+		index.ts
+```
 
-Run `npm run test:simulation` from the web project for the replacement acceptance tests. `npm run check` also checks the archived application's existing tests/build during the transition; passing those does not mean the new core is connected to the UI.
+There are no redundant `entity/entities` or `action/actions` levels. Actions belong beneath Pawn because pawns execute them. Materials have their own branch because a material is a definition, not an entity. Spatial mechanics and ownership transfers live with sites.
 
-## Tick Contract
+When implemented, named anomalies belong under `catalog/actors/anomalies`, ordinary authored maps under `catalog/sites`, and quests under `catalog/quests/<quest>/quest.ts`. Stage folders are useful when a stage actually has multiple files/assets. Do not create empty quest, actor, or site stubs just to fill out the proposed tree. Quest content must not own a site's lifetime. Reusable quest mechanics belong in core when needed.
 
-Every entity observes the same site snapshot for a tick. Handlers must not mutate it; tests freeze inputs. Local need changes and shared action requests are collected before any next-state changes are applied. The resolver orders competing actions by entity ID. A move or resource claim has one winner; losing actions retain a blocker for retry. Doors own automatic-close proposals in their definition, and shared spatial resolution prevents closure around occupants or incoming movement.
+## Entity, Definition, Material
 
-Movement uses a conservative starting-snapshot occupancy rule: a pawn cannot enter another ground pawn's starting tile on the same tick, even if that pawn proposes leaving it. Swaps and traffic optimization are not implemented. A closed automatic door is opened on one tick and crossed on a later tick. Entity/proposal array order does not change the tested results; stable ID arbitration is explicit, not hidden direct-mutation ordering.
+- **Entity** is a persistent physical instance with identity, location, material, and amount. A site or transfer owns its actual record.
+- **Pawn** is an entity with agency and an action queue. Agency, independent movement, player permission, autonomy, and carryability are distinct. Staff and anomalies are definitions, not separate entity stores.
+- **Item** is a loose physical object. It has no mandatory food subtype. A **Door** has door mechanics; it is not an item just because it is made of steel.
+- **EntityDefinition** describes a named model: stable definition ID, display name, description, and initial defaults. Multiple instances share a definition ID, never an instance ID or mutable defaults.
+- **Material** describes what an entity is made of. A steel ingot and a steel door can share a material without sharing their entity kind. Instance `amount` is remaining abstract material units, not a weight simulation.
 
-All owned pawns advance applicable needs once, including carried or transit-owned pawns. Carried pawns do not independently act or occupy another tile. No food need means no hunger updates. Autonomy off prevents new self-selected actions but preserves current queues and ongoing physiology. Player authority is checked at submission and execution. Debug permission is supplied through a trusted caller context, never inferred from the queued action; debug commands bypass player permission, not physical restrictions. Cancellation removes an intention and does not teleport/drop cargo or change autonomy.
+Catalog entries are intentionally small, wiki-like records. For example, [FieldAgent.ts](catalog/actors/staff/FieldAgent.ts) gives its description, capabilities, needs, and diet; [AutomaticSteelDoor.ts](catalog/entities/doors/AutomaticSteelDoor.ts) selects steel and automatic operation. [Door.ts](core/entity/Door.ts) contains the mechanics. Add source/attribution/license metadata with externally sourced content; no new SCP content is authored in this slice.
 
-Transfers accept prepared ground entities at a loading tile, include carried dependency groups and move their actual records into transit ownership. Travelling pawns must have empty queues. No site ticks these records in transit. The coordinator advances their needs and commits arrivals after site execution, so arrivals receive no extra local step. Blocked arrivals retain payload and reason. Both endpoints remain protected from disposal while a transfer exists. Transfers are ordinary headless domain commands, not user-facing authorization endpoints yet.
+Named content may eventually need unique behavior beside its catalog entry. Add a narrow core behavior interface when such a feature is implemented; do not put named-definition tests in the coordinator or prebuild an ECS/plugin framework. Display documentation can later be generated from catalog metadata; a wiki generator is not implemented here.
 
-## Authored Data And Saves
+## Actions Stay Together
 
-The acceptance site is a JSON document with rectangular `.` floor / `#` wall rows and entities. `instantiateSite` gives the site and each entity fresh IDs and remaps local carried/target references and initial action IDs. Snapshot restore preserves IDs, action progress and transit exactly. No callbacks are serialized and no per-type revival or save migration runs.
+[Move.ts](core/entity/pawn/actions/Move.ts) owns movement eligibility, routing, occupancy checks, door opening, stepping, and arrival. Take, Drop, Eat, and Wait each own their corresponding checks and effects. Approach movement is reused, not copied into a second execution system.
 
-The loader checks authored map geometry and local references because it is creating new live objects. Snapshot parsing intentionally does not revalidate gameplay. The definition catalog and template types are trusted developer-authored content, not a hardened external mod interface.
+Each action class implements `canStart` and `tick`. [ActionQueue.ts](core/entity/pawn/actions/ActionQueue.ts) has a small constructor dispatch and generic queue advancement, not a switch containing each action's rules. Adding a new action means its class, serializable action shape, and constructor entry. Only one queued action gets a turn; the next begins on the next tick.
 
-## Current Scope
+Action handlers are short-lived code objects, not saved class instances. Progress, source, target, and blocker are ordinary JSON queue data. Cancellation removes that intention only: it does not undo consumed material, drop a carried entity, teleport anything, or change autonomy. Current actions have no persistent reservations requiring a cancellation hook; introduce one only when a real action owns such resources.
 
-Implemented: entity/pawn separation, independent autonomy/control/mobility/carryability, move/take/drop/eat/wait, one chosen autonomous patrol intention, non-pawn automatic doors/items, deterministic claims, optional needs, shared JSON site instantiation, snapshot replay, multi-site ticking, prepared cross-site transfers and empty-site disposal.
+[ControlPolicy.ts](core/ControlPolicy.ts) checks player/script/debug authority and edits queues. Immediate starts use the action's own checks. Appended intentions may depend on earlier actions (for example Take then Drop), so their physical eligibility is deferred until execution. A blocked action stays queued and retries against current state; it can be cancelled. Previews return eligibility without mutation or event publication. Debug authority bypasses player permission, not the executor's physical rules.
 
-Not ported: Site 828's full authored map, personnel dossiers, qualifications, jobs, material construction, electrical networks, clinical care, anomaly-specific actions, combat, quest progression, reactive mental states, transit return/reroute, stack quantities/weight, and browser binding. `canAct` and `mobile` permit representing an inactive or immobile pawn; they do not implement death, injury or recovery rules. The accepted input policy blocks a revoked player action in place; richer active-control-change policies remain future work.
+## Sequential Ticks
 
-The current definition union deliberately covers only the first executable examples. Add concrete behaviors when porting a wanted feature; do not build an ECS or a scripting system in anticipation. Preserve useful domain calculations from the archive selectively, then test them through this core. Do not expand legacy execution to make the replacement look complete.
+The proposal/resolver system has been deleted. [Simulation.ts](core/Simulation.ts) clones the caller's state once, then executes directly against that working state:
+
+1. Increment the global tick and capture each site's starting entity IDs.
+2. Tick sites and entities in ascending, case-sensitive ID order.
+3. Each entity sees changes made by earlier turns. Removed entities are skipped; newly added IDs wait until the next tick.
+4. Advance transit needs and commit unblocked arrivals after all site turns.
+5. Return the finished state and events. The input remains untouched.
+
+This boundary copy is for caller isolation, not simultaneous simulation: actions do not read an old snapshot or emit proposals for a later resolver. Stable ordering makes replay reproducible but deliberately gives earlier IDs priority. First successful movement/consumption wins. Later movers can enter a tile vacated earlier in the same tick. Swaps, fairness rotation, and traffic optimization are not implemented. Pathfinding plans through other pawns; actual stepping waits for occupancy to clear.
+
+Opening a closed automatic door spends the opener's turn without movement. A later entity sees that door as open immediately. Door closure checks current nearby ground occupants when the door gets its own turn. There is no special end-of-tick door resolver.
+
+Pawn needs advance once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs once outside sites, and arrivals receive no extra local turn. `canAct` and `mobile` can represent inactivity/immobility but do not themselves implement injury, death, or recovery.
+
+Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) currently selects food at hunger >= 50, otherwise a configured patrol destination; it never performs a separate version of an action.
+
+## Diets Without Food Subclasses
+
+[Material.ts](core/material/Material.ts) defines descriptive tags and diet rules. Tags are catalog strings, not a core enum. Each diet rule matches one tag and specifies nourishment per unit for that consumer. If several rules match, the highest nourishment applies once; values do not stack.
+
+Examples: a metalivore accepts `metal`, a plastic consumer accepts `plastic`, and an ordinary plant-food diet accepts `edible-plant`. Wood is tagged `organic`, `plant`, and `wood`, not `edible-plant`. Classification does not imply digestibility. No special branch in Eat knows steel, plastic, meat, or meals.
+
+[Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous food selection considers acceptable, reachable items by distance then ID. Dynamic pawn obstruction can still make an action wait. Explicit orders keep their specified target and never silently substitute another. An eat action approaches, rechecks, consumes at most one unit, reduces hunger according to the diet, and removes an exhausted item. Fractional remainders are supported. Pawns with no hunger need do not search for or consume food.
+
+For now, **only loose items are consumable**. Material matching alone does not authorize eating installed doors or living pawns; structural damage and predation need their own consequences. There is one material per entity, no mixtures, digestion chemistry, calories, or weight model. Extend only when actual content needs more.
+
+## Sites, Transfers, And Saves
+
+[SharedActions.json](catalog/sites/tests/SharedActions.json) is an authored site: rectangular `.` floor / `#` wall rows plus placements naming catalog definitions, local IDs, locations, and optional instance overrides. Overrides replace supplied top-level fields; they are not a recursive patch language. `instantiateSite` clones defaults, allocates fresh site/entity IDs, and remaps carried references, queued targets, and initial action IDs. Site instantiation checks geometry/references; this is trusted developer content, not a hardened mod loader.
+
+```ts
+import { entities, materials } from "./catalog";
+import template from "./catalog/sites/tests/SharedActions.json";
+import { createSimulation, advanceSimulation } from "./core/Simulation";
+import { instantiateSite, type SiteTemplate } from "./core/site/Site";
+
+const created = instantiateSite(
+  createSimulation(),
+  template as SiteTemplate,
+  entities,
+);
+const next = advanceSimulation(created.state, materials);
+```
+
+Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
+
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Definitions/handlers are supplied by code, not serialized or revived. Version 2 discards the previous experimental shape; there are no migrations or deep save validators.
+
+## Verification And Scope
+
+Run `npm run test:simulation` from the web project. Tests cover sequential contention and following, detached inputs, door behavior, material-driven eating and quantities, autonomous versus explicit targets, control/autonomy/cancellation, carried-pawn identity, authored instances, save replay, multi-site/transit ownership, and forbidden dependency directions.
+
+`npm run check` also validates the archived application's tests/build. That does not mean the replacement is connected to the browser. Not ported: full Site 828, SCP behaviors, quests, personnel dossiers, qualifications, jobs, construction, power, clinical care, combat, richer transport, or UI binding. Selectively reuse useful legacy calculations; do not preserve old implementations merely to satisfy old tests.

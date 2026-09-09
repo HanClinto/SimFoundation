@@ -1,0 +1,40 @@
+import type { Position } from "../../Entity";
+import type { Pawn } from "../Pawn";
+import type { Site } from "../../../site/Site";
+import type { Materials } from "../../../material/Material";
+import type { TickEvent } from "../../../Simulation";
+
+export type ActionState =
+  | { kind: "move"; destination: Position }
+  | { kind: "take"; targetId: string }
+  | { kind: "drop"; targetId: string }
+  | { kind: "eat"; targetId: string }
+  | { kind: "wait"; ticks: number };
+
+export type ActionSource = "player" | "autonomy" | "script" | "debug";
+
+export interface QueuedAction {
+  id: string;
+  source: ActionSource;
+  action: ActionState;
+  elapsed: number;
+  blockedReason: string | null;
+}
+
+export interface ActionContext {
+  site: Site;
+  pawn: Pawn;
+  tick: number;
+  materials: Materials;
+  events: TickEvent[];
+}
+
+export type ActionResult =
+  | { status: "completed" }
+  | { status: "running" }
+  | { status: "blocked"; reason: string };
+
+export interface Action {
+  canStart(context: ActionContext): string | null;
+  tick(context: ActionContext, elapsed: number): ActionResult;
+}

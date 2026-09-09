@@ -1,6 +1,17 @@
-import type { Entity, Position, Simulation, Transfer } from "../model";
-import { advanceNeeds } from "../entities/needs";
-import { doorAt, floorAt, samePosition } from "../world/spatial";
+import type { Entity, Position } from "../entity/Entity";
+import type { Simulation } from "../Simulation";
+import { advanceNeeds } from "../entity/pawn/Needs";
+import { doorAt, floorAt, samePosition } from "./TileMap";
+
+export interface Transfer {
+  id: string;
+  originId: string;
+  destinationId: string;
+  arrival: Position;
+  arrivesAt: number;
+  blockedReason: string | null;
+  entities: Record<string, Entity>;
+}
 
 export interface TransferRequest {
   readonly originId: string;

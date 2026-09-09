@@ -1,0 +1,36 @@
+{
+  "name": "Shared action test site",
+  "terrain": ["#########", "#.......#", "#.......#", "#.......#", "#########"],
+  "entities": [
+    {
+      "id": "operator",
+      "definitionId": "field-agent",
+      "location": { "kind": "ground", "position": { "x": 1, "y": 1 } },
+      "overrides": { "name": "Operator" }
+    },
+    {
+      "id": "visitor",
+      "definitionId": "field-agent",
+      "location": { "kind": "ground", "position": { "x": 1, "y": 3 } },
+      "overrides": {
+        "name": "Autonomous visitor",
+        "playerControllable": false,
+        "needs": {},
+        "patrol": [
+          { "x": 6, "y": 3 },
+          { "x": 1, "y": 3 }
+        ]
+      }
+    },
+    {
+      "id": "door",
+      "definitionId": "automatic-steel-door",
+      "location": { "kind": "ground", "position": { "x": 3, "y": 1 } }
+    },
+    {
+      "id": "meal",
+      "definitionId": "packaged-meal",
+      "location": { "kind": "ground", "position": { "x": 2, "y": 1 } }
+    }
+  ]
+}
