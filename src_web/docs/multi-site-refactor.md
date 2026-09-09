@@ -145,6 +145,28 @@ Remove the current SCP-999 singleton and single-adversary combat record. Entity 
 
 All pawns are entities; not all entities are pawns. Use plain serializable tagged records, not a deep class hierarchy or an ECS dependency. The exact TypeScript union should follow the existing physical requirements rather than make every property optional on every object.
 
+### Agreed Taxonomy And Control Policy
+
+Locked design direction, 2026-09-09; implementation remains tracked by the cleanup ledger. Use **Entity** consistently for a persistent world/inventory/transit object, and **Pawn** for an entity capable of agency and action execution. Do not introduce GameObject as a second name for the same concept. Mobility is independent of agency: a carried crate is not a pawn, and a stationary intelligent entity can be one. Staff is a pawn role; anomaly is a classification/definition, not a disjoint ownership category. Not every anomaly is a pawn.
+
+Replace drafting as a separate actor/combat mode with an **autonomy enabled/disabled** policy. Player-control permission, autonomy policy and physical ability to act are independent. Staff normally accept player commands and allow autonomy; anomalies normally choose their own actions but reject player commands. Disabling autonomy must not grant control of an otherwise uncontrollable entity.
+
+- Autonomy enabled allows selection of new needs-, schedule-, job- and behavior-driven commitments when the pawn is available. Explicit queued commands retain their established priority and safe handoff rules.
+- Autonomy disabled suppresses those new self-selected commitments, including automatic job claiming. Explicit orders and their necessary approach/carry/work steps still execute. Once those orders finish, the pawn waits rather than independently choosing new work.
+- Changing the policy alone does not cancel or interrupt the current commitment, clear queued orders, release cargo, reset action recovery or replenish resources. Finish the active commitment, or use the normal explicit cancellation/replacement action with its existing safety checks. Turning autonomy back on permits selection at the next eligible boundary, not a duplicate execution tick.
+- Needs, physiological effects, hazards and applicable condition changes continue regardless of autonomy. Incapacitation or death prevents inappropriate action execution independently of either autonomy or control permission. Autonomous emergency overrides, if ever added, must be explicit policy rather than a hidden exception.
+- Remove the combat-responder prerequisite for ordinary movement and the temporary-draft/return-to-autonomy plumbing. Issuing a move does not itself toggle the pawn's autonomy setting. Intent source explains why the action exists; it does not select a different movement engine.
+
+Carryability is a physical capability of an entity, independent of whether it is a pawn. Disabled, injured or dead pawns can be carried when the carrier, load and handling conditions permit. Preserve the same entity ID, personal history, equipment and applicable state; do not delete the pawn and spawn a duplicate cargo item. Carried pawns have a carrier-relative location, not an additional independently occupied map tile, and do not independently walk while carried. The site or transport remains their simulation owner, so applicable health/needs/effects advance once, not again inside the carrier's tick. Prevent self-carry and containment/carrier cycles; pickup, drop and cross-site transfer must preserve the complete dependency group.
+
+This establishes representation and handling requirements, not a decision to add death, revival, medical evacuation rules or mind control immediately. Those gameplay transitions remain separate work. A dead pawn's continued historical identity does not imply that living needs or autonomous actions continue after death.
+
+Implementation checklist additions (all pending):
+
+- [ ] E8 Replace drafted/responder gating of ordinary actions with independent autonomy policy; remove temporary-draft movement and duplicate return-to-autonomy state.
+- [ ] E9 Test autonomy toggles during travel, protected cargo work and queued commands: no cancellation, duplicate action, free resources or suspension of needs.
+- [ ] T4 Support carrier-relative pawn location and shared entity handling without proxy cargo objects; preserve identity/equipment, prevent cycles, and tick carried entities once.
+
 An entity has a stable instance ID, a type/definition reference and a location. A pawn additionally has applicable needs, abilities, behavior state and action execution state. A human staff member may have personnel history, qualifications and employment data; an anomaly must not require a fabricated human dossier to use movement or a queue. Fixtures, supply stacks and stationary anomalies remain non-pawn entities unless their behavior actually needs pawn execution.
 
 - **Selection of intent:** Human needs, schedules, assigned work, player orders and anomaly-specific behaviors propose actions. They may choose differently, but do not implement separate movement or action timing.
@@ -161,7 +183,7 @@ Implement this by converting the existing staff pawn, SCP-999 and 049-2 examples
 
 A game save is a JSON serialization of the full authoritative global state: clock, sites, entities, in-flight transfers and quest progress. No database, object pickling hooks, per-entity serializers, migrations or replay log is required to reconstruct it. Serialize data and type IDs, not functions or live class instances. Behavior implementations are selected from code by type ID when simulation runs. Derived pathfinding graphs, indexes and view state need not be saved.
 
-Keep loading modest: parse JSON, check the format version and basic shape, then reuse a small set of essential identity/ownership/reference checks. Fail clearly and discard incompatible development saves. Do not spend a separate milestone exhaustively re-encoding all gameplay invariants in a second validator. Most correctness belongs in commands and focused simulation tests. Restore-mid-action and restore-in-transit tests verify that the stored state is sufficient.
+Keep loading modest: parse JSON, check that the root is a non-null non-array object and check the format version, with try/catch for parsing and storage errors. Trust current-version contents; do not validate ownership or gameplay references in the loader. Discard incompatible development saves. Correctness belongs in commands and focused simulation tests. Restore-mid-action and restore-in-transit tests verify that the stored state is sufficient.
 
 Use a simple JSON site document for both authored startup content and unusual integration fixtures. It holds the map, initial entities and whatever local state the fixture needs. ASCII rows plus a tile legend may be used within JSON when useful for hand-authored geometry; material records, fixtures and entities remain structured data. Do not build a custom map language or an editor in this refactor.
 
