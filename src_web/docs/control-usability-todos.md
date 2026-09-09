@@ -35,11 +35,12 @@ Status: implementation in progress. Check items only after their scoped checks p
 
 ## 4. Consistent Object Location and Inspection
 
-- [ ] Rename Focus personnel to Find Object (it includes people, furniture, supplies and utilities).
-- [ ] Define locator behavior explicitly: choosing an entry locates/inspects the target without silently changing the command subject. With Follow enabled, retarget the camera to the located entry rather than snapping back to the previous one.
-- [ ] Remove or consolidate the redundant Open Record toolbar button while retaining keyboard and empty-selection inspection affordances.
+- [x] Rename Focus personnel to Find Object (it includes people, furniture, supplies and utilities).
+- [x] Define locator behavior explicitly: choosing an entry locates/inspects the target without silently changing the command subject. With Follow enabled, retarget the camera to the located entry rather than snapping back to the previous one.
+- [x] Remove or consolidate the redundant Open Record toolbar button while retaining keyboard and empty-selection inspection affordances.
 - Acceptance: portrait selection remains subject selection; object lookup remains target selection. Both locate predictably, use observed coordinates in Recorded view, and handle absent/off-map entries without invented positions. Name links retain inspection access.
 - Validation: pointer/keyboard locator, Follow on/off, Recorded, selected target independent of subject, no queue mutation, small toolbar.
+- Verified: enabled Follow retargets on lookup, disabled Follow stays off, and clearing the locator stops Follow without moving the camera or deselecting the subject. Tests cover observed coordinates, missing followed objects, empty Enter and entity Enter without a toolbar inspection button. Browser confirmed spare-bed inspection, Caleb retained while locating Lena, both toolbars without Open Record, 560px layout and unchanged save. Full gate passed with 367 tests.
 
 ## 5. Truthful Availability and Reasons
 

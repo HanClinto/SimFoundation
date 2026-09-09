@@ -63,6 +63,9 @@ export function createSiteMap(
   const entitySelect = element.querySelector<HTMLSelectElement>(
     "[data-camera-entity]",
   )!;
+  entitySelect.setAttribute("aria-label", "Find Object");
+  entitySelect.title =
+    "Locate an inspection target; the active command subject stays selected";
   const followControl = element.querySelector<HTMLInputElement>(
     "[data-camera-follow]",
   );
@@ -73,7 +76,7 @@ export function createSiteMap(
     element.querySelector<HTMLOutputElement>("[data-camera-zoom]")!;
   const inspect = element.querySelector<HTMLButtonElement>(
     '[data-camera-action="inspect"]',
-  )!;
+  );
   const placementBar = element.querySelector<HTMLElement>(
     "[data-placement-bar]",
   )!;
@@ -245,7 +248,7 @@ export function createSiteMap(
     const signature = JSON.stringify(objects.map(({ id, name }) => [id, name]));
     if (signature !== objectSignature) {
       entitySelect.replaceChildren(
-        new Option("Select object", ""),
+        new Option("Find Object", ""),
         ...objects.map((object) => new Option(object.name, object.id)),
       );
       objectSignature = signature;
@@ -275,7 +278,7 @@ export function createSiteMap(
       perspectiveLabel.textContent =
         camera.perspective === "world" ? "SIMULATION" : "RECORDED";
     zoomLabel.value = `${Math.round(camera.zoom * 100)}%`;
-    inspect.disabled = camera.selectedId === null;
+    if (inspect) inspect.disabled = camera.selectedId === null;
     drawFrame();
   }
   function focus(position: TilePosition, preserveFollow = false) {
@@ -380,8 +383,14 @@ export function createSiteMap(
     const object = mapObjects(displayed().game, camera.perspective).find(
       (object) => object.id === camera.selectedId,
     );
-    if (object) focus(object.position, true);
-    else render(current);
+    if (object) {
+      if (following) followId = object.id;
+      focus(object.position, true);
+    } else {
+      following = false;
+      followId = null;
+      render(current);
+    }
   });
   element.addEventListener("click", (event) => {
     const action = (event.target as Element).closest<HTMLElement>(

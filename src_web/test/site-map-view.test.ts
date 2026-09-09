@@ -279,11 +279,14 @@ it("follows only the selected perspective's position and releases the camera for
   });
   const controller = createController(createInitialState());
   const initial = controller.advance();
-  const view = createSiteMap(canvas, root, controller, vi.fn());
+  root.querySelector('[data-camera-action="inspect"]')!.remove();
+  const openRecord = vi.fn();
+  const view = createSiteMap(canvas, root, controller, openRecord);
   const follow = root.querySelector<HTMLInputElement>("[data-camera-follow]")!;
   const select = root.querySelector<HTMLSelectElement>("[data-camera-entity]")!;
   const personId = "person-mara-voss";
   const camera = () => vi.mocked(renderSite).mock.calls.at(-1)![2]!;
+  expect(select.getAttribute("aria-label")).toBe("Find Object");
   expect(follow.disabled).toBe(true);
   select.value = personId;
   select.dispatchEvent(new window.Event("change", { bubbles: true }));
@@ -344,7 +347,12 @@ it("follows only the selected perspective's position and releases the camera for
   follow.click();
   select.value = "person-lena-ortiz";
   select.dispatchEvent(new window.Event("change", { bubbles: true }));
-  expect(camera().center).toEqual({ x: 60, y: 58 });
+  expect(camera().center).toEqual(
+    moved.game.world.positions["person-lena-ortiz"],
+  );
+  expect(camera().activePawnId).toBe(personId);
+  view.render(lenaMoved);
+  expect(camera().center).toEqual({ x: 70, y: 70 });
   select.value = personId;
   select.dispatchEvent(new window.Event("change", { bubbles: true }));
   canvas.dispatchEvent(new window.KeyboardEvent("keydown", { key: "+" }));
@@ -403,6 +411,29 @@ it("follows only the selected perspective's position and releases the camera for
     initial.game.observations.entities[personId]!.position,
   );
   expect(camera().center).not.toEqual(moved.game.world.positions[personId]);
+  canvas.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter" }));
+  expect(openRecord).toHaveBeenCalledWith(personId, "recorded");
+  select.value = "person-lena-ortiz";
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  expect(camera().center).toEqual(
+    initial.game.observations.entities["person-lena-ortiz"]!.position,
+  );
+  expect(camera().activePawnId).toBe(personId);
+  const beforeClear = camera().center;
+  select.value = "";
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  expect(follow.checked).toBe(false);
+  expect(camera()).toMatchObject({
+    center: beforeClear,
+    selectedId: null,
+    activePawnId: personId,
+  });
+  openRecord.mockClear();
+  canvas.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter" }));
+  expect(openRecord).not.toHaveBeenCalled();
+  select.value = personId;
+  select.dispatchEvent(new window.Event("change", { bubbles: true }));
+  follow.click();
   const recordedCamera = camera();
   expect(view.controlPerson(personId)).toContain("World view");
   expect(camera()).toEqual(recordedCamera);
