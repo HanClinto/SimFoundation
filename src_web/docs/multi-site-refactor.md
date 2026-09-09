@@ -4,6 +4,12 @@ Status: approved direction, implementation started 2026-09-09; tracked in [#24](
 
 ## Implementation Status
 
+### Latest Scope Clarification
+
+The user explicitly approved replacing the dedicated SCP-999 slot and hard-coded adversary model with a shared entity/pawn system, including deleting and reimplementing unsuitable prototype behavior. This is the next headless priority, ahead of further save validation or browser bindings. The progress descriptions below describe the existing intermediate implementation, not acceptance of those specialized records as the final model.
+
+Saves remain plain JSON snapshots of authoritative state. Do not build a persistence framework or a second hand-maintained model of every gameplay rule. Authored site files and integration fixtures should share a simple headless loading path. The entity/action design and lightweight file contract below supersede earlier suggestions to preserve separate resident/threat stores or make extensive campaign validation the next major work item.
+
 The first checkpoint separated `SiteState`, `SimulationClock` and `SiteSimulationState`, moved clock advancement to the coordinator, and made combat withdrawal policy explicit.
 
 The next checkpoint adds [sites.ts](../src/simulation/sites.ts): an ordinary serializable site collection, neutral site creation, guarded disposal, explicit site context/update, ownership checks and one sorted global tick over all retained sites. Local systems and the shared runner now accept site context without `version` or `expeditions`. Sites can have no SCP-999 and no startup stock, people, cameras or furniture. Newly generated split objects and vessels in these stores have site-qualified IDs that remain stable.
@@ -54,7 +60,7 @@ One global simulation owns many persistent sites. Each site has a tilemap and lo
 
 An unstaffed site still advances applicable behavior: hazards, residents, equipment, and ongoing local conditions. A quest may involve any combination of sites. Completing or abandoning it neither destroys a site nor resets its contents. Establishing remote containment and relocating operations must use the same systems as operating Site 828.
 
-This is a change to simulation ownership, not a new strategy-game UI or a general entity-component-system rewrite. Existing specialized entity types and physical rules remain useful.
+This is a change to simulation ownership and a shared entity/pawn model, not a new strategy-game UI or a general-purpose entity-component-system framework. Reuse physical rules where sound; delete special-case execution paths rather than preserving them for compatibility.
 
 ## Current Couplings To Remove
 
@@ -79,25 +85,70 @@ SimulationState
   sitesById
     SiteState
       id, name, world/tilemap
-      personnel, residents, threats, physical objects
+      entities[] (pawns and non-pawn objects, each with one stable ID)
       jobs, routines, clinical policy, observations, local incidents
       object work, vessel work, storage, environment, local combat
   transfersById
     endpoints, manifest, staging, phase, deadlines, blocked reason
-    in-transit personnel, residents, threats, physical objects
+    in-transit entities and their contained/carried dependencies
   operations
     assigned team, destination, departure/return intentions, reports
   quests
     requirements, progress and durable accomplishments
 ```
 
-Every site is the same SiteState type, with its own entities, objects, work queues, routines, utilities and other local systems. There is no HomeSite/RemoteSite subtype, reduced remote state, or simulation capability flag based on distance or UI selection. An empty site has empty collections, not missing functionality. Equipment, staffing and physical conditions determine what work can actually happen.
+Every site is the same SiteState type, with its own entities, work queues, routines, utilities and other local systems. Physical objects and pawns are kinds of entity, not parallel owners. There is no HomeSite/RemoteSite subtype, reduced remote state, or simulation capability flag based on distance or UI selection. An empty site has empty collections, not missing functionality. Equipment, staffing and physical conditions determine what work can actually happen.
 
-Keep one canonical record for each transferable entity inside its owning site's typed collection, or inside a transfer's transit payload after departure. A staged manifest references the origin's records; it does not duplicate them. Membership in those collections establishes ownership. Do not serialize an independently mutable global copy or ownership roster. A derived campaign-wide lookup can find a person or object by stable ID for dossiers and commands; it is an index, not another owner or ticking system.
+Keep one canonical record for each transferable entity inside its owning site's entity collection, or inside a transfer's transit payload after departure. A staged manifest references the origin's records; it does not duplicate them. Membership in those collections establishes ownership. Staff, pawn, object and anomaly lists are derived views over this collection, not separately mutable copies. A derived campaign-wide lookup can find an entity by stable ID for dossiers and commands; it is an index, not another owner or ticking system.
 
 Global lookup supports dossiers, transfers and stable identity, but does not tick site-owned people a second time. Historical injuries, skills, equipment and personal preferences travel with the person. Site staffing policies, furniture assignments, physical jobs and station reservations stay local. Each site owns its local work and action queues. Orders reference both site and entity identity; pending actions do not automatically acquire permission to execute at a new site.
 
-The current SCP-999 singleton and single-adversary combat record need explicit resident/threat identity and ownership. Do not create a new SCP-999 for every site. Move entity-specific state with its entity and retain encounter-local membership/events at their site. This does not require generalized multi-enemy tactics or interchangeable anomaly behavior plugins now.
+Remove the current SCP-999 singleton and single-adversary combat record. Entity instance IDs are separate from definition/type IDs: multiple instances of the same type must work in one site or different sites without aliasing. Startup content may instantiate a single SCP-999; the runtime must not reserve a special slot or identify it through a hard-coded instance ID. Target identity, physical state and current action belong to the entity; encounter-local events or objectives belong to the site/operation.
+
+## Shared Entities And Pawn Actions
+
+All pawns are entities; not all entities are pawns. Use plain serializable tagged records, not a deep class hierarchy or an ECS dependency. The exact TypeScript union should follow the existing physical requirements rather than make every property optional on every object.
+
+An entity has a stable instance ID, a type/definition reference and a location. A pawn additionally has applicable needs, abilities, behavior state and action execution state. A human staff member may have personnel history, qualifications and employment data; an anomaly must not require a fabricated human dossier to use movement or a queue. Fixtures, supply stacks and stationary anomalies remain non-pawn entities unless their behavior actually needs pawn execution.
+
+- **Selection of intent:** Human needs, schedules, assigned work, player orders and anomaly-specific behaviors propose actions. They may choose differently, but do not implement separate movement or action timing.
+- **Execution:** One action pipeline handles approach, prerequisites, reservation, progress, interruption, cancellation and completion. General actions include movement, resting, eating and attacks. A specialized action such as comforting another pawn can have a focused executor without becoming a second actor simulation.
+- **Autonomy:** Keep one selected autonomous commitment at a time initially. Do not create speculative long autonomous queues or a planning language. Existing manual queue semantics should be reused where appropriate, not copied into an anomaly queue implementation.
+- **Needs:** Need definitions specify which needs exist, their rates and permitted ways to satisfy them. An entity without a nutrition requirement does not accumulate hunger; giving it a huge hunger counter or a per-tick named-SCP exception is not equivalent. No universal assumption that every pawn sleeps, eats meals, uses beds or can perform human jobs.
+- **Control:** Player command permission is independent of pawn capability and affiliation. Staff may be controllable by default; autonomous anomalies are not. Validate this at the headless player-command boundary, not only by hiding buttons. Autonomy uses the same legal action executors without pretending to be a player. A later control effect can change permission without swapping the entity's type; mind-control gameplay itself is not part of this pass.
+- **Combat:** Attacks name actor and target entity IDs, with abilities and eligibility deciding what can occur. Hostile pawns use the same positioning, windup, recovery and action ownership mechanisms. Remove the singleton adversary and responder-only targeting assumption. Advanced squad AI, broad weapon balance and new lethal outcomes remain separate work.
+- **Inspection:** Derive a consistent current-action description from the actual executor, including source, target, phase, progress and blocker. Use one action identity for timing and cancellation. The view should not decode unrelated resident, staff and adversary state machines.
+
+Implement this by converting the existing staff pawn, SCP-999 and 049-2 examples to the shared model and deleting their redundant plumbing. Do not add an unused generic layer alongside all three old models. Preserve useful behavioral outcomes through focused tests; outdated scenario scripts and saves may be removed rather than forcing compatibility.
+
+## Lightweight Saves And Authored Sites
+
+A game save is a JSON serialization of the full authoritative global state: clock, sites, entities, in-flight transfers and quest progress. No database, object pickling hooks, per-entity serializers, migrations or replay log is required to reconstruct it. Serialize data and type IDs, not functions or live class instances. Behavior implementations are selected from code by type ID when simulation runs. Derived pathfinding graphs, indexes and view state need not be saved.
+
+Keep loading modest: parse JSON, check the format version and basic shape, then reuse a small set of essential identity/ownership/reference checks. Fail clearly and discard incompatible development saves. Do not spend a separate milestone exhaustively re-encoding all gameplay invariants in a second validator. Most correctness belongs in commands and focused simulation tests. Restore-mid-action and restore-in-transit tests verify that the stored state is sufficient.
+
+Use a simple JSON site document for both authored startup content and unusual integration fixtures. It holds the map, initial entities and whatever local state the fixture needs. ASCII rows plus a tile legend may be used within JSON when useful for hand-authored geometry; material records, fixtures and entities remain structured data. Do not build a custom map language or an editor in this refactor.
+
+Distinguish two operations, sharing the same site data model:
+
+1. **Restore a campaign snapshot:** Preserve IDs, clock, progress and transit exactly. Never rerun startup population or regenerate entities while loading a save.
+2. **Instantiate an authored site:** Copy the site data into a campaign, allocate unique instance IDs and remap internal references once. Make authored time values explicitly relative to instantiation where needed. This prevents two loads of one fixture from sharing entities or action targets. Unsupported external references should be rejected rather than silently repaired.
+
+Site 828 becomes one authored site file, not a privileged factory. Integration fixtures may start with blocked routes, damaged containment, scarce materials, several same-type anomalies, active work or other useful stress conditions without being suitable player starts. Prefer those files and real commands over large ad hoc nested-state construction in tests. Do not export a mid-transit site as a self-contained template unless its external references are explicitly resolved; the complete campaign snapshot already covers that use case.
+
+## Pre-UI Execution Order
+
+The current M1-M7 milestone labels remain for tracking, but the user's latest guidance changes the next work order:
+
+1. Replace entity singletons and split pawn execution with the shared entity/action model. Prove multiple same-type instances, non-pawn objects, optional needs and headless control permission.
+2. Extract the pure command executor with stable accepted/unchanged/rejected results, generated IDs and lightweight events. Previews reuse the same checks without publishing or mutating state. Finish common action/timing projections from that execution state.
+3. Simplify transfer helpers to move complete entity records plus their contained/carried dependencies. Use small functions for preparing a payload, detaching it and attaching it; no configurable transport framework. Keep site jobs/reservations local and references valid.
+4. Load Site 828 and stress fixtures through one headless authored-site path; add straightforward campaign JSON snapshot/restore alongside it.
+5. Adapt the existing expedition/quest examples to retained sites and run an end-to-end headless fixture before any UI rebinding.
+
+Keep dependency flow from plain types and definitions to local actions/systems, then site/campaign coordination, then application publication. File loading supplies data to headless instantiation; browser storage/UI sits outside. Break the current site/transfer coordination cycle during the ownership edits, not through a new generic service container.
+
+The pre-UI gate includes a staff pawn and two instances of one anomaly type using shared action execution, an entity with no food requirement, a rejected player order to an autonomous anomaly, two instantiated copies of a site fixture with distinct IDs, and a campaign restored during work and transit that continues identically. It also retains the existing multi-site stock, queue, incident and transfer conservation tests where applicable.
 
 Physical location is distinct from owner: an object can be on a site tile, carried by an owned person, or inside an owned vessel. All members of a carried/contained group must have the same owner. Attached emission behavior travels with its host; fixed sources stay at their site. Installed objects require packing or another supported physical preparation before departure.
 
@@ -170,7 +221,7 @@ Each milestone is an isolated validated change group, with the smallest coherent
 
 ### M1. State Ownership And Current-Version Persistence
 
-**Deliver:** Global simulation container and a uniform site collection, with entities/objects and queues owned by each site and transit payloads owned by transfers. Move startup content into a Site 828 setup; introduce a neutral site factory. Separate resident/threat identity from singleton assumptions. Qualify IDs/references and split save checks into entity, site and cross-owner invariants. Update the root controller and minimum browser snapshot plumbing to consume the new shape without fake nested GameState projections.
+**Deliver:** Global simulation container and a uniform site collection with the shared entity/pawn model, site-owned queues and transfer-owned transit payloads. Remove singleton resident/adversary state. Load Site 828 from ordinary authored site data. Qualify IDs/references and add lightweight JSON snapshot/version/reference checks. Keep browser binding changes behind the pre-UI headless gate; do not fabricate nested GameState projections.
 
 **Gate:** One-site behavior still works; two sites with overlapping coordinates and distinct inventories round-trip through current saves. Duplicate IDs/owners, cross-site carrier or job references, malformed dependencies and missing owners are rejected. Creating a second site does not create staff/SCP-999/stock unintentionally. New legitimate objects and changed quantities are allowed. Older saves are discarded.
 
@@ -220,7 +271,7 @@ Each milestone is an isolated validated change group, with the smallest coherent
 
 ## Exclusions And Review Points
 
-No new SCP scenarios, research system, arbitrary quest scripting, hostile capture, pediatric/organ medicine, death/abandonment mechanics, fuel economy, vehicle animation, procedural world map, multiplayer, save migrations or generic ECS rewrite. Existing supported state must be transferable without pretending those new abilities exist.
+No new SCP scenarios, research system, arbitrary quest scripting, hostile capture, pediatric/organ medicine, death/abandonment mechanics, fuel economy, vehicle animation, procedural world map, multiplayer, save migrations or general-purpose ECS framework. Replacing special-case pawn/entity implementations is explicitly approved and included. Existing supported state must be transferable without pretending those new gameplay abilities exist.
 
 Multiple sites are not multiple vertical levels. Each site remains a single playable tilemap; no roofs, base weather, floor penetration, ceilings or vertical pathfinding are introduced. New sensing/knowledge hiding is deferred; simulation ownership must remain inspectable.
 
