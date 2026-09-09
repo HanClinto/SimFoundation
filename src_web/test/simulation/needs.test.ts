@@ -8,6 +8,17 @@ import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
 import { instantiateEntity } from "../../src/simulation/core/site/EntityPlacement";
 import { entities, materials } from "../../src/simulation/catalog";
 import { Eat } from "../../src/simulation/core/entity/pawn/actions/Eat";
+import { Sleep } from "../../src/simulation/core/entity/pawn/actions/Sleep";
+import type { ActionState } from "../../src/simulation/core/entity/pawn/actions/Action";
+
+const provider = (
+  id: string,
+  action: ActionState | null,
+  relief = 1,
+): NeedActionProvider => ({
+  offer: (_context, needId) =>
+    needId === id && action ? { action, relief } : null,
+});
 
 function context(needs: Pawn["needs"]): ActionContext {
   const pawn = instantiateEntity(
@@ -34,11 +45,8 @@ it("selects the greatest present need without knowing its name or action", () =>
   const input = context({ curiosity: need(60), fatigue: need(90) });
   const before = structuredClone(input);
   const providers: NeedActionProvider[] = [
-    {
-      needId: "curiosity",
-      findAction: () => ({ kind: "move", destination: { x: 2, y: 0 } }),
-    },
-    { needId: "fatigue", findAction: () => ({ kind: "wait", ticks: 3 }) },
+    provider("curiosity", { kind: "move", destination: { x: 2, y: 0 } }),
+    provider("fatigue", { kind: "wait", ticks: 3 }),
   ];
   expect(chooseNeedAction(input, providers)).toEqual({
     kind: "wait",
@@ -47,20 +55,14 @@ it("selects the greatest present need without knowing its name or action", () =>
   expect(input).toEqual(before);
 });
 
-it("skips unsupported or unsatisfiable needs and tries another provider before lower needs", () => {
+it("skips unsatisfiable needs and chooses the strongest relief for the highest satisfiable need", () => {
   const input = context({
     unsupported: need(100),
     fatigue: need(90),
     curiosity: need(60),
   });
-  const fallback: NeedActionProvider = {
-    needId: "curiosity",
-    findAction: () => ({ kind: "wait", ticks: 1 }),
-  };
-  const unavailable: NeedActionProvider = {
-    needId: "fatigue",
-    findAction: () => null,
-  };
+  const fallback = provider("curiosity", { kind: "wait", ticks: 1 });
+  const unavailable = provider("fatigue", null);
   expect(chooseNeedAction(input, [unavailable, fallback])).toEqual({
     kind: "wait",
     ticks: 1,
@@ -69,15 +71,16 @@ it("skips unsupported or unsatisfiable needs and tries another provider before l
     chooseNeedAction(input, [
       unavailable,
       fallback,
-      { needId: "fatigue", findAction: () => ({ kind: "wait", ticks: 2 }) },
+      provider("fatigue", { kind: "wait", ticks: 3 }, 2),
+      provider("fatigue", { kind: "wait", ticks: 2 }, 5),
     ]),
   ).toEqual({ kind: "wait", ticks: 2 });
 });
 
 it("breaks equal urgency ties by need ID regardless of record or provider order", () => {
   const providers: NeedActionProvider[] = [
-    { needId: "zeta", findAction: () => ({ kind: "wait", ticks: 2 }) },
-    { needId: "alpha", findAction: () => ({ kind: "wait", ticks: 1 }) },
+    provider("zeta", { kind: "wait", ticks: 2 }),
+    provider("alpha", { kind: "wait", ticks: 1 }),
   ];
   expect(
     chooseNeedAction(context({ zeta: need(70), alpha: need(70) }), providers),
@@ -93,10 +96,11 @@ it("breaks equal urgency ties by need ID regardless of record or provider order"
 it("considers even the lowest positive urgency but skips absent or satisfied needs", () => {
   let calls = 0;
   const provider: NeedActionProvider = {
-    needId: "fatigue",
-    findAction: () => {
+    offer: (_context, needId) => {
       calls++;
-      return { kind: "wait", ticks: 1 };
+      return needId === "fatigue"
+        ? { action: { kind: "wait", ticks: 1 }, relief: 1 }
+        : null;
     },
   };
   expect(chooseNeedAction(context({}), [provider])).toBeNull();
@@ -113,14 +117,19 @@ it("considers even the lowest positive urgency but skips absent or satisfied nee
 
 it("falls through severe hunger with no food to mild fatigue, but chooses food when available", () => {
   const input = context({ hunger: need(95), fatigue: need(10) });
-  const rest: NeedActionProvider = {
-    needId: "fatigue",
-    findAction: () => ({ kind: "wait", ticks: 3 }),
-  };
-  const providers = [rest, Eat.needAction];
+  input.site.entities.bed = instantiateEntity(
+    {
+      id: "bed",
+      definitionId: "bed",
+      location: { kind: "ground", position: { x: 2, y: 0 } },
+    },
+    entities,
+  );
+  const providers = [Sleep.needAction, Eat.needAction];
   expect(chooseNeedAction(input, providers)).toEqual({
-    kind: "wait",
-    ticks: 3,
+    kind: "sleep",
+    targetId: "bed",
+    workTicks: 0,
   });
   input.site.entities.meal = instantiateEntity(
     {

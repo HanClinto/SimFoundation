@@ -4,9 +4,18 @@ import { Take } from "./Take";
 import { Drop } from "./Drop";
 import { Eat } from "./Eat";
 import { Wait } from "./Wait";
+import { Sleep } from "./Sleep";
+import { Relax } from "./Relax";
+import { Research } from "./Research";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "sleep":
+      return new Sleep(action);
+    case "relax":
+      return new Relax(action);
+    case "research":
+      return new Research(action);
     case "move":
       return new Move(action.destination);
     case "take":

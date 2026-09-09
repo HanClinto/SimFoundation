@@ -4,7 +4,16 @@ import type { Site } from "../../../site/Site";
 import type { Materials } from "../../../material/Material";
 import type { TickEvent } from "../../../Simulation";
 
+export type ActivityKind = "sleep" | "relax" | "research";
+
+export interface ActivityState {
+  kind: ActivityKind;
+  targetId: string;
+  workTicks: number;
+}
+
 export type ActionState =
+  | ActivityState
   | { kind: "move"; destination: Position }
   | { kind: "take"; targetId: string }
   | { kind: "drop"; targetId: string }

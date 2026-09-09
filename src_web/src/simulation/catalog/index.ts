@@ -9,12 +9,19 @@ import { Plastic } from "./materials/Plastic";
 import { Stone } from "./materials/Stone";
 import { PlantFood } from "./materials/PlantFood";
 import { AnimalTissue } from "./materials/AnimalTissue";
+import { Bed } from "./entities/furniture/Bed";
+import { Armchair } from "./entities/furniture/Armchair";
+import { ResearchDesk } from "./entities/equipment/ResearchDesk";
 
 export const entities: EntityTemplates = Object.fromEntries(
-  [FieldAgent, AutomaticSteelDoor, PackagedMeal].map((entry) => [
-    entry.id,
-    entry,
-  ]),
+  [
+    FieldAgent,
+    AutomaticSteelDoor,
+    PackagedMeal,
+    Bed,
+    Armchair,
+    ResearchDesk,
+  ].map((entry) => [entry.id, entry]),
 );
 
 export const materials: Materials = Object.fromEntries(

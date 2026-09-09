@@ -1,17 +1,28 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
 import type { Entity } from "../../Entity";
 import { nourishmentFor } from "../../../material/Material";
-import { distance, positionOf } from "../../../site/TileMap";
-import { interactionRoute } from "../../../site/Pathfinding";
 import { Move } from "./Move";
 import type { NeedActionProvider } from "../Needs";
+import { findTarget } from "./FindTarget";
 
 export class Eat implements Action {
   static readonly needAction: NeedActionProvider = {
-    needId: "hunger",
-    findAction(context) {
+    offer(context, needId) {
+      if (needId !== "hunger") return null;
       const target = Eat.findFood(context);
-      return target ? { kind: "eat", targetId: target.id } : null;
+      return target
+        ? {
+            action: { kind: "eat", targetId: target.id },
+            relief: Math.min(
+              context.pawn.needs.hunger!.value,
+              Math.min(1, target.amount) *
+                nourishmentFor(
+                  context.materials[target.materialId]!,
+                  context.pawn.diet,
+                ),
+            ),
+          }
+        : null;
     },
   };
 
@@ -56,26 +67,9 @@ export class Eat implements Action {
   }
 
   static findFood(context: ActionContext): Entity | null {
-    const { site, pawn } = context;
-    const origin = positionOf(site, pawn.id);
-    if (!origin) return null;
-    const candidates = Object.values(site.entities).filter(
+    return findTarget(
+      context,
       (entity) => new Eat(entity.id).canStart(context) === null,
-    );
-    candidates.sort((first, second) => {
-      const firstPosition = positionOf(site, first.id);
-      const secondPosition = positionOf(site, second.id);
-      return (
-        (firstPosition ? distance(origin, firstPosition) : Infinity) -
-          (secondPosition ? distance(origin, secondPosition) : Infinity) ||
-        (first.id < second.id ? -1 : first.id > second.id ? 1 : 0)
-      );
-    });
-    return (
-      candidates.find((entity) => {
-        const path = interactionRoute(site, pawn.id, entity.id);
-        return path !== null && (pawn.mobile || path.length === 0);
-      }) ?? null
     );
   }
 }

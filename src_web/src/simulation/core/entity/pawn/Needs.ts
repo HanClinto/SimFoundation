@@ -5,9 +5,23 @@ export interface Need {
   increasePerTick: number;
 }
 
+export function applyNeedChanges(
+  needs: Record<string, Need>,
+  changes: Readonly<Record<string, number>>,
+): void {
+  for (const [id, change] of Object.entries(changes)) {
+    const need = needs[id];
+    if (need) need.value = Math.max(0, Math.min(100, need.value + change));
+  }
+}
+
 export interface NeedActionProvider {
-  readonly needId: string;
-  findAction(context: ActionContext): ActionState | null;
+  offer(context: ActionContext, needId: string): NeedActionOffer | null;
+}
+
+export interface NeedActionOffer {
+  action: ActionState;
+  relief: number;
 }
 
 export function chooseNeedAction(
@@ -22,11 +36,13 @@ export function chooseNeedAction(
         (firstId < secondId ? -1 : firstId > secondId ? 1 : 0),
     );
   for (const [needId] of urgent) {
+    let best: NeedActionOffer | null = null;
     for (const provider of providers) {
-      if (provider.needId !== needId) continue;
-      const action = provider.findAction(context);
-      if (action) return action;
+      const offer = provider.offer(context, needId);
+      if (offer && offer.relief > 0 && (!best || offer.relief > best.relief))
+        best = offer;
     }
+    if (best) return best.action;
   }
   return null;
 }

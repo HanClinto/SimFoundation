@@ -1,6 +1,7 @@
 import type { Pawn } from "./pawn/Pawn";
 import type { Item } from "./Item";
 import type { Door } from "./Door";
+import type { Facility } from "./Facility";
 
 export interface Position {
   x: number;
@@ -22,4 +23,4 @@ export interface EntityBase {
   amount: number;
 }
 
-export type Entity = Pawn | Item | Door;
+export type Entity = Pawn | Item | Door | Facility;

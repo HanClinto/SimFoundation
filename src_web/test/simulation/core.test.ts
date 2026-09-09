@@ -269,6 +269,7 @@ it("restores exact queued state through plain JSON and rejects incompatible root
     "{}",
     '{"version":1}',
     '{"version":2}',
+    '{"version":3}',
     '{"version":999}',
   ])
     expect(deserialize(text)).toBeNull();

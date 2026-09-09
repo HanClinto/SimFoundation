@@ -1,5 +1,6 @@
 import type { Entity, Position } from "../entity/Entity";
 import type { Simulation } from "../Simulation";
+import { facilityInUse } from "../entity/Facility";
 import { advanceNeeds } from "../entity/pawn/Needs";
 import { floorAt, samePosition, traversalAt } from "./TileMap";
 
@@ -67,6 +68,8 @@ export function depart(
   }
   for (const id of selected) {
     const entity = origin.entities[id]!;
+    if (entity.kind === "facility" && facilityInUse(origin, id))
+      return fail("Finish or cancel use of the travelling facility first.");
     if (entity.kind === "pawn" && entity.queue.length)
       return fail("Finish or cancel travelling pawns' queued actions first.");
   }

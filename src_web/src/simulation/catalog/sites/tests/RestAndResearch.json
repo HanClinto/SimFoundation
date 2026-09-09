@@ -1,0 +1,41 @@
+{
+  "name": "Rest and research trial",
+  "terrain": [
+    "#########",
+    "#.......#",
+    "#.......#",
+    "#.......#",
+    "#.......#",
+    "#.......#",
+    "#########"
+  ],
+  "entities": [
+    {
+      "id": "operator",
+      "definitionId": "field-agent",
+      "location": { "kind": "ground", "position": { "x": 1, "y": 1 } },
+      "overrides": {
+        "needs": {
+          "hunger": { "value": 95, "increasePerTick": 0 },
+          "fatigue": { "value": 20, "increasePerTick": 0.2 },
+          "stress": { "value": 10, "increasePerTick": 0 }
+        }
+      }
+    },
+    {
+      "id": "bed",
+      "definitionId": "bed",
+      "location": { "kind": "ground", "position": { "x": 5, "y": 1 } }
+    },
+    {
+      "id": "chair",
+      "definitionId": "armchair",
+      "location": { "kind": "ground", "position": { "x": 5, "y": 3 } }
+    },
+    {
+      "id": "desk",
+      "definitionId": "research-desk",
+      "location": { "kind": "ground", "position": { "x": 1, "y": 5 } }
+    }
+  ]
+}

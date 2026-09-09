@@ -30,6 +30,7 @@ simulation/
 			EntityTemplate.ts
 			Item.ts
 			Door.ts
+			Facility.ts
 			pawn/
 				Pawn.ts
 				Needs.ts
@@ -43,6 +44,11 @@ simulation/
 					Drop.ts
 					Eat.ts
 					Wait.ts
+					Sleep.ts
+					Relax.ts
+					Research.ts
+					FacilityAction.ts
+					FindTarget.ts
 		material/
 			Material.ts
 		site/
@@ -55,6 +61,9 @@ simulation/
 		actors/staff/FieldAgent.ts
 		entities/doors/AutomaticSteelDoor.ts
 		entities/supplies/PackagedMeal.ts
+		entities/furniture/Bed.ts
+		entities/furniture/Armchair.ts
+		entities/equipment/ResearchDesk.ts
 		materials/
 			Steel.ts
 			Wood.ts
@@ -63,6 +72,7 @@ simulation/
 			PlantFood.ts
 			AnimalTissue.ts
 		sites/tests/SharedActions.json
+		sites/tests/RestAndResearch.json
 		index.ts
 ```
 
@@ -75,6 +85,7 @@ When implemented, named anomalies belong under `catalog/actors/anomalies`, ordin
 - **Entity** is a persistent physical instance with identity, location, material, and amount. A site or transfer owns its actual record.
 - **Pawn** is an entity with agency and an action queue. Agency, independent movement, player permission, autonomy, and carryability are distinct. Staff and anomalies are definitions, not separate entity stores.
 - **Item** is a loose physical object. It has no mandatory food subtype. A **Door** has door mechanics; it is not an item just because it is made of steel.
+- **Facility** is a reusable activity location in the same entity collection, not a separate store. Its activities specify duration and signed need changes. A bed, armchair, and research desk are catalog templates of facilities, not hard-coded targets in autonomy. Facilities can be carried when unused but cannot be used in inventory.
 - **EntityTemplate** describes a named model: stable definition ID, display name, description, and initial defaults. Multiple instances share a definition ID, never an instance ID or mutable defaults. The generic contract lives in [EntityTemplate.ts](core/entity/EntityTemplate.ts); concrete models live in the catalog. There is no universal Definition abstraction.
 - **Material** describes what an entity is made of. A steel ingot and a steel door can share a material without sharing their entity kind. Instance `amount` is remaining abstract material units, not a weight simulation.
 
@@ -88,7 +99,7 @@ Named content may eventually need unique behavior beside its catalog entry. Add 
 
 Each action class implements `canStart` and `tick`. [ActionQueue.ts](core/entity/pawn/actions/ActionQueue.ts) has a small constructor dispatch and generic queue advancement, not a switch containing each action's rules. Adding a new action means its class, serializable action shape, and constructor entry. Only one queued action gets a turn; the next begins on the next tick.
 
-Action handlers are short-lived code objects, not saved class instances. Progress, source, target, and blocker are ordinary JSON queue data. Cancellation removes that intention only: it does not undo consumed material, drop a carried entity, teleport anything, or change autonomy. Current actions have no persistent reservations requiring a cancellation hook; introduce one only when a real action owns such resources.
+Action handlers are short-lived code objects, not saved class instances. Progress, source, target, and blocker are ordinary JSON queue data. Cancellation removes that intention only: it does not undo consumed material, earned research progress, need changes, drop a carried entity, teleport anything, or change autonomy. Facility occupancy is derived from the active action's work progress, so removing the queue entry releases it without a second reservation ledger or cancellation hook.
 
 [ControlPolicy.ts](core/ControlPolicy.ts) checks player/script/debug authority and edits queues. Immediate starts use the action's own checks. Appended intentions may depend on earlier actions (for example Take then Drop), so their physical eligibility is deferred until execution. A blocked action stays queued and retries against current state; it can be cancelled. Previews return eligibility without mutation or event publication. Debug authority bypasses player permission, not the executor's physical rules.
 
@@ -114,9 +125,33 @@ Autonomy off prevents new self-selected work, not queued commitments or physiolo
 
 [Needs.ts](core/entity/pawn/Needs.ts) owns need progression and generic urgency selection. Need values represent relative deficits on the same 0..100 scale: zero is satisfied; positive values up to 100 compete by urgency, highest first, with case-sensitive need ID breaking ties. Fractional values from need progression are retained. There is no minimum urgency cutoff beyond zero. Absent or satisfied needs do not invoke providers. An unsupported or currently unsatisfiable need does not prevent trying the next one: hunger 95 with no available food can fall through to fatigue 10 when a rest provider is available. A free pawn may choose food even at low positive hunger if no more urgent satisfiable need takes precedence.
 
-A `NeedActionProvider` declares `needId` and a non-mutating `findAction(context)` that returns an ordinary queued-action description or null. Each action owns its provider: Eat's `needAction` connects hunger to its existing diet-aware, reachable-food search. [NeedActions.ts](core/entity/pawn/actions/NeedActions.ts) only lists registered providers. Providers for the same need are tried in registration order until one finds an action. There is no cross-need travel/benefit score or queue preemption; this policy applies only when an autonomous pawn is free to select new work.
+A `NeedActionProvider` exposes non-mutating `offer(context, needId)`, returning an ordinary action description and positive `relief`, or null. It does not declare one exclusive need. For the highest-urgency need with an available offer, choose the action offering the greatest relief; equal relief uses registration order. Each provider first chooses its nearest eligible reachable target by Manhattan distance then entity ID. Relief is the reduction on the next productive tick, capped at the current deficit, not the entire session's benefit. Costs to other needs do not count as relief. No cross-need weighted utility, travel-cost optimization, or queue preemption is attempted.
 
-Adding another need-satisfying action requires its implementation and provider registration, not an edit to Autonomy or a named-need switch in Needs. Tests use arbitrary need names and test providers to verify priority, unavailable-provider fallback, positive versus satisfied scores, ties and unchanged input. The hunger/fatigue regression uses real food discovery and a stand-in rest provider; Eat remains the only production need action, and sleeping is not implemented yet. This small action-selection contract does not yet generalize object advertisements or target searches.
+Each action owns its offer logic. Eat matches hunger to material/diet-aware consumption. Sleep, Relax and Research discover the reductions advertised by the facility's activity data, so one action can offer relief for several needs. [NeedActions.ts](core/entity/pawn/actions/NeedActions.ts) only lists those providers. Adding another action does not require a named-need switch in Autonomy or Needs. [FindTarget.ts](core/entity/pawn/actions/FindTarget.ts) shares eligible/reachable target search between eating and facility activities; it replaces the former food-only search TODO without adding Provider/Consumer inheritance.
+
+The generic selector tests cover arbitrary needs and offer strengths. Real activity tests cover hungry-with-no-food choosing Sleep, stress choosing Relax, occupied-bed alternatives, optional curiosity choosing Research, and replay/cancellation. The interface remains intentionally small and provisional; the concrete behaviors are the reason for its shape.
+
+## Sleep, Relax, And Research
+
+[FacilityAction.ts](core/entity/pawn/actions/FacilityAction.ts) shares the mechanics that proved identical across these three actions: checking a ground facility, approaching its interaction position, acquiring exclusive use on the first work tick, applying effects, and finishing a bounded session. The concrete Sleep/Relax classes select the corresponding advertised activity. Research additionally checks for a research record and increments its progress. The generic helper does not contain a switch of action-specific effects or outputs.
+
+Initial catalog tuning, per productive tick (negative reduces a deficit):
+
+| Facility / Action        | Work Ticks | Fatigue | Stress | Curiosity | Output                     |
+| ------------------------ | ---------: | ------: | -----: | --------: | -------------------------- |
+| Bed / Sleep              |          8 |      -8 |     -2 |      none | none                       |
+| Armchair / Relax         |          6 |      -1 |     -6 |      none | none                       |
+| Research desk / Research |          6 |      +1 |     +3 |        -4 | +1 local research progress |
+
+These are prototype values, not a time or health model. Every pawn's normal need progression still runs once before action effects. Signed changes are clamped to 0..100 and apply only to needs that pawn has; sleeping does not manufacture stress, and researching does not manufacture curiosity. Staff templates have hunger, fatigue and stress. Curiosity is optional, used by a research-oriented pawn or test; staff without it can still be explicitly ordered to research for its output.
+
+Sessions last the configured number of actual work ticks even if a need reaches zero early. Travel, door opening, and blocked ticks earn no effects or progress. `workTicks` lives in queued action state, while `elapsed` includes the whole intention. New commands reset workTicks to zero; save restore preserves it. Autonomy off does not interrupt active sessions. Rising stress does not preempt research mid-session; it can change the next chosen action. Cancellation retains past benefits/costs/output and abandons the remaining session.
+
+One facility serves one pawn at a time. Travel does not reserve it: first productive turn wins in stable actor order. Active use is derived from the current action with workTicks > 0. Occupied facilities are omitted from new autonomous searches, and already queued competitors wait/retry. Completion or cancellation releases use immediately. A paused/blocked active user retains the commitment until completion or cancellation; richer interruption policy is deferred. Occupied facilities cannot be picked up or dispatched in a transfer. Target removal or carrying prevents further work and exposes a blocker, not a substitute target.
+
+Facilities currently occupy one blocking tile; the pawn works at an adjacent reachable tile. Bed/chair names do not imply lying/sitting animation or occupying the furniture footprint. The browser still runs the archive, so these activities are headless only.
+
+[RestAndResearch.json](catalog/sites/tests/RestAndResearch.json) is the authored trial used by activity tests. It starts with a hungry, tired, stressed operator, no food, and a bed/chair/desk. Research progress is a durable counter on that desk, not a global currency, quest completion, specimen study, technology unlock, or implemented research project system. No social interaction model is added here.
 
 ## Traversal And Interaction
 
@@ -138,7 +173,7 @@ Examples: a metalivore accepts `metal`, a plastic consumer accepts `plastic`, an
 
 [Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous food selection considers acceptable, reachable items by distance then ID. Dynamic pawn obstruction can still make an action wait. Explicit orders keep their specified target and never silently substitute another. An eat action approaches, rechecks, consumes at most one unit, reduces hunger according to the diet, and removes an exhausted item. Fractional remainders are supported. Pawns with no hunger need do not search for or consume food.
 
-Future rest/comfort/entertainment discovery should expose small actor-specific interaction offers (action, target, expected benefit, availability, and interaction position). Extract that common target search when a second real need action demonstrates the shared contract. The current need-action providers select intentions; they are not a Provider/Consumer class hierarchy or a generic object-offer framework. A material becomes food relative to the consumer's diet, not through a universal food advertisement.
+Facility activities now advertise signed need effects, while Eat derives its offer from the particular consumer's diet. A material becomes food relative to the consumer, not through a universal food advertisement. Shared target search checks physical reachability and action eligibility; execution always rechecks current state. Future social/comfort activities can extend this only when their real mechanics require it.
 
 For now, **only loose items are consumable**. Material matching alone does not authorize eating installed doors or living pawns; structural damage and predation need their own consequences. There is one material per entity, no mixtures, digestion chemistry, calories, or weight model. Extend only when actual content needs more.
 
@@ -162,7 +197,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 3 adds explicit entity obstruction and discards earlier experimental shapes; there are no migrations or deep save validators.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 4 adds facilities and sustained activity state and discards earlier experimental shapes; there are no migrations or deep save validators.
 
 ## Verification And Scope
 

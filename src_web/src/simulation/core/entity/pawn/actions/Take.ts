@@ -1,5 +1,6 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
 import { Move } from "./Move";
+import { facilityInUse } from "../../Facility";
 
 export class Take implements Action {
   constructor(readonly targetId: string) {}
@@ -15,6 +16,8 @@ export class Take implements Action {
       return "This entity cannot be picked up now.";
     if (target.kind === "pawn" && target.canAct && target.mobile)
       return "An active mobile pawn cannot be picked up.";
+    if (target.kind === "facility" && facilityInUse(site, target.id))
+      return "The facility is occupied.";
     if (
       Object.values(site.entities).some(
         (entity) =>

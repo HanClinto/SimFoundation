@@ -20,4 +20,6 @@ One-tile footprints and blocking/nonblocking occupancy are sufficient for now. C
 
 Generic need discovery should eventually use actor-specific interaction offers. Implement a second real need action before extracting common offer/search machinery; do not build Provider/Consumer inheritance or duplicate material-based food classification now.
 
+[Decision 012](012-sustained-activities-and-need-offers.md) implements Sleep, Relax and Research and extracts the shared target search demonstrated by those actions. It replaces single-need action providers with actor-specific relief offers while retaining urgency-first selection.
+
 Snapshot version 3 discards states without explicit obstruction, with no migration or deep save validator. The legacy engine/browser remain untouched. Acceptance tests cover item detours, dynamic blockage, blocking target approach/consumption, door-plus-object precedence and blocked transfer arrival released by an actual pickup.
