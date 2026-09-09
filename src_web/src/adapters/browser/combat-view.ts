@@ -29,6 +29,7 @@ export function createCombatWindow(
   controller: GameController,
   begin: (request: PlacementRequest) => void,
   locate: (position: TilePosition) => void,
+  control: (id: string) => string | null,
 ) {
   const element = document.createElement("section");
   element.id = "combat-window";
@@ -36,11 +37,9 @@ export function createCombatWindow(
   element.hidden = true;
   element.setAttribute("aria-label", "Tactical response");
   element.innerHTML =
-    '<div class="title-bar"><div class="title-bar-text">Tactical Response</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><p data-tactical-status></p><div class="planner-roster-scroll"><table class="data-table" aria-label="Response team"><thead><tr><th>Responder</th><th>Duty</th><th>Condition</th><th>Order</th><th>Action</th></tr></thead><tbody data-tactical-roster></tbody></table></div><div class="field-row"><label for="tactical-person">Responder</label><select id="tactical-person"></select><button type="button" data-tactical-locate>Locate</button></div><div class="dossier-actions"><button type="button" data-tactical-draft>Draft</button><button type="button" data-tactical-release>Release</button><button type="button" data-tactical-move>Move</button><button type="button" data-tactical-hold>Hold</button><button type="button" data-tactical-retreat>Retreat</button><button type="button" data-tactical-engage>Engage 049-2</button></div><dl class="trial-readings" data-tactical-readings></dl><fieldset><legend>Casualty Response</legend><div class="field-row"><label for="tactical-patient">Colleague</label><select id="tactical-patient"></select><button type="button" data-tactical-stabilize>Stabilize</button></div></fieldset><fieldset><legend>Isolated Encounter - Sandbox</legend><div class="dossier-actions"><button type="button" data-tactical-start>Place 049-2</button><button type="button" data-tactical-target>Locate 049-2</button></div><p data-tactical-encounter></p></fieldset><p role="status" data-tactical-feedback></p><ol data-tactical-events></ol></div><div class="resize-grip" aria-hidden="true"></div>';
+    '<div class="title-bar"><div class="title-bar-text">Tactical Response</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><p data-tactical-status></p><div class="planner-roster-scroll"><table class="data-table" aria-label="Response team"><thead><tr><th>Responder</th><th>Duty</th><th>Condition</th><th>Order</th><th>Action</th></tr></thead><tbody data-tactical-roster></tbody></table></div><div class="field-row"><label for="tactical-person">Responder</label><select id="tactical-person"></select><button type="button" data-tactical-locate>Locate</button><button type="button" data-tactical-control>Control on Map</button></div><div class="dossier-actions"><button type="button" data-tactical-draft>Draft</button><button type="button" data-tactical-release>Release</button></div><dl class="trial-readings" data-tactical-readings></dl><fieldset><legend>Isolated Encounter - Sandbox</legend><div class="dossier-actions"><button type="button" data-tactical-start>Place 049-2</button><button type="button" data-tactical-target>Locate 049-2</button></div><p data-tactical-encounter></p></fieldset><p role="status" data-tactical-feedback></p><ol data-tactical-events></ol></div><div class="resize-grip" aria-hidden="true"></div>';
   host.append(element);
   const person = element.querySelector<HTMLSelectElement>("#tactical-person")!;
-  const patient =
-    element.querySelector<HTMLSelectElement>("#tactical-patient")!;
   const feedback = element.querySelector<HTMLElement>(
     "[data-tactical-feedback]",
   )!;
@@ -48,9 +47,6 @@ export function createCombatWindow(
   let perspective: MapPerspective = "world";
   let selected = "person-caleb-ward";
   person.replaceChildren(
-    ...current.game.personnel.map((entry) => new Option(entry.name, entry.id)),
-  );
-  patient.replaceChildren(
     ...current.game.personnel.map((entry) => new Option(entry.name, entry.id)),
   );
   const button = (action: string) =>
@@ -66,7 +62,6 @@ export function createCombatWindow(
     selected = person.value;
     render(current);
   });
-  patient.addEventListener("change", () => render(current));
   button("draft").addEventListener("click", () => {
     if (perspective === "world")
       apply(controller.draftResponder(selected, true));
@@ -75,26 +70,9 @@ export function createCombatWindow(
     if (perspective === "world")
       apply(controller.draftResponder(selected, false));
   });
-  button("hold").addEventListener("click", () => {
-    if (perspective === "world")
-      apply(controller.orderResponder(selected, "hold"));
-  });
-  button("engage").addEventListener("click", () => {
-    if (perspective === "world")
-      apply(
-        controller.orderResponder(selected, "engage", undefined, "SCP-049-2"),
-      );
-  });
-  button("stabilize").addEventListener("click", () => {
-    if (perspective === "world")
-      apply(
-        controller.orderResponder(
-          selected,
-          "stabilize",
-          undefined,
-          patient.value,
-        ),
-      );
+  button("control").addEventListener("click", () => {
+    if (perspective === "world" && !button("control").disabled)
+      feedback.textContent = control(selected) ?? "";
   });
   button("locate").addEventListener("click", () => {
     const position =
@@ -103,29 +81,6 @@ export function createCombatWindow(
         : current.game.observations.entities[selected]?.position;
     if (position) locate(position);
   });
-  for (const order of ["move", "retreat"] as const)
-    button(order).addEventListener("click", () => {
-      if (perspective !== "world") return;
-      const id = selected;
-      begin({
-        label: `${order === "move" ? "Move" : "Withdraw"}: ${current.game.personnel.find((entry) => entry.id === id)!.name}`,
-        origin: order === "retreat" ? { x: 60, y: 55 } : { x: 68, y: 55 },
-        footprint: (position) => [{ position }],
-        validate: (position) => {
-          const code = controller.previewTacticalOrder(id, order, position);
-          return code === "accepted" ? null : messages[code];
-        },
-        confirm: (position) => {
-          const result = controller.orderResponder(id, order, position);
-          apply(result);
-          return {
-            accepted: result.code === "accepted",
-            snapshot: result.snapshot,
-            message: messages[result.code],
-          };
-        },
-      });
-    });
   button("start").addEventListener("click", () => {
     if (perspective !== "world") return;
     begin({
@@ -246,43 +201,29 @@ export function createCombatWindow(
         return [term, description];
       }),
     );
-    for (const action of [
-      "release",
-      "move",
-      "hold",
-      "retreat",
-      "engage",
-      "stabilize",
-    ])
-      button(action).disabled =
-        recorded || !responder.drafted || responder.incapacitated;
+    button("release").disabled =
+      recorded || !responder.drafted || responder.incapacitated;
+    const controlIssue = recorded
+      ? "Recorded view is inspection-only; use Locate."
+      : expeditionMember(snapshot.game, selected)
+        ? "Assigned to expedition; use its field map."
+        : !snapshot.game.world.positions[selected]
+          ? "This person is not present on this map."
+          : null;
+    button("control").disabled = !!controlIssue;
+    button("control").title =
+      controlIssue ??
+      "Select and center this person on the map; existing work continues.";
     button("draft").disabled =
       recorded ||
       responder.drafted ||
       responder.incapacitated ||
       expeditionMember(snapshot.game, selected);
     if (expeditionMember(snapshot.game, selected)) {
-      for (const action of [
-        "release",
-        "move",
-        "hold",
-        "retreat",
-        "engage",
-        "stabilize",
-      ])
-        button(action).disabled = true;
+      button("release").disabled = true;
       element.querySelector("[data-tactical-readings]")!.textContent =
         "Assigned to expedition; use Expedition Operations for field orders and supplies.";
     }
-    button("engage").disabled ||=
-      combat.status !== "active" ||
-      !combat.participants.includes(selected) ||
-      responder.ammunition <= 0;
-    button("stabilize").disabled ||=
-      patient.value === selected ||
-      !combat.responders[patient.value]?.injuries ||
-      !!combat.responders[patient.value]?.stabilized ||
-      responder.medicalSupplies <= 0;
     button("start").disabled = recorded || combat.status === "active";
     button("target").disabled = recorded ? !combat.sighting : !combat.adversary;
     const target = recorded ? combat.sighting?.adversary : combat.adversary;

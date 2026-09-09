@@ -6,13 +6,29 @@ import { createCombatWindow } from "../src/adapters/browser/combat-view";
 import type { PlacementRequest } from "../src/adapters/browser/placement";
 
 afterEach(() => vi.unstubAllGlobals());
-it("drafts and issues physical map orders, while Recorded controls stay read-only", () => {
+it("hands control to the map without issuing orders and retains explicit duty controls", () => {
   const window = new JSDOM().window;
   vi.stubGlobal("document", window.document);
   vi.stubGlobal("Option", window.Option);
   const controller = createController(createInitialState());
   const begin = vi.fn<(request: PlacementRequest) => void>();
-  const view = createCombatWindow(document.body, controller, begin, vi.fn());
+  const control = vi.fn(() => null as string | null);
+  const view = createCombatWindow(
+    document.body,
+    controller,
+    begin,
+    vi.fn(),
+    control,
+  );
+  const before = controller.getSnapshot();
+  view.element
+    .querySelector<HTMLButtonElement>("[data-tactical-control]")!
+    .click();
+  expect(control).toHaveBeenCalledWith("person-caleb-ward");
+  expect(controller.getSnapshot()).toEqual(before);
+  expect(begin).not.toHaveBeenCalled();
+  for (const action of ["move", "hold", "retreat", "engage", "stabilize"])
+    expect(view.element.querySelector(`[data-tactical-${action}]`)).toBeNull();
   view.element
     .querySelector<HTMLButtonElement>("[data-tactical-draft]")!
     .click();
@@ -20,19 +36,40 @@ it("drafts and issues physical map orders, while Recorded controls stay read-onl
     controller.getSnapshot().game.combat.responders["person-caleb-ward"]!
       .drafted,
   ).toBe(true);
+  controller.queueAction({
+    mapId: before.game.world.map.id,
+    actorId: "person-caleb-ward",
+    action: "move",
+    destination: { x: 60, y: 59 },
+  });
+  controller.queueAction({
+    mapId: before.game.world.map.id,
+    actorId: "person-caleb-ward",
+    action: "hold",
+  });
+  view.render(controller.getSnapshot());
+  const queued = controller.getSnapshot();
   view.element
-    .querySelector<HTMLButtonElement>("[data-tactical-move]")!
+    .querySelector<HTMLButtonElement>("[data-tactical-control]")!
     .click();
-  const request = begin.mock.calls[0]![0];
-  expect(request.validate(request.origin, controller.getSnapshot())).toBeNull();
-  expect(request.confirm(request.origin).accepted).toBe(true);
+  expect(controller.getSnapshot()).toEqual(queued);
+  control.mockReturnValue(
+    "Finish or cancel map placement before selecting a responder.",
+  );
+  view.element
+    .querySelector<HTMLButtonElement>("[data-tactical-control]")!
+    .click();
   expect(
-    controller.getSnapshot().game.combat.responders["person-caleb-ward"]!.order,
-  ).toBe("move");
+    view.element.querySelector("[data-tactical-feedback]")!.textContent,
+  ).toContain("placement");
   view.select("person-caleb-ward", controller.getSnapshot(), "recorded");
   expect(
-    view.element.querySelector<HTMLButtonElement>("[data-tactical-move]")!
+    view.element.querySelector<HTMLButtonElement>("[data-tactical-control]")!
       .disabled,
   ).toBe(true);
   expect(view.element.textContent).toContain("live tactical state withheld");
+  expect(
+    view.element.querySelector<HTMLButtonElement>("[data-tactical-control]")!
+      .title,
+  ).toContain("Recorded");
 });

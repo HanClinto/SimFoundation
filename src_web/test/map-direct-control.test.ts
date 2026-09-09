@@ -189,4 +189,13 @@ it("keeps actor selection through ground inspection and panning, and submits onl
     activePawnId: id,
   });
   expect(controller.getSnapshot()).toEqual(beforeSwitch);
+  expect(view.controlPerson(target.id)).toBeNull();
+  expect(view.controlPerson(target.id)).toBeNull();
+  expect(vi.mocked(renderSite).mock.calls.at(-1)![2]).toMatchObject({
+    selectedId: target.id,
+    activePawnId: target.id,
+    center: beforeSwitch.game.world.positions[target.id],
+  });
+  expect(controller.getSnapshot()).toEqual(beforeSwitch);
+  expect(view.controlPerson("missing-person")).toContain("not present");
 });

@@ -147,6 +147,7 @@ it("combines independent layers without changing pinned placement and cancels wi
   view.beginPlacement(request);
   const pointer = (type: string, clientX = 0) =>
     canvas.dispatchEvent(new window.MouseEvent(type, { clientX, button: 0 }));
+  expect(view.controlPerson("person-caleb-ward")).toContain("placement");
   pointer("pointerdown");
   pointer("pointerup");
   pointer("pointermove", 40);
@@ -402,6 +403,9 @@ it("follows only the selected perspective's position and releases the camera for
     initial.game.observations.entities[personId]!.position,
   );
   expect(camera().center).not.toEqual(moved.game.world.positions[personId]);
+  const recordedCamera = camera();
+  expect(view.controlPerson(personId)).toContain("World view");
+  expect(camera()).toEqual(recordedCamera);
   follow.click();
   view.focus({ x: 10, y: 10 });
   root

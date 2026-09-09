@@ -688,6 +688,20 @@ export function createSiteMap(
       drawFrame();
     },
     focus,
+    controlPerson(id: string): string | null {
+      if (placement)
+        return "Finish or cancel map placement before selecting a responder.";
+      if (camera.perspective !== "world")
+        return "Switch the map to World view to control a responder.";
+      if (
+        !current.game.world.positions[id] ||
+        !current.game.personnel.some((person) => person.id === id)
+      )
+        return "This person is not present on this map.";
+      pawnControl.select(id, true);
+      canvas.focus();
+      return null;
+    },
     beginPlacement(request: PlacementRequest) {
       pawnControl.close();
       placement = createPlacementSession(request);

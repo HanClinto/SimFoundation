@@ -884,6 +884,10 @@ const combatView = createCombatWindow(
     windowManager.open("camera-window");
     siteCamera.focus(position);
   },
+  (id) => {
+    windowManager.open("camera-window");
+    return siteCamera.controlPerson(id);
+  },
 );
 windowManager.register(combatView.element, {
   id: "combat-window",

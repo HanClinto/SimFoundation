@@ -2,6 +2,8 @@
 
 GitHub tracking issues are the operational source for status. This document records scope tiers and category boundaries so future contributors can understand the intended shape without reconstructing it from issue history.
 
+Current interaction cleanup: [detailed control usability TODOs](control-usability-todos.md), tracked under [#23](https://github.com/HanClinto/SimFoundation/issues/23).
+
 ## Tier Definitions
 
 - **Minimum:** Required for the first playable definition of done.
