@@ -4,7 +4,6 @@ import type {
 } from "../../application/controller";
 import {
   ASSESSMENT_LABELS,
-  SURVEY_KINDS,
   SURVEY_INTERVAL_FIELDS,
   ASSESSMENT_REQUIREMENTS,
   clinicalQualificationReasons,
@@ -16,6 +15,8 @@ import { recordAge } from "./personnel-records";
 import { createAssignmentView } from "./assignment-view";
 import { routineUnavailableIds } from "../../simulation/routines";
 import { observedSnapshot } from "./observed-view";
+
+const SURVEY_KINDS = ["physical", "mood", "psychological"] as const;
 
 export function createClinicalCareView(
   container: HTMLElement,
@@ -33,7 +34,7 @@ export function createClinicalCareView(
       <label class="procedure-choice">Procedure <select data-clinical-procedure aria-label="Compare procedure eligibility">${SURVEY_KINDS.map((kind) => `<option value="${kind}">${ASSESSMENT_LABELS[kind]}</option>`).join("")}</select></label><div data-clinical-duty></div>
     </section>
     <section class="clinical-panel" id="${id}-panel-2" role="tabpanel" aria-labelledby="${id}-tab-2" data-clinical-panel="2" hidden>
-      <div class="clinical-register-scroll"><table class="data-table" aria-label="Staff clinical reviews"><thead><tr><th>Staff member</th><th>Physical</th><th>Mood</th><th>Psychiatric</th><th>Anomalous</th><th>Appointments</th><th>Record</th></tr></thead><tbody data-clinical-staff></tbody></table></div>
+      <div class="clinical-register-scroll"><table class="data-table" aria-label="Staff clinical reviews"><thead><tr><th>Staff member</th><th>Physical</th><th>Mood</th><th>Psychiatric</th><th>Appointments</th><th>Record</th></tr></thead><tbody data-clinical-staff></tbody></table></div>
     </section>`;
   const tabs = Array.from(
     container.querySelectorAll<HTMLButtonElement>("[data-clinical-tab]"),
@@ -133,7 +134,7 @@ export function createClinicalCareView(
           ).length === 0,
       ).length;
       container.querySelector(`[data-survey-coverage="${kind}"]`)!.textContent =
-        `Medical ${ASSESSMENT_REQUIREMENTS[kind].medicalLevel}+ / ${count} assigned and qualified${kind === "anomalous" && !snapshot.game.capabilities.anomalousPsychometrics ? " / Research unavailable" : ""}`;
+        `Medical ${ASSESSMENT_REQUIREMENTS[kind].medicalLevel}+ / ${count} assigned and qualified`;
     }
     assignment.render(
       snapshot.game.personnel,

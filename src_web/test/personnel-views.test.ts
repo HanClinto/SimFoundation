@@ -44,6 +44,11 @@ describe("personnel reference windows", () => {
       windows[0]!.querySelector('[data-field="sanity-band"]')?.textContent,
     ).toBe("Observed only / unassessed");
     const records = createPersonnelMedicalWindows(document.body, [person]);
+    expect(
+      records.assessmentRecords[0]!.querySelector(
+        "[data-assess-traits-person-id]",
+      ),
+    ).toBeNull();
     expect(records.assessmentRecords[0]?.textContent).toContain(
       "psychiatric condition not evaluated",
     );
@@ -54,6 +59,8 @@ describe("personnel reference windows", () => {
     document.body.append(host);
     const view = createClinicalCareView(host, controller);
     expect(host.querySelectorAll("[data-assignment-person]")).toHaveLength(6);
+    expect(host.querySelector('[data-survey-interval="anomalous"]')).toBeNull();
+    expect(host.textContent).not.toContain("Research unavailable");
     const procedure = host.querySelector<HTMLSelectElement>(
       "[data-clinical-procedure]",
     )!;
@@ -148,7 +155,7 @@ describe("personnel reference windows", () => {
     chart
       .querySelector<HTMLButtonElement>('[data-body-region="leftArm"]')!
       .click();
-    updatePersonnelMedicalWindows(windows, state.personnel, 50, false);
+    updatePersonnelMedicalWindows(windows, state.personnel, 50);
     const rightArmFinding = chart.querySelector<HTMLElement>(
       '[data-finding-regions="rightArm"]',
     );

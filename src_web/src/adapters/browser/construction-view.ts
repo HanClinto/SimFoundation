@@ -5,34 +5,6 @@ import type {
   GameController,
 } from "../../application/controller";
 import type { TilePosition } from "../../simulation/world";
-import { laboratoryTiles } from "../../simulation/construction";
-import type { PlacementRequest } from "./placement";
-
-export function laboratoryPlacement(
-  controller: GameController,
-): PlacementRequest {
-  return {
-    label: "Laboratory annex / 40 materials",
-    origin: { x: 59, y: 80 },
-    footprint: (origin) =>
-      laboratoryTiles(origin).map((tile) => ({
-        position: tile.position,
-        entrance: tile.tile === "door",
-      })),
-    validate: (origin) => {
-      const code = controller.previewLaboratory(origin);
-      return code ? constructionMessages[code] : null;
-    },
-    confirm: (origin) => {
-      const result = controller.placeLaboratory(origin);
-      return {
-        accepted: result.code === "placed",
-        message: constructionMessages[result.code],
-        snapshot: result.snapshot,
-      };
-    },
-  };
-}
 
 export const constructionMessages: Record<ConstructionCode, string> = {
   placed: "Annex authorized. 40 material units reserved.",
@@ -52,15 +24,14 @@ export const constructionMessages: Record<ConstructionCode, string> = {
 export function createConstructionWindow(
   host: HTMLElement,
   controller: GameController,
-  plan: () => void,
   locate: (position: TilePosition) => void,
 ) {
   const element = document.createElement("section");
   element.id = "construction-window";
   element.className = "window managed-window";
   element.hidden = true;
-  element.setAttribute("aria-label", "Site 828 construction");
-  element.innerHTML = `<div class="title-bar"><div class="title-bar-text">Site 828 - Construction</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><header class="clinical-policy-heading"><h2>Construction Register</h2><p data-construction-stock></p></header><div class="planner-toolbar"><button type="button" data-plan-laboratory>Plan annex</button></div><div class="construction-table-scroll"><table class="data-table" aria-label="Facility annexes"><thead><tr><th>Annex</th><th>Status</th><th>Orders</th></tr></thead><tbody data-construction-register></tbody></table></div><p data-construction-command-status role="status"></p></div><div class="resize-grip" aria-hidden="true"></div>`;
+  element.setAttribute("aria-label", "Legacy annex projects");
+  element.innerHTML = `<div class="title-bar"><div class="title-bar-text">Legacy Annex Projects</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><header class="clinical-policy-heading"><h2>Existing Annex Projects</h2><p data-construction-stock></p></header><div class="construction-table-scroll"><table class="data-table" aria-label="Facility annexes"><thead><tr><th>Annex</th><th>Status</th><th>Orders</th></tr></thead><tbody data-construction-register></tbody></table></div><p data-construction-command-status role="status"></p></div><div class="resize-grip" aria-hidden="true"></div>`;
   host.append(element);
   const register = element.querySelector<HTMLElement>(
     "[data-construction-register]",
@@ -70,9 +41,6 @@ export function createConstructionWindow(
   )!;
   let current = controller.getSnapshot();
   let signature = "";
-  element
-    .querySelector("[data-plan-laboratory]")!
-    .addEventListener("click", plan);
   element.addEventListener("click", (event) => {
     const target = (event.target as Element).closest<HTMLElement>(
       "[data-focus-blueprint], [data-cancel-blueprint]",
@@ -93,7 +61,7 @@ export function createConstructionWindow(
   function render(snapshot: ControllerSnapshot) {
     current = snapshot;
     element.querySelector("[data-construction-stock]")!.textContent =
-      `${snapshot.game.construction.availableMaterials} material units available / 40 per annex`;
+      `${snapshot.game.construction.availableMaterials} material units available`;
     const nextSignature = JSON.stringify([
       snapshot.game.construction,
       snapshot.game.jobs.map(({ id, status, assignmentReason }) => [

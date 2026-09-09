@@ -2,7 +2,6 @@ import { expect, it, vi } from "vitest";
 import { createPlacementSession } from "../src/adapters/browser/placement";
 import { createInitialState } from "../src/simulation/state";
 import { createController } from "../src/application/controller";
-import { laboratoryPlacement } from "../src/adapters/browser/construction-view";
 import { cameraPlacement } from "../src/adapters/browser/surveillance-view";
 
 it("pins any footprint and revalidates before committing without knowing the object type", () => {
@@ -33,17 +32,13 @@ it("pins any footprint and revalidates before committing without knowing the obj
   expect(confirm).toHaveBeenCalledWith({ x: 4, y: 5 });
 });
 
-it("lets owning systems supply both building and device placement through the same contract", () => {
+it("lets a device owner supply placement through the shared contract", () => {
   const controller = createController(createInitialState());
-  const building = createPlacementSession(laboratoryPlacement(controller));
-  expect(building.preview(controller.getSnapshot()).tiles).toHaveLength(63);
-  expect(building.confirm(controller.getSnapshot()).accepted).toBe(true);
-  expect(building.confirm(controller.getSnapshot()).accepted).toBe(false);
   const camera = createPlacementSession(cameraPlacement(controller));
   expect(camera.preview(controller.getSnapshot()).tiles).toHaveLength(1);
   expect(camera.confirm(controller.getSnapshot()).accepted).toBe(true);
   expect(controller.getSnapshot().game.observations.cameraKits).toBe(2);
   expect(controller.getSnapshot().game.construction.availableMaterials).toBe(
-    120,
+    160,
   );
 });

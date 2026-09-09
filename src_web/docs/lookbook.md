@@ -43,7 +43,7 @@ Facilities is a folder inside the SCP menu. Individual sites such as Site 828 ar
 
 ### Encarta 95 and early CD-ROM reference software
 
-The Foundation Library should feel exploratory and multimedia-rich:
+The static Foundation Library prototype has been removed. If real study records later justify an archive, this remains an optional visual reference, not a required window or progression system:
 
 - Hierarchical topic trees beside illustrated articles
 - Cross-linked records that encourage following a trail
@@ -51,9 +51,9 @@ The Foundation Library should feel exploratory and multimedia-rich:
 - Strong article typography inside otherwise utilitarian window chrome
 - A sense that the archive contains more than the player currently understands
 
-The knowledgebase is both help system and in-world encyclopedia. Facts unlock through observation and research; unavailable or disputed information should be represented honestly inside the fiction.
+Authored reference material and knowledge earned through simulation must remain distinct. No functioning research/unlock system currently exists.
 
-Research uses this reference-book language as an evolving investigation archive: illustrated anomaly entries link to dated observations, hypotheses, experiment protocols, and related cases. SCP-9620 is the central unresolved investigation; optional anomaly studies may inform it without becoming compulsory quest steps. Separate established source material, in-world findings, and uncertainty. Do not present the archive as a checklist of foreknown answers.
+Future research should begin as work performed by a pawn at a study facility associated with a real anomaly or containment unit. Records may then justify a browsing surface. Do not build a checklist of foreknown answers, global research currency or unlock tree merely to fill an archive.
 
 ### Lotus Notes and institutional groupware
 

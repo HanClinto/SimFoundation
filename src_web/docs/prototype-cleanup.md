@@ -51,14 +51,18 @@ Defer broad unlock graphs, generic research currencies, speculative discovery tr
 - [x] Visually compare the archive, SCP-999 resident record, construction panel and Occupational Health against their actual simulation owners.
 - [x] Trace psychometrics capability writers: no production enabling path found; clinical tests explicitly enable the saved flag.
 - [x] Trace annex completion: physical room construction and a research-skill commissioning job, not an evidence-producing research activity.
-- [ ] First removal: retire the static archive's fake navigation/progression and the clinical dead-end affordance, without granting new capabilities.
-- [ ] Second removal: stop presenting the SCP-999 record as a general Anomaly Registry; retain its functioning resident inspection/behavior.
-- [ ] Third review: retire or reduce the annex-specific UI/workflow while safely handling existing blueprint jobs and material reservations. Prefer generic building and furniture placement over a second construction engine.
+- [x] First removal: deleted the static archive, shortcuts, inert contents tree, progress display and archive-only styling. Removed anomalous screening request/schedule/procedure controls without granting new capabilities; ordinary care and historical records remain.
+- [x] Second removal: renamed the resident record and facility entry SCP-999; its functioning behavior and observations remain.
+- [x] Third review: removed new-annex authorization, placement helper and facility shortcut. Existing saved projects retain completion and pre-dispatch cancellation, accessible through Engineering only when blueprints exist. Generic surface construction and object placement remain the normal build paths.
 - [ ] Then decide on one facility-based research action, separately from this cleanup, with no tech tree required.
 
 ## This Pass
 
-Only this review document was added. No gameplay, save schema, UI regression snapshots or research framework were introduced. Browser navigation was inspection-only with the simulation paused. Runtime cleanup was not layered onto the user's in-progress shell changes: the working copy of the shell currently contains older tactical/expedition callback wiring incompatible with the current view APIs, which produces type diagnostics. Those edits were left untouched.
+The approved pruning pass removes presentation and authorization paths rather than adding replacement frameworks. Saved clinical data, capability fields and annex execution remain for compatibility; they are not a commitment to preserve these mechanics in the future. No new research mechanics, global unlock or save schema was introduced. The shell's stale tactical/expedition callbacks were reconciled with the existing map handoff APIs so the pruned application typechecks; unrelated local changes were preserved.
+
+Validation stays focused on ordinary care, generic placement and legacy work/resource safety, plus a visual inspection of the reduced facility UI. The placement test no longer depends on the retired annex helper. Underlying legacy authoring APIs remain for old construction tests and compatibility; there is no normal UI for authorizing new annexes.
+
+Verified in the browser: no archive window/shortcuts/status, no Plan Annex entry, only physical/mood/psychiatric routine surveys, no anomalous request buttons, and the SCP-999 resident title. Fresh sites hide the legacy annex link; the facility's subsystem totals now derive from its actual entries. Editing then restoring the mood survey interval restored the saved state exactly. The existing care, construction, persistence and placement tests pass without new snapshot suites. The shared preview was marked hidden by the browser during verification, so navigation used DOM activation; screenshots and live content were also checked.
 
 The next useful validation is a short visual pass after each removal and existing behavior checks for anything actually touched. A long scripted base-plus-expedition playtest is not the priority for this work.
 

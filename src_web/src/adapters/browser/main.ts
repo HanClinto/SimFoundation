@@ -7,7 +7,6 @@ import {
   type ControllerSnapshot,
 } from "../../application/controller";
 import { createInitialState } from "../../simulation/state";
-import bookIconUrl from "./assets/book.svg";
 import alarmIconUrl from "./assets/alarm.svg";
 import cameraIconUrl from "./assets/camera.svg";
 import controlIconUrl from "./assets/control.svg";
@@ -31,7 +30,6 @@ import {
 } from "./personnel-view";
 import { refreshForNewDeployment } from "./deployment-version";
 import { createSiteMap } from "./site-map-view";
-import { laboratoryPlacement } from "./construction-view";
 import { cameraPlacement } from "./surveillance-view";
 import "./personnel-reference.css";
 import { createClinicalCareView } from "./clinical-care-view";
@@ -44,7 +42,6 @@ import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createPowerWindow } from "./power-view";
 import { createCombatWindow } from "./combat-view";
-import { createEncounterSandboxWindow } from "./encounter-sandbox-view";
 import { createExpeditionsWindow } from "./expeditions-view";
 import { createFieldInspector, fieldInspectionTarget } from "./field-inspector";
 import {
@@ -73,10 +70,6 @@ app.innerHTML = `
     <button class="desktop-icon" type="button" data-open-window="facility-window">
       <img class="desktop-icon-asset" src="${facilityIconUrl}" alt="" />
       <span>Site 828</span>
-    </button>
-    <button class="desktop-icon" type="button" data-open-window="knowledge-window">
-      <img class="desktop-icon-asset" data-window-icon src="${bookIconUrl}" alt="" />
-      <span>Foundation Library</span>
     </button>
     <button class="desktop-icon" type="button" data-open-window="control-window">
       <img class="desktop-icon-asset" data-window-icon src="${controlIconUrl}" alt="" />
@@ -123,17 +116,13 @@ app.innerHTML = `
             <img class="subsystem-icon-asset" data-window-icon src="${alarmIconUrl}" alt="" />
             <span>Alarm Manager</span>
           </button>
-          <button class="subsystem-icon" type="button" data-open-window="knowledge-window">
-            <img class="subsystem-icon-asset" data-window-icon src="${bookIconUrl}" alt="" />
-            <span>Research Archive</span>
-          </button>
           <button class="subsystem-icon" type="button" data-open-window="work-orders-window">
             <img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" />
             <span>Work Orders</span>
           </button>
           <button class="subsystem-icon" type="button" data-open-window="anomaly-window">
             <img class="subsystem-icon-asset" data-window-icon src="${recordsIconUrl}" alt="" />
-            <span>Anomaly Registry</span>
+            <span>SCP-999</span>
           </button>
           <button class="subsystem-icon" type="button" data-open-window="clinical-care-window">
             <img class="subsystem-icon-asset" data-window-icon src="${medicalIconUrl}" alt="" />
@@ -141,7 +130,6 @@ app.innerHTML = `
           </button>
           <button class="subsystem-icon" type="button" data-open-window="day-planner-window"><img class="subsystem-icon-asset" data-window-icon src="${controlIconUrl}" alt="" /><span>Day Planner</span></button>
           <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
-          <button class="subsystem-icon" type="button" data-open-window="construction-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Construction</span></button>
           <button class="subsystem-icon" type="button" data-open-window="engineering-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Engineering</span></button>
           <button class="subsystem-icon" type="button" data-open-window="objects-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Objects and Supplies</span></button>
           <button class="subsystem-icon" type="button" data-open-window="storage-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Storage and Hauling</span></button>
@@ -149,7 +137,6 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="vessel-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Vessels and Transport</span></button>
           <button class="subsystem-icon" type="button" data-open-window="power-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Power and Lighting</span></button>
           <button class="subsystem-icon" type="button" data-open-window="combat-window"><img class="subsystem-icon-asset" data-window-icon src="${personnelIconUrl}" alt="" /><span>Tactical Response</span></button>
-          <button class="subsystem-icon" type="button" data-open-window="encounter-sandbox-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Encounter Sandbox</span></button>
           <button class="subsystem-icon" type="button" data-open-window="expeditions-window"><img class="subsystem-icon-asset" data-window-icon src="${folderIconUrl}" alt="" /><span>Expeditions</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
@@ -159,12 +146,12 @@ app.innerHTML = `
             <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
             <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
             <div><dt>Residents</dt><dd>1 assigned</dd></div>
-            <div><dt>Systems</dt><dd>18 available</dd></div>
+            <div><dt>Systems</dt><dd><span data-system-count></span> available</dd></div>
           </dl>
         </aside>
       </div>
       <div class="status-bar">
-        <p class="status-bar-field">18 systems</p>
+        <p class="status-bar-field"><span data-system-count></span> systems</p>
         <p class="status-bar-field">Site systems online</p>
       </div>
     </div>
@@ -185,8 +172,9 @@ app.innerHTML = `
       <output data-camera-zoom aria-label="Map zoom">70%</output>
       <button type="button" data-camera-action="in" title="Zoom in" aria-label="Zoom in">+</button>
       <button type="button" data-camera-action="home" title="Center on Site 828" aria-label="Center on Site 828">&#8962;</button>
-      <select data-camera-entity aria-label="Find Object"></select>
+      <select data-camera-entity aria-label="Focus personnel"></select>
       <div class="field-row"><input id="map-follow" type="checkbox" data-camera-follow disabled/><label for="map-follow">Follow</label></div>
+      <button type="button" data-camera-action="inspect" disabled>Open Record</button>
       <details class="map-layers"><summary>Layers</summary><div class="map-layer-panel">
         <fieldset><legend>Perspective</legend><div class="field-row"><input id="map-world" type="radio" name="map-perspective" data-map-perspective="world" checked/><label for="map-world">World</label><input id="map-recorded" type="radio" name="map-perspective" data-map-perspective="recorded"/><label for="map-recorded">Recorded</label></div></fieldset>
         <fieldset><legend>Base map</legend><div class="field-row"><input id="map-site" type="radio" name="map-base" data-map-base="site" checked/><label for="map-site">Site</label><input id="map-materials" type="radio" name="map-base" data-map-base="materials"/><label for="map-materials">Materials</label></div></fieldset>
@@ -319,9 +307,9 @@ app.innerHTML = `
   <section id="day-planner-window" class="window managed-window" aria-label="Site 828 day planner" hidden><div class="title-bar"><div class="title-bar-text">Site 828 - Day Planner</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body day-planner-body" id="day-planner-body"></div><div class="resize-grip" aria-hidden="true"></div></section>
   <section id="surveillance-window" class="window managed-window" aria-label="Site 828 surveillance" hidden><div class="title-bar"><div class="title-bar-text">Site 828 - Surveillance</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body day-planner-body" id="surveillance-body"></div><div class="resize-grip" aria-hidden="true"></div></section>
 
-  <section id="anomaly-window" class="window managed-window anomaly-window" aria-label="Site 828 anomaly registry" hidden>
+  <section id="anomaly-window" class="window managed-window anomaly-window" aria-label="SCP-999 resident record" hidden>
     <div class="title-bar">
-      <div class="title-bar-text">Site 828 - Anomaly Registry</div>
+      <div class="title-bar-text">SCP-999 - Resident Record</div>
       <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
     </div>
     <div class="window-body alarm-body">
@@ -340,32 +328,6 @@ app.innerHTML = `
         <p id="scp-999-last-interaction">No interaction recorded.</p>
       </fieldset>
       <p class="system-note">Local social contact observed. SCP-999 greets nearby personnel and shows particular interest in observable distress. Sleeping and eating personnel are left undisturbed.</p>
-    </div>
-    <div class="resize-grip" aria-hidden="true"></div>
-  </section>
-
-  <section id="knowledge-window" class="window managed-window knowledge-window" aria-label="Foundation knowledgebase" hidden>
-    <div class="title-bar">
-      <div class="title-bar-text">Foundation Library '98 - Site 828</div>
-      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
-    </div>
-    <div class="window-body encyclopedia-body">
-      <aside class="topic-tree">
-        <strong>Contents</strong>
-        <ul class="tree-view"><li>Foundation Operations<ul><li><strong>Site 828</strong></li><li>Containment Classes</li><li>Incident Protocols</li></ul></li><li>Known Anomalies</li><li>Personnel Handbook</li></ul>
-      </aside>
-      <article class="encyclopedia-article">
-        <p class="article-section">FOUNDATION SITES / NORTH AMERICA</p>
-        <h1>Site 828</h1>
-        <p>Site 828 is a provisional research and containment installation established near Jarbridge, Nevada.</p>
-        <p>Its founding mandate concerns the study and classification of SCP-9620. Access to detailed records remains restricted.</p>
-        <fieldset class="research-capability">
-          <legend>Personnel screening research</legend>
-          <dl class="status-list">
-            <div><dt>Anomalous Psychometrics</dt><dd id="psychometrics-status">NOT AVAILABLE</dd></div>
-          </dl>
-        </fieldset>
-      </article>
     </div>
     <div class="resize-grip" aria-hidden="true"></div>
   </section>
@@ -400,7 +362,6 @@ app.innerHTML = `
           <button type="button" data-open-window="facility-window"><img class="menu-item-icon" src="${facilityIconUrl}" alt="" /><span><strong>Site 828</strong><small>Jarbridge, Nevada</small></span></button>
         </div>
       </details>
-      <button type="button" data-open-window="knowledge-window"><img class="menu-item-icon" src="${bookIconUrl}" alt="" /><span><strong>Foundation Library</strong><small>Browse available records</small></span></button>
       <hr />
       <button id="save-site" type="button"><strong>Save Site</strong><small id="save-site-status">Preparing local record</small></button>
       <button id="load-site" type="button"><strong>Load Site</strong><small>Restore the latest local record</small></button>
@@ -426,6 +387,11 @@ function requireElement<ElementType extends Element>(
   return element;
 }
 
+for (const count of app.querySelectorAll("[data-system-count]"))
+  count.textContent = String(
+    app.querySelectorAll("#facility-window .subsystem-icon").length,
+  );
+
 const canvas = requireElement<HTMLCanvasElement>("#site-canvas");
 const pauseButton = requireElement<HTMLButtonElement>("#pause-button");
 const tickCount = requireElement<HTMLElement>("#tick-count");
@@ -439,9 +405,6 @@ const incidentBadge = requireElement<HTMLElement>("#incident-badge");
 const incidentLevel = requireElement<HTMLElement>("#incident-level");
 const incidentSummary = requireElement<HTMLElement>("#incident-summary");
 const runtimeStatus = requireElement<HTMLElement>("#runtime-status");
-const psychometricsStatus = requireElement<HTMLElement>(
-  "#psychometrics-status",
-);
 const controlWindow = requireElement<HTMLElement>("#control-window");
 const controlViewMenu = requireElement<HTMLElement>("#control-view-menu");
 const controlViewMenuButton = requireElement<HTMLButtonElement>(
@@ -596,21 +559,12 @@ windowManager.register(requireElement<HTMLElement>("#work-orders-window"), {
 });
 windowManager.register(requireElement<HTMLElement>("#anomaly-window"), {
   id: "anomaly-window",
-  title: "Anomaly Registry",
+  title: "SCP-999",
   iconUrl: recordsIconUrl,
   defaultRect: { left: 736, top: 76, width: 440, height: 520 },
   defaultOpen: false,
   minimumWidth: 320,
   minimumHeight: 220,
-});
-windowManager.register(requireElement<HTMLElement>("#knowledge-window"), {
-  id: "knowledge-window",
-  title: "Foundation Library",
-  iconUrl: bookIconUrl,
-  defaultRect: { left: 264, top: 82, width: 720, height: 520 },
-  defaultOpen: false,
-  minimumWidth: 120,
-  minimumHeight: 32,
 });
 windowManager.register(requireElement<HTMLElement>("#debug-window"), {
   id: "debug-window",
@@ -895,23 +849,6 @@ windowManager.register(combatView.element, {
   minimumWidth: 350,
   minimumHeight: 300,
 });
-const encounterSandbox = createEncounterSandboxWindow(
-  app,
-  controller,
-  (request) => {
-    windowManager.open("camera-window");
-    return siteCamera.beginWorldPlacement(request);
-  },
-);
-windowManager.register(encounterSandbox.element, {
-  id: "encounter-sandbox-window",
-  title: "Encounter Sandbox",
-  iconUrl: workOrdersIconUrl,
-  defaultRect: { left: 240, top: 120, width: 380, height: 240 },
-  defaultOpen: false,
-  minimumWidth: 300,
-  minimumHeight: 180,
-});
 const fieldWindow = requireElement<HTMLElement>("#camera-window").cloneNode(
   true,
 ) as HTMLElement;
@@ -1059,10 +996,6 @@ const surveillanceView = createSurveillanceView(
 const constructionView = createConstructionWindow(
   app,
   controller,
-  () => {
-    windowManager.open("camera-window");
-    siteCamera.beginPlacement(laboratoryPlacement(controller));
-  },
   (position) => {
     windowManager.open("camera-window");
     siteCamera.focus(position);
@@ -1070,7 +1003,7 @@ const constructionView = createConstructionWindow(
 );
 windowManager.register(constructionView.element, {
   id: "construction-window",
-  title: "Construction",
+  title: "Legacy Annex Projects",
   iconUrl: workOrdersIconUrl,
   defaultRect: { left: 220, top: 150, width: 590, height: 400 },
   defaultOpen: false,
@@ -1132,12 +1065,6 @@ app.addEventListener("click", (event) => {
   );
   const personId = assessmentButton?.dataset.assessPersonId;
   if (personId) controller.orderPhysicalAssessment(personId);
-
-  const traitAssessmentButton = (
-    event.target as Element
-  ).closest<HTMLButtonElement>("[data-assess-traits-person-id]");
-  const traitPersonId = traitAssessmentButton?.dataset.assessTraitsPersonId;
-  if (traitPersonId) controller.orderAnomalousAssessment(traitPersonId);
 
   const biasAssessmentButton = (
     event.target as Element
@@ -1334,7 +1261,6 @@ function render(snapshot: ControllerSnapshot): void {
     fieldCamera.render(field);
   else if (!fieldWindow.hidden) windowManager.close("expedition-map-window");
   combatView.render(snapshot);
-  encounterSandbox.render(snapshot);
   powerView.render(snapshot);
   surveillanceView.render(snapshot);
   storageView.render(snapshot);
@@ -1362,7 +1288,6 @@ function render(snapshot: ControllerSnapshot): void {
     personnelMedicalWindows,
     snapshot.game.personnel,
     snapshot.game.tick,
-    snapshot.game.capabilities.anomalousPsychometrics,
     snapshot.game.jobs,
   );
   updateWorkOrders(
@@ -1419,14 +1344,6 @@ function render(snapshot: ControllerSnapshot): void {
         ? "Current state unknown"
         : `${snapshot.game.tick - lastObserved} minutes since observation; current state unknown`;
   }
-  psychometricsStatus.textContent = snapshot.game.capabilities
-    .anomalousPsychometrics
-    ? "AVAILABLE"
-    : "NOT AVAILABLE";
-  psychometricsStatus.className = snapshot.game.capabilities
-    .anomalousPsychometrics
-    ? "online-status"
-    : "";
   personnelCount.textContent = `${snapshot.game.personnel.length} assigned`;
   siteName.textContent = snapshot.game.siteName;
   tickCount.textContent = snapshot.game.tick.toLocaleString();

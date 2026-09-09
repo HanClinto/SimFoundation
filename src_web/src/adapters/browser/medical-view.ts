@@ -104,7 +104,6 @@ function assessmentRecordMarkup(person: PersonnelRecord): string {
         <button type="button" data-screen-mood-person-id="${person.id}">Request Mood Screener</button>
         <button type="button" data-assess-psychology-person-id="${person.id}">Request Psychiatric Evaluation</button>
         <button type="button" data-assess-biases-person-id="${person.id}">Evaluate Work Preferences</button>
-        <button type="button" data-assess-traits-person-id="${person.id}" disabled>Run Anomalous Screening</button>
       </div>
     </header>
     <div class="assessment-history" data-assessment-field="history"></div>
@@ -161,7 +160,7 @@ export function createPersonnelMedicalWindows(
   }
 
   const windows = { medicalCharts, assessmentRecords };
-  updatePersonnelMedicalWindows(windows, personnel, 0, false);
+  updatePersonnelMedicalWindows(windows, personnel, 0);
   return windows;
 }
 
@@ -562,7 +561,6 @@ export function updatePersonnelMedicalWindows(
   windows: PersonnelMedicalWindows,
   personnel: readonly PersonnelRecord[],
   currentTick: number,
-  anomalousPsychometricsUnlocked: boolean,
   jobs: readonly SiteJob[] = [],
 ): void {
   for (const person of personnel) {
@@ -576,20 +574,6 @@ export function updatePersonnelMedicalWindows(
       throw new Error(`Medical windows missing: ${person.id}`);
     updateMedicalChart(chart, person, currentTick);
     updateAssessmentRecord(record, person, currentTick);
-    const screeningButton = record.querySelector<HTMLButtonElement>(
-      "[data-assess-traits-person-id]",
-    );
-    if (screeningButton) {
-      const last = lastClinicalReview(person, "anomalous");
-      const current = last !== undefined && currentTick - last < 30;
-      screeningButton.disabled = !anomalousPsychometricsUnlocked || current;
-      screeningButton.textContent = current
-        ? "Anomalous Survey Current"
-        : "Request Anomalous Survey";
-      screeningButton.title = !anomalousPsychometricsUnlocked
-        ? "Requires Anomalous Psychometrics research"
-        : "Extended behavior survey; conclusions require supporting evidence.";
-    }
     const biasAssessmentButton = record.querySelector<HTMLButtonElement>(
       "[data-assess-biases-person-id]",
     );
@@ -660,7 +644,6 @@ export function updatePersonnelMedicalWindows(
       ["mood", moodButton],
       ["psychological", psychologicalAssessmentButton],
       ["preferences", biasAssessmentButton],
-      ["anomalous", screeningButton],
     ] as const) {
       if (button && pending.some((job) => job.assessment?.kind === kind)) {
         button.disabled = true;

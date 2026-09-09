@@ -6,23 +6,14 @@ import { createInitialState } from "../src/simulation/state";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("independent construction inspector", () => {
-  it("coordinates plan and locate actions without owning the camera window", () => {
+  it("retains locate and cancellation for saved annex work without new authorization", () => {
     const window = new JSDOM("<!doctype html><body></body>").window;
     vi.stubGlobal("document", window.document);
     vi.stubGlobal("Option", window.Option);
     const controller = createController(createInitialState());
-    const plan = vi.fn();
     const locate = vi.fn();
-    const view = createConstructionWindow(
-      document.body,
-      controller,
-      plan,
-      locate,
-    );
-    view.element
-      .querySelector<HTMLButtonElement>("[data-plan-laboratory]")!
-      .click();
-    expect(plan).toHaveBeenCalledOnce();
+    const view = createConstructionWindow(document.body, controller, locate);
+    expect(view.element.querySelector("[data-plan-laboratory]")).toBeNull();
     view.render(controller.placeLaboratory({ x: 59, y: 80 }).snapshot);
     view.element
       .querySelector<HTMLButtonElement>("[data-focus-blueprint]")!
