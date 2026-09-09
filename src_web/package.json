@@ -7,6 +7,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "archive:scp": "node scripts/archive-scp-recommendations.mjs",
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/verify-deployment-build.mjs",
     "preview": "vite preview",
