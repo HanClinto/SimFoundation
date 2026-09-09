@@ -44,6 +44,7 @@ import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createPowerWindow } from "./power-view";
 import { createCombatWindow } from "./combat-view";
+import { createEncounterSandboxWindow } from "./encounter-sandbox-view";
 import { createExpeditionsWindow } from "./expeditions-view";
 import { createFieldInspector, fieldInspectionTarget } from "./field-inspector";
 import {
@@ -148,6 +149,7 @@ app.innerHTML = `
           <button class="subsystem-icon" type="button" data-open-window="vessel-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Vessels and Transport</span></button>
           <button class="subsystem-icon" type="button" data-open-window="power-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Power and Lighting</span></button>
           <button class="subsystem-icon" type="button" data-open-window="combat-window"><img class="subsystem-icon-asset" data-window-icon src="${personnelIconUrl}" alt="" /><span>Tactical Response</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="encounter-sandbox-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Encounter Sandbox</span></button>
           <button class="subsystem-icon" type="button" data-open-window="expeditions-window"><img class="subsystem-icon-asset" data-window-icon src="${folderIconUrl}" alt="" /><span>Expeditions</span></button>
         </div>
         <aside class="folder-details" aria-label="Facility summary">
@@ -875,10 +877,6 @@ windowManager.register(powerView.element, {
 const combatView = createCombatWindow(
   app,
   controller,
-  (request) => {
-    windowManager.open("camera-window");
-    siteCamera.beginPlacement(request);
-  },
   (position) => {
     windowManager.open("camera-window");
     siteCamera.focus(position);
@@ -896,6 +894,23 @@ windowManager.register(combatView.element, {
   defaultOpen: false,
   minimumWidth: 350,
   minimumHeight: 300,
+});
+const encounterSandbox = createEncounterSandboxWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    return siteCamera.beginWorldPlacement(request);
+  },
+);
+windowManager.register(encounterSandbox.element, {
+  id: "encounter-sandbox-window",
+  title: "Encounter Sandbox",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 240, top: 120, width: 380, height: 240 },
+  defaultOpen: false,
+  minimumWidth: 300,
+  minimumHeight: 180,
 });
 const fieldWindow = requireElement<HTMLElement>("#camera-window").cloneNode(
   true,
@@ -1319,6 +1334,7 @@ function render(snapshot: ControllerSnapshot): void {
     fieldCamera.render(field);
   else if (!fieldWindow.hidden) windowManager.close("expedition-map-window");
   combatView.render(snapshot);
+  encounterSandbox.render(snapshot);
   powerView.render(snapshot);
   surveillanceView.render(snapshot);
   storageView.render(snapshot);

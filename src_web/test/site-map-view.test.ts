@@ -257,6 +257,25 @@ it("combines independent layers without changing pinned placement and cancels wi
     new window.MouseEvent("dblclick", { clientX: 380, clientY: 210 }),
   );
   expect(open).toHaveBeenLastCalledWith("storage:storage-1", "world");
+  const snapshot = controller.getSnapshot();
+  const priorConfirms = confirm.mock.calls.length;
+  expect(view.beginWorldPlacement(request)).toBeNull();
+  expect(view.beginWorldPlacement(request)).toContain("current placement");
+  const perspective = document.createElement("input");
+  perspective.dataset.mapPerspective = "recorded";
+  root.append(perspective);
+  perspective.dispatchEvent(new window.Event("change", { bubbles: true }));
+  expect(
+    root.querySelector<HTMLButtonElement>('[data-camera-action="confirm"]')!
+      .disabled,
+  ).toBe(true);
+  canvas.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Enter" }));
+  expect(confirm.mock.calls).toHaveLength(priorConfirms);
+  root
+    .querySelector<HTMLButtonElement>('[data-camera-action="cancel"]')!
+    .click();
+  expect(view.beginWorldPlacement(request)).toContain("World view");
+  expect(controller.getSnapshot()).toEqual(snapshot);
 });
 
 it("follows only the selected perspective's position and releases the camera for manual navigation", () => {

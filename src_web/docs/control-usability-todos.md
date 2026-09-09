@@ -1,7 +1,7 @@
 # Control Usability Follow-Ups
 
 Tracking: [interaction overhaul #23](https://github.com/HanClinto/SimFoundation/issues/23).
-Status: implementation in progress. Check items only after their scoped checks pass.
+Status: all six audit groups completed and validated. Checkpoint notes below retain the implementation sequence and verification details.
 
 ## 1. Consistent Personal Order Submission
 
@@ -56,10 +56,11 @@ Status: implementation in progress. Check items only after their scoped checks p
 
 ## 6. Separate Sandbox Creation From Operations
 
-- [ ] Move Place 049-2 and encounter creation controls out of Tactical Response into an explicitly named Sandbox surface using existing sandbox conventions.
+- [x] Move Place 049-2 and encounter creation controls out of Tactical Response into an explicitly named Sandbox surface using existing sandbox conventions.
 - Retain threat observations/condition and relevant locate/inspection in operational windows. No new encounter mechanics or default scenario spawning.
 - Acceptance: ordinary staff operations do not create test threats; sandbox access remains discoverable, explicitly administrative, and uses existing placement/validation. No loss of the current authoring capability.
 - Validation: sandbox placement and rejection, tactical absence of spawn controls, Recorded restrictions, no accidental encounter creation on navigation.
+- Verified: Encounter Sandbox is a separate facility shortcut/window; Tactical Response retains threat status and Locate only. The sandbox uses existing encounter preview/creation and guarded World placement, refuses an existing placement, blocks confirmation after a switch to Recorded, and rechecks map identity and live encounter eligibility. Tests cover inert navigation, invalid tiles/team, successful creation and stale confirmation. Browser confirmed inert opening, no-team reason, both Recorded guards, cancelled preview, unchanged save and 300px layout. Full gate passed with 372 tests / 80 files; an unrelated routine-source test timed out once under the full run, then passed alone and in the repeated full gate without modifications.
 
 ## Delivery Boundaries
 

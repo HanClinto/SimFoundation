@@ -697,6 +697,24 @@ export function createSiteMap(
       drawFrame();
     },
     focus,
+    beginWorldPlacement(request: PlacementRequest): string | null {
+      if (placement) return "Finish or cancel the current placement first.";
+      if (camera.perspective !== "world")
+        return "Switch the map to World view before sandbox placement.";
+      const placementMapId = mapId;
+      pawnControl.close();
+      placement = createPlacementSession({
+        ...request,
+        validate: (position, snapshot) =>
+          camera.perspective !== "world"
+            ? "Sandbox placement is unavailable in Recorded view."
+            : mapId !== placementMapId
+              ? "The sandbox map has changed."
+              : request.validate(position, snapshot),
+      });
+      focus(request.origin);
+      return null;
+    },
     controlPerson(id: string): string | null {
       if (placement)
         return "Finish or cancel map placement before selecting a responder.";
