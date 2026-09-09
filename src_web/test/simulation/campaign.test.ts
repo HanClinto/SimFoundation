@@ -64,7 +64,13 @@ it("instantiates a shared JSON site definition twice without sharing mutable rec
   expect(result.state.tick).toBe(1);
   expect(
     result.state.sites[first.siteId]!.entities[`${first.siteId}:operator`],
-  ).toMatchObject({ needs: { hunger: { value: 20.1 } } });
+  ).toMatchObject({ needs: { hunger: { value: 0 } } });
+  expect(
+    result.state.sites[first.siteId]!.entities[`${first.siteId}:meal`],
+  ).toBeUndefined();
+  expect(
+    second.state.sites[first.siteId]!.entities[`${first.siteId}:meal`],
+  ).toBeDefined();
   expect(
     positionOf(result.state.sites[second.siteId]!, `${second.siteId}:visitor`),
   ).not.toEqual({ x: 1, y: 3 });
@@ -289,7 +295,11 @@ it("holds an arrival behind a blocking item until it is physically picked up", (
       {
         ...template.entities[3]!,
         location: { kind: "ground", position: { x: 5, y: 1 } },
-        overrides: { blocksMovement: true },
+        overrides: {
+          blocksMovement: true,
+          materialId: "steel",
+          name: "Steel stock",
+        },
       },
     ],
   });

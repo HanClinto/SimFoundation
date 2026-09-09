@@ -7,6 +7,7 @@ import type { ActionContext } from "../../src/simulation/core/entity/pawn/action
 import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
 import { instantiateEntity } from "../../src/simulation/core/site/EntityPlacement";
 import { entities, materials } from "../../src/simulation/catalog";
+import { Eat } from "../../src/simulation/core/entity/pawn/actions/Eat";
 
 function context(needs: Pawn["needs"]): ActionContext {
   const pawn = instantiateEntity(
@@ -89,7 +90,7 @@ it("breaks equal urgency ties by need ID regardless of record or provider order"
   ).toEqual({ kind: "wait", ticks: 1 });
 });
 
-it("does not query providers for absent or below-threshold needs", () => {
+it("considers even the lowest positive urgency but skips absent or satisfied needs", () => {
   let calls = 0;
   const provider: NeedActionProvider = {
     needId: "fatigue",
@@ -100,12 +101,39 @@ it("does not query providers for absent or below-threshold needs", () => {
   };
   expect(chooseNeedAction(context({}), [provider])).toBeNull();
   expect(
-    chooseNeedAction(context({ fatigue: need(49) }), [provider]),
+    chooseNeedAction(context({ fatigue: need(0) }), [provider]),
   ).toBeNull();
   expect(calls).toBe(0);
-  expect(chooseNeedAction(context({ fatigue: need(50) }), [provider])).toEqual({
+  expect(chooseNeedAction(context({ fatigue: need(1) }), [provider])).toEqual({
     kind: "wait",
     ticks: 1,
   });
   expect(calls).toBe(1);
+});
+
+it("falls through severe hunger with no food to mild fatigue, but chooses food when available", () => {
+  const input = context({ hunger: need(95), fatigue: need(10) });
+  const rest: NeedActionProvider = {
+    needId: "fatigue",
+    findAction: () => ({ kind: "wait", ticks: 3 }),
+  };
+  const providers = [rest, Eat.needAction];
+  expect(chooseNeedAction(input, providers)).toEqual({
+    kind: "wait",
+    ticks: 3,
+  });
+  input.site.entities.meal = instantiateEntity(
+    {
+      id: "meal",
+      definitionId: "packaged-meal",
+      location: { kind: "ground", position: { x: 1, y: 0 } },
+    },
+    entities,
+  );
+  expect(chooseNeedAction(input, providers)).toEqual({
+    kind: "eat",
+    targetId: "meal",
+  });
+  expect(input.pawn.queue).toEqual([]);
+  expect(input.site.entities.meal.amount).toBe(1);
 });

@@ -15,7 +15,7 @@ export function chooseNeedAction(
   providers: readonly NeedActionProvider[],
 ): ActionState | null {
   const urgent = Object.entries(context.pawn.needs)
-    .filter(([, need]) => need.value >= 50)
+    .filter(([, need]) => need.value > 0)
     .sort(
       ([firstId, first], [secondId, second]) =>
         second.value - first.value ||
