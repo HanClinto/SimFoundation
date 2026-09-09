@@ -998,18 +998,12 @@ const expeditionsView = createExpeditionsWindow(
     siteCamera.focus(position);
   },
   showField,
-  (request) => {
+  (expeditionId, personId) => {
+    const active = controller.getSnapshot().game.expeditions.active;
+    if (active?.id !== expeditionId || active.phase !== "field")
+      return "This expedition is no longer available for field control.";
     showField();
-    fieldCamera.beginPlacement({
-      ...request,
-      confirm: (position) => {
-        const result = request.confirm(position);
-        return {
-          ...result,
-          snapshot: fieldSnapshot(result.snapshot) ?? result.snapshot,
-        };
-      },
-    });
+    return fieldCamera.controlPerson(personId);
   },
   (position) => fieldCamera.focus(position),
 );

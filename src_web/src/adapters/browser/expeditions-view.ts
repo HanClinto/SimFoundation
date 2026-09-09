@@ -8,10 +8,8 @@ import {
   EXPEDITION_ASSEMBLY,
   type ExpeditionCode,
 } from "../../simulation/expeditions";
-import { FIELD_EXTRACTION } from "../../simulation/expedition-site";
 import { readyResponder } from "../../simulation/combat";
 import { OBJECT_DEFINITIONS } from "../../simulation/objects";
-import type { PlacementRequest } from "./placement";
 import type { TilePosition } from "../../simulation/world";
 
 const messages: Record<ExpeditionCode, string> = {
@@ -29,7 +27,7 @@ export function createExpeditionsWindow(
   controller: GameController,
   locateBase: (position: TilePosition) => void,
   openField: () => void,
-  beginField: (request: PlacementRequest) => void,
+  controlField: (expeditionId: string, personId: string) => string | null,
   focusField: (position: TilePosition) => void,
 ) {
   const element = document.createElement("section");
@@ -38,7 +36,7 @@ export function createExpeditionsWindow(
   element.hidden = true;
   element.setAttribute("aria-label", "Expedition operations");
   element.innerHTML =
-    '<div class="title-bar"><div class="title-bar-text">Expedition Operations</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><div class="field-row"><label for="expedition-notice">Notice</label><select id="expedition-notice"></select></div><p data-expedition-report></p><fieldset><legend>Response Manifest</legend><div class="planner-roster-scroll"><table class="data-table" aria-label="Expedition manifest"><thead><tr><th>Enlist</th><th>Equipment</th><th>Rounds</th><th>Kits</th></tr></thead><tbody data-expedition-team></tbody></table></div></fieldset><div class="dossier-actions"><button type="button" data-expedition-enlist>Assemble team</button><button type="button" data-expedition-locate>Assembly point</button><button type="button" data-expedition-dispatch>Dispatch</button><button type="button" data-expedition-cancel>Cancel assembly</button><button type="button" data-expedition-map>Open field map</button><button type="button" data-expedition-recall>Regroup / return</button></div><p data-expedition-status></p><fieldset><legend>Field Orders</legend><div class="field-row"><label for="expedition-responder">Responder</label><select id="expedition-responder"></select><button type="button" data-expedition-find>Locate</button></div><div class="dossier-actions"><button type="button" data-expedition-move>Move</button><button type="button" data-expedition-hold>Hold</button><button type="button" data-expedition-engage>Engage</button><button type="button" data-expedition-retreat>Extraction point</button></div><div class="field-row"><label for="expedition-patient">Colleague</label><select id="expedition-patient"></select><button type="button" data-expedition-stabilize>Stabilize</button></div><dl class="trial-readings" data-expedition-responder-state></dl></fieldset><fieldset><legend>Recovery</legend><div class="field-row"><label for="expedition-cargo">Object</label><select id="expedition-cargo"></select><button type="button" data-expedition-recover>Secure / recover</button></div><p data-expedition-recovery></p></fieldset><p role="status" data-expedition-feedback></p><h3>Return Reports</h3><ol data-expedition-history></ol></div><div class="resize-grip" aria-hidden="true"></div>';
+    '<div class="title-bar"><div class="title-bar-text">Expedition Operations</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><div class="field-row"><label for="expedition-notice">Notice</label><select id="expedition-notice"></select></div><p data-expedition-report></p><fieldset><legend>Response Manifest</legend><div class="planner-roster-scroll"><table class="data-table" aria-label="Expedition manifest"><thead><tr><th>Enlist</th><th>Equipment</th><th>Rounds</th><th>Kits</th></tr></thead><tbody data-expedition-team></tbody></table></div></fieldset><div class="dossier-actions"><button type="button" data-expedition-enlist>Assemble team</button><button type="button" data-expedition-locate>Assembly point</button><button type="button" data-expedition-dispatch>Dispatch</button><button type="button" data-expedition-cancel>Cancel assembly</button><button type="button" data-expedition-map>Open field map</button><button type="button" data-expedition-recall>Regroup / return</button></div><p data-expedition-status></p><fieldset><legend>Field Responders</legend><div class="field-row"><label for="expedition-responder">Responder</label><select id="expedition-responder"></select><button type="button" data-expedition-find>Locate</button><button type="button" data-expedition-control>Control on Map</button></div><dl class="trial-readings" data-expedition-responder-state></dl></fieldset><fieldset><legend>Recovery</legend><p data-expedition-recovery></p></fieldset><p role="status" data-expedition-feedback></p><h3>Return Reports</h3><ol data-expedition-history></ol></div><div class="resize-grip" aria-hidden="true"></div>';
   host.append(element);
   const manifest = element.querySelector("fieldset")!;
   const manifestDetails = document.createElement("details");
@@ -48,23 +46,12 @@ export function createExpeditionsWindow(
   manifest.before(manifestDetails);
   manifestDetails.append(manifestSummary, manifest);
   let lastPhase: string | null = null;
-  const cancelCargo = document.createElement("button");
-  cancelCargo.type = "button";
-  cancelCargo.textContent = "Cancel recovery / put down";
-  cancelCargo.dataset.expeditionCancelRecovery = "";
-  element
-    .querySelector("#expedition-cargo")!
-    .parentElement!.append(cancelCargo);
   let current = controller.getSnapshot();
   const notice =
     element.querySelector<HTMLSelectElement>("#expedition-notice")!;
   const responder = element.querySelector<HTMLSelectElement>(
     "#expedition-responder",
   )!;
-  const patient = element.querySelector<HTMLSelectElement>(
-    "#expedition-patient",
-  )!;
-  const cargo = element.querySelector<HTMLSelectElement>("#expedition-cargo")!;
   const feedback = element.querySelector<HTMLElement>(
     "[data-expedition-feedback]",
   )!;
@@ -155,84 +142,33 @@ export function createExpeditionsWindow(
       focusField(position);
     }
   });
-  const order = (action: "hold" | "engage" | "stabilize", target?: string) => {
-    const active = current.game.expeditions.active;
-    if (!active) return;
-    const result = controller.orderFieldResponder(
-      active.id,
-      responder.value,
-      action,
-      undefined,
-      target,
-    );
-    render(result.snapshot);
-    feedback.textContent =
-      result.code === "accepted"
-        ? "Field order accepted."
-        : `Field order unavailable: ${result.code}.`;
-  };
-  button("hold").addEventListener("click", () => order("hold"));
-  button("engage").addEventListener("click", () =>
-    order("engage", "SCP-049-2"),
-  );
-  button("stabilize").addEventListener("click", () =>
-    order("stabilize", patient.value),
-  );
-  for (const action of ["move", "retreat"] as const)
-    button(action).addEventListener("click", () => {
-      const active = current.game.expeditions.active;
-      if (!active) return;
-      const id = responder.value;
-      const expeditionId = active.id;
-      beginField({
-        label: `${action === "move" ? "Move" : "Withdraw"} field responder`,
-        origin:
-          action === "retreat"
-            ? FIELD_EXTRACTION
-            : fieldState(current.game)!.world.positions[id]!,
-        footprint: (position) => [{ position }],
-        validate: (position) => {
-          const code = controller.previewFieldOrder(
-            expeditionId,
-            id,
-            action,
-            position,
-          );
-          return code === "accepted" ? null : `Order unavailable: ${code}.`;
-        },
-        confirm: (position) => {
-          const result = controller.orderFieldResponder(
-            expeditionId,
-            id,
-            action,
-            position,
-          );
-          return {
-            accepted: result.code === "accepted",
-            message:
-              result.code === "accepted"
-                ? "Field movement ordered."
-                : result.code,
-            snapshot: result.snapshot,
-          };
-        },
-      });
-    });
-  button("recover").addEventListener("click", () => {
-    const active = current.game.expeditions.active;
-    if (active)
-      apply(
-        controller.recoverExpeditionObject(
-          active.id,
-          responder.value,
-          cargo.value,
-        ),
-      );
+  button("control").addEventListener("click", () => {
+    const expeditionId = current.game.expeditions.active?.id;
+    const id = responder.value;
+    const snapshot = controller.getSnapshot();
+    const active = snapshot.game.expeditions.active;
+    const issue =
+      active?.id !== expeditionId
+        ? "This expedition is no longer available."
+        : fieldControlIssue(snapshot, id);
+    if (issue || !expeditionId) {
+      render(snapshot);
+      feedback.textContent = issue ?? "No active expedition.";
+      return;
+    }
+    feedback.textContent = controlField(expeditionId, id) ?? "";
   });
-  cancelCargo.addEventListener("click", () => {
-    const active = current.game.expeditions.active;
-    if (active) apply(controller.cancelRecovery(active.id, responder.value));
-  });
+  function fieldControlIssue(
+    snapshot: ControllerSnapshot,
+    id: string,
+  ): string | null {
+    const active = snapshot.game.expeditions.active;
+    if (active?.phase !== "field")
+      return "Personal control is available only while the team is in the field.";
+    if (!active.team.includes(id) || !active.site?.world.positions[id])
+      return "This responder is not present on the field map.";
+    return null;
+  }
   const options = (
     select: HTMLSelectElement,
     entries: readonly { id: string; name: string }[],
@@ -300,19 +236,6 @@ export function createExpeditionsWindow(
       responder,
       people.map((person) => ({ id: person.id, name: person.name })),
     );
-    options(
-      patient,
-      people.map((person) => ({ id: person.id, name: person.name })),
-    );
-    options(
-      cargo,
-      field?.objects.items
-        .filter((item) => !active?.cargo.includes(item.id))
-        .map((item) => ({
-          id: item.id,
-          name: OBJECT_DEFINITIONS[item.kind].name,
-        })) ?? [],
-    );
     const assembled = expeditionAssembled(state);
     element.querySelector("[data-expedition-status]")!.textContent = !active
       ? "No team dispatched."
@@ -330,32 +253,15 @@ export function createExpeditionsWindow(
       active?.phase ?? "",
     );
     button("recall").disabled = active?.phase !== "field";
-    for (const action of [
-      "move",
-      "hold",
-      "engage",
-      "retreat",
-      "stabilize",
-      "recover",
-      "find",
-    ])
-      button(action).disabled = active?.phase !== "field" || !responder.value;
+    button("find").disabled =
+      !["field", "regrouping"].includes(active?.phase ?? "") ||
+      !field?.world.positions[responder.value];
+    const controlIssue = fieldControlIssue(snapshot, responder.value);
+    button("control").disabled = !!controlIssue;
+    button("control").title =
+      controlIssue ??
+      "Select and center this responder on the field map; existing work continues.";
     const member = field?.combat.responders[responder.value];
-    cancelCargo.disabled = !active?.recoveryOrders.some(
-      (order) =>
-        order.personId === responder.value && order.phase !== "delivered",
-    );
-    if (member?.incapacitated)
-      for (const action of [
-        "move",
-        "hold",
-        "engage",
-        "retreat",
-        "stabilize",
-        "recover",
-      ])
-        button(action).disabled = true;
-    button("recover").disabled ||= !cargo.value;
     const readings = member
       ? [
           ["Action", `${member.order} / ${member.phase} / ${member.remaining}`],

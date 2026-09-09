@@ -5,8 +5,8 @@ Status: implementation in progress. Check items only after their scoped checks p
 
 ## 1. Consistent Personal Order Submission
 
-- [ ] Remove ordinary inspector paths that silently clear a person's pending queue.
-- Base Tactical Response personal-order paths have been removed; expedition personal/recovery controls remain open work.
+- [x] Remove ordinary inspector paths that silently clear a person's pending queue.
+- Base Tactical Response and Expedition Operations personal-order/recovery paths now hand off to the appropriate map; explicit duty and mission lifecycle transitions remain separate.
 - Route personal commands through the map's Add to Queue / Do Now policy, rather than changing low-level legacy controller semantics indiscriminately.
 - Keep explicit draft/release and mission lifecycle ownership transitions separate from personal intentions.
 - Acceptance: opening an inspector or handing control to a map leaves queue, routine, cargo, draft status and supplies unchanged. Do Now preserves pending entries; Add to Queue waits for the current owner. Protected cargo, clinical work and mission phases still reject unsafe interruption.
@@ -16,13 +16,14 @@ Status: implementation in progress. Check items only after their scoped checks p
 ## 2. One Personal Command Surface
 
 - [x] Tactical Response: replace Move/Hold/Retreat/Engage/Stabilize and separate patient chooser with Control on Map for the selected responder.
-- [ ] Expedition Operations: replace duplicate Field Orders and per-person Recovery commands with map handoff; retain assembly, loadouts, dispatch, recall, mission status and recovery reporting.
+- [x] Expedition Operations: replace duplicate Field Orders and per-person Recovery commands with map handoff; retain assembly, loadouts, dispatch, recall, mission status and recovery reporting.
 - Handing off opens the correct map, selects the subject idempotently, centers on its displayed position, preserves the Follow checkbox, and focuses the canvas. It must not create work or enter placement.
 - Keep Draft/Release in Tactical Response as deliberate duty transitions; derive their eligibility from real previews (item 5).
 - Remove hard-coded tactical movement origins and ambiguous Extraction point-as-movement UI along with those obsolete command paths.
 - Acceptance: map exposes actual target verbs including Attack versus Engage From Here; no duplicate generic Engage or personal Move/Confirm workflow remains in these inspectors. Recorded handoff remains inspection-only; field handoff verifies mission/map identity and presence.
 - Validation: tactical and expedition view tests, map handoff tests, desktop/narrow-window browser workflow.
 - Base checkpoint verified: repeated handoff preserves queued work and supplies; map selection centers the subject without drafting, issuing orders or entering placement. Recorded retains Locate; Control is disabled there. World handoff refuses an active placement or a Recorded map with a specific reason. Browser confirmed Lena selection, canvas focus, unchanged saved state and 350px layout without overflow. No sandbox capability removed yet.
+- Field checkpoint verified: repeated handoff preserves current recovery and pending work, checks latest expedition identity/phase/team/presence, and relays map blockers. Browser used an isolated real carrying-recovery state: handoff left state identical, queue cancellation put the case down at the carrier's actual tile and started pending movement, Recorded refused control, and the 380px operations layout fit. Shared save unchanged; all 366 tests and full build gate passed.
 
 ## 3. Clear Command Mode and Inspector Names
 

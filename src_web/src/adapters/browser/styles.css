@@ -1397,12 +1397,14 @@ ul.menu.pawn-verb-menu {
   min-width: 0;
 }
 
-#combat-window .field-row {
+#combat-window .field-row,
+#expeditions-window .field-row {
   flex-wrap: wrap;
   gap: 6px;
 }
 
-#combat-window [data-tactical-control] {
+#combat-window [data-tactical-control],
+#expeditions-window [data-expedition-control] {
   min-width: 100px;
   white-space: nowrap;
 }
