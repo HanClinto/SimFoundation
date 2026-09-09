@@ -116,7 +116,7 @@ export interface PsychologicalProjection {
 
 export interface ClinicalSurveyRecord {
   readonly id: string;
-  readonly kind: "mood" | "anomalous";
+  readonly kind: "mood";
   readonly assessedTick: number;
   readonly recordedOrder: number;
   readonly assessor: string;
@@ -140,40 +140,6 @@ export interface PersonnelTrait {
   readonly label: string;
   readonly tags: readonly TraitTag[];
   readonly parameters?: Readonly<Record<string, number>>;
-  readonly disclosed: boolean;
-}
-
-export interface TraitEvidence {
-  readonly id: string;
-  readonly observedTick: number;
-  readonly recordedOrder: number;
-  readonly source: string;
-  readonly label: string;
-  readonly supportsTraitId: string;
-}
-
-export interface TraitConclusion {
-  readonly traitId: string;
-  readonly label: string;
-  readonly status: "suspected" | "confirmed" | "ruled-out";
-  readonly confidence: number;
-  readonly evidenceIds: readonly string[];
-}
-
-export interface TraitAssessment {
-  readonly id: string;
-  readonly assessedTick: number;
-  readonly recordedOrder: number;
-  readonly method: string;
-  readonly protocolVersion: number;
-  readonly conclusions: readonly TraitConclusion[];
-}
-
-export interface TraitProjection {
-  readonly traitId: string;
-  readonly label: string;
-  readonly status: "disclosed" | "suspected" | "confirmed";
-  readonly confidence: number;
 }
 
 export interface PersonnelBiases {
@@ -224,8 +190,6 @@ export interface PersonnelRecord {
   readonly fear: number;
   readonly needs: PersonnelNeeds;
   readonly traits: Readonly<Record<string, PersonnelTrait>>;
-  readonly traitEvidence: readonly TraitEvidence[];
-  readonly traitAssessments: readonly TraitAssessment[];
   readonly biases: PersonnelBiases;
   readonly biasAssessments: readonly BiasAssessment[];
   readonly skills: readonly PersonnelSkill[];
@@ -246,7 +210,6 @@ export interface DerivedMeasure {
 
 const MAX_PHYSICAL_ASSESSMENTS = 50;
 const MAX_PSYCHOLOGICAL_ASSESSMENTS = 50;
-const MAX_TRAIT_ASSESSMENTS = 50;
 const MAX_BIAS_ASSESSMENTS = 20;
 
 const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
@@ -267,17 +230,13 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
         methodical: {
           label: "Methodical",
           tags: ["work"],
-          disclosed: true,
         },
         "psychic-sensitivity": {
           label: "Psychically Insulated",
           tags: ["anomalous"],
           parameters: { sensitivity: -2 },
-          disclosed: false,
         },
       },
-      traitEvidence: [],
-      traitAssessments: [],
       biases: { mindMight: -2, receptiveResolute: -1 },
       biasAssessments: [],
       skills: [
@@ -337,22 +296,17 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
         practical: {
           label: "Practical",
           tags: ["work"],
-          disclosed: true,
         },
         "emotional-expression": {
           label: "Reserved presentation",
           tags: ["social"],
           parameters: { reserve: 2 },
-          disclosed: false,
         },
         "light-sleeper": {
           label: "Light Sleeper",
           tags: ["medical"],
-          disclosed: true,
         },
       },
-      traitEvidence: [],
-      traitAssessments: [],
       biases: { mindMight: 2, receptiveResolute: 2 },
       biasAssessments: [],
       skills: [
@@ -411,16 +365,12 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
         compassionate: {
           label: "Compassionate",
           tags: ["social"],
-          disclosed: true,
         },
         "steady-hands": {
           label: "Steady Hands",
           tags: ["medical"],
-          disclosed: true,
         },
       },
-      traitEvidence: [],
-      traitAssessments: [],
       biases: { mindMight: 1, receptiveResolute: -2 },
       biasAssessments: [],
       skills: [
@@ -472,16 +422,12 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
           label: "Iron-Willed",
           tags: ["threat-response"],
           parameters: { sensitivity: -2 },
-          disclosed: true,
         },
         alert: {
           label: "Alert",
           tags: ["threat-response"],
-          disclosed: true,
         },
       },
-      traitEvidence: [],
-      traitAssessments: [],
       biases: { mindMight: 2, receptiveResolute: 1 },
       biasAssessments: [],
       skills: [
@@ -561,22 +507,17 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
           label: "Sociable",
           tags: ["social"],
           parameters: { socialDrive: 2 },
-          disclosed: true,
         },
         "emotional-expression": {
           label: "Masks distress",
           tags: ["social"],
           parameters: { masking: 2 },
-          disclosed: false,
         },
         superstitious: {
           label: "Superstitious",
           tags: ["anomalous"],
-          disclosed: true,
         },
       },
-      traitEvidence: [],
-      traitAssessments: [],
       biases: { mindMight: 1, receptiveResolute: -1 },
       biasAssessments: [],
       skills: [
@@ -642,26 +583,13 @@ const STARTING_PERSONNEL: readonly Omit<PersonnelRecord, "clinicalSurveys">[] =
         resourceful: {
           label: "Resourceful",
           tags: ["work"],
-          disclosed: true,
         },
         "psychic-sensitivity": {
           label: "Psychically Attuned",
           tags: ["anomalous"],
           parameters: { sensitivity: 2 },
-          disclosed: false,
         },
       },
-      traitEvidence: [
-        {
-          id: "evidence-scanner-response-emil",
-          observedTick: 0,
-          recordedOrder: 1,
-          source: "Inventory scanner log",
-          label: "Repeated anomalous readings while equipment was handled",
-          supportsTraitId: "psychic-sensitivity",
-        },
-      ],
-      traitAssessments: [],
       biases: { mindMight: 0, receptiveResolute: -2 },
       biasAssessments: [],
       skills: [
@@ -742,10 +670,6 @@ export function latestPhysicalAssessment(
   return person.physicalAssessments.at(-1) ?? null;
 }
 
-function traitStatusRank(status: TraitProjection["status"]): number {
-  return { suspected: 1, disclosed: 2, confirmed: 3 }[status];
-}
-
 function nextRecordOrder(person: PersonnelRecord): number {
   return (
     Math.max(
@@ -755,130 +679,9 @@ function nextRecordOrder(person: PersonnelRecord): number {
       ...person.psychologicalAssessments.map(
         ({ recordedOrder }) => recordedOrder,
       ),
-      ...person.traitEvidence.map(({ recordedOrder }) => recordedOrder),
-      ...person.traitAssessments.map(({ recordedOrder }) => recordedOrder),
       ...person.biasAssessments.map(({ recordedOrder }) => recordedOrder),
       ...person.clinicalSurveys.map(({ recordedOrder }) => recordedOrder),
     ) + 1
-  );
-}
-
-export function projectTraits(
-  person: PersonnelRecord,
-): readonly TraitProjection[] {
-  const projections = new Map<string, TraitProjection>();
-  for (const [traitId, trait] of Object.entries(person.traits)) {
-    if (!trait.disclosed) continue;
-    projections.set(traitId, {
-      traitId,
-      label: trait.label,
-      status: "disclosed",
-      confidence: 1,
-    });
-  }
-
-  for (const assessment of person.traitAssessments) {
-    for (const conclusion of assessment.conclusions) {
-      if (conclusion.status === "ruled-out") {
-        if (projections.get(conclusion.traitId)?.status === "suspected") {
-          projections.delete(conclusion.traitId);
-        }
-        continue;
-      }
-      const projected: TraitProjection = {
-        traitId: conclusion.traitId,
-        label: conclusion.label,
-        status: conclusion.status,
-        confidence: conclusion.confidence,
-      };
-      const existing = projections.get(conclusion.traitId);
-      if (
-        !existing ||
-        traitStatusRank(projected.status) > traitStatusRank(existing.status) ||
-        (traitStatusRank(projected.status) ===
-          traitStatusRank(existing.status) &&
-          projected.confidence > existing.confidence)
-      ) {
-        projections.set(conclusion.traitId, projected);
-      }
-    }
-  }
-  return [...projections.values()];
-}
-
-function assessSupportedAnomalousTraits(
-  person: PersonnelRecord,
-  assessedTick: number,
-  method: string,
-  status: "suspected" | "confirmed",
-  confidence: number,
-): PersonnelRecord {
-  const conclusions = Object.entries(person.traits).flatMap(
-    ([traitId, trait]): TraitConclusion[] => {
-      if (trait.disclosed || !trait.tags.includes("anomalous")) return [];
-      const existing = projectTraits(person).find(
-        (projection) => projection.traitId === traitId,
-      );
-      if (
-        existing &&
-        traitStatusRank(existing.status) >= traitStatusRank(status)
-      ) {
-        return [];
-      }
-      const evidenceIds = person.traitEvidence
-        .filter(({ supportsTraitId }) => supportsTraitId === traitId)
-        .map(({ id }) => id);
-      if (evidenceIds.length === 0) return [];
-      return [{ traitId, label: trait.label, status, confidence, evidenceIds }];
-    },
-  );
-  if (conclusions.length === 0) return person;
-
-  const assessment: TraitAssessment = {
-    id: `traits-${person.id}-${method}-${assessedTick}`,
-    assessedTick,
-    recordedOrder: nextRecordOrder(person),
-    method,
-    protocolVersion: 1,
-    conclusions,
-  };
-  return {
-    ...person,
-    traitAssessments: [
-      ...person.traitAssessments
-        .filter(
-          ({ assessedTick: previousTick, method: previousMethod }) =>
-            previousTick !== assessedTick || previousMethod !== method,
-        )
-        .slice(-(MAX_TRAIT_ASSESSMENTS - 1)),
-      assessment,
-    ],
-  };
-}
-
-export function analyzeAnomalousTraitEvidence(
-  person: PersonnelRecord,
-  assessedTick: number,
-): PersonnelRecord {
-  return assessSupportedAnomalousTraits(
-    person,
-    assessedTick,
-    "Automated anomalous evidence analysis",
-    "suspected",
-    0.62,
-  );
-}
-
-export function assessAnomalousTraits(
-  person: PersonnelRecord,
-  assessedTick: number,
-): PersonnelRecord {
-  return assessSupportedAnomalousTraits(
-    person,
-    assessedTick,
-    "Targeted anomalous psychometrics",
-    "confirmed",
-    0.9,
   );
 }
 
@@ -1051,18 +854,12 @@ export function recordClinicalSurvey(
     assessedTick,
     recordedOrder: nextRecordOrder(person),
     assessor,
-    confidence: kind === "mood" ? (medicalLevel >= 3 ? 0.65 : 0.4) : 0.7,
-    moodEstimate:
-      kind === "mood"
-        ? {
-            minimum: Math.max(0, mood - margin),
-            maximum: Math.min(100, mood + margin),
-          }
-        : null,
-    summary:
-      kind === "mood"
-        ? "Brief mood screening; psychiatric condition not evaluated."
-        : "Anomalous behavior survey completed. Findings are limited to supported evidence; absence of a finding does not establish absence of anomalous traits.",
+    confidence: medicalLevel >= 3 ? 0.65 : 0.4,
+    moodEstimate: {
+      minimum: Math.max(0, mood - margin),
+      maximum: Math.min(100, mood + margin),
+    },
+    summary: "Brief mood screening; psychiatric condition not evaluated.",
   };
   return {
     ...person,

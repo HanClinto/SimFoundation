@@ -22,7 +22,7 @@ import { createExpeditions, type ExpeditionState } from "./expeditions";
 import type { ActionQueues } from "./action-queue";
 import type { ActionTiming } from "./action-progress";
 
-export const GAME_STATE_VERSION = 45;
+export const GAME_STATE_VERSION = 46;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -42,9 +42,6 @@ export interface GameState {
   readonly gameMinute: number;
   readonly siteName: string;
   readonly incident: IncidentState;
-  readonly capabilities: {
-    readonly anomalousPsychometrics: boolean;
-  };
   readonly jobs: readonly SiteJob[];
   readonly personnel: readonly PersonnelRecord[];
   readonly scp999: Scp999State;
@@ -88,9 +85,6 @@ export function createInitialState(seed = 9620): GameState {
       level: "green",
       summary: "Routine operations",
     },
-    capabilities: {
-      anomalousPsychometrics: false,
-    },
     jobs: [],
     personnel,
     scp999: createScp999State(),
@@ -100,7 +94,6 @@ export function createInitialState(seed = 9620): GameState {
       reviewInterval: 0,
       moodReviewInterval: 0,
       psychiatricReviewInterval: 0,
-      anomalousReviewInterval: 0,
       clinicianIds: ["person-priya-shah"],
     },
     routines,

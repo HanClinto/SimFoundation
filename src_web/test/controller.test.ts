@@ -96,44 +96,6 @@ describe("game controller", () => {
     );
   });
 
-  it("requires a scenario capability before targeted screening", () => {
-    const initial = createInitialState();
-    const controller = createController(initial);
-
-    expect(() =>
-      controller.orderAnomalousAssessment("person-emil-novak"),
-    ).toThrow("Anomalous Psychometrics has not been unlocked");
-
-    controller.replaceState({
-      ...initial,
-      capabilities: { anomalousPsychometrics: true },
-    });
-
-    controller.orderAnomalousAssessment("person-emil-novak");
-    for (
-      let tick = 0;
-      tick < 100 &&
-      controller
-        .getSnapshot()
-        .game.jobs.some((job) => job.assessment && job.status !== "completed");
-      tick += 1
-    )
-      controller.advance();
-    const screened = controller.getSnapshot();
-    const screenedEmil = screened.game.personnel.find(
-      ({ id }) => id === "person-emil-novak",
-    );
-    expect(screenedEmil?.traitAssessments.at(-1)?.conclusions[0]?.status).toBe(
-      "confirmed",
-    );
-    expect(
-      controller
-        .orderAnomalousAssessment("person-emil-novak")
-        .game.personnel.find(({ id }) => id === "person-emil-novak")
-        ?.traitAssessments,
-    ).toHaveLength(1);
-  });
-
   it("orders a bounded work-preference evaluation", () => {
     const controller = createController(createInitialState());
     controller.orderWorkPreferenceAssessment("person-mara-voss");

@@ -338,7 +338,6 @@ export interface GameController {
     jobId: string,
     priority: WorkPriority | null,
   ): ControllerSnapshot;
-  orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
   orderPsychologicalAssessment(personId: string): ControllerSnapshot;
@@ -812,11 +811,6 @@ export function createController(initialState: GameState): GameController {
 
     orderMoodScreening(personId) {
       state = requestAssessment(state, personId, "mood");
-      return publish();
-    },
-
-    orderAnomalousAssessment(personId) {
-      state = requestAssessment(state, personId, "anomalous");
       return publish();
     },
 

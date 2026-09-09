@@ -61,33 +61,25 @@ describe("parallel clinical surveys", () => {
         }).status,
       ).toBe("invalid");
   });
-  it("discovers independently scheduled reviews and gates anomalous procedures", () => {
+  it("discovers independently scheduled reviews without duplicate referrals", () => {
     const state = setClinicalCarePolicy(createInitialState(), {
       reviewInterval: 240,
       moodReviewInterval: 240,
       psychiatricReviewInterval: 480,
-      anomalousReviewInterval: 1440,
       clinicianIds: [],
     });
     expect(
       discoverClinicalWork(state).jobs.filter(({ assessment }) => assessment),
     ).toHaveLength(18);
-    const unlocked = {
-      ...state,
-      capabilities: { anomalousPsychometrics: true },
-    };
-    const discovered = discoverClinicalWork(unlocked);
+    const discovered = discoverClinicalWork(state);
     expect(discovered.jobs.filter(({ assessment }) => assessment)).toHaveLength(
-      24,
+      18,
     );
     expect(discoverClinicalWork(discovered).jobs).toHaveLength(
       discovered.jobs.length,
     );
     expect(ASSESSMENT_REQUIREMENTS.mood.work).toBeLessThan(
       ASSESSMENT_REQUIREMENTS.psychological.work,
-    );
-    expect(ASSESSMENT_REQUIREMENTS.psychological.work).toBeLessThan(
-      ASSESSMENT_REQUIREMENTS.anomalous.work,
     );
   });
   it("records coarse mood evidence without creating a psychiatric report", () => {
@@ -104,19 +96,5 @@ describe("parallel clinical surveys", () => {
     expect(screened.clinicalSurveys[0]?.summary).toContain(
       "psychiatric condition not evaluated",
     );
-  });
-  it("records an anomalous survey even when no supported finding is available", () => {
-    const state = createInitialState();
-    const assessed = completeAssessment(
-      state.personnel[0]!,
-      "anomalous",
-      20,
-      state.personnel[2]!,
-    );
-    expect(assessed.clinicalSurveys[0]).toMatchObject({
-      kind: "anomalous",
-      moodEstimate: null,
-    });
-    expect(assessed.traitAssessments).toHaveLength(0);
   });
 });

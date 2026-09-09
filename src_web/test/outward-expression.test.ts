@@ -4,12 +4,11 @@ import {
   deriveSanity,
   projectPsychology,
   assessPsychologicalState,
-  projectTraits,
 } from "../src/simulation/personnel";
 import { advanceScp999 } from "../src/simulation/scp-999";
 
 describe("outward expression and local social perception", () => {
-  it("allows composed presentation despite hidden distress without revealing the trait", () => {
+  it("allows composed outward presentation despite distress", () => {
     const jon = createInitialState().personnel.find(
       ({ id }) => id === "person-jon-bell",
     )!;
@@ -23,11 +22,6 @@ describe("outward expression and local social perception", () => {
     expect(projectPsychology(distressed).moodAppearance).toBe(
       "Smiles during conversation",
     );
-    expect(
-      projectTraits(distressed).some(
-        ({ traitId }) => traitId === "emotional-expression",
-      ),
-    ).toBe(false);
     expect(
       assessPsychologicalState(distressed, 10).psychologicalAssessments[0]!
         .sanityEstimate.maximum,

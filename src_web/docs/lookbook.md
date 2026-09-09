@@ -118,6 +118,8 @@ Double-clicking or following a link opens the relevant object without closing un
 
 ## Interaction Rules
 
+Development personnel views expose live state rather than assessment-limited estimates: physical health, mood, sanity, needs, stress, fear, work preferences, all traits/parameters and active effects. The medical body chart shows actual effects per region. Dated appointment results remain in Assessment History and do not override current summaries. Anomalous screening and its reveal pipeline are deleted. Outward-expression bubbles and the map's explicit Recorded perspective retain their in-world behavior, but staff inspectors are not fog-limited.
+
 Encounter creation lives in the separately named Encounter Sandbox facility window. Tactical Response retains threat observations and Locate but has no spawn control. Opening sandbox tools is inert; creation requires a valid World-map placement and confirmation, with existing team/occupancy checks. Recorded view and active placement block authoring; switching to Recorded during a sandbox preview blocks confirmation.
 
 Scene depth remains physical rather than selection-driven: at equal depth, ground objects draw before pawns, so selecting a bed or seat cannot cover its occupant. Selection priority applies only within the object or pawn group; nearer entities still occlude farther ones normally.

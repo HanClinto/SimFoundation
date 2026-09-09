@@ -1,4 +1,10 @@
-# Personnel Model: Simplified Hybrid with Assessment Fog
+# Personnel Model
+
+## Current Development Policy
+
+Personnel inspectors and medical charts show live simulation truth: health, mood, sanity, needs, stress, fear, trait parameters, work preferences and active effects. Assessments do not unlock those values. Ordinary care appointments may still produce dated reports, but their estimates are history rather than the current-state source. The anomalous psychometrics capability, survey/request branch, trait evidence/assessment pipeline and disclosure flags have been deleted in schema 46; older saves are discarded, never migrated.
+
+The assessment-fog proposals below are deferred design notes, not current requirements. Do not add information hiding while the base simulation is being expanded and tuned. In-world outward expression and the map's explicit Recorded view remain distinct mechanisms; their existence does not restrict the development personnel inspector.
 
 Status: current design specification
 

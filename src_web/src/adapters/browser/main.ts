@@ -1248,23 +1248,15 @@ function render(snapshot: ControllerSnapshot): void {
   objectsView.render(snapshot);
   siteCamera.render(snapshot);
   engineeringView.render(snapshot);
+  const personnel = snapshot.game.personnel;
   snapshot = observedSnapshot(snapshot);
   dayPlanner.render(snapshot);
   clinicalCareView.render(snapshot);
-  updatePersonnelRoster(
-    personnelRows,
-    snapshot.game.personnel,
-    snapshot.game.observations,
-  );
-  updatePersonnelInspectors(
-    personnelInspectors,
-    snapshot.game.personnel,
-    snapshot.game.tick,
-    snapshot.game.observations,
-  );
+  updatePersonnelRoster(personnelRows, personnel);
+  updatePersonnelInspectors(personnelInspectors, personnel, snapshot.game.tick);
   updatePersonnelMedicalWindows(
     personnelMedicalWindows,
-    snapshot.game.personnel,
+    personnel,
     snapshot.game.tick,
     snapshot.game.jobs,
   );

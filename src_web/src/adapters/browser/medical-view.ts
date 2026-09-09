@@ -1,4 +1,5 @@
 import {
+  derivePhysicalHealth,
   latestBiasAssessment,
   latestPhysicalAssessment,
   latestPsychologicalAssessment,
@@ -59,14 +60,14 @@ function medicalChartMarkup(person: PersonnelRecord): string {
   return `
     <header class="medical-summary">
       <div>
-        <strong data-medical-field="physical-summary">No current assessment</strong>
-        <small data-medical-field="assessment-meta">Physical condition unassessed</small>
+        <strong data-medical-field="physical-summary"></strong>
+        <small data-medical-field="assessment-meta">Current simulation</small>
       </div>
       <button type="button" data-assess-person-id="${person.id}">Request Examination</button>
     </header>
     <p class="clinical-referral-status" data-clinical-status role="status">No pending referrals.</p>
     <div class="medical-workspace">
-      <section class="body-chart-pane" aria-label="Assessed body regions">
+      <section class="body-chart-pane" aria-label="Current body effects">
         <div class="body-map-toolbar">
           <strong>Body map</strong>
           <button type="button" class="body-filter selected" data-body-filter="all" aria-pressed="true">All</button>
@@ -81,15 +82,12 @@ function medicalChartMarkup(person: PersonnelRecord): string {
           </div>
         </div>
         <div class="medical-legend" aria-label="Body map legend">
-          <span><i class="legend-unassessed"></i>Unassessed</span>
-          <span><i class="legend-observed"></i>Observed sign</span>
-          <span><i class="legend-clear"></i>No finding</span>
-          <span><i class="legend-suspected"></i>Suspected</span>
-          <span><i class="legend-confirmed"></i>Confirmed</span>
+          <span><i class="legend-clear"></i>No active effect</span>
+          <span><i class="legend-confirmed"></i>Active effect</span>
         </div>
       </section>
       <section class="medical-findings-pane">
-        <h3>Physical findings</h3>
+        <h3>Current effects</h3>
         <div class="medical-findings" data-medical-field="findings"></div>
       </section>
     </div>
@@ -164,19 +162,6 @@ export function createPersonnelMedicalWindows(
   return windows;
 }
 
-function confidenceLabel(confidence: number): string {
-  if (confidence >= 0.85) return "high confidence";
-  if (confidence >= 0.6) return "moderate confidence";
-  return "low confidence";
-}
-
-function assessmentAge(currentTick: number, assessedTick: number): string {
-  const minutes = Math.max(0, currentTick - assessedTick);
-  if (minutes === 0) return "just now";
-  if (minutes === 1) return "1 minute ago";
-  return `${minutes} minutes ago`;
-}
-
 function textElement<TagName extends keyof HTMLElementTagNameMap>(
   tagName: TagName,
   text: string,
@@ -191,7 +176,6 @@ function updateMedicalChart(
   person: PersonnelRecord,
   currentTick: number,
 ): void {
-  const assessment = latestPhysicalAssessment(person);
   const summary = chart.querySelector<HTMLElement>(
     '[data-medical-field="physical-summary"]',
   );
@@ -204,51 +188,21 @@ function updateMedicalChart(
   if (!summary || !meta || !findings)
     throw new Error("Medical chart incomplete");
 
-  summary.textContent = assessment
-    ? `Physical ${assessment.estimate.minimum}-${assessment.estimate.maximum}`
-    : "No current assessment";
-  meta.textContent = assessment
-    ? `${assessment.method} / ${confidenceLabel(assessment.confidence)} / ${assessmentAge(currentTick, assessment.assessedTick)}`
-    : person.physicalObservations.length > 0
-      ? "Observable signs present; severity not assessed"
-      : "Unknown is not equivalent to healthy";
-
-  const conclusions = assessment?.conclusions ?? [];
-  const observationItems = person.physicalObservations.map((observation) => {
+  summary.textContent = `Physical ${derivePhysicalHealth(person).toFixed(1)}`;
+  meta.textContent = `Current simulation / tick ${currentTick}`;
+  const effectItems = person.effects.map((effect) => {
     const item = document.createElement("article");
-    item.className = "medical-finding finding-observed";
-    item.dataset.findingRegions = observation.bodyRegions.join(" ");
+    item.className = "medical-finding finding-confirmed";
+    item.dataset.findingRegions = effect.bodyRegions.join(" ");
     item.append(
-      textElement("strong", observation.label),
+      textElement("strong", effect.name),
       textElement(
         "span",
-        `observed / ${observation.source} / ${assessmentAge(currentTick, observation.observedTick)}`,
+        `${effect.kind} / ${effect.severity} / physical penalty ${effect.physicalHealthPenalty} / stress recovery ${effect.stressRecoveryPerTick}`,
       ),
       textElement(
         "small",
-        observation.bodyRegions
-          .map(
-            (region) =>
-              BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region,
-          )
-          .join(", "),
-      ),
-    );
-    return item;
-  });
-  const conclusionItems = conclusions.map((conclusion) => {
-    const item = document.createElement("article");
-    item.className = `medical-finding finding-${conclusion.status}`;
-    item.dataset.findingRegions = conclusion.bodyRegions.join(" ");
-    item.append(
-      textElement("strong", conclusion.label),
-      textElement(
-        "span",
-        `${conclusion.status} / ${confidenceLabel(conclusion.confidence)}`,
-      ),
-      textElement(
-        "small",
-        conclusion.bodyRegions
+        effect.bodyRegions
           .map(
             (region) =>
               BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region,
@@ -259,45 +213,24 @@ function updateMedicalChart(
     return item;
   });
   findings.replaceChildren(
-    ...(conclusionItems.length > 0 || observationItems.length > 0
-      ? [...conclusionItems, ...observationItems]
-      : assessment
-        ? [
-            Object.assign(document.createElement("p"), {
-              className: "empty-record",
-              textContent: "No physical findings reported by this examination.",
-            }),
-          ]
-        : [
-            Object.assign(document.createElement("p"), {
-              className: "empty-record",
-              textContent:
-                "No suitable physical examination is on record. Body regions remain unassessed.",
-            }),
-          ]),
+    ...(effectItems.length > 0
+      ? effectItems
+      : [textElement("p", "No active effects")]),
   );
 
   for (const regionElement of chart.querySelectorAll<HTMLElement>(
     "[data-body-region]",
   )) {
     const region = regionElement.dataset.bodyRegion as BodyRegion;
-    const regionConclusion = conclusions.find((conclusion) =>
-      conclusion.bodyRegions.includes(region),
-    );
-    const regionObservation = person.physicalObservations.find((observation) =>
-      observation.bodyRegions.includes(region),
-    );
-    const state = regionConclusion
-      ? regionConclusion.status
-      : assessment
-        ? "clear"
-        : regionObservation
-          ? "observed"
-          : "unassessed";
+    const state = person.effects.some((effect) =>
+      effect.bodyRegions.includes(region),
+    )
+      ? "confirmed"
+      : "clear";
     const label = BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region;
     regionElement.dataset.assessmentState = state;
-    regionElement.title = `${label}: ${state}`;
-    regionElement.setAttribute("aria-label", `${label}: ${state}`);
+    regionElement.title = `${label}: ${state === "confirmed" ? "active effect" : "no active effect"}`;
+    regionElement.setAttribute("aria-label", regionElement.title);
   }
   const selected = chart.querySelector<HTMLElement>(
     '[data-body-region][aria-pressed="true"]',
@@ -371,56 +304,6 @@ function updateAssessmentRecord(
       details.append(row);
     }
     entry.append(header, details, textElement("p", findingText));
-    return {
-      tick: assessment.assessedTick,
-      sequence: assessment.recordedOrder,
-      entry,
-    };
-  });
-  const traitEvidenceEntries = person.traitEvidence.map((evidence) => {
-    const entry = document.createElement("article");
-    entry.className = "assessment-entry observation-entry";
-    const header = document.createElement("header");
-    header.append(
-      textElement("strong", "Behavioral evidence"),
-      textElement("time", recordAge(currentTick, evidence.observedTick)),
-    );
-    const details = document.createElement("dl");
-    const source = document.createElement("div");
-    source.append(
-      textElement("dt", "Source"),
-      textElement("dd", evidence.source),
-    );
-    details.append(source);
-    entry.append(header, details, textElement("p", evidence.label));
-    return {
-      tick: evidence.observedTick,
-      sequence: evidence.recordedOrder,
-      entry,
-    };
-  });
-  const traitAssessmentEntries = person.traitAssessments.map((assessment) => {
-    const entry = document.createElement("article");
-    entry.className = "assessment-entry trait-assessment-entry";
-    const header = document.createElement("header");
-    header.append(
-      textElement("strong", assessment.method),
-      textElement("time", recordAge(currentTick, assessment.assessedTick)),
-    );
-    const details = document.createElement("dl");
-    const protocol = document.createElement("div");
-    protocol.append(
-      textElement("dt", "Protocol"),
-      textElement("dd", `Version ${assessment.protocolVersion}`),
-    );
-    details.append(protocol);
-    const conclusions = assessment.conclusions
-      .map(
-        (conclusion) =>
-          `${conclusion.label} (${conclusion.status}, ${Math.round(conclusion.confidence * 100)}%)`,
-      )
-      .join("; ");
-    entry.append(header, details, textElement("p", conclusions));
     return {
       tick: assessment.assessedTick,
       sequence: assessment.recordedOrder,
@@ -534,8 +417,6 @@ function updateAssessmentRecord(
     }),
     ...assessmentEntries,
     ...observationEntries,
-    ...traitEvidenceEntries,
-    ...traitAssessmentEntries,
     ...biasAssessmentEntries,
     ...psychologicalAssessmentEntries,
   ]

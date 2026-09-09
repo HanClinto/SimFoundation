@@ -14,7 +14,6 @@ describe("integrated site operations", () => {
       reviewInterval: 480,
       moodReviewInterval: 480,
       psychiatricReviewInterval: 0,
-      anomalousReviewInterval: 0,
       clinicianIds: [
         "person-priya-shah",
         "person-mara-voss",

@@ -4,6 +4,7 @@ import type {
 } from "../../application/controller";
 import {
   ASSESSMENT_LABELS,
+  SURVEY_KINDS,
   SURVEY_INTERVAL_FIELDS,
   ASSESSMENT_REQUIREMENTS,
   clinicalQualificationReasons,
@@ -15,8 +16,6 @@ import { recordAge } from "./personnel-records";
 import { createAssignmentView } from "./assignment-view";
 import { routineUnavailableIds } from "../../simulation/routines";
 import { observedSnapshot } from "./observed-view";
-
-const SURVEY_KINDS = ["physical", "mood", "psychological"] as const;
 
 export function createClinicalCareView(
   container: HTMLElement,
@@ -80,11 +79,9 @@ export function createClinicalCareView(
     label: "Medical duty assignments",
     skillId: "medical",
     eligibility: (person) =>
-      clinicalQualificationReasons(
-        person,
-        procedure.value as SurveyKind,
-        current.game.capabilities.anomalousPsychometrics,
-      ).join("; ") || "Qualified for procedure",
+      clinicalQualificationReasons(person, procedure.value as SurveyKind).join(
+        "; ",
+      ) || "Qualified for procedure",
     onChange: (ids) =>
       controller.setClinicalCarePolicy({
         ...controller.getSnapshot().game.clinicalCare,
@@ -126,12 +123,7 @@ export function createClinicalCareView(
         snapshot.game.clinicalCare[SURVEY_INTERVAL_FIELDS[kind]] ?? 0,
       );
       const count = selectedStaff.filter(
-        (person) =>
-          clinicalQualificationReasons(
-            person,
-            kind,
-            snapshot.game.capabilities.anomalousPsychometrics,
-          ).length === 0,
+        (person) => clinicalQualificationReasons(person, kind).length === 0,
       ).length;
       container.querySelector(`[data-survey-coverage="${kind}"]`)!.textContent =
         `Medical ${ASSESSMENT_REQUIREMENTS[kind].medicalLevel}+ / ${count} assigned and qualified`;

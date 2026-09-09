@@ -53,7 +53,7 @@ SCP-999 physically approaches available personnel before providing Calm, interru
 
 The laboratory-annex prototype is deleted, including its state, executor, commissioning jobs, API, exclusions, renderer, register and dedicated tests. Engineering builds and removes individual surfaces; Objects and Supplies handles furniture. Schema 45 intentionally rejects all earlier saves. Development saves are disposable: no migration, legacy work completion or backward-compatibility layer is maintained. Startup replaces incompatible or invalid saved data with a fresh site and enables autosave when storage is available.
 
-The static Research Archive and its disconnected psychometrics progress display have been removed. Normal care offers physical, mood and psychiatric surveys, without an unreachable anomalous-screening request or schedule. Existing clinical history and save fields remain readable. SCP-999 has its own resident record rather than a misleading general Anomaly Registry. Research is not implemented as a tech tree; future study should be physical pawn work using a facility and a real anomaly/containment target. See [prototype cleanup](docs/prototype-cleanup.md).
+The static Research Archive and anomalous psychometrics branch are deleted, including capability, scheduling, request API, trait evidence/assessment records and disclosure flags. Schema 46 discards prior saves. Personnel inspectors and medical charts show current health, psychology, needs, work preferences, traits and effects directly; care reports do not gate access. SCP-999 has its own resident record rather than a misleading general Anomaly Registry. Research is not implemented as a tech tree; future study should be physical pawn work using a facility and a real anomaly/containment target. See [prototype cleanup](docs/prototype-cleanup.md).
 
 Surveillance requests device placement through the same map interaction. The map owns positioning and cancellation, not object-specific validation or resource rules. Work Orders reports physical locations and provides **Locate** links. The research-laboratory selector and scripted experiment task ladder have been removed.
 
@@ -229,7 +229,7 @@ The scripted AN-001 and SCP-9620 workflows, instant **Complete Research** shortc
 
 ### Occupational Health Prototype
 
-Open Occupational Health from the Site 828 facility folder to assign any staff member to medical duty and choose separate recurring intervals for physical examinations, rapid mood screeners, psychiatric evaluations, and extended anomalous behavior surveys. Routine reviews are off by default. Anomalous surveys require Anomalous Psychometrics research; a configured interval waits for that research rather than exposing hidden traits.
+Open Occupational Health from the Site 828 facility folder to assign medical duty and choose recurring intervals for physical examinations, mood screeners and psychiatric evaluations. Routine reviews are off by default. These are appointments and historical reports, not information-unlock requirements; current personnel state is directly visible for simulation development.
 
 The assignment table includes all personnel and sorts by recorded Medical Skill or current job availability. A procedure selector explains disqualifications using the same requirement definitions as job execution. Assignment is not qualification: untrained staff can administer a slower, lower-confidence mood screener; physical examinations require Medical 3, psychiatric evaluation Medical 5, and anomalous surveys Medical 6. These thresholds are provisional balancing values. Current availability reflects active work and patient reservations, not a prediction of future shifts or hidden capability.
 
@@ -237,7 +237,7 @@ Manual examination and evaluation buttons create referrals, not instant assessme
 
 Personnel are general-purpose pawns with backgrounds, qualifications, preferences, and trainable skills. Scientist, engineer, custodian, medic, security officer, and similar labels describe current duties and certifications rather than immutable character classes.
 
-The current pawn rules architecture is defined in the [Personnel Model](docs/personnel-model.md). It specifies identity, Traits, preference Biases, usage-based Skills, Effects, derived Health, equipment, and assessment-limited player knowledge. The executable personnel model remains an incremental prototype of that design.
+The pawn rules architecture is described in the [Personnel Model](docs/personnel-model.md): identity, Traits, preference Biases, usage-based Skills, Effects, derived Health and equipment. Assessment-fog proposals are deferred. The current priority is visible, tunable simulation behavior rather than concealed information.
 
 Each pawn has:
 

@@ -1,30 +1,13 @@
 import {
-  latestPhysicalAssessment,
-  projectBiases,
-  projectPsychology,
-  projectTraits,
+  derivePhysicalHealth,
+  deriveMood,
+  deriveSanity,
   type PersonnelItem,
   type PersonnelRecord,
 } from "../../simulation/personnel";
-import { recordedInfluences, recordAge } from "./personnel-records";
 import { equipmentIllustration } from "./equipment-art";
 import figureUrl from "./assets/personnel-figure.svg";
 import { pawnPortrait } from "./pawn-art";
-import type { SiteObservations } from "../../simulation/observations";
-
-function observedPsychology(
-  person: PersonnelRecord,
-  observations?: SiteObservations,
-) {
-  const psychology = projectPsychology(person);
-  if (!observations) return psychology;
-  const known = observations.entities[person.id];
-  return {
-    ...psychology,
-    moodAppearance: known?.moodAppearance ?? "No recorded observation",
-    sanityAppearance: known?.sanityAppearance ?? "No recorded observation",
-  };
-}
 
 function initials(name: string): string {
   return name
@@ -135,12 +118,12 @@ export function createPersonnelInspectorWindows(
             </div>
           </fieldset>
           <fieldset>
-            <legend>Behavioral impressions</legend>
+            <legend>Current state</legend>
             <dl class="compact-metrics">
               ${compactMetricMarkup("Satiety", "satiety")}
               ${compactMetricMarkup("Rest", "rest")}
-              ${compactMetricMarkup("Demeanor", "stress")}
-              ${compactMetricMarkup("Presentation", "fear")}
+              ${compactMetricMarkup("Stress", "stress")}
+              ${compactMetricMarkup("Fear", "fear")}
             </dl>
           </fieldset>
           <fieldset>
@@ -178,16 +161,16 @@ export function createPersonnelInspectorWindows(
             <p data-field="traits"></p>
           </fieldset>
           <fieldset>
-            <legend>Recorded findings</legend>
+            <legend>Current effects</legend>
             <ul data-field="effects"></ul>
           </fieldset>
           <fieldset>
             <legend>Work preferences</legend>
             <dl class="preference-summary">
-              <div><dt>Mind / Might</dt><dd data-field="bias-mind-might">Unassessed</dd></div>
-              <div><dt>Receptive / Resolute</dt><dd data-field="bias-receptive-resolute">Unassessed</dd></div>
+              <div><dt>Mind / Might</dt><dd data-field="bias-mind-might"></dd></div>
+              <div><dt>Receptive / Resolute</dt><dd data-field="bias-receptive-resolute"></dd></div>
             </dl>
-            <p class="system-note" data-field="bias-assessment-meta">No work-preference evaluation on record.</p>
+            <p class="system-note" data-field="bias-assessment-meta">Current simulation values</p>
           </fieldset>
           <div class="psychology-grid">
             <fieldset>
@@ -306,7 +289,6 @@ function setContributors(
 export function updatePersonnelRoster(
   tableBody: HTMLElement,
   personnel: readonly PersonnelRecord[],
-  observations?: SiteObservations,
 ): void {
   const existingIds = new Set(
     Array.from(
@@ -333,13 +315,14 @@ export function updatePersonnelRoster(
       `[data-person-id="${person.id}"]`,
     );
     if (!row) throw new Error(`Personnel row missing: ${person.id}`);
-    const psychology = observedPsychology(person, observations);
+    const mood = deriveMood(person);
+    const sanity = deriveSanity(person);
     for (const [cell, value] of [
       ["name", person.name],
       ["assignment", person.assignment],
       ["activity", person.activity],
-      ["mood", psychology.moodAppearance],
-      ["sanity", psychology.sanityAppearance],
+      ["mood", `${mood.score.toFixed(1)} / ${mood.band}`],
+      ["sanity", `${sanity.score.toFixed(1)} / ${sanity.band}`],
     ] as const) {
       const target = row.querySelector<HTMLElement>(`[data-cell="${cell}"]`);
       if (!target) throw new Error(`Personnel roster cell missing: ${cell}`);
@@ -352,7 +335,6 @@ export function updatePersonnelInspectors(
   windows: readonly HTMLElement[],
   personnel: readonly PersonnelRecord[],
   currentTick = 0,
-  observations?: SiteObservations,
 ): void {
   for (const person of personnel) {
     const inspector = windows.find(
@@ -360,26 +342,21 @@ export function updatePersonnelInspectors(
     );
     if (!inspector)
       throw new Error(`Personnel inspector missing: ${person.id}`);
-    const psychology = observedPsychology(person, observations);
-    const psychologicalAssessment = psychology.assessment;
-    const moodScreening = person.clinicalSurveys
-      .filter(({ kind }) => kind === "mood")
-      .at(-1);
-    const useMoodScreening =
-      moodScreening?.moodEstimate &&
-      (!psychologicalAssessment ||
-        moodScreening.assessedTick > psychologicalAssessment.assessedTick);
-    const physicalAssessment = latestPhysicalAssessment(person);
-    const projectedBiases = projectBiases(person);
-    const projectedTraits = projectTraits(person);
+    const mood = deriveMood(person);
+    const sanity = deriveSanity(person);
     const traitSummary =
-      projectedTraits.length > 0
-        ? projectedTraits
-            .map(({ label, status }) =>
-              status === "disclosed" ? label : `${label} (${status})`,
-            )
-            .join(", ")
-        : "No documented Traits";
+      Object.values(person.traits)
+        .map(
+          (trait) =>
+            `${trait.label}${
+              trait.parameters
+                ? ` (${Object.entries(trait.parameters)
+                    .map(([name, value]) => `${name}: ${value}`)
+                    .join(", ")})`
+                : ""
+            }`,
+        )
+        .join(", ") || "None";
 
     setText(inspector, "title", `${person.name} - Personnel Inspector`);
     setText(inspector, "initials", initials(person.name));
@@ -390,42 +367,22 @@ export function updatePersonnelInspectors(
     setText(
       inspector,
       "physical-summary",
-      physicalAssessment
-        ? `${physicalAssessment.estimate.minimum}-${physicalAssessment.estimate.maximum}`
-        : "Unassessed",
+      derivePhysicalHealth(person).toFixed(1),
     );
     setText(
       inspector,
       "physical-recency",
-      physicalAssessment
-        ? recordAge(currentTick, physicalAssessment.assessedTick)
-        : person.physicalObservations.length > 0
-          ? "Visible signs reported; severity unknown"
-          : "No current report",
+      `Current simulation / tick ${currentTick}`,
     );
     setText(inspector, "traits", traitSummary);
     setText(inspector, "traits-summary", traitSummary);
-    setText(
-      inspector,
-      "bias-mind-might",
-      projectedBiases
-        ? `${projectedBiases.mindMight.label} (${projectedBiases.mindMight.estimate.minimum} to ${projectedBiases.mindMight.estimate.maximum})`
-        : "Unassessed",
-    );
+    setText(inspector, "bias-mind-might", String(person.biases.mindMight));
     setText(
       inspector,
       "bias-receptive-resolute",
-      projectedBiases
-        ? `${projectedBiases.receptiveResolute.label} (${projectedBiases.receptiveResolute.estimate.minimum} to ${projectedBiases.receptiveResolute.estimate.maximum})`
-        : "Unassessed",
+      String(person.biases.receptiveResolute),
     );
-    setText(
-      inspector,
-      "bias-assessment-meta",
-      projectedBiases
-        ? `${Math.round(projectedBiases.confidence * 100)}% confidence / ${recordAge(currentTick, projectedBiases.assessedTick)}`
-        : "No work-preference evaluation on record.",
-    );
+    setText(inspector, "bias-assessment-meta", "Current simulation values");
     const bestSkill = [...person.skills].sort(
       (first, second) => second.level - first.level,
     )[0];
@@ -436,60 +393,25 @@ export function updatePersonnelInspectors(
         ? `${bestSkill.id[0]?.toUpperCase()}${bestSkill.id.slice(1)} ${bestSkill.level}`
         : "None",
     );
-    const assessmentAge = psychologicalAssessment
-      ? currentTick - psychologicalAssessment.assessedTick
-      : null;
-    const assessmentLabel = psychologicalAssessment
-      ? `${assessmentAge !== null && assessmentAge >= 30 ? "Stale" : "Assessed"} / ${recordAge(currentTick, psychologicalAssessment.assessedTick)}`
-      : "Observed only / unassessed";
-    setText(
-      inspector,
-      "mood-score",
-      useMoodScreening
-        ? `${moodScreening.moodEstimate!.minimum}-${moodScreening.moodEstimate!.maximum}`
-        : psychologicalAssessment
-          ? `${psychologicalAssessment.moodEstimate.minimum}-${psychologicalAssessment.moodEstimate.maximum}`
-          : psychology.moodAppearance,
-    );
-    setText(
-      inspector,
-      "mood-band",
-      useMoodScreening
-        ? `${currentTick - moodScreening.assessedTick >= 30 ? "Stale screener" : "Screener"} / ${Math.round(moodScreening.confidence * 100)}% confidence / ${recordAge(currentTick, moodScreening.assessedTick)}`
-        : assessmentLabel,
-    );
-    setText(
-      inspector,
-      "sanity-score",
-      psychologicalAssessment
-        ? `${psychologicalAssessment.sanityEstimate.minimum}-${psychologicalAssessment.sanityEstimate.maximum}`
-        : psychology.sanityAppearance,
-    );
-    setText(inspector, "sanity-band", assessmentLabel);
-    setMetric(inspector, "satiety", "No recent self-report");
-    setMetric(inspector, "rest", "No recent self-report");
-    setMetric(inspector, "stress", psychology.moodAppearance);
-    setMetric(inspector, "fear", psychology.sanityAppearance);
-    setContributors(
-      inspector,
-      "mood-contributors",
-      psychologicalAssessment?.moodContributors ?? [
-        "Requires psychological assessment",
-      ],
-    );
-    setContributors(
-      inspector,
-      "sanity-contributors",
-      psychologicalAssessment?.sanityContributors ?? [
-        "Requires psychological assessment",
-      ],
-    );
+    setText(inspector, "mood-score", mood.score.toFixed(1));
+    setText(inspector, "mood-band", `${mood.band} / current simulation`);
+    setText(inspector, "sanity-score", sanity.score.toFixed(1));
+    setText(inspector, "sanity-band", `${sanity.band} / current simulation`);
+    setMetric(inspector, "satiety", person.needs.satiety.toFixed(1));
+    setMetric(inspector, "rest", person.needs.rest.toFixed(1));
+    setMetric(inspector, "stress", person.stress.toFixed(1));
+    setMetric(inspector, "fear", person.fear.toFixed(1));
+    setContributors(inspector, "mood-contributors", mood.contributors);
+    setContributors(inspector, "sanity-contributors", sanity.contributors);
     setContributors(
       inspector,
       "effects",
-      recordedInfluences(person).length > 0
-        ? recordedInfluences(person)
-        : ["No findings on record. Unassessed conditions remain unknown."],
+      person.effects.length > 0
+        ? person.effects.map(
+            (effect) =>
+              `${effect.name} / ${effect.severity} / physical penalty ${effect.physicalHealthPenalty} / stress recovery ${effect.stressRecoveryPerTick}`,
+          )
+        : ["No active effects"],
     );
 
     for (const [slot] of EQUIPMENT_SLOTS) {

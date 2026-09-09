@@ -19,7 +19,7 @@ Visually confirmed static site text, inert contents tree and a display of the `a
 
 ### Anomalous Psychometrics
 
-Fresh state sets a capability false; no production enabling path was found. Tests enable it explicitly. The unavailable request/scheduling UI has been removed. The remaining anomalous capability, policy, request API and assessment model are the next deletion candidate; save compatibility is not a reason to keep them. Do not silently unlock the feature in place of removing it.
+Deleted in schema 46: capability, scheduling interval, request API, anomalous survey generation, targeted/automated trait inference, evidence/assessment records, disclosure flags and matching persistence validators. No compatibility layer or automatic unlock remains.
 
 ### Anomaly Registry
 
@@ -59,6 +59,8 @@ Defer broad unlock graphs, generic research currencies, speculative discovery tr
 
 ## This Pass
 
+Schema 46 follow-up deletes the anomalous clinical branch and trait-reveal schema completely, and makes development personnel/medical views show current values without assessments. Existing ordinary appointments are not required to inspect staff. See [development visibility decision](decisions/005-development-personnel-visibility.md). Browser verification used fresh, unassessed staff: Emil's trait parameters were visible and Lena's chart showed health 86 and the real forearm injury at tick 0; removed capability/evidence fields were absent from the new save.
+
 The first pruning pass removed presentation; the follow-up removes annex internals completely. Retaining them for save compatibility was the wrong decision and is superseded by the explicit no-migrations policy. Schema 45 starts fresh and overwrites incompatible saves. Current-version save round trips and corruption checks remain useful; no legacy schema is maintained.
 
 Validation stays focused on ordinary care, generic placement, current resource conservation and fresh-state behavior. Annex-only suites are deleted. Daily operations and cancellation tests exercise current surface work instead of retired annexes.
@@ -67,10 +69,19 @@ The initial visual pass verified no archive window/shortcuts/status, no Plan Ann
 
 ## Further Consolidation Candidates
 
-1. Remove the unreachable anomalous-screening branch, including its capability flag, policy interval and request API. Keep ordinary care; decide deliberately whether historical trait-survey structures still earn their complexity.
-2. Review the separate work-preference evaluation, mood screening and psychiatric assessment paths. Prefer a smaller set of meaningful physical appointments over overlapping report types; do not preserve fog-of-war solely because it already exists.
+1. Completed: remove the anomalous-screening branch and unused trait-reveal records/algorithms entirely.
+2. Completed development visibility pass: live health, psychology, needs, preferences, traits and contributors are directly visible. Medical charts show real active effects. Ordinary appointments/history remain as simulated work, not gates; further simplification of report types is deferred rather than replaced with a new psychology framework.
 3. Consolidate material stock and spending around physical stacks and reservations. The current fixed 160-unit conservation budget and preferred stockpile coordinate still reflect the starter scenario; replacing those assumptions should accompany a real supply/procurement need, not a generic inventory rewrite.
-4. Review authored field missions and their fixed team/target/cargo assumptions before adding more missions. Preserve reusable map lifecycle, travel and hauling; retire scenario-specific progression that does not serve them.
+4. Preserve authored field missions as playable integration test beds. Separate scenario setup and objectives from map lifecycle, travel, combat and hauling, so the same small scenario can be exercised by a player or a high-level test. Do not delete useful quest scenarios just for being authored.
+
+### Next: Scenario-Backed Accounting Review
+
+- Use a small scenario with a non-default quantity/location of materials to expose fixed 160-unit and stockpile assumptions before changing accounting.
+- Exercise reserve, pickup, delivery, cancellation and consumption through real commands. Verify physical quantities and reservation ownership rather than exact UI sequences or fixed completion ticks.
+- Reuse the expedition depot to exercise outbound supplies, recovered cargo and return without assuming every mission always has two objects or a particular threat.
+- Keep the scenario definition inspectable/playable; avoid a general quest engine or a large UI automation framework until there is a second concrete scenario that needs it.
+
+These next items are approved priorities, not completed accounting or mission-engine changes. The personnel cleanup does not alter inventory or expedition rules.
 
 These are prioritized review candidates, not newly implemented mechanics or commitments to a replacement framework.
 

@@ -161,9 +161,6 @@ it("orders the selected layer and operates real doors without granting research"
   expect(
     view.element.querySelector("[data-surface-feedback]")?.textContent,
   ).toBe("Door control set to closed.");
-  expect(
-    controller.getSnapshot().game.capabilities.anomalousPsychometrics,
-  ).toBe(false);
   view.element
     .querySelector<HTMLInputElement>("#automatic-surface-repairs")!
     .click();

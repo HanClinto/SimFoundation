@@ -7,9 +7,6 @@ import {
   derivePhysicalHealth,
   deriveSanity,
   latestPhysicalAssessment,
-  analyzeAnomalousTraitEvidence,
-  assessAnomalousTraits,
-  projectTraits,
   assessWorkPreferences,
   projectBiases,
   projectPsychology,
@@ -181,52 +178,6 @@ describe("personnel simulation", () => {
     expect(jon.physicalAssessments).toHaveLength(50);
     expect(jon.physicalAssessments[0]?.assessedTick).toBe(300);
     expect(jon.physicalAssessments.at(-1)?.assessedTick).toBe(1770);
-  });
-
-  it("keeps anomalous Traits hidden until evidence analysis and assessment", () => {
-    const emil = createInitialState().personnel.find(
-      ({ id }) => id === "person-emil-novak",
-    );
-    if (!emil) throw new Error("Emil Novak missing");
-
-    expect(projectTraits(emil)).toEqual([
-      {
-        traitId: "resourceful",
-        label: "Resourceful",
-        status: "disclosed",
-        confidence: 1,
-      },
-    ]);
-
-    const analyzed = analyzeAnomalousTraitEvidence(emil, 12);
-    expect(projectTraits(analyzed)).toContainEqual({
-      traitId: "psychic-sensitivity",
-      label: "Psychically Attuned",
-      status: "suspected",
-      confidence: 0.62,
-    });
-
-    const assessed = assessAnomalousTraits(analyzed, 18);
-    expect(projectTraits(assessed)).toContainEqual({
-      traitId: "psychic-sensitivity",
-      label: "Psychically Attuned",
-      status: "confirmed",
-      confidence: 0.9,
-    });
-    expect(assessed.traits["psychic-sensitivity"]?.parameters).toEqual({
-      sensitivity: 2,
-    });
-
-    const reanalyzed = analyzeAnomalousTraitEvidence(assessed, 24);
-    const reassessed = assessAnomalousTraits(reanalyzed, 30);
-    expect(reanalyzed.traitAssessments).toHaveLength(2);
-    expect(reassessed.traitAssessments).toHaveLength(2);
-    expect(projectTraits(reassessed)).toContainEqual({
-      traitId: "psychic-sensitivity",
-      label: "Psychically Attuned",
-      status: "confirmed",
-      confidence: 0.9,
-    });
   });
 
   it("projects work preferences as named ranges rather than exact Biases", () => {

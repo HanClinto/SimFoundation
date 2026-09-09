@@ -231,21 +231,15 @@ function isClinicalSurvey(value: unknown): boolean {
   return (
     isRecord(value) &&
     isNonEmptyString(value.id) &&
-    isLiteral(value.kind, ["mood", "anomalous"]) &&
+    value.kind === "mood" &&
     isIntegerInRange(value.assessedTick, 0) &&
     isIntegerInRange(value.recordedOrder, 0) &&
     isNonEmptyString(value.assessor) &&
     isNumberInRange(value.confidence, 0, 1) &&
     isNonEmptyString(value.summary) &&
-    (value.kind === "anomalous"
-      ? value.moodEstimate === null
-      : isRecord(value.moodEstimate) &&
-        isNumberInRange(value.moodEstimate.minimum, 0, 100) &&
-        isNumberInRange(
-          value.moodEstimate.maximum,
-          value.moodEstimate.minimum,
-          100,
-        ))
+    isRecord(value.moodEstimate) &&
+    isNumberInRange(value.moodEstimate.minimum, 0, 100) &&
+    isNumberInRange(value.moodEstimate.maximum, value.moodEstimate.minimum, 100)
   );
 }
 
@@ -273,8 +267,7 @@ function isPersonnelTrait(value: unknown): boolean {
   if (
     !isRecord(value) ||
     !isNonEmptyString(value.label) ||
-    !isArrayOf(value.tags, (tag) => isLiteral(tag, TRAIT_TAGS)) ||
-    typeof value.disclosed !== "boolean"
+    !isArrayOf(value.tags, (tag) => isLiteral(tag, TRAIT_TAGS))
   ) {
     return false;
   }
@@ -282,41 +275,6 @@ function isPersonnelTrait(value: unknown): boolean {
     value.parameters === undefined ||
     (isRecord(value.parameters) &&
       Object.values(value.parameters).every(isFiniteNumber))
-  );
-}
-
-function isTraitEvidence(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    isNonEmptyString(value.id) &&
-    isIntegerInRange(value.observedTick, 0) &&
-    isIntegerInRange(value.recordedOrder, 0) &&
-    isNonEmptyString(value.source) &&
-    isNonEmptyString(value.label) &&
-    isNonEmptyString(value.supportsTraitId)
-  );
-}
-
-function isTraitConclusion(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    isNonEmptyString(value.traitId) &&
-    isNonEmptyString(value.label) &&
-    isLiteral(value.status, ASSESSMENT_STATUSES) &&
-    isNumberInRange(value.confidence, 0, 1) &&
-    isArrayOf(value.evidenceIds, isNonEmptyString)
-  );
-}
-
-function isTraitAssessment(value: unknown): boolean {
-  return (
-    isRecord(value) &&
-    isNonEmptyString(value.id) &&
-    isIntegerInRange(value.assessedTick, 0) &&
-    isIntegerInRange(value.recordedOrder, 0) &&
-    isNonEmptyString(value.method) &&
-    isIntegerInRange(value.protocolVersion, 0) &&
-    isArrayOf(value.conclusions, isTraitConclusion)
   );
 }
 
@@ -368,8 +326,6 @@ function isPersonnelRecord(value: unknown): boolean {
     !Object.entries(value.traits).every(
       ([traitId, trait]) => traitId.length > 0 && isPersonnelTrait(trait),
     ) ||
-    !isArrayOf(value.traitEvidence, isTraitEvidence) ||
-    !isArrayOf(value.traitAssessments, isTraitAssessment, 50) ||
     !isRecord(value.biases) ||
     !isIntegerInRange(value.biases.mindMight, -3, 3) ||
     !isIntegerInRange(value.biases.receptiveResolute, -3, 3) ||
@@ -406,7 +362,6 @@ function isSiteJob(value: unknown): boolean {
           "mood",
           "psychological",
           "preferences",
-          "anomalous",
         ]) &&
         value.skillId === "medical")) &&
     isNonEmptyString(value.description) &&
@@ -1928,7 +1883,6 @@ function isGameState(value: unknown): value is GameState {
   if (!isLiteral(value.incident.level, ["green", "yellow", "orange", "red"])) {
     return false;
   }
-  if (!isRecord(value.capabilities)) return false;
   if (
     !isRecord(value.clinicalCare) ||
     ![0, 240, 480, 1440].includes(
@@ -1938,15 +1892,12 @@ function isGameState(value: unknown): value is GameState {
     [
       value.clinicalCare.moodReviewInterval,
       value.clinicalCare.psychiatricReviewInterval,
-      value.clinicalCare.anomalousReviewInterval,
     ].some(
       (interval) =>
         interval !== undefined &&
         ![0, 240, 480, 1440].includes(interval as number),
     )
   )
-    return false;
-  if (typeof value.capabilities.anomalousPsychometrics !== "boolean")
     return false;
   if (
     !isArrayOf(value.jobs, isSiteJob) ||

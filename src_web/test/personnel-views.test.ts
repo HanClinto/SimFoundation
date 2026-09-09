@@ -12,6 +12,11 @@ import {
 import { createClinicalCareView } from "../src/adapters/browser/clinical-care-view";
 import { createController } from "../src/application/controller";
 import { completeAssessment } from "../src/simulation/clinical";
+import {
+  deriveMood,
+  deriveSanity,
+  derivePhysicalHealth,
+} from "../src/simulation/personnel";
 
 beforeEach(() => {
   const window = new JSDOM("<!doctype html><html><body></body></html>").window;
@@ -28,7 +33,32 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("personnel reference windows", () => {
-  it("shows a mood screener without disclosing a psychiatric assessment", () => {
+  it("exposes current needs, psychology, trait parameters and effects before any assessment", () => {
+    const state = createInitialState();
+    const person = state.personnel.find(
+      (person) => person.id === "person-emil-novak",
+    )!;
+    const windows = createPersonnelInspectorWindows(document.body, [person]);
+    const inspector = windows[0]!;
+    const field = (name: string) =>
+      inspector.querySelector(`[data-field="${name}"]`)!.textContent;
+    expect(field("traits")).toContain("Psychically Attuned (sensitivity: 2)");
+    expect(field("mood-score")).toBe(deriveMood(person).score.toFixed(1));
+    expect(field("sanity-score")).toBe(deriveSanity(person).score.toFixed(1));
+    expect(field("physical-summary")).toBe(
+      derivePhysicalHealth(person).toFixed(1),
+    );
+    expect(inspector.querySelector('[data-value="rest"]')!.textContent).toBe(
+      person.needs.rest.toFixed(1),
+    );
+    expect(field("mood-contributors")).not.toContain("Requires");
+    const changed = { ...person, stress: 95, fear: 80 };
+    updatePersonnelInspectors(windows, [changed], 20);
+    expect(field("mood-score")).toBe(deriveMood(changed).score.toFixed(1));
+    expect(field("sanity-score")).toBe(deriveSanity(changed).score.toFixed(1));
+    expect(changed.psychologicalAssessments).toHaveLength(0);
+  });
+  it("shows live psychology independently of historical screening records", () => {
     const state = createInitialState();
     const person = completeAssessment(
       state.personnel[0]!,
@@ -39,10 +69,11 @@ describe("personnel reference windows", () => {
     const windows = createPersonnelInspectorWindows(document.body, [person]);
     expect(
       windows[0]!.querySelector('[data-field="mood-band"]')?.textContent,
-    ).toContain("Screener");
+    ).toContain("current simulation");
     expect(
       windows[0]!.querySelector('[data-field="sanity-band"]')?.textContent,
-    ).toBe("Observed only / unassessed");
+    ).toContain("current simulation");
+    expect(person.psychologicalAssessments).toHaveLength(0);
     const records = createPersonnelMedicalWindows(document.body, [person]);
     expect(
       records.assessmentRecords[0]!.querySelector(
@@ -162,6 +193,6 @@ describe("personnel reference windows", () => {
     expect(rightArmFinding).not.toBeNull();
     expect(rightArmFinding?.hidden).toBe(true);
     expect(chart.querySelector(".anatomy-illustration")).not.toBeNull();
-    expect(chart.textContent).not.toContain("Deep right forearm laceration");
+    expect(chart.textContent).toContain("Deep right forearm laceration");
   });
 });

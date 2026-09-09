@@ -1,5 +1,4 @@
 import {
-  assessAnomalousTraits,
   assessPhysicalHealth,
   assessPsychologicalState,
   assessWorkPreferences,
@@ -13,8 +12,7 @@ export type AssessmentKind =
   | "physical"
   | "mood"
   | "psychological"
-  | "preferences"
-  | "anomalous";
+  | "preferences";
 export interface ClinicalOrder {
   readonly patientId: string;
   readonly kind: AssessmentKind;
@@ -23,22 +21,15 @@ export interface ClinicalCarePolicy {
   readonly reviewInterval: 0 | 240 | 480 | 1440;
   readonly moodReviewInterval?: 0 | 240 | 480 | 1440;
   readonly psychiatricReviewInterval?: 0 | 240 | 480 | 1440;
-  readonly anomalousReviewInterval?: 0 | 240 | 480 | 1440;
   readonly clinicianIds: readonly string[];
 }
 
-export const SURVEY_KINDS = [
-  "physical",
-  "mood",
-  "psychological",
-  "anomalous",
-] as const;
+export const SURVEY_KINDS = ["physical", "mood", "psychological"] as const;
 export type SurveyKind = (typeof SURVEY_KINDS)[number];
 export const SURVEY_INTERVAL_FIELDS = {
   physical: "reviewInterval",
   mood: "moodReviewInterval",
   psychological: "psychiatricReviewInterval",
-  anomalous: "anomalousReviewInterval",
 } as const;
 export const ASSESSMENT_REQUIREMENTS: Record<
   AssessmentKind,
@@ -48,20 +39,16 @@ export const ASSESSMENT_REQUIREMENTS: Record<
   physical: { medicalLevel: 3, work: 48 },
   psychological: { medicalLevel: 5, work: 96 },
   preferences: { medicalLevel: 3, work: 64 },
-  anomalous: { medicalLevel: 6, work: 144 },
 };
 
 export function clinicalQualificationReasons(
   person: PersonnelRecord,
   kind: AssessmentKind,
-  anomalousPsychometrics = true,
 ): readonly string[] {
   const reasons: string[] = [];
   const minimum = ASSESSMENT_REQUIREMENTS[kind].medicalLevel;
   if ((person.skills.find(({ id }) => id === "medical")?.level ?? 0) < minimum)
     reasons.push(`Medical ${minimum} required`);
-  if (kind === "anomalous" && !anomalousPsychometrics)
-    reasons.push("Anomalous Psychometrics research required");
   return reasons;
 }
 
@@ -85,11 +72,7 @@ export function setClinicalCarePolicy(
 ): GameState {
   if (
     ![0, 240, 480, 1440].includes(policy.reviewInterval) ||
-    [
-      policy.moodReviewInterval,
-      policy.psychiatricReviewInterval,
-      policy.anomalousReviewInterval,
-    ].some(
+    [policy.moodReviewInterval, policy.psychiatricReviewInterval].some(
       (interval) =>
         interval !== undefined && ![0, 240, 480, 1440].includes(interval),
     ) ||
@@ -105,7 +88,6 @@ export function setClinicalCarePolicy(
       reviewInterval: policy.reviewInterval,
       moodReviewInterval: policy.moodReviewInterval ?? 0,
       psychiatricReviewInterval: policy.psychiatricReviewInterval ?? 0,
-      anomalousReviewInterval: policy.anomalousReviewInterval ?? 0,
       clinicianIds: [...policy.clinicianIds],
     },
   };
@@ -125,11 +107,7 @@ export function discoverClinicalWork(state: GameState): GameState {
   )) {
     for (const kind of SURVEY_KINDS) {
       const interval = state.clinicalCare[SURVEY_INTERVAL_FIELDS[kind]] ?? 0;
-      if (
-        !interval ||
-        (kind === "anomalous" && !state.capabilities.anomalousPsychometrics)
-      )
-        continue;
+      if (!interval) continue;
       const last = lastClinicalReview(person, kind);
       if (last === undefined || state.tick - last >= interval)
         next = requestAssessment(next, person.id, kind);
@@ -142,7 +120,6 @@ export const ASSESSMENT_LABELS: Record<AssessmentKind, string> = {
   mood: "Rapid mood screener",
   psychological: "Psychiatric evaluation",
   preferences: "Work-preference interview",
-  anomalous: "Extended anomalous behavior survey",
 };
 
 export function requestAssessment(
@@ -158,8 +135,6 @@ export function requestAssessment(
     state.combat.responders[patientId]?.incapacitated
   )
     return state;
-  if (kind === "anomalous" && !state.capabilities.anomalousPsychometrics)
-    throw new Error("Anomalous Psychometrics has not been unlocked");
   if (
     state.jobs.some(
       (job) =>
@@ -235,10 +210,8 @@ export function completeAssessment(
         ? assessPsychologicalState(patient, tick)
         : kind === "preferences"
           ? assessWorkPreferences(patient, tick)
-          : kind === "mood"
-            ? patient
-            : assessAnomalousTraits(patient, tick);
-  if (kind === "mood" || kind === "anomalous")
+          : patient;
+  if (kind === "mood")
     return recordClinicalSurvey(
       assessed,
       kind,
