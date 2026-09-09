@@ -151,14 +151,6 @@ export function vesselPlacementIssue(
             )
           : [order.destination]
         ).some((tile) => sameTile(tile, position)),
-    ) ||
-    state.construction.blueprints.some(
-      (blueprint) =>
-        !["completed", "cancelled"].includes(blueprint.status) &&
-        position.x >= blueprint.origin.x &&
-        position.x < blueprint.origin.x + 9 &&
-        position.y >= blueprint.origin.y &&
-        position.y < blueprint.origin.y + 7,
     )
   )
     return "busy";

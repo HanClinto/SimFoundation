@@ -1,5 +1,4 @@
 import type { GameState } from "../../simulation/state";
-import { laboratoryTiles } from "../../simulation/construction";
 import { isActiveSurfaceOrder } from "../../simulation/environment";
 import { MATERIALS, type MaterialId } from "../../simulation/materials";
 import { sameTile, type TilePosition } from "../../simulation/world";
@@ -101,24 +100,6 @@ export function workSiteVisuals(
       order.jobId,
       !!order.blockedReason || !!order.cancelRequested,
     );
-  }
-  for (const blueprint of state.construction.blueprints) {
-    if (["completed", "cancelled"].includes(blueprint.status)) continue;
-    for (const tile of laboratoryTiles(blueprint.origin))
-      add(
-        blueprint.id,
-        tile.position,
-        tile.tile === "floor"
-          ? "floor"
-          : tile.tile === "door"
-            ? "door"
-            : "wall",
-        "concrete",
-        false,
-        blueprint.status === "building",
-        blueprint.buildJobId,
-        !!blueprint.blockedReason,
-      );
   }
   for (const order of state.vesselWork.orders) {
     if (

@@ -43,7 +43,7 @@ export function createEngineeringWindow(
   element.hidden = true;
   element.setAttribute("aria-label", "Site 828 engineering inspector");
   element.innerHTML =
-    '<div class="title-bar"><div class="title-bar-text">Engineering - Tile Record</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><h2>Tile Record</h2><dl class="trial-readings" data-tile-record></dl><button type="button" data-open-related-window="construction-window" hidden>Legacy annex projects</button></div><div class="resize-grip" aria-hidden="true"></div>';
+    '<div class="title-bar"><div class="title-bar-text">Engineering - Tile Record</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><h2>Tile Record</h2><dl class="trial-readings" data-tile-record></dl></div><div class="resize-grip" aria-hidden="true"></div>';
   host.append(element);
   const controls = document.createElement("div");
   controls.className = "surface-controls";
@@ -226,9 +226,6 @@ export function createEngineeringWindow(
         : "Door command could not be applied.";
   });
   function render(snapshot: ControllerSnapshot) {
-    element.querySelector<HTMLButtonElement>(
-      '[data-open-related-window="construction-window"]',
-    )!.hidden = snapshot.game.construction.blueprints.length === 0;
     current = snapshot;
     if (
       cancellationId &&

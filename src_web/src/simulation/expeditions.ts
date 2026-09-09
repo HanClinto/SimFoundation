@@ -286,8 +286,6 @@ export function fieldState(state: GameState): GameState | null {
     construction: {
       availableMaterials: 0,
       stockpile: FIELD_EXTRACTION,
-      nextBlueprintNumber: 1,
-      blueprints: [],
     },
     objectOrders: [],
     vesselWork: { nextId: 1, orders: [] },

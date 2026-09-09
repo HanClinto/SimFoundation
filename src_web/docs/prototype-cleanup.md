@@ -9,6 +9,7 @@ This review supersedes a proposed exhaustive workflow playtest as the next prior
 - Remove misleading controls or hide unfinished feature shells when there is no meaningful underlying operation. Preserve useful authored material as reference documentation rather than pretending it is earned knowledge.
 - Keep tests at behavioral boundaries: resource conservation, actual work, observations and safe cancellation. Avoid tests that require a particular window arrangement, hard-coded scenario or future research progression.
 - New research mechanics need a separate small design decision; this review does not authorize a new tech tree or a complete research framework.
+- Saves are disposable development artifacts. Do not migrate old versions or retain obsolete systems for compatibility. Incompatible changes bump the schema; startup replaces old/invalid data with a fresh site.
 
 ## Verified Candidates
 
@@ -18,7 +19,7 @@ Visually confirmed static site text, inert contents tree and a display of the `a
 
 ### Anomalous Psychometrics
 
-Fresh state sets a saved capability false; no production enabling path was found. Tests enable it explicitly. Occupational Health exposes an interval control marked Research unavailable. Retire the unreachable normal-game affordance for now, preserving the useful clinical implementation separately. Do not silently unlock it. Removing the saved flag itself is a separate compatibility decision, not a prerequisite for hiding the misleading feature.
+Fresh state sets a capability false; no production enabling path was found. Tests enable it explicitly. The unavailable request/scheduling UI has been removed. The remaining anomalous capability, policy, request API and assessment model are the next deletion candidate; save compatibility is not a reason to keep them. Do not silently unlock the feature in place of removing it.
 
 ### Anomaly Registry
 
@@ -26,9 +27,9 @@ The current window is specifically SCP-999 resident status/contact reporting, no
 
 ### Laboratory Annex
 
-Dedicated 9x7 blueprint, 40-material reservation, hauling/building jobs, room metadata, then a 48-progress research-skill commissioning job. No resulting research record or capability connection was found. Generic surface construction already exists. Retire the special laboratory promise. Consider removing new-annex authorization and keeping existing saved work able to finish; preserve a prefab build feature only if it proves useful independent of research. Do not move the commissioning job into a new research abstraction just to preserve it.
+Deleted completely: dedicated blueprint state, authoring APIs, hauling/building/commissioning executor, tick hook, cross-system exclusions, project art, save validators, register and annex-only tests. Schema 45 rejects older saves. Generic surface construction remains; current material-stock accounting and generic work authorization survive in `material-stock.ts`, not a legacy annex adapter.
 
-Evidence anchors: [archive shell](../src/adapters/browser/main.ts), [clinical coverage display](../src/adapters/browser/clinical-care-view.ts), [clinical eligibility](../src/simulation/clinical.ts), [initial capability](../src/simulation/state.ts), [annex executor](../src/simulation/construction.ts), [annex UI](../src/adapters/browser/construction-view.ts).
+Evidence anchors: [desktop shell](../src/adapters/browser/main.ts), [clinical coverage display](../src/adapters/browser/clinical-care-view.ts), [clinical eligibility](../src/simulation/clinical.ts), [initial state](../src/simulation/state.ts), [current material stock](../src/simulation/material-stock.ts).
 
 The observed dependency chain is misleading: the archive displays a gate, clinical controls wait on that gate, and a research-labelled construction task never supplies it. These are not three parts of an implemented research loop.
 
@@ -53,16 +54,25 @@ Defer broad unlock graphs, generic research currencies, speculative discovery tr
 - [x] Trace annex completion: physical room construction and a research-skill commissioning job, not an evidence-producing research activity.
 - [x] First removal: deleted the static archive, shortcuts, inert contents tree, progress display and archive-only styling. Removed anomalous screening request/schedule/procedure controls without granting new capabilities; ordinary care and historical records remain.
 - [x] Second removal: renamed the resident record and facility entry SCP-999; its functioning behavior and observations remain.
-- [x] Third review: removed new-annex authorization, placement helper and facility shortcut. Existing saved projects retain completion and pre-dispatch cancellation, accessible through Engineering only when blueprints exist. Generic surface construction and object placement remain the normal build paths.
+- [x] Third review: deleted the annex implementation and all runtime/validation/UI dependencies. No old projects are loaded or continued. Generic surface construction and object placement remain the build paths.
 - [ ] Then decide on one facility-based research action, separately from this cleanup, with no tech tree required.
 
 ## This Pass
 
-The approved pruning pass removes presentation and authorization paths rather than adding replacement frameworks. Saved clinical data, capability fields and annex execution remain for compatibility; they are not a commitment to preserve these mechanics in the future. No new research mechanics, global unlock or save schema was introduced. The shell's stale tactical/expedition callbacks were reconciled with the existing map handoff APIs so the pruned application typechecks; unrelated local changes were preserved.
+The first pruning pass removed presentation; the follow-up removes annex internals completely. Retaining them for save compatibility was the wrong decision and is superseded by the explicit no-migrations policy. Schema 45 starts fresh and overwrites incompatible saves. Current-version save round trips and corruption checks remain useful; no legacy schema is maintained.
 
-Validation stays focused on ordinary care, generic placement and legacy work/resource safety, plus a visual inspection of the reduced facility UI. The placement test no longer depends on the retired annex helper. Underlying legacy authoring APIs remain for old construction tests and compatibility; there is no normal UI for authorizing new annexes.
+Validation stays focused on ordinary care, generic placement, current resource conservation and fresh-state behavior. Annex-only suites are deleted. Daily operations and cancellation tests exercise current surface work instead of retired annexes.
 
-Verified in the browser: no archive window/shortcuts/status, no Plan Annex entry, only physical/mood/psychiatric routine surveys, no anomalous request buttons, and the SCP-999 resident title. Fresh sites hide the legacy annex link; the facility's subsystem totals now derive from its actual entries. Editing then restoring the mood survey interval restored the saved state exactly. The existing care, construction, persistence and placement tests pass without new snapshot suites. The shared preview was marked hidden by the browser during verification, so navigation used DOM activation; screenshots and live content were also checked.
+The initial visual pass verified no archive window/shortcuts/status, no Plan Annex, ordinary physical/mood/psychiatric surveys and the SCP-999 resident title. The subsequent deletion removes the legacy link and register as well. Facility subsystem totals derive from actual entries.
+
+## Further Consolidation Candidates
+
+1. Remove the unreachable anomalous-screening branch, including its capability flag, policy interval and request API. Keep ordinary care; decide deliberately whether historical trait-survey structures still earn their complexity.
+2. Review the separate work-preference evaluation, mood screening and psychiatric assessment paths. Prefer a smaller set of meaningful physical appointments over overlapping report types; do not preserve fog-of-war solely because it already exists.
+3. Consolidate material stock and spending around physical stacks and reservations. The current fixed 160-unit conservation budget and preferred stockpile coordinate still reflect the starter scenario; replacing those assumptions should accompany a real supply/procurement need, not a generic inventory rewrite.
+4. Review authored field missions and their fixed team/target/cargo assumptions before adding more missions. Preserve reusable map lifecycle, travel and hauling; retire scenario-specific progression that does not serve them.
+
+These are prioritized review candidates, not newly implemented mechanics or commitments to a replacement framework.
 
 The next useful validation is a short visual pass after each removal and existing behavior checks for anything actually touched. A long scripted base-plus-expedition playtest is not the priority for this work.
 

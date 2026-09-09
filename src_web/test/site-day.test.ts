@@ -1,17 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import { advanceSimulation } from "../src/simulation/tick";
-import {
-  authorizeSiteWork,
-  placeLaboratory,
-} from "../src/simulation/construction";
+import { authorizeSiteWork } from "../src/simulation/material-stock";
 import { setClinicalCarePolicy } from "../src/simulation/clinical";
 import { installCamera } from "../src/simulation/observations";
 import { orderSurfaceWork } from "../src/simulation/environment";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 describe("integrated site operations", () => {
-  it("operates a full day with research, care, construction, routines and containment while retaining valid saves", () => {
+  it("operates a full day with care, surface work, routines and containment while retaining valid saves", () => {
     let state = createInitialState(828);
     state = setClinicalCarePolicy(state, {
       reviewInterval: 480,
@@ -24,7 +21,6 @@ describe("integrated site operations", () => {
         "person-caleb-ward",
       ],
     });
-    state = placeLaboratory(state, { x: 59, y: 80 }).state;
     state = orderSurfaceWork(
       state,
       { x: 61, y: 54 },
@@ -72,7 +68,6 @@ describe("integrated site operations", () => {
         );
       }
     }
-    expect(state.construction.blueprints[0]?.status).toBe("completed");
     expect(state.environment.orders[0]?.phase).toBe("completed");
     expect(
       state.personnel.every(

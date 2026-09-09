@@ -128,21 +128,6 @@ export function objectPlacementIssue(
     })
   )
     return "invalid-position";
-  if (
-    state.construction.blueprints.some(
-      (blueprint) =>
-        blueprint.status !== "cancelled" &&
-        blueprint.status !== "completed" &&
-        footprint.some(
-          (tile) =>
-            tile.x >= blueprint.origin.x &&
-            tile.x < blueprint.origin.x + 9 &&
-            tile.y >= blueprint.origin.y &&
-            tile.y < blueprint.origin.y + 7,
-        ),
-    )
-  )
-    return "occupied";
   const conflicts = (position: TilePosition) =>
     footprint.some((tile) => sameTile(tile, position));
   if (

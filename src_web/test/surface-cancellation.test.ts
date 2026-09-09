@@ -9,7 +9,6 @@ import { surfaceAt } from "../src/simulation/materials";
 import { reservedObject } from "../src/simulation/objects";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { cameraPlacementIssue } from "../src/simulation/observations";
-import { validateLaboratoryPlacement } from "../src/simulation/construction";
 import { setDoorPolicy } from "../src/simulation/world";
 
 function verifySave(state: ReturnType<typeof createInitialState>) {
@@ -137,9 +136,9 @@ it("cancels fitting and demolition without changing a layer or retaining footpri
   expect(state.environment.orders[0]!.phase).toBe("fitting");
   state = cancelSurfaceWork(state, state.environment.orders[0]!.id);
   verifySave(state);
-  expect(validateLaboratoryPlacement(state, { x: 59, y: 80 })).not.toBe(
-    "overlap",
-  );
+  expect(
+    orderSurfaceWork(state, { x: 63, y: 80 }, "floor", "steel", "floor").code,
+  ).toBe("accepted");
   const position = { x: 59, y: 65 };
   state = orderSurfaceWork(state, position, "floor", "steel", "remove").state;
   const before = surfaceAt(state.world.map, position, "floor");

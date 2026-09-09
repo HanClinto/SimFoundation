@@ -37,7 +37,6 @@ import { createDayPlanner } from "./day-planner-view";
 import { observedSnapshot } from "./observed-view";
 import { createSurveillanceView } from "./surveillance-view";
 import { MATERIALS } from "../../simulation/materials";
-import { createConstructionWindow } from "./construction-view";
 import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createPowerWindow } from "./power-view";
@@ -445,19 +444,17 @@ function updatePersistenceControls(message: string): void {
 
 if (initialGameLoad.status === "loaded") {
   updatePersistenceControls("Local site restored; autosave active");
-} else if (initialGameLoad.status === "empty") {
+} else if (initialGameLoad.status !== "unavailable") {
   autosaveEnabled = saveGameState(localStorage, controller.getSnapshot().game);
   updatePersistenceControls(
-    autosaveEnabled ? "Autosave active" : "Browser storage unavailable",
+    autosaveEnabled
+      ? initialGameLoad.status === "empty"
+        ? "Autosave active"
+        : "Stored site discarded; fresh site started with autosave"
+      : "Browser storage unavailable",
   );
 } else {
-  const reason =
-    initialGameLoad.status === "incompatible"
-      ? "Stored site uses another version"
-      : initialGameLoad.status === "invalid"
-        ? "Stored site is invalid"
-        : "Browser storage unavailable";
-  updatePersistenceControls(`${reason}; Save Site to replace`);
+  updatePersistenceControls("Browser storage unavailable");
 }
 const runtime = createBrowserRuntime(controller, (time) => {
   siteCamera.animate(time);
@@ -993,24 +990,6 @@ const surveillanceView = createSurveillanceView(
   },
 );
 
-const constructionView = createConstructionWindow(
-  app,
-  controller,
-  (position) => {
-    windowManager.open("camera-window");
-    siteCamera.focus(position);
-  },
-);
-windowManager.register(constructionView.element, {
-  id: "construction-window",
-  title: "Legacy Annex Projects",
-  iconUrl: workOrdersIconUrl,
-  defaultRect: { left: 220, top: 150, width: 590, height: 400 },
-  defaultOpen: false,
-  minimumWidth: 320,
-  minimumHeight: 220,
-});
-
 personnelRows.addEventListener("dblclick", (event) => {
   const row = (event.target as Element).closest<HTMLElement>(
     "[data-person-id]",
@@ -1270,7 +1249,6 @@ function render(snapshot: ControllerSnapshot): void {
   siteCamera.render(snapshot);
   engineeringView.render(snapshot);
   snapshot = observedSnapshot(snapshot);
-  constructionView.render(snapshot);
   dayPlanner.render(snapshot);
   clinicalCareView.render(snapshot);
   updatePersonnelRoster(

@@ -42,13 +42,7 @@ import {
   tileAt,
   type SiteWorld,
 } from "../../simulation/world";
-import {
-  LABORATORY_HEIGHT,
-  LABORATORY_WIDTH,
-  laboratoryTiles,
-  laboratoryWorkSite,
-  type ConstructionState,
-} from "../../simulation/construction";
+import type { MaterialStock } from "../../simulation/material-stock";
 
 export const GAME_STATE_STORAGE_KEY = "scp-site-manager.game-state.v1";
 
@@ -497,145 +491,25 @@ function isSiteWorld(value: unknown): value is SiteWorld {
   );
 }
 
-function isConstructionState(value: unknown): value is ConstructionState {
+function isMaterialStock(value: unknown): value is MaterialStock {
   return (
     isRecord(value) &&
     isIntegerInRange(value.availableMaterials, 0, 160) &&
     isRecord(value.stockpile) &&
     isIntegerInRange(value.stockpile.x, 0, 127) &&
-    isIntegerInRange(value.stockpile.y, 0, 127) &&
-    isIntegerInRange(value.nextBlueprintNumber, 1, 33) &&
-    isArrayOf(
-      value.blueprints,
-      (blueprint) =>
-        isRecord(blueprint) &&
-        isNonEmptyString(blueprint.id) &&
-        isRecord(blueprint.origin) &&
-        isIntegerInRange(blueprint.origin.x, 0, 128 - LABORATORY_WIDTH) &&
-        isIntegerInRange(blueprint.origin.y, 1, 128 - LABORATORY_HEIGHT) &&
-        isLiteral(blueprint.status, [
-          "reserved",
-          "hauling",
-          "building",
-          "completed",
-          "cancelled",
-        ]) &&
-        isNonEmptyString(blueprint.haulJobId) &&
-        isNonEmptyString(blueprint.buildJobId) &&
-        isNonEmptyString(blueprint.commissionJobId) &&
-        isNullableString(blueprint.blockedReason),
-      32,
-    )
+    isIntegerInRange(value.stockpile.y, 0, 127)
   );
 }
 
-function constructionReferencesValid(state: GameState): boolean {
+function materialStockReferencesValid(state: GameState): boolean {
   const construction = state.construction;
-  if (
-    tileAt(state.world.map, construction.stockpile) === null ||
-    construction.nextBlueprintNumber !== construction.blueprints.length + 1
-  )
-    return false;
-  if (
+  if (tileAt(state.world.map, construction.stockpile) === null) return false;
+  return (
     construction.availableMaterials +
       vesselMaterialCommitted(state) +
-      state.environment.spentMaterials +
-      construction.blueprints.filter(({ status }) => status !== "cancelled")
-        .length *
-        40 !==
+      state.environment.spentMaterials ===
     160
-  )
-    return false;
-  const footprint = new Set<string>();
-  const jobIds = new Set<string>();
-  return construction.blueprints.every((blueprint, index) => {
-    const number = index + 1;
-    if (
-      blueprint.id !== `blueprint-lab-${number}` ||
-      blueprint.haulJobId !== `job-haul-lab-${number}` ||
-      blueprint.buildJobId !== `job-build-lab-${number}` ||
-      blueprint.commissionJobId !== `job-commission-lab-${number}`
-    )
-      return false;
-    for (const id of [
-      blueprint.haulJobId,
-      blueprint.buildJobId,
-      blueprint.commissionJobId,
-    ]) {
-      if (jobIds.has(id)) return false;
-      jobIds.add(id);
-    }
-    const haul = state.jobs.find(({ id }) => id === blueprint.haulJobId);
-    const build = state.jobs.find(({ id }) => id === blueprint.buildJobId);
-    const commission = state.jobs.find(
-      ({ id }) => id === blueprint.commissionJobId,
-    );
-    if (blueprint.status === "cancelled") return !haul && !build && !commission;
-    for (const { position } of laboratoryTiles(blueprint.origin)) {
-      const key = `${position.x},${position.y}`;
-      if (footprint.has(key)) return false;
-      footprint.add(key);
-      if (
-        blueprint.status !== "completed" &&
-        tileAt(state.world.map, position) !== "grass"
-      )
-        return false;
-    }
-    if (
-      !haul ||
-      haul.skillId !== "logistics" ||
-      haul.requiredProgress !== 1 ||
-      !sameTile(
-        haul.workSite,
-        blueprint.status === "reserved"
-          ? (() => {
-              const cargo = reservedObject(state.objects, blueprint.haulJobId);
-              return cargo?.location.kind === "ground"
-                ? cargo.location.position
-                : construction.stockpile;
-            })()
-          : laboratoryWorkSite(blueprint.origin),
-      )
-    )
-      return false;
-    if (blueprint.status === "reserved")
-      return (
-        haul.status !== "completed" &&
-        haul.requiredWorkerId === null &&
-        !build &&
-        !commission
-      );
-    if (haul.requiredWorkerId === null) return false;
-    if (blueprint.status === "hauling")
-      return haul.status !== "completed" && !build && !commission;
-    if (
-      haul.status !== "completed" ||
-      !build ||
-      build.skillId !== "engineering" ||
-      build.requiredProgress !== 112 ||
-      !sameTile(build.workSite, laboratoryWorkSite(blueprint.origin))
-    )
-      return false;
-    if (blueprint.status === "building") return !commission;
-    return (
-      build.status === "completed" &&
-      commission?.skillId === "research" &&
-      commission.requiredProgress === 48 &&
-      sameTile(commission.workSite, {
-        x: blueprint.origin.x + 4,
-        y: blueprint.origin.y + 3,
-      }) &&
-      state.world.map.rooms.some(
-        (room) =>
-          room.id === `room-${blueprint.id}` &&
-          room.kind === "laboratory" &&
-          room.x === blueprint.origin.x &&
-          room.y === blueprint.origin.y &&
-          room.width === LABORATORY_WIDTH &&
-          room.height === LABORATORY_HEIGHT,
-      )
-    );
-  });
+  );
 }
 
 function workerReferencesValid(state: GameState): boolean {
@@ -1428,19 +1302,6 @@ function objectsValid(state: GameState): boolean {
       )
         return false;
     }
-  for (const blueprint of state.construction.blueprints)
-    if (!["completed", "cancelled"].includes(blueprint.status)) {
-      const cargo = reservedObject(state.objects, blueprint.haulJobId);
-      if (
-        !cargo ||
-        cargo.kind !== "materials" ||
-        cargo.quantity !== 40 ||
-        (blueprint.status === "hauling"
-          ? cargo.location.kind !== "carried"
-          : cargo.location.kind !== "ground")
-      )
-        return false;
-    }
   const manualMoves = new Set(state.objectOrders.map((order) => order.jobId));
   const unreserved = materials
     .filter(
@@ -1456,11 +1317,7 @@ function objectsValid(state: GameState): boolean {
       .reduce((sum, order) => sum + vesselOrderCost(order), 0) +
     state.environment.orders
       .filter((order) => order.phase === "completed")
-      .reduce((sum, order) => sum + surfaceOrderCost(order), 0) +
-    state.construction.blueprints.filter(
-      (blueprint) => blueprint.status === "completed",
-    ).length *
-      40;
+      .reduce((sum, order) => sum + surfaceOrderCost(order), 0);
   if (
     materials.reduce((sum, item) => sum + item.quantity, 0) + materialUsed !==
     160
@@ -2096,7 +1953,7 @@ function isGameState(value: unknown): value is GameState {
     !isArrayOf(value.personnel, isPersonnelRecord) ||
     !isScp999State(value.scp999) ||
     !isSiteWorld(value.world) ||
-    !isConstructionState(value.construction) ||
+    !isMaterialStock(value.construction) ||
     !isRoutineState(value.routines) ||
     !isObservationState(value.observations) ||
     !isEnvironment(value.environment) ||
@@ -2228,7 +2085,7 @@ function isGameState(value: unknown): value is GameState {
     state.clinicalCare.clinicianIds.every((id) =>
       state.personnel.some((person) => person.id === id),
     ) &&
-    constructionReferencesValid(state) &&
+    materialStockReferencesValid(state) &&
     routineReferencesValid(state) &&
     observationReferencesValid(state) &&
     environmentReferencesValid(state) &&

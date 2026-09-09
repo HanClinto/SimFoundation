@@ -26,6 +26,7 @@ The simulation must remain importable in Node without DOM, Canvas, storage, time
 
 ## Definition of Done for a Change
 
+- Development saves are disposable. Never add save migrations, backward-compatibility adapters, or retained gameplay implementations for old saves. Bump the save version for incompatible changes, discard incompatible saves, and start fresh. Current-version persistence and corruption validation still matter.
 - Player-visible behavior and exclusions match the issue.
 - Gameplay rules live in the simulation rather than a renderer or inspector.
 - New authoritative state is serializable and versioned where necessary.

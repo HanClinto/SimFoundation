@@ -299,20 +299,6 @@ export function storagePlacementIssue(
   )
     return "overlap";
   if (
-    state.construction.blueprints.some(
-      (blueprint) =>
-        !["completed", "cancelled"].includes(blueprint.status) &&
-        tiles.some(
-          (position) =>
-            position.x >= blueprint.origin.x &&
-            position.y >= blueprint.origin.y &&
-            position.x < blueprint.origin.x + 9 &&
-            position.y < blueprint.origin.y + 7,
-        ),
-    )
-  )
-    return "overlap";
-  if (
     state.objectOrders.some(
       (order) =>
         !["completed", "cancelled"].includes(order.phase) &&

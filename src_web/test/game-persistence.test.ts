@@ -93,6 +93,20 @@ describe("game persistence", () => {
         memoryStorage(JSON.stringify({ version: GAME_STATE_VERSION + 1 })),
       ),
     ).toEqual({ status: "incompatible", state: null });
+    const oldSave = {
+      ...createInitialState(),
+      version: GAME_STATE_VERSION - 1,
+      construction: {
+        availableMaterials: 120,
+        stockpile: { x: 67, y: 68 },
+        nextBlueprintNumber: 2,
+        blueprints: [{ id: "retired-annex" }],
+      },
+    };
+    expect(loadGameState(memoryStorage(JSON.stringify(oldSave)))).toEqual({
+      status: "incompatible",
+      state: null,
+    });
   });
 
   it("fails safely when browser storage is unavailable", () => {

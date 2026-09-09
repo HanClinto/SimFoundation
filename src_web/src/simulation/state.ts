@@ -2,10 +2,7 @@ import type { SiteJob } from "./jobs";
 import { createStartingPersonnel, type PersonnelRecord } from "./personnel";
 import { createScp999State, type Scp999State } from "./scp-999";
 import { createStartingWorld, type SiteWorld } from "./world";
-import {
-  createConstructionState,
-  type ConstructionState,
-} from "./construction";
+import { createMaterialStock, type MaterialStock } from "./material-stock";
 import type { ClinicalCarePolicy } from "./clinical";
 import { createRoutineState, type RoutineState } from "./routines";
 import {
@@ -25,7 +22,7 @@ import { createExpeditions, type ExpeditionState } from "./expeditions";
 import type { ActionQueues } from "./action-queue";
 import type { ActionTiming } from "./action-progress";
 
-export const GAME_STATE_VERSION = 44;
+export const GAME_STATE_VERSION = 45;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -52,7 +49,7 @@ export interface GameState {
   readonly personnel: readonly PersonnelRecord[];
   readonly scp999: Scp999State;
   readonly world: SiteWorld;
-  readonly construction: ConstructionState;
+  readonly construction: MaterialStock;
   readonly clinicalCare: ClinicalCarePolicy;
   readonly routines: RoutineState;
   readonly observations: SiteObservations;
@@ -98,7 +95,7 @@ export function createInitialState(seed = 9620): GameState {
     personnel,
     scp999: createScp999State(),
     world: furnishedWorld,
-    construction: createConstructionState(),
+    construction: createMaterialStock(),
     clinicalCare: {
       reviewInterval: 0,
       moodReviewInterval: 0,

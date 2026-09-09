@@ -192,17 +192,6 @@ export function surfaceChangeIssue(
   )
     return "occupied";
   if (
-    state.construction.blueprints.some(
-      (blueprint) =>
-        !["completed", "cancelled"].includes(blueprint.status) &&
-        position.x >= blueprint.origin.x &&
-        position.x < blueprint.origin.x + 9 &&
-        position.y >= blueprint.origin.y &&
-        position.y < blueprint.origin.y + 7,
-    )
-  )
-    return "occupied";
-  if (
     state.objectOrders.some(
       (order) =>
         !["completed", "cancelled"].includes(order.phase) &&

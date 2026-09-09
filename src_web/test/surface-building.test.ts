@@ -10,7 +10,6 @@ import { advanceSimulation } from "../src/simulation/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { orderObjectMove } from "../src/simulation/object-work";
 import { removeStorageArea, setStorageArea } from "../src/simulation/storage";
-import { validateLaboratoryPlacement } from "../src/simulation/construction";
 import { cameraPlacementIssue } from "../src/simulation/observations";
 
 it("workers pave soil, build a barrier, remove it, and install an automatic door using finite stock", () => {
@@ -284,5 +283,4 @@ it("allows remodeling the former material-store tile after its supplies and desi
     loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} })
       .status,
   ).toBe("loaded");
-  expect(validateLaboratoryPlacement(state, { x: 59, y: 80 })).toBeNull();
 });

@@ -17,7 +17,6 @@ import {
 import { advanceJobs } from "./jobs";
 import { advancePersonnel } from "./personnel";
 import { advanceScp999 } from "./scp-999";
-import { advanceConstruction } from "./construction";
 import type { GameState } from "./state";
 import { discoverClinicalWork } from "./clinical";
 import { advanceRoutines, routineUnavailableIds } from "./routines";
@@ -122,17 +121,15 @@ function advanceSiteSimulation(state: GameState): GameState {
               advanceExposure(
                 advanceVesselWork(
                   advanceObjectWork(
-                    advanceSurfaceWork(
-                      advanceConstruction({
-                        ...state,
-                        tick,
-                        gameMinute: state.gameMinute,
-                        jobs: jobResult.jobs,
-                        personnel: scp999Result.personnel,
-                        scp999: scp999Result.anomaly,
-                        world: scp999Result.world,
-                      }),
-                    ),
+                    advanceSurfaceWork({
+                      ...state,
+                      tick,
+                      gameMinute: state.gameMinute,
+                      jobs: jobResult.jobs,
+                      personnel: scp999Result.personnel,
+                      scp999: scp999Result.anomaly,
+                      world: scp999Result.world,
+                    }),
                   ),
                 ),
               ),

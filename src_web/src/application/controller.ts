@@ -84,13 +84,7 @@ import {
 import { type MaterialId, type SurfaceLayer } from "../simulation/materials";
 import { observeSite } from "../simulation/observations";
 import type { GameState } from "../simulation/state";
-import {
-  authorizeSiteWork,
-  cancelLaboratory,
-  placeLaboratory,
-  validateLaboratoryPlacement,
-  type ConstructionCode,
-} from "../simulation/construction";
+import { authorizeSiteWork } from "../simulation/material-stock";
 import {
   setDoorPolicy,
   type DoorPolicy,
@@ -105,11 +99,6 @@ import {
   setPersonnelSchedule,
   type ScheduleBlock,
 } from "../simulation/routines";
-
-export interface ConstructionCommandResult {
-  readonly code: ConstructionCode;
-  readonly snapshot: ControllerSnapshot;
-}
 
 export interface ControllerSnapshot {
   readonly game: GameState;
@@ -349,9 +338,6 @@ export interface GameController {
     jobId: string,
     priority: WorkPriority | null,
   ): ControllerSnapshot;
-  previewLaboratory(origin: TilePosition): ConstructionCode | null;
-  placeLaboratory(origin: TilePosition): ConstructionCommandResult;
-  cancelLaboratory(blueprintId: string): ConstructionCommandResult;
   orderAnomalousAssessment(personId: string): ControllerSnapshot;
   orderWorkPreferenceAssessment(personId: string): ControllerSnapshot;
   orderPhysicalAssessment(personId: string): ControllerSnapshot;
@@ -786,26 +772,6 @@ export function createController(initialState: GameState): GameController {
     setClinicalCarePolicy(policy) {
       state = setClinicalCarePolicy(state, policy);
       return publish();
-    },
-
-    previewLaboratory(origin) {
-      return validateLaboratoryPlacement(state, origin);
-    },
-
-    placeLaboratory(origin) {
-      const result = placeLaboratory(state, origin);
-      if (result.state === state)
-        return { code: result.code, snapshot: getSnapshot() };
-      state = result.state;
-      return { code: result.code, snapshot: publish() };
-    },
-
-    cancelLaboratory(blueprintId) {
-      const result = cancelLaboratory(state, blueprintId);
-      if (result.state === state)
-        return { code: result.code, snapshot: getSnapshot() };
-      state = result.state;
-      return { code: result.code, snapshot: publish() };
     },
 
     advance(tickCount = 1) {
