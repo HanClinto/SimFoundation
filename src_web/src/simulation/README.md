@@ -37,6 +37,7 @@ simulation/
 				actions/
 					Action.ts
 					ActionQueue.ts
+					NeedActions.ts
 					Move.ts
 					Take.ts
 					Drop.ts
@@ -107,7 +108,15 @@ Opening a closed automatic door spends the opener's turn without movement. A lat
 
 Pawn needs advance once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs once outside sites, and arrivals receive no extra local turn. `canAct` and `mobile` can represent inactivity/immobility but do not themselves implement injury, death, or recovery.
 
-Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) currently selects food at hunger >= 50, otherwise a configured patrol destination; it never performs a separate version of an action.
+Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) asks the Needs system for a suitable action, otherwise selects a configured patrol destination. It names no individual need or need-satisfying action and never performs a separate version of an action.
+
+### Need-Driven Selection
+
+[Needs.ts](core/entity/pawn/Needs.ts) owns need progression and generic urgency selection. Need values represent deficits on the same 0..100 scale: larger means more urgent. Only present needs with value >= 50 are considered, highest value first, with case-sensitive need ID breaking ties. The shared threshold preserves the initial behavior without adding a configuration system. Absent needs do not invoke providers. An unsupported or currently unsatisfiable need does not prevent trying the next one.
+
+A `NeedActionProvider` declares `needId` and a non-mutating `findAction(context)` that returns an ordinary queued-action description or null. Each action owns its provider: Eat's `needAction` connects hunger to its existing diet-aware, reachable-food search. [NeedActions.ts](core/entity/pawn/actions/NeedActions.ts) only lists registered providers. Providers for the same need are tried in registration order until one finds an action. There is no cross-need travel/benefit score or queue preemption; this policy applies only when an autonomous pawn is free to select new work.
+
+Adding another need-satisfying action requires its implementation and provider registration, not an edit to Autonomy or a named-need switch in Needs. Tests use arbitrary need names and test providers to verify priority, unavailable-provider fallback, thresholds, ties and unchanged input; Eat remains the only production need action. This small action-selection contract does not yet generalize object advertisements or target searches.
 
 ## Traversal And Interaction
 
@@ -129,7 +138,7 @@ Examples: a metalivore accepts `metal`, a plastic consumer accepts `plastic`, an
 
 [Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous food selection considers acceptable, reachable items by distance then ID. Dynamic pawn obstruction can still make an action wait. Explicit orders keep their specified target and never silently substitute another. An eat action approaches, rechecks, consumes at most one unit, reduces hunger according to the diet, and removes an exhausted item. Fractional remainders are supported. Pawns with no hunger need do not search for or consume food.
 
-Future rest/comfort/entertainment discovery should expose small actor-specific interaction offers (action, target, expected benefit, availability, and interaction position). Extract that common search when a second real need action demonstrates the shared contract. There is no Provider/Consumer hierarchy or generic offer framework yet. A material becomes food relative to the consumer's diet, not through a universal food advertisement.
+Future rest/comfort/entertainment discovery should expose small actor-specific interaction offers (action, target, expected benefit, availability, and interaction position). Extract that common target search when a second real need action demonstrates the shared contract. The current need-action providers select intentions; they are not a Provider/Consumer class hierarchy or a generic object-offer framework. A material becomes food relative to the consumer's diet, not through a universal food advertisement.
 
 For now, **only loose items are consumable**. Material matching alone does not authorize eating installed doors or living pawns; structural damage and predation need their own consequences. There is one material per entity, no mixtures, digestion chemistry, calories, or weight model. Extend only when actual content needs more.
 

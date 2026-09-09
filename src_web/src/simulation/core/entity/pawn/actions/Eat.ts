@@ -4,8 +4,17 @@ import { nourishmentFor } from "../../../material/Material";
 import { distance, positionOf } from "../../../site/TileMap";
 import { interactionRoute } from "../../../site/Pathfinding";
 import { Move } from "./Move";
+import type { NeedActionProvider } from "../Needs";
 
 export class Eat implements Action {
+  static readonly needAction: NeedActionProvider = {
+    needId: "hunger",
+    findAction(context) {
+      const target = Eat.findFood(context);
+      return target ? { kind: "eat", targetId: target.id } : null;
+    },
+  };
+
   constructor(readonly targetId: string) {}
 
   canStart({ site, pawn, materials }: ActionContext): string | null {
