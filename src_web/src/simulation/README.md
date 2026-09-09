@@ -47,6 +47,9 @@ simulation/
 					Sleep.ts
 					Relax.ts
 					Research.ts
+					Read.ts
+					Exercise.ts
+					Wash.ts
 					FacilityAction.ts
 					FindTarget.ts
 		material/
@@ -59,11 +62,15 @@ simulation/
 			Transfer.ts
 	catalog/
 		actors/staff/FieldAgent.ts
+		actors/staff/Researcher.ts
 		entities/doors/AutomaticSteelDoor.ts
 		entities/supplies/PackagedMeal.ts
 		entities/furniture/Bed.ts
 		entities/furniture/Armchair.ts
 		entities/equipment/ResearchDesk.ts
+		entities/furniture/Bookshelf.ts
+		entities/equipment/ExerciseBike.ts
+		entities/furniture/Washbasin.ts
 		materials/
 			Steel.ts
 			Wood.ts
@@ -73,6 +80,7 @@ simulation/
 			AnimalTissue.ts
 		sites/tests/SharedActions.json
 		sites/tests/RestAndResearch.json
+		sites/tests/DailyLife.json
 		index.ts
 ```
 
@@ -127,13 +135,13 @@ Autonomy off prevents new self-selected work, not queued commitments or physiolo
 
 A `NeedActionProvider` exposes non-mutating `offer(context, needId)`, returning an ordinary action description and positive `relief`, or null. It does not declare one exclusive need. For the highest-urgency need with an available offer, choose the action offering the greatest relief; equal relief uses registration order. Each provider first chooses its nearest eligible reachable target by Manhattan distance then entity ID. Relief is the reduction on the next productive tick, capped at the current deficit, not the entire session's benefit. Costs to other needs do not count as relief. No cross-need weighted utility, travel-cost optimization, or queue preemption is attempted.
 
-Each action owns its offer logic. Eat matches hunger to material/diet-aware consumption. Sleep, Relax and Research discover the reductions advertised by the facility's activity data, so one action can offer relief for several needs. [NeedActions.ts](core/entity/pawn/actions/NeedActions.ts) only lists those providers. Adding another action does not require a named-need switch in Autonomy or Needs. [FindTarget.ts](core/entity/pawn/actions/FindTarget.ts) shares eligible/reachable target search between eating and facility activities; it replaces the former food-only search TODO without adding Provider/Consumer inheritance.
+Each action owns its offer logic. Eat matches hunger to material/diet-aware consumption. Facility actions discover the reductions advertised by the facility's activity data, so one action can offer relief for several needs. [NeedActions.ts](core/entity/pawn/actions/NeedActions.ts) only lists those providers. Adding another action does not require a named-need switch in Autonomy or Needs. [FindTarget.ts](core/entity/pawn/actions/FindTarget.ts) shares eligible/reachable target search between eating and facility activities; it replaces the former food-only search TODO without adding Provider/Consumer inheritance.
 
 The generic selector tests cover arbitrary needs and offer strengths. Real activity tests cover hungry-with-no-food choosing Sleep, stress choosing Relax, occupied-bed alternatives, optional curiosity choosing Research, and replay/cancellation. The interface remains intentionally small and provisional; the concrete behaviors are the reason for its shape.
 
 ## Sleep, Relax, And Research
 
-[FacilityAction.ts](core/entity/pawn/actions/FacilityAction.ts) shares the mechanics that proved identical across these three actions: checking a ground facility, approaching its interaction position, acquiring exclusive use on the first work tick, applying effects, and finishing a bounded session. The concrete Sleep/Relax classes select the corresponding advertised activity. Research additionally checks for a research record and increments its progress. The generic helper does not contain a switch of action-specific effects or outputs.
+[FacilityAction.ts](core/entity/pawn/actions/FacilityAction.ts) shares the mechanics that proved identical across sustained activities: checking a ground facility, approaching its interaction position, acquiring exclusive use on the first work tick, applying effects, and finishing a bounded session. The small concrete classes select the corresponding advertised activity. Research additionally checks for a research record and increments its progress. The generic helper does not contain a switch of action-specific effects or outputs.
 
 Initial catalog tuning, per productive tick (negative reduces a deficit):
 
@@ -152,6 +160,24 @@ One facility serves one pawn at a time. Travel does not reserve it: first produc
 Facilities currently occupy one blocking tile; the pawn works at an adjacent reachable tile. Bed/chair names do not imply lying/sitting animation or occupying the furniture footprint. The browser still runs the archive, so these activities are headless only.
 
 [RestAndResearch.json](catalog/sites/tests/RestAndResearch.json) is the authored trial used by activity tests. It starts with a hungry, tired, stressed operator, no food, and a bed/chair/desk. Research progress is a durable counter on that desk, not a global currency, quest completion, specimen study, technology unlock, or implemented research project system. No social interaction model is added here.
+
+### Reading And Daily Care
+
+The next concrete activities reuse the same session, occupancy and offer mechanics without changing the selector:
+
+| Facility / Action        | Work Ticks | Reduces Per Work Tick                 | Increases Per Work Tick                 |
+| ------------------------ | ---------: | ------------------------------------- | --------------------------------------- |
+| Bookshelf / Read         |          6 | Curiosity 3, Restlessness 4, Stress 1 | none                                    |
+| Exercise bike / Exercise |          5 | Restlessness 6, Stress 2              | Fatigue 3, Hunger 1, Hygiene pressure 2 |
+| Washbasin / Wash         |          3 | Hygiene pressure 10, Stress 1         | none                                    |
+
+**Curiosity** is the desire to learn or investigate. **Restlessness** is the desire for a change of activity, relieved by physical exercise or reading. There is no separate Boredom need: the proposed Boredom/Restlessness overlap was consolidated at the user's request. Curiosity remains distinct rather than becoming a synonym for entertainment.
+
+[Researcher.ts](catalog/actors/staff/Researcher.ts) is an optional staff template with growing Curiosity and Restlessness. It also carries experimental Hygiene pressure, where larger means more need to wash. Ordinary FieldAgent defaults remain hunger/fatigue/stress only. Hygiene is not required by the core, and actions never create it on pawns lacking it. There are no hygiene penalties, disease, mandatory washing schedules, water/drainage costs, fitness progression, or powered exercise equipment. Those systems are not implied by facility names. Hygiene remains provisional and easy to remove.
+
+[DailyLife.json](catalog/sites/tests/DailyLife.json) places a researcher among ordinary study/care facilities and six meals. Tests cover a 300-tick autonomous run, research versus reading, exercise leading to washing, per-action reload continuation, and absent needs. Reading is not research and creates no desk progress.
+
+The current policy favors specialists when all facilities are available: research gives more immediate Curiosity relief than reading, and exercise gives more Restlessness relief. Reading is a useful fallback when either specialized option is unavailable. Multi-need side benefits do not override the highest-need-first policy. This is a visible tuning limitation, not a reason to add personality randomness or a predictive utility framework yet.
 
 ## Traversal And Interaction
 
@@ -197,7 +223,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 4 adds facilities and sustained activity state and discards earlier experimental shapes; there are no migrations or deep save validators.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 5 includes reading, exercise and washing actions and discards earlier experimental shapes; there are no migrations or deep save validators.
 
 ## Verification And Scope
 

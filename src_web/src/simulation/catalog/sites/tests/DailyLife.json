@@ -1,0 +1,57 @@
+{
+  "name": "Daily life trial",
+  "terrain": [
+    "###########",
+    "#.........#",
+    "#.........#",
+    "#.........#",
+    "#.........#",
+    "#.........#",
+    "#.........#",
+    "#.........#",
+    "###########"
+  ],
+  "entities": [
+    {
+      "id": "researcher",
+      "definitionId": "researcher",
+      "location": { "kind": "ground", "position": { "x": 5, "y": 4 } }
+    },
+    {
+      "id": "bed",
+      "definitionId": "bed",
+      "location": { "kind": "ground", "position": { "x": 2, "y": 2 } }
+    },
+    {
+      "id": "chair",
+      "definitionId": "armchair",
+      "location": { "kind": "ground", "position": { "x": 8, "y": 2 } }
+    },
+    {
+      "id": "desk",
+      "definitionId": "research-desk",
+      "location": { "kind": "ground", "position": { "x": 2, "y": 6 } }
+    },
+    {
+      "id": "shelf",
+      "definitionId": "bookshelf",
+      "location": { "kind": "ground", "position": { "x": 8, "y": 6 } }
+    },
+    {
+      "id": "bike",
+      "definitionId": "exercise-bike",
+      "location": { "kind": "ground", "position": { "x": 2, "y": 4 } }
+    },
+    {
+      "id": "basin",
+      "definitionId": "washbasin",
+      "location": { "kind": "ground", "position": { "x": 8, "y": 4 } }
+    },
+    {
+      "id": "meals",
+      "definitionId": "packaged-meal",
+      "location": { "kind": "ground", "position": { "x": 5, "y": 2 } },
+      "overrides": { "amount": 6 }
+    }
+  ]
+}

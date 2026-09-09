@@ -5,7 +5,7 @@ import { tickPawn } from "./entity/pawn/Pawn";
 import { tickDoor } from "./entity/Door";
 import { advanceTransfers } from "./site/Transfer";
 
-export const SIMULATION_VERSION = 4;
+export const SIMULATION_VERSION = 5;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;

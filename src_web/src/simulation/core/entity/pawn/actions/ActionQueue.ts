@@ -7,9 +7,18 @@ import { Wait } from "./Wait";
 import { Sleep } from "./Sleep";
 import { Relax } from "./Relax";
 import { Research } from "./Research";
+import { Read } from "./Read";
+import { Exercise } from "./Exercise";
+import { Wash } from "./Wash";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "read":
+      return new Read(action);
+    case "exercise":
+      return new Exercise(action);
+    case "wash":
+      return new Wash(action);
     case "sleep":
       return new Sleep(action);
     case "relax":

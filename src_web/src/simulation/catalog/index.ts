@@ -12,6 +12,10 @@ import { AnimalTissue } from "./materials/AnimalTissue";
 import { Bed } from "./entities/furniture/Bed";
 import { Armchair } from "./entities/furniture/Armchair";
 import { ResearchDesk } from "./entities/equipment/ResearchDesk";
+import { Bookshelf } from "./entities/furniture/Bookshelf";
+import { ExerciseBike } from "./entities/equipment/ExerciseBike";
+import { Washbasin } from "./entities/furniture/Washbasin";
+import { Researcher } from "./actors/staff/Researcher";
 
 export const entities: EntityTemplates = Object.fromEntries(
   [
@@ -21,6 +25,10 @@ export const entities: EntityTemplates = Object.fromEntries(
     Bed,
     Armchair,
     ResearchDesk,
+    Bookshelf,
+    ExerciseBike,
+    Washbasin,
+    Researcher,
   ].map((entry) => [entry.id, entry]),
 );
 
