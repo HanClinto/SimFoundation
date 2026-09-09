@@ -1478,6 +1478,9 @@ pauseButton.addEventListener("click", () => {
 for (const speedButton of speedButtons) {
   speedButton.addEventListener("click", () => {
     const speed = Number(speedButton.dataset.speed) as SimulationSpeed;
+    if (speed === runtime.getSpeed()) {
+      controller.setRunning(!controller.getSnapshot().running);
+    }
     setSimulationSpeed(speed);
     render(controller.getSnapshot());
   });
