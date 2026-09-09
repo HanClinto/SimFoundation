@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import { recordDoorOpening } from "./action-progress";
 import { manualActionWaiting } from "./person-actions";
 import {
@@ -32,7 +32,7 @@ export interface RoutineProgress {
 }
 
 export function routineProgress(
-  state: GameState,
+  state: SiteSimulationState,
   actorId: string,
 ): RoutineProgress | null {
   const activity = state.routines.activities[actorId];
@@ -155,7 +155,10 @@ export function createRoutineState(
   };
 }
 
-export function scheduleAt(state: GameState, personId: string): ScheduleBlock {
+export function scheduleAt(
+  state: SiteSimulationState,
+  personId: string,
+): ScheduleBlock {
   return (
     state.routines.schedules[personId]?.[
       Math.floor(state.gameMinute / 60) % 24
@@ -163,11 +166,11 @@ export function scheduleAt(state: GameState, personId: string): ScheduleBlock {
   );
 }
 
-export function setPersonnelSchedule(
-  state: GameState,
+export function setPersonnelSchedule<State extends SiteSimulationState>(
+  state: State,
   personId: string,
   schedule: readonly ScheduleBlock[],
-): GameState {
+): State {
   if (!state.personnel.some(({ id }) => id === personId))
     throw new Error(`Unknown person: ${personId}`);
   if (
@@ -188,7 +191,7 @@ function urgentNeed(person: PersonnelRecord): boolean {
   return person.needs.satiety < 20 || person.needs.rest < 15;
 }
 
-function recreationDue(state: GameState, personId: string): boolean {
+function recreationDue(state: SiteSimulationState, personId: string): boolean {
   const roster = state.personnel.map(({ id }) => id).sort();
   const offset = Math.floor((roster.indexOf(personId) * 120) / roster.length);
   return (
@@ -201,7 +204,9 @@ function recreationDue(state: GameState, personId: string): boolean {
   );
 }
 
-export function routineUnavailableIds(state: GameState): readonly string[] {
+export function routineUnavailableIds(
+  state: SiteSimulationState,
+): readonly string[] {
   return state.personnel
     .filter(
       (person) =>
@@ -222,7 +227,9 @@ export function routineUnavailableIds(state: GameState): readonly string[] {
     .map(({ id }) => id);
 }
 
-export function advanceRoutines(state: GameState): GameState {
+export function advanceRoutines<State extends SiteSimulationState>(
+  state: State,
+): State {
   let actionTimings = state.actionTimings;
   let objects = state.objects;
   const people = new Map(state.personnel.map((person) => [person.id, person]));
@@ -581,12 +588,12 @@ export function advanceRoutines(state: GameState): GameState {
   });
 }
 
-export function orderPersonalRoutine(
-  state: GameState,
+export function orderPersonalRoutine<State extends SiteSimulationState>(
+  state: State,
   actorId: string,
   kind: RoutineKind,
   stationId: string,
-): { state: GameState; reason: string | null } {
+): { state: State; reason: string | null } {
   const fail = (reason: string) => ({ state, reason });
   const station = state.routines.stations.find(
     (entry) => entry.id === stationId && entry.kind === kind,
@@ -670,10 +677,10 @@ export function orderPersonalRoutine(
   };
 }
 
-export function cancelPersonalRoutine(
-  state: GameState,
+export function cancelPersonalRoutine<State extends SiteSimulationState>(
+  state: State,
   actorId: string,
-): { state: GameState; reason: string | null } {
+): { state: State; reason: string | null } {
   const activity = state.routines.activities[actorId];
   if (activity?.source !== "player")
     return { state, reason: "No player routine is active." };

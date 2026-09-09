@@ -43,7 +43,7 @@ export interface SiteState {
   readonly incident: IncidentState;
   readonly jobs: readonly SiteJob[];
   readonly personnel: readonly PersonnelRecord[];
-  readonly scp999: Scp999State;
+  readonly scp999: Scp999State | null;
   readonly world: SiteWorld;
   readonly clinicalCare: ClinicalCarePolicy;
   readonly routines: RoutineState;
@@ -60,6 +60,7 @@ export interface SiteSimulationState extends SiteState, SimulationClock {
 }
 
 export interface GameState extends SiteSimulationState {
+  readonly scp999: Scp999State;
   readonly version: typeof GAME_STATE_VERSION;
   readonly expeditions: ExpeditionState;
 }

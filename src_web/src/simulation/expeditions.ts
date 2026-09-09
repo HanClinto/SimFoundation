@@ -543,12 +543,13 @@ export function recallExpedition(state: GameState): ExpeditionResult {
         "Stabilize injured team members and wait for incapacitated responders to recover before regrouping.",
     };
   for (const id of active.team) {
-    const ordered = orderResponder(
-      field,
-      id,
-      "retreat",
-      expeditionScenario(active.noticeId).extraction,
-    );
+    const ordered: ReturnType<typeof orderResponder<GameState>> =
+      orderResponder(
+        field,
+        id,
+        "retreat",
+        expeditionScenario(active.noticeId).extraction,
+      );
     if (ordered.code !== "accepted")
       return {
         state,

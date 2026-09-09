@@ -102,6 +102,7 @@ export interface PhysicalObject {
   readonly vessel?: { readonly material: MaterialId; readonly sealed: boolean };
 }
 export interface ObjectStore {
+  readonly idPrefix?: string;
   readonly nextId: number;
   readonly items: readonly PhysicalObject[];
 }
@@ -242,10 +243,11 @@ export function reserveStack(
       },
       objectId,
     };
-  const id = `object-${store.nextId}`;
+  const id = `${store.idPrefix ?? ""}object-${store.nextId}`;
   return {
     objectId: id,
     store: {
+      ...store,
       nextId: store.nextId + 1,
       items: [
         ...store.items.map((item) =>

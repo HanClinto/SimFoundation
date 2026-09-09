@@ -112,7 +112,11 @@ it("shares stock between surface and vessel work without reserving it twice", ()
     "steel",
     "floor",
   ).state;
-  let state = craftVessel(surface, { x: 66, y: 65 }, "concrete").state;
+  let state: ReturnType<typeof createInitialState> = craftVessel(
+    surface,
+    { x: 66, y: 65 },
+    "concrete",
+  ).state;
   expect(availableMaterials(state.objects)).toBe(11);
   expect(
     loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} })

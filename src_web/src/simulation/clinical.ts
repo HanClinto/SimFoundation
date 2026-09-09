@@ -6,7 +6,7 @@ import {
   type PersonnelRecord,
 } from "./personnel";
 import type { SiteJob } from "./jobs";
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 
 export type AssessmentKind =
   | "physical"
@@ -66,10 +66,10 @@ export function lastClinicalReview(
             ?.assessedTick;
 }
 
-export function setClinicalCarePolicy(
-  state: GameState,
+export function setClinicalCarePolicy<State extends SiteSimulationState>(
+  state: State,
   policy: ClinicalCarePolicy,
-): GameState {
+): State {
   if (
     ![0, 240, 480, 1440].includes(policy.reviewInterval) ||
     [policy.moodReviewInterval, policy.psychiatricReviewInterval].some(
@@ -93,7 +93,9 @@ export function setClinicalCarePolicy(
   };
 }
 
-export function discoverClinicalWork(state: GameState): GameState {
+export function discoverClinicalWork<State extends SiteSimulationState>(
+  state: State,
+): State {
   if (
     SURVEY_KINDS.every(
       (kind) => !state.clinicalCare[SURVEY_INTERVAL_FIELDS[kind]],
@@ -122,11 +124,11 @@ export const ASSESSMENT_LABELS: Record<AssessmentKind, string> = {
   preferences: "Work-preference interview",
 };
 
-export function requestAssessment(
-  state: GameState,
+export function requestAssessment<State extends SiteSimulationState>(
+  state: State,
   patientId: string,
   kind: AssessmentKind,
-): GameState {
+): State {
   const patient = state.personnel.find(({ id }) => id === patientId);
   if (!patient) throw new Error(`Unknown person: ${patientId}`);
   if (!state.world.positions[patientId]) return state;

@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { GameState, SiteSimulationState } from "./state";
 import { personCurrentAction } from "./person-actions";
 import { routineProgress } from "./routines";
 import { findRoute, sameTile, type TilePosition } from "./world";
@@ -16,13 +16,35 @@ export interface ActionTiming {
   };
 }
 
-export function recordDoorOpening(
-  state: GameState,
+export function recordDoorOpening<State extends SiteSimulationState>(
+  state: State,
   actorId: string,
   position: TilePosition,
   parentKey?: string,
-): GameState {
-  const identity = currentActionIdentity(state, actorId);
+): State {
+  const routine = state.routines.activities[actorId];
+  const responder = state.combat.responders[actorId];
+  const current = state.actionQueues[actorId]?.current;
+  const queue =
+    current?.started && current.intent.mapId === state.world.map.id
+      ? current
+      : null;
+  const identity = queue
+    ? {
+        key: `queue:${queue.intent.sequence}:${queue.intent.action}:${queue.intent.targetId ?? ""}:${queue.intent.destination?.x},${queue.intent.destination?.y}`,
+        startedTick: state.actionTimings[actorId]?.startedTick,
+      }
+    : routine
+      ? {
+          key: `routine:${actorId}:${routine.startedTick}:${routine.stationId}`,
+          startedTick: routine.startedTick,
+        }
+      : responder?.drafted
+        ? {
+            key: `tactical:${actorId}:${responder.order}:${responder.targetId}:${responder.destination?.x},${responder.destination?.y}:${!!(responder.order === "hold" && responder.returnToAutonomy)}`,
+            startedTick: state.actionTimings[actorId]?.startedTick,
+          }
+        : null;
   const key = parentKey ?? identity?.key;
   if (!key) return state;
   const previous = state.actionTimings[actorId];

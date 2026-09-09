@@ -1,5 +1,8 @@
 import type { GameState } from "./state";
-import { draftResponder, orderResponder } from "./combat";
+import {
+  performSiteInteraction,
+  siteInteractionIssue,
+} from "./site-interactions";
 import {
   cancelRecovery,
   expeditionMember,
@@ -9,10 +12,7 @@ import {
 } from "./expeditions";
 import { OBJECT_DEFINITIONS } from "./objects";
 import {
-  orderPersonalRoutine,
-  cancelPersonalRoutine,
   isPersonalRoutineAction,
-  PERSONAL_ROUTINE_KINDS,
   type PersonalRoutineAction,
 } from "./routines";
 
@@ -76,66 +76,20 @@ export function performInteraction(
       ? { state: result.state, reason: null }
       : fail("Cargo cannot be put down at this time.");
   }
-  const responder = local.combat.responders[actorId];
-  if (responder?.incapacitated)
-    return fail(
-      "This person is incapacitated; another responder must stabilize them.",
-    );
-  if (
-    local.objects.items.some(
-      (item) =>
-        item.location.kind === "carried" && item.location.personId === actorId,
-    )
-  )
-    return fail("Finish the reserved cargo delivery first.");
-  if (
-    local.jobs.some(
-      (job) =>
-        job.status === "in-progress" &&
-        job.assessment &&
-        (job.assignedPersonId === actorId ||
-          job.assessment.patientId === actorId),
-    )
-  )
-    return fail("Finish the active clinical appointment first.");
-  if (action === "cancel") {
-    if (local.routines.activities[actorId]?.source === "player")
-      return cancelPersonalRoutine(state, actorId);
-    if (
-      !responder?.drafted ||
-      (responder.order === "hold" &&
-        responder.phase === "ready" &&
-        !responder.returnToAutonomy)
-    )
-      return fail("No current personal action to cancel.");
-    const held = orderResponder(local, actorId, "hold");
-    if (held.code !== "accepted")
-      return fail("This action cannot be cancelled now.");
-    const next = {
-      ...held.state,
-      combat: {
-        ...held.state.combat,
-        responders: {
-          ...held.state.combat.responders,
-          [actorId]: {
-            ...held.state.combat.responders[actorId]!,
-            returnToAutonomy: responder.returnToAutonomy === true,
-          },
-        },
-      },
-    };
-    return { state: field ? storeFieldState(state, next) : next, reason: null };
-  }
-  if (isPersonalRoutineAction(action)) {
-    if (field || !targetId?.startsWith("object:"))
+  if (action !== "recover") {
+    if (field && isPersonalRoutineAction(action))
       return fail("Personal routines require a bed or seat at the base.");
-    return orderPersonalRoutine(
-      state,
-      actorId,
-      PERSONAL_ROUTINE_KINDS[action],
-      targetId.slice(7),
-    );
+    const result = performSiteInteraction(local, request);
+    return result.reason
+      ? fail(result.reason)
+      : {
+          state: field ? storeFieldState(state, result.state) : result.state,
+          reason: null,
+        };
   }
+  const issue = siteInteractionIssue(local, actorId);
+  if (issue) return fail(issue);
+  const responder = local.combat.responders[actorId];
   if (action === "recover") {
     if (!field || !targetId?.startsWith("object:"))
       return fail("Recovery is available for field cargo only.");
@@ -159,61 +113,7 @@ export function performInteraction(
             : "This recovery cannot start now.",
         );
   }
-  if (action === "engage" || action === "attack") {
-    if (
-      !local.combat.adversary ||
-      targetId !== local.combat.adversary.id ||
-      local.combat.status !== "active" ||
-      local.combat.adversary.health <= 0
-    )
-      return fail("No active adversary at this location.");
-    if (!local.combat.participants.includes(actorId))
-      return fail("This person is not enrolled in this encounter.");
-    if (!responder || responder.ammunition <= 0)
-      return fail("No ammunition remaining.");
-  } else if (action === "stabilize") {
-    const patient = targetId ? local.combat.responders[targetId] : null;
-    if (targetId === actorId)
-      return fail("Select another injured person to stabilize.");
-    if (!targetId || !local.world.positions[targetId] || !patient)
-      return fail("No casualty at this location.");
-    if (!patient.injuries)
-      return fail("This person has no tactical injury to stabilize.");
-    if (patient.stabilized) return fail("This person is already stabilized.");
-    if (responder && responder.medicalSupplies <= 0)
-      return fail("No stabilization kits remaining.");
-  } else if (action !== "hold") return fail("Unknown interaction.");
-  const drafted = responder?.drafted
-    ? { state: local, code: "accepted" as const }
-    : draftResponder(local, actorId, true);
-  if (drafted.code !== "accepted")
-    return fail("This person cannot leave their current commitment.");
-  const result = orderResponder(
-    drafted.state,
-    actorId,
-    action,
-    undefined,
-    action === "hold" ? undefined : targetId,
-  );
-  if (result.code !== "accepted")
-    return fail("This interaction is no longer available.");
-  const temporary =
-    action === "stabilize" &&
-    (!responder?.drafted || responder.returnToAutonomy === true);
-  const next = {
-    ...result.state,
-    combat: {
-      ...result.state.combat,
-      responders: {
-        ...result.state.combat.responders,
-        [actorId]: {
-          ...result.state.combat.responders[actorId]!,
-          returnToAutonomy: temporary,
-        },
-      },
-    },
-  };
-  return { state: field ? storeFieldState(state, next) : next, reason: null };
+  return fail("Unknown interaction.");
 }
 
 export function interactionOptions(

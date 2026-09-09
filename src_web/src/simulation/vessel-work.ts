@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import { isElectrical } from "./power";
 import type { SiteJob } from "./jobs";
 import { MATERIALS, type MaterialId } from "./materials";
@@ -70,7 +70,7 @@ export function activeVesselOrder(order: VesselOrder): boolean {
   return !["completed", "cancelled"].includes(order.phase);
 }
 export function vesselReservesTile(
-  state: GameState,
+  state: SiteSimulationState,
   position: TilePosition,
 ): boolean {
   return state.vesselWork.orders.some(
@@ -93,7 +93,7 @@ export function vesselOrderCost(
       : 0;
 }
 export function vesselPlacementIssue(
-  state: GameState,
+  state: SiteSimulationState,
   position: TilePosition,
   exceptId?: string,
 ): VesselCommandCode | null {
@@ -150,7 +150,7 @@ export function vesselPlacementIssue(
 }
 
 function jobFor(
-  state: GameState,
+  state: SiteSimulationState,
   order: VesselOrder,
   workSite: TilePosition,
   skillId: SiteJob["skillId"],
@@ -174,11 +174,11 @@ function jobFor(
     workSite,
   };
 }
-function addOrder(
-  state: GameState,
+function addOrder<State extends SiteSimulationState>(
+  state: State,
   order: VesselOrder,
   job: SiteJob,
-): GameState {
+): State {
   return {
     ...state,
     jobs: [...state.jobs, job],
@@ -189,11 +189,11 @@ function addOrder(
   };
 }
 
-export function craftVessel(
-  state: GameState,
+export function craftVessel<State extends SiteSimulationState>(
+  state: State,
   position: TilePosition,
   material: MaterialId,
-): { state: GameState; code: VesselCommandCode } {
+): { state: State; code: VesselCommandCode } {
   if (!Object.hasOwn(MATERIALS, material))
     return { state, code: "invalid-cargo" };
   const issue = vesselPlacementIssue(state, position);
@@ -223,7 +223,7 @@ export function craftVessel(
     id,
     jobId,
     action: "craft",
-    vesselId: `vessel-${state.vesselWork.nextId}`,
+    vesselId: `${state.objects.idPrefix ?? ""}vessel-${state.vesselWork.nextId}`,
     cargoId: cargo.id,
     material,
     position: { ...position },
@@ -243,14 +243,14 @@ export function craftVessel(
   };
 }
 
-export function orderVesselAction(
-  state: GameState,
+export function orderVesselAction<State extends SiteSimulationState>(
+  state: State,
   vesselId: string,
   action: Exclude<VesselAction, "craft">,
   cargoId?: string,
   destination?: TilePosition,
   transport?: { mode: "helicopter" | "truck"; duration: number },
-): { state: GameState; code: VesselCommandCode } {
+): { state: State; code: VesselCommandCode } {
   if (action !== "load" && cargoId !== undefined)
     return { state, code: "invalid-cargo" };
   const vessel = state.objects.items.find(
@@ -436,7 +436,9 @@ export function orderVesselAction(
   };
 }
 
-export function advanceVesselWork(state: GameState): GameState {
+export function advanceVesselWork<State extends SiteSimulationState>(
+  state: State,
+): State {
   let objects = state.objects;
   let jobs = [...state.jobs];
   const orders = state.vesselWork.orders.map((order): VesselOrder => {
@@ -737,7 +739,10 @@ export function advanceVesselWork(state: GameState): GameState {
   };
 }
 
-export function cancelVesselWork(state: GameState, id: string): GameState {
+export function cancelVesselWork<State extends SiteSimulationState>(
+  state: State,
+  id: string,
+): State {
   const order = state.vesselWork.orders.find((order) => order.id === id);
   if (
     !order ||

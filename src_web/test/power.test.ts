@@ -244,7 +244,7 @@ it("restores the starter lights and cameras after a physical generator repair, w
       setItem: () => {},
     }).status,
   ).toBe("loaded");
-  let state = ordered.state;
+  let state: ReturnType<typeof createInitialState> = ordered.state;
   for (let tick = 0; tick < 350; tick += 1) {
     state = advanceSimulation(state);
     if (state.vesselWork.orders[0]!.phase === "completed") break;
@@ -262,7 +262,7 @@ it("restores the starter lights and cameras after a physical generator repair, w
 });
 
 it("hauls and installs additional lights before they draw power, then sheds load to recover from overload", () => {
-  let state = createInitialState();
+  let state: ReturnType<typeof createInitialState> = createInitialState();
   for (const [id, position] of [
     ["light-spare-1", { x: 73, y: 66 }],
     ["light-spare-2", { x: 74, y: 66 }],
@@ -302,7 +302,7 @@ it("hauls and installs additional lights before they draw power, then sheds load
 it("installs underfloor cable beneath a full pantry without counting the work kit as stock", () => {
   const initial = createInitialState();
   const position = { x: 58, y: 67 };
-  let state = {
+  let state: ReturnType<typeof createInitialState> = {
     ...initial,
     objects: {
       ...initial.objects,
@@ -326,7 +326,7 @@ it("installs underfloor cable beneath a full pantry without counting the work ki
     true,
   );
   expect(ordered.code).toBe("accepted");
-  let replay = ordered.state;
+  let replay: ReturnType<typeof createInitialState> = ordered.state;
   const area = replay.storage.areas.find((area) => area.serveMeals)!;
   const initialStock = storageQuantity(replay, area);
   const phases = new Set<string>();

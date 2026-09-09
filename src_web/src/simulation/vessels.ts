@@ -1,10 +1,10 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import { MATERIALS } from "./materials";
 import type { ExposureSource } from "./environment";
 import type { PhysicalObject } from "./objects";
 
 export function containingVessel(
-  state: GameState,
+  state: SiteSimulationState,
   objectId: string,
 ): PhysicalObject | undefined {
   const object = state.objects.items.find((item) => item.id === objectId);
@@ -16,7 +16,7 @@ export function containingVessel(
 }
 
 export function containingBarrier(
-  state: GameState,
+  state: SiteSimulationState,
   source: ExposureSource,
 ): PhysicalObject | undefined {
   if (!source.objectId) return undefined;
@@ -24,7 +24,9 @@ export function containingBarrier(
   return vessel?.vessel?.sealed && vessel.condition > 0 ? vessel : undefined;
 }
 
-export function advanceVesselWear(state: GameState): GameState {
+export function advanceVesselWear<State extends SiteSimulationState>(
+  state: State,
+): State {
   const damage = new Map<string, number>();
   for (const source of state.environment.sources) {
     if (source.enabled === false) continue;
@@ -61,7 +63,10 @@ export function advanceVesselWear(state: GameState): GameState {
   };
 }
 
-export function objectEmits(state: GameState, objectId: string): boolean {
+export function objectEmits(
+  state: SiteSimulationState,
+  objectId: string,
+): boolean {
   return state.environment.sources.some(
     (source) =>
       source.enabled !== false &&
@@ -74,7 +79,7 @@ export function objectEmits(state: GameState, objectId: string): boolean {
 }
 
 export function vesselWearRate(
-  state: GameState,
+  state: SiteSimulationState,
   vessel: PhysicalObject,
 ): number {
   if (!vessel.vessel || !vessel.vessel.sealed || vessel.condition <= 0)
@@ -98,7 +103,7 @@ export function vesselWearRate(
 }
 
 export function vesselTransitForecast(
-  state: GameState,
+  state: SiteSimulationState,
   vessel: PhysicalObject,
   minutes: number,
 ): string {

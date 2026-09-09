@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import type { PhysicalObject } from "./objects";
 import type { TilePosition } from "./world";
 
@@ -34,9 +34,9 @@ export interface PowerNetwork {
     readonly demand: number;
   }[];
 }
-const networks = new WeakMap<GameState, PowerNetwork>();
+const networks = new WeakMap<SiteSimulationState, PowerNetwork>();
 
-export function powerNetwork(state: GameState): PowerNetwork {
+export function powerNetwork(state: SiteSimulationState): PowerNetwork {
   const cached = networks.get(state);
   if (cached) return cached;
   const readings: Record<string, PowerReading> = {};
@@ -180,11 +180,11 @@ export function powerNetwork(state: GameState): PowerNetwork {
   return result;
 }
 
-export function setUtilityEnabled(
-  state: GameState,
+export function setUtilityEnabled<State extends SiteSimulationState>(
+  state: State,
   id: string,
   enabled: boolean,
-): GameState {
+): State {
   if (typeof enabled !== "boolean") return state;
   const item = state.objects.items.find((item) => item.id === id);
   if (

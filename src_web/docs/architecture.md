@@ -2,7 +2,7 @@
 
 This document defines the initial implementation boundaries for the web game. It is intentionally more stable than the folder layout: modules may move, but dependency direction and state ownership should remain explicit.
 
-Approved next direction: [persistent multi-site simulation](decisions/008-persistent-multi-site-simulation.md), with a [staged refactor plan](multi-site-refactor.md), tracked in [#24](https://github.com/HanClinto/SimFoundation/issues/24). The first internal checkpoint separates site/clock state types, makes the global coordinator supply the local tick clock, and passes combat withdrawal policy explicitly. Persistent site ownership is not implemented yet. The base/temporary-expedition descriptions below document current behavior, not the target architecture; site lifetime and simulation will become independent of expeditions and quests.
+Approved next direction: [persistent multi-site simulation](decisions/008-persistent-multi-site-simulation.md), with a [staged refactor plan](multi-site-refactor.md), tracked in [#24](https://github.com/HanClinto/SimFoundation/issues/24). The headless site collection and scoped application controller now run persistent sites through shared local systems and personal queue execution, without campaign fields in local state. Ownership, work isolation, replay and per-site incidents are tested. Browser bootstrap/save conversion and transfers are still pending; the base/temporary-expedition descriptions below document the current browser implementation rather than the target architecture. See the plan's implementation status for the exact remaining work.
 
 ## Goals
 

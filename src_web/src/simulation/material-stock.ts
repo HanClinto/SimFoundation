@@ -1,5 +1,5 @@
 import { authorizeJob } from "./jobs";
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import type { ObjectStore } from "./objects";
 
 export function availableMaterials(objects: ObjectStore): number {
@@ -16,7 +16,10 @@ export function availableMaterials(objects: ObjectStore): number {
   );
 }
 
-export function authorizeSiteWork(state: GameState, jobId: string): GameState {
+export function authorizeSiteWork<State extends SiteSimulationState>(
+  state: State,
+  jobId: string,
+): State {
   const job = state.jobs.find(({ id }) => id === jobId);
   if (!job) throw new Error(`Unknown job: ${jobId}`);
   if (job.status !== "proposed") return state;

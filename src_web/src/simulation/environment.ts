@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import { isElectrical } from "./power";
 import { blocksSpace } from "./spaces";
 import { advanceVesselWear, containingBarrier } from "./vessels";
@@ -62,10 +62,10 @@ export function surfaceOrderCost(
     : MATERIALS[order.material].cost;
 }
 
-export function cancelSurfaceWork(
-  state: GameState,
+export function cancelSurfaceWork<State extends SiteSimulationState>(
+  state: State,
   orderId: string,
-): GameState {
+): State {
   const order = state.environment.orders.find((order) => order.id === orderId);
   if (!order || !isActiveSurfaceOrder(order)) return state;
   if (order.phase === "delivering") {
@@ -127,7 +127,7 @@ export function cancelSurfaceWork(
 }
 
 export function surfaceChangeIssue(
-  state: GameState,
+  state: SiteSimulationState,
   position: TilePosition,
   layer: SurfaceLayer,
   operation: SurfaceOperation,
@@ -218,7 +218,7 @@ export interface ExposureSource {
   readonly objectId?: string;
 }
 export function exposurePosition(
-  state: GameState,
+  state: SiteSimulationState,
   source: ExposureSource,
 ): TilePosition | null {
   if (!source.objectId) return source.position;
@@ -238,7 +238,7 @@ export type ExposureCommandCode =
   | "not-found";
 
 export function exposureSourceIssue(
-  state: GameState,
+  state: SiteSimulationState,
   policy: ExposureSourcePolicy,
   id?: string,
 ): ExposureCommandCode | null {
@@ -285,11 +285,11 @@ export function exposureSourceIssue(
   return null;
 }
 
-export function setExposureSource(
-  state: GameState,
+export function setExposureSource<State extends SiteSimulationState>(
+  state: State,
   policy: ExposureSourcePolicy,
   id?: string,
-): { state: GameState; code: ExposureCommandCode } {
+): { state: State; code: ExposureCommandCode } {
   const issue = exposureSourceIssue(state, policy, id);
   if (issue) return { state, code: issue };
   let number = 1;
@@ -330,7 +330,10 @@ export function setExposureSource(
   };
 }
 
-export function removeExposureSource(state: GameState, id: string): GameState {
+export function removeExposureSource<State extends SiteSimulationState>(
+  state: State,
+  id: string,
+): State {
   if (!state.environment.sources.some((source) => source.id === id))
     return state;
   return {
@@ -365,7 +368,7 @@ export function neighbors(position: TilePosition): readonly TilePosition[] {
 }
 
 export function exposureTiles(
-  state: GameState,
+  state: SiteSimulationState,
   source: ExposureSource,
 ): readonly TilePosition[] {
   if (source.enabled === false || containingBarrier(state, source)) return [];
@@ -391,7 +394,9 @@ export function exposureTiles(
   }
   return reached;
 }
-export function advanceExposure(state: GameState): GameState {
+export function advanceExposure<State extends SiteSimulationState>(
+  state: State,
+): State {
   state = advanceVesselWear(state);
   const damage: SurfaceDamage[] = [];
   const electricalDamage = new Map<number, number>();
@@ -453,13 +458,13 @@ export type SurfaceOrderCode =
   | "occupied"
   | "unsupported"
   | "invalid-material";
-export function orderSurfaceWork(
-  state: GameState,
+export function orderSurfaceWork<State extends SiteSimulationState>(
+  state: State,
   position: TilePosition,
   layer: SurfaceLayer,
   material: MaterialId,
   operation: SurfaceOperation = "replace",
-): { state: GameState; code: SurfaceOrderCode } {
+): { state: State; code: SurfaceOrderCode } {
   if (!Object.hasOwn(MATERIALS, material))
     return { state, code: "invalid-material" };
   const issue = surfaceChangeIssue(state, position, layer, operation);
@@ -562,7 +567,9 @@ export function orderSurfaceWork(
   };
 }
 
-export function advanceSurfaceWork(state: GameState): GameState {
+export function advanceSurfaceWork<State extends SiteSimulationState>(
+  state: State,
+): State {
   let objects = state.objects;
   let jobs = [...state.jobs];
   let map = state.world.map;
@@ -712,7 +719,7 @@ export function advanceSurfaceWork(state: GameState): GameState {
     });
     return { ...order, phase: "completed", blockedReason: null };
   });
-  let result: GameState = {
+  let result: State = {
     ...state,
     objects,
     jobs,
@@ -725,7 +732,9 @@ export function advanceSurfaceWork(state: GameState): GameState {
   return result;
 }
 
-export function discoverSurfaceWork(state: GameState): GameState {
+export function discoverSurfaceWork<State extends SiteSimulationState>(
+  state: State,
+): State {
   if (!state.environment.automaticRepairs) return state;
   for (const [key, cell] of Object.entries(state.observations.knownSurfaces)) {
     if (state.environment.orders.filter(isActiveSurfaceOrder).length >= 16)
@@ -751,7 +760,9 @@ export function discoverSurfaceWork(state: GameState): GameState {
   return state;
 }
 
-export function observeStructuralDamage(state: GameState): GameState {
+export function observeStructuralDamage<State extends SiteSimulationState>(
+  state: State,
+): State {
   const structures = Object.values(state.observations.knownSurfaces).flatMap(
     (cell) => (cell.structure ? [cell.structure] : []),
   );

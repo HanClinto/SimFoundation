@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import { vesselReservesTile } from "./vessel-work";
 import {
   storageContains,
@@ -52,7 +52,7 @@ const activeOrder = (order: ObjectOrder) =>
   order.phase !== "completed" && order.phase !== "cancelled";
 
 export function objectPlacementIssue(
-  state: GameState,
+  state: SiteSimulationState,
   objectId: string,
   destination: TilePosition,
   orientation: ObjectOrientation,
@@ -185,7 +185,7 @@ export function objectPlacementIssue(
 }
 
 function workFace(
-  state: GameState,
+  state: SiteSimulationState,
   object: PhysicalObject,
   position: TilePosition,
   orientation: ObjectOrientation,
@@ -211,14 +211,14 @@ function workFace(
   );
 }
 
-export function orderObjectMove(
-  state: GameState,
+export function orderObjectMove<State extends SiteSimulationState>(
+  state: State,
   objectId: string,
   destination: TilePosition,
   orientation: ObjectOrientation,
   install = true,
   quantity?: number,
-): { state: GameState; code: ObjectCommandCode } {
+): { state: State; code: ObjectCommandCode } {
   const object = state.objects.items.find((item) => item.id === objectId);
   if (!object || object.location.kind === "consumed")
     return { state, code: "not-found" };
@@ -309,7 +309,10 @@ export function orderObjectMove(
   };
 }
 
-export function cancelObjectMove(state: GameState, orderId: string): GameState {
+export function cancelObjectMove<State extends SiteSimulationState>(
+  state: State,
+  orderId: string,
+): State {
   const order = state.objectOrders.find((order) => order.id === orderId);
   if (!order || order.phase !== "pickup") return state;
   return refreshMealSummary({
@@ -329,7 +332,9 @@ export function cancelObjectMove(state: GameState, orderId: string): GameState {
   });
 }
 
-export function advanceObjectWork(state: GameState): GameState {
+export function advanceObjectWork<State extends SiteSimulationState>(
+  state: State,
+): State {
   let objects = state.objects;
   let jobs = [...state.jobs];
   const orders = state.objectOrders.map((order): ObjectOrder => {

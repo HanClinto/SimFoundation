@@ -17,7 +17,7 @@ import {
 import { advanceJobs } from "./jobs";
 import { advancePersonnel } from "./personnel";
 import { advanceScp999 } from "./scp-999";
-import type { GameState, SimulationClock } from "./state";
+import type { GameState, SimulationClock, SiteSimulationState } from "./state";
 import { discoverClinicalWork } from "./clinical";
 import { advanceRoutines, routineUnavailableIds } from "./routines";
 
@@ -55,10 +55,11 @@ export function advanceSimulation(state: GameState): GameState {
   );
 }
 
-export function advanceSiteSimulation(
-  state: GameState,
+export function advanceSiteSimulation<State extends SiteSimulationState>(
+  state: State,
   clock: SimulationClock,
-): GameState {
+  withdrawal: "distance" | "explicit" = "distance",
+): State {
   const { tick } = clock;
   state = {
     ...state,
@@ -74,7 +75,7 @@ export function advanceSiteSimulation(
       ),
     ]),
   };
-  state = advanceCombat({ ...state, ...clock });
+  state = advanceCombat({ ...state, ...clock }, withdrawal);
   state = advanceRoutines(
     refreshMealSummary(
       discoverClinicalWork({
@@ -109,20 +110,16 @@ export function advanceSiteSimulation(
       );
     },
   );
-  const scp999Result = advanceScp999(
-    state.scp999,
-    jobResult.personnel,
-    tick,
-    jobResult.world,
-    [
-      ...state.personnel
-        .filter((person) => tacticallyUnavailable(state, person.id))
-        .map((person) => person.id),
-      ...Object.entries(state.routines.activities)
-        .filter(([, activity]) => activity.kind !== "break")
-        .map(([id]) => id),
-    ],
-  );
+  const scp999Result = state.scp999
+    ? advanceScp999(state.scp999, jobResult.personnel, tick, jobResult.world, [
+        ...state.personnel
+          .filter((person) => tacticallyUnavailable(state, person.id))
+          .map((person) => person.id),
+        ...Object.entries(state.routines.activities)
+          .filter(([, activity]) => activity.kind !== "break")
+          .map(([id]) => id),
+      ])
+    : { anomaly: null, personnel: jobResult.personnel, world: jobResult.world };
   return refreshMealSummary(
     discoverStorageWork(
       discoverSurfaceWork(

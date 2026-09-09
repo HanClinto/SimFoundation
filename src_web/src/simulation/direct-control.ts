@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { GameState, SiteSimulationState } from "./state";
 import { draftResponder, orderResponder, type TacticalCode } from "./combat";
 import { expeditionMember, fieldState, storeFieldState } from "./expeditions";
 import type { TilePosition } from "./world";
@@ -31,6 +31,28 @@ export function goHere(
       : expeditionMember(state, personId)
   )
     return { state, code: "busy" };
+  const result = goHereAtSite(local, mapId, personId, destination);
+  return result.code === "accepted"
+    ? {
+        code: result.code,
+        state: field ? storeFieldState(state, result.state) : result.state,
+      }
+    : { state, code: result.code };
+}
+
+export function goHereAtSite<State extends SiteSimulationState>(
+  state: State,
+  mapId: string,
+  personId: string,
+  destination: TilePosition,
+): { state: State; code: TacticalCode } {
+  if (
+    state.world.map.id !== mapId ||
+    !state.world.positions[personId] ||
+    !state.personnel.some((person) => person.id === personId)
+  )
+    return { state, code: "not-found" };
+  const local = state;
   const responder = local.combat.responders[personId];
   const temporary = !responder?.drafted || responder.returnToAutonomy === true;
   const drafted = responder?.drafted
@@ -54,6 +76,6 @@ export function goHere(
   };
   return {
     code: "accepted",
-    state: field ? storeFieldState(state, next) : next,
+    state: next,
   };
 }

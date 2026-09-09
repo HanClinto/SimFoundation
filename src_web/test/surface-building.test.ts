@@ -14,7 +14,7 @@ import { removeStorageArea, setStorageArea } from "../src/simulation/storage";
 import { cameraPlacementIssue } from "../src/simulation/observations";
 
 it("workers pave soil, build a barrier, remove it, and install an automatic door using finite stock", () => {
-  let state = createInitialState();
+  let state: ReturnType<typeof createInitialState> = createInitialState();
   const position = { x: 63, y: 79 };
   for (const operation of [
     "floor",
@@ -120,7 +120,7 @@ it("rejects unsupported, occupied and conflicting footprint work without spendin
 
 it("waits for late obstructions before fitting without consuming supplies", () => {
   const position = { x: 59, y: 65 };
-  let state = orderSurfaceWork(
+  let state: ReturnType<typeof createInitialState> = orderSurfaceWork(
     createInitialState(),
     position,
     "structure",
@@ -256,7 +256,7 @@ it("allows remodeling the former material-store tile after its supplies and desi
       ),
     },
   };
-  let state = orderSurfaceWork(
+  let state: ReturnType<typeof createInitialState> = orderSurfaceWork(
     relocated,
     { x: 67, y: 68 },
     "structure",

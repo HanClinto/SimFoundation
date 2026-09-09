@@ -119,7 +119,10 @@ it("validates source policies and avoids ID collisions after removal without ali
   ).toBe("invalid-position");
   expect(setExposureSource(initial, policy, "missing").code).toBe("not-found");
   const draft = { ...policy, position: { ...policy.position } };
-  let state = setExposureSource(initial, draft).state;
+  let state: ReturnType<typeof createInitialState> = setExposureSource(
+    initial,
+    draft,
+  ).state;
   draft.position.x = 0;
   expect(state.environment.sources[0]!.position.x).toBe(60);
   state = setExposureSource(state, policy).state;
@@ -154,7 +157,7 @@ it("automatic containment maintenance ignores floor damage", () => {
 
 it("lets a generic source trigger observed barrier failure and physical maintenance recovery", () => {
   const initial = createInitialState();
-  let state = setExposureSource(
+  let state: ReturnType<typeof createInitialState> = setExposureSource(
     {
       ...initial,
       world: {
@@ -217,7 +220,10 @@ it("lets a generic source trigger observed barrier failure and physical maintena
 });
 
 it("can disable an existing source after construction blocks its tile", () => {
-  let state = setExposureSource(createInitialState(), policy).state;
+  let state: ReturnType<typeof createInitialState> = setExposureSource(
+    createInitialState(),
+    policy,
+  ).state;
   state = {
     ...state,
     world: {

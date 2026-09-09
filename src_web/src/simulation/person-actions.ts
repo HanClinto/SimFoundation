@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { GameState, SiteSimulationState } from "./state";
 import type { TilePosition } from "./world";
 import { draftResponder } from "./combat";
 import { fieldState } from "./expeditions";
@@ -211,7 +211,7 @@ export function cancelPersonAction(
 }
 
 export function automaticAction(
-  state: GameState,
+  state: SiteSimulationState,
   actorId: string,
 ): AutomaticAction | null {
   const person = state.personnel.find((entry) => entry.id === actorId);
@@ -268,7 +268,7 @@ export function automaticAction(
 }
 
 export function manualActionWaiting(
-  state: GameState,
+  state: SiteSimulationState,
   actorId: string,
 ): boolean {
   return (

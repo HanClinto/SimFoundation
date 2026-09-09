@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import { objectEmits } from "./vessels";
 import { vesselReservesTile } from "./vessel-work";
 import { isActiveSurfaceOrder } from "./environment";
@@ -25,7 +25,7 @@ export interface StorageArea {
   readonly emission?: "any" | "none" | "active";
 }
 export function storageAccepts(
-  state: GameState,
+  state: SiteSimulationState,
   area: StorageArea,
   item: PhysicalObject,
 ): boolean {
@@ -100,7 +100,7 @@ export function storageContains(
   );
 }
 export function storedObjects(
-  state: GameState,
+  state: SiteSimulationState,
   area: StorageArea,
 ): readonly PhysicalObject[] {
   return state.objects.items.filter(
@@ -119,13 +119,16 @@ export function storedObjects(
       storageContains(area, item.location.position),
   );
 }
-export function storageQuantity(state: GameState, area: StorageArea): number {
+export function storageQuantity(
+  state: SiteSimulationState,
+  area: StorageArea,
+): number {
   return storedObjects(state, area).reduce(
     (sum, item) => sum + item.quantity,
     0,
   );
 }
-export function servingMealCount(state: GameState): number {
+export function servingMealCount(state: SiteSimulationState): number {
   return state.objects.items
     .filter(
       (item) =>
@@ -144,7 +147,7 @@ export function servingMealCount(state: GameState): number {
     .reduce((sum, item) => sum + item.quantity, 0);
 }
 export function mealCollectionPoint(
-  state: GameState,
+  state: SiteSimulationState,
   origin: TilePosition,
 ): TilePosition | null {
   return (
@@ -206,7 +209,7 @@ export type StorageCommandCode =
   | "not-found";
 export type StoragePolicy = Omit<StorageArea, "id">;
 export function incomingQuantity(
-  state: GameState,
+  state: SiteSimulationState,
   area: StorageArea,
   exceptObject?: string,
 ): number {
@@ -235,7 +238,7 @@ export function incomingQuantity(
     }, 0);
 }
 export function storagePlacementIssue(
-  state: GameState,
+  state: SiteSimulationState,
   policy: StoragePolicy,
   id?: string,
 ): StorageCommandCode | null {
@@ -330,11 +333,11 @@ export function storagePlacementIssue(
     return "occupied";
   return null;
 }
-export function setStorageArea(
-  state: GameState,
+export function setStorageArea<State extends SiteSimulationState>(
+  state: State,
   policy: StoragePolicy,
   id?: string,
-): { state: GameState; code: StorageCommandCode } {
+): { state: State; code: StorageCommandCode } {
   const issue = storagePlacementIssue(state, policy, id);
   if (issue) return { state, code: issue };
   const area = {
@@ -360,10 +363,10 @@ export function setStorageArea(
     }),
   };
 }
-export function removeStorageArea(
-  state: GameState,
+export function removeStorageArea<State extends SiteSimulationState>(
+  state: State,
   id: string,
-): { state: GameState; code: StorageCommandCode } {
+): { state: State; code: StorageCommandCode } {
   const area = state.storage.areas.find((area) => area.id === id);
   if (!area) return { state, code: "not-found" };
   if (
@@ -387,7 +390,9 @@ export function removeStorageArea(
     }),
   };
 }
-export function refreshMealSummary(state: GameState): GameState {
+export function refreshMealSummary<State extends SiteSimulationState>(
+  state: State,
+): State {
   const pantryMeals = servingMealCount(state);
   const meals = state.objects.items
     .filter(
@@ -406,7 +411,9 @@ export function refreshMealSummary(state: GameState): GameState {
     },
   };
 }
-export function discoverStorageWork(state: GameState): GameState {
+export function discoverStorageWork<State extends SiteSimulationState>(
+  state: State,
+): State {
   const reasons: Record<string, string> = {};
   for (const area of state.storage.areas) {
     if (!area.enabled) continue;
@@ -501,7 +508,10 @@ export function discoverStorageWork(state: GameState): GameState {
   return { ...state, storage: { ...state.storage, blockedReasons: reasons } };
 }
 
-export function storageStatus(state: GameState, area: StorageArea): string {
+export function storageStatus(
+  state: SiteSimulationState,
+  area: StorageArea,
+): string {
   if (!area.enabled) return "Paused";
   const mismatches = storedObjects(state, area).filter(
     (item) => !storageAccepts(state, area, item),

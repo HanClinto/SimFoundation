@@ -1,5 +1,5 @@
 import PF from "pathfinding";
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import { powerNetwork } from "./power";
 import { vesselReservesTile } from "./vessel-work";
 import { isActiveSurfaceOrder } from "./environment";
@@ -150,7 +150,9 @@ export function createSiteObservations(world: SiteWorld): SiteObservations {
   };
 }
 
-export function observeSite(state: GameState): GameState {
+export function observeSite<State extends SiteSimulationState>(
+  state: State,
+): State {
   const map = state.world.map;
   const power = powerNetwork(state);
   const sensors = [
@@ -252,7 +254,7 @@ export function observeSite(state: GameState): GameState {
           canObserve(map, sensor.position, position, sensor.range),
         )
         .map(({ id }) => id),
-      activity: person?.activity ?? state.scp999.status,
+      activity: person?.activity ?? state.scp999?.status ?? "Unknown activity",
       moodAppearance: psychology?.moodAppearance ?? null,
       sanityAppearance: psychology?.sanityAppearance ?? null,
       blockedReason: state.routines.blockedReasons[id] ?? null,
@@ -296,7 +298,10 @@ export function observeSite(state: GameState): GameState {
   };
 }
 
-export function cameraInstalled(state: GameState, camera: SiteCamera): boolean {
+export function cameraInstalled(
+  state: SiteSimulationState,
+  camera: SiteCamera,
+): boolean {
   return (
     camera.installJobId === null ||
     state.jobs.some(
@@ -305,11 +310,11 @@ export function cameraInstalled(state: GameState, camera: SiteCamera): boolean {
   );
 }
 
-export function setCameraEnabled(
-  state: GameState,
+export function setCameraEnabled<State extends SiteSimulationState>(
+  state: State,
   cameraId: string,
   enabled: boolean,
-): GameState {
+): State {
   if (!state.observations.cameras.some(({ id }) => id === cameraId))
     throw new Error(`Unknown camera: ${cameraId}`);
   return observeSite({
@@ -330,7 +335,7 @@ export type CameraPlacementCode =
   | "occupied"
   | "no-kits";
 export function cameraPlacementIssue(
-  state: GameState,
+  state: SiteSimulationState,
   position: TilePosition,
 ): CameraPlacementCode | null {
   if (vesselReservesTile(state, position)) return "occupied";
@@ -366,10 +371,10 @@ export function cameraPlacementIssue(
   return state.observations.cameraKits === 0 ? "no-kits" : null;
 }
 
-export function installCamera(
-  state: GameState,
+export function installCamera<State extends SiteSimulationState>(
+  state: State,
   position: TilePosition,
-): { readonly state: GameState; readonly code: CameraPlacementCode } {
+): { readonly state: State; readonly code: CameraPlacementCode } {
   const issue = cameraPlacementIssue(state, position);
   if (issue) return { state, code: issue };
   const number = state.observations.cameras.length + 1;

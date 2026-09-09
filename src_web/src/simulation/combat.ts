@@ -1,4 +1,4 @@
-import type { GameState } from "./state";
+import type { SiteSimulationState } from "./state";
 import type { InjuryCause } from "./personnel";
 import { recordDoorOpening } from "./action-progress";
 import {
@@ -109,13 +109,16 @@ export const createCombatState = (): CombatState => ({
 });
 const distance = (first: TilePosition, second: TilePosition) =>
   Math.hypot(first.x - second.x, first.y - second.y);
-export function tacticallyUnavailable(state: GameState, id: string): boolean {
+export function tacticallyUnavailable(
+  state: SiteSimulationState,
+  id: string,
+): boolean {
   const responder = state.combat.responders[id];
   return !!responder && (responder.drafted || responder.incapacitated);
 }
 
 export function previewDraftResponder(
-  state: GameState,
+  state: SiteSimulationState,
   id: string,
   drafted: boolean,
 ): { code: TacticalCode; reason: string | null } {
@@ -179,11 +182,11 @@ export function previewDraftResponder(
   return { code: "accepted", reason: null };
 }
 
-export function draftResponder(
-  state: GameState,
+export function draftResponder<State extends SiteSimulationState>(
+  state: State,
   id: string,
   drafted: boolean,
-): { state: GameState; code: TacticalCode } {
+): { state: State; code: TacticalCode } {
   const preview = previewDraftResponder(state, id, drafted);
   if (preview.code !== "accepted") return { state, code: preview.code };
   const responder = state.combat.responders[id] ?? readyResponder();
@@ -237,13 +240,13 @@ export function draftResponder(
   };
 }
 
-export function orderResponder(
-  state: GameState,
+export function orderResponder<State extends SiteSimulationState>(
+  state: State,
   id: string,
   order: TacticalOrder,
   destination?: TilePosition,
   targetId?: string,
-): { state: GameState; code: TacticalCode } {
+): { state: State; code: TacticalCode } {
   const responder = state.combat.responders[id];
   if (!responder?.drafted) return { state, code: "not-drafted" };
   if (responder.incapacitated) return { state, code: "incapacitated" };
@@ -319,7 +322,9 @@ export function orderResponder(
   };
 }
 
-export function advanceTacticalMovement(state: GameState): GameState {
+export function advanceTacticalMovement<State extends SiteSimulationState>(
+  state: State,
+): State {
   let world = state.world;
   const responders = { ...state.combat.responders };
   const activities = new Map<string, string>();
@@ -377,10 +382,10 @@ export function advanceTacticalMovement(state: GameState): GameState {
   };
 }
 
-export function startEncounter(
-  state: GameState,
+export function startEncounter<State extends SiteSimulationState>(
+  state: State,
   position: TilePosition,
-): { state: GameState; code: TacticalCode } {
+): { state: State; code: TacticalCode } {
   const participants = Object.keys(state.combat.responders)
     .filter(
       (id) =>
@@ -455,7 +460,10 @@ export function startEncounter(
   };
 }
 
-export function engagementIssue(state: GameState, id: string): string | null {
+export function engagementIssue(
+  state: SiteSimulationState,
+  id: string,
+): string | null {
   const responder = state.combat.responders[id];
   const adversary = state.combat.adversary;
   if (!responder?.drafted || responder.incapacitated)
@@ -474,7 +482,7 @@ export function engagementIssue(state: GameState, id: string): string | null {
 }
 
 function attackRoute(
-  state: GameState,
+  state: SiteSimulationState,
   id: string,
 ): readonly TilePosition[] | null {
   const origin = state.world.positions[id]!;
@@ -517,10 +525,10 @@ function attackRoute(
   return best;
 }
 
-export function advanceCombat(
-  state: GameState,
+export function advanceCombat<State extends SiteSimulationState>(
+  state: State,
   withdrawal: "distance" | "explicit" = "distance",
-): GameState {
+): State {
   for (const [id, responder] of Object.entries(state.combat.responders)) {
     if (
       responder.returnToAutonomy &&
@@ -993,7 +1001,9 @@ export function advanceCombat(
   };
 }
 
-export function observeCombat(state: GameState): GameState {
+export function observeCombat<State extends SiteSimulationState>(
+  state: State,
+): State {
   const adversary = state.combat.adversary;
   if (
     !adversary ||

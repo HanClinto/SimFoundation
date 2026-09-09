@@ -2,7 +2,7 @@
 
 ## Status
 
-Direction approved by the user on 2026-09-09; implementation started in [#24](https://github.com/HanClinto/SimFoundation/issues/24). The first checkpoint extracts site/clock types and explicit clock/withdrawal inputs; persistent multi-site ownership is not implemented yet. The staged [refactor plan](../multi-site-refactor.md) records contracts, status and acceptance gates. This decision supersedes the temporary-location lifetime and base/field asymmetry in decisions 003 and 007; their descriptions remain historical records of the current implementation.
+Direction approved by the user on 2026-09-09; implementation started in [#24](https://github.com/HanClinto/SimFoundation/issues/24). The headless site collection, local-system runner, site-owned queues and scoped application controller are implemented and tested; browser/save cutover and transfers remain pending. The staged [refactor plan](../multi-site-refactor.md) records contracts, status and acceptance gates. This decision supersedes the temporary-location lifetime and base/field asymmetry in decisions 003 and 007; their descriptions remain historical records of the current browser implementation.
 
 ## Context
 

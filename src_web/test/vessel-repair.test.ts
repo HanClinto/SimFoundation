@@ -20,7 +20,7 @@ function verifySave(state: ReturnType<typeof createInitialState>) {
 }
 
 function wornCase() {
-  let state = craftVessel(
+  let state: ReturnType<typeof createInitialState> = craftVessel(
     createInitialState(),
     { x: 66, y: 65 },
     "steel",
@@ -47,7 +47,7 @@ it("repairs the existing empty open case through physical material delivery and 
   const initial = wornCase();
   const queued = orderVesselAction(initial, "vessel-1", "repair");
   expect(queued.code).toBe("accepted");
-  let state = queued.state;
+  let state: ReturnType<typeof createInitialState> = queued.state;
   expect(availableMaterials(state.objects)).toBe(136);
   verifySave(state);
   expect(
@@ -82,7 +82,11 @@ it("repairs the existing empty open case through physical material delivery and 
 });
 
 it("cancels unused repair stock once and retains transported stock until delivery", () => {
-  let state = orderVesselAction(wornCase(), "vessel-1", "repair").state;
+  let state: ReturnType<typeof createInitialState> = orderVesselAction(
+    wornCase(),
+    "vessel-1",
+    "repair",
+  ).state;
   const orderId = state.vesselWork.orders.at(-1)!.id;
   const cancelled = cancelVesselWork(state, orderId);
   expect(availableMaterials(cancelled.objects)).toBe(144);

@@ -1,9 +1,11 @@
 import { observeStructuralDamage } from "./environment";
-import type { GameState, IncidentState } from "./state";
+import type { SiteSimulationState, IncidentState } from "./state";
 
 export const VESSEL_WARNING_INTEGRITY = 25;
 
-export function recordedVesselIncident(state: GameState): IncidentState | null {
+export function recordedVesselIncident(
+  state: SiteSimulationState,
+): IncidentState | null {
   const vessels = Object.values(state.observations.objects)
     .map((observation) => observation.object)
     .filter(
@@ -26,7 +28,9 @@ export function recordedVesselIncident(state: GameState): IncidentState | null {
     : null;
 }
 
-export function observeFacilityIncidents(state: GameState): GameState {
+export function observeFacilityIncidents<State extends SiteSimulationState>(
+  state: State,
+): State {
   const ownIncident = [
     "Structural damage:",
     "Vessel condition:",
