@@ -8,6 +8,11 @@ import {
   type SiteSetup,
 } from "../simulation/sites";
 import type { IncidentLevel } from "../simulation/state";
+import {
+  dispatchFreight,
+  returnFreight,
+  type FreightRequest,
+} from "../simulation/site-transfers";
 import { siteActions } from "../simulation/site-actions";
 import type { ActionIntent } from "../simulation/action-queue-core";
 import {
@@ -35,6 +40,8 @@ import type { MaterialId, SurfaceLayer } from "../simulation/materials";
 import { objectFootprint, type ObjectOrientation } from "../simulation/objects";
 
 export type SimulationCommand =
+  | { readonly kind: "dispatch-freight"; readonly request: FreightRequest }
+  | { readonly kind: "return-freight"; readonly transferId: string }
   | {
       readonly kind: "queue-action";
       readonly siteId: string;
@@ -183,6 +190,17 @@ export function createSimulationController(initial: SimulationState) {
       return getSnapshot();
     },
     dispatch(command: SimulationCommand) {
+      if (
+        command.kind === "dispatch-freight" ||
+        command.kind === "return-freight"
+      ) {
+        const result =
+          command.kind === "dispatch-freight"
+            ? dispatchFreight(simulation, command.request)
+            : returnFreight(simulation, command.transferId);
+        if (!result.reason) commit(result.state);
+        return { snapshot: publish(), reason: result.reason };
+      }
       if (command.kind === "create-site") {
         const result = createSite(simulation, command.setup);
         if (!result.reason) commit(result.state);

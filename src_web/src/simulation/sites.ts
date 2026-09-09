@@ -6,11 +6,19 @@ import type { SiteSimulationState, SiteState, SimulationClock } from "./state";
 import { advanceSiteSimulation } from "./tick";
 import { siteActions } from "./site-actions";
 import { tileAt, type TileKind } from "./world";
+import {
+  advanceSiteTransfers,
+  type SiteTransfer,
+  type TransferHistory,
+} from "./site-transfers";
 
 export interface SimulationState extends SimulationClock {
   readonly seed: number;
   readonly nextSiteId: number;
   readonly sites: Readonly<Record<string, SiteState>>;
+  readonly nextTransferId: number;
+  readonly transfers: Readonly<Record<string, SiteTransfer>>;
+  readonly transferHistory: readonly TransferHistory[];
 }
 
 export interface SiteSetup {
@@ -25,7 +33,16 @@ export interface SiteResult {
 }
 
 export function createSimulation(seed = 9620): SimulationState {
-  return { seed, tick: 0, gameMinute: 480, nextSiteId: 1, sites: {} };
+  return {
+    seed,
+    tick: 0,
+    gameMinute: 480,
+    nextSiteId: 1,
+    sites: {},
+    nextTransferId: 1,
+    transfers: {},
+    transferHistory: [],
+  };
 }
 
 export function createSite(
@@ -170,6 +187,32 @@ export function updateSite(
 }
 
 export function siteOwnershipIssue(state: SimulationState): string | null {
+  if (
+    !Number.isSafeInteger(state.nextSiteId) ||
+    state.nextSiteId < 1 ||
+    !Number.isSafeInteger(state.nextTransferId) ||
+    state.nextTransferId < 1 ||
+    !Number.isSafeInteger(state.tick) ||
+    state.tick < 0 ||
+    !Number.isSafeInteger(state.gameMinute) ||
+    state.gameMinute < 0
+  )
+    return "Invalid global clock or identity allocator.";
+  const historyIds = new Set(state.transferHistory.map((entry) => entry.id));
+  if (historyIds.size !== state.transferHistory.length)
+    return "Transfer completion identities must be unique.";
+  for (const id of [...Object.keys(state.transfers), ...historyIds]) {
+    const match = /^transfer-([1-9]\d*)$/.exec(id);
+    if (!match || Number(match[1]) >= state.nextTransferId)
+      return "Transfer identity allocator would reuse an existing identity.";
+    if (state.transfers[id] && historyIds.has(id))
+      return "A completed transfer cannot still own a payload.";
+  }
+  for (const siteId of Object.keys(state.sites)) {
+    const match = /^site-([1-9]\d*)$/.exec(siteId);
+    if (match && Number(match[1]) >= state.nextSiteId)
+      return "Site identity allocator would reuse an existing identity.";
+  }
   const owners = new Map<string, string>();
   for (const [siteId, site] of Object.entries(state.sites)) {
     if (site.world.map.id !== siteId)
@@ -266,6 +309,74 @@ export function siteOwnershipIssue(state: SimulationState): string | null {
     )
       return "Queued actions must belong to this site and its people.";
   }
+  for (const [transferId, transfer] of Object.entries(state.transfers)) {
+    if (
+      !Number.isSafeInteger(transfer.departedAt) ||
+      transfer.departedAt < 0 ||
+      transfer.departedAt > state.tick ||
+      !Number.isSafeInteger(transfer.arrivesAt) ||
+      transfer.arrivesAt < transfer.departedAt ||
+      !Number.isInteger(transfer.duration) ||
+      transfer.duration < 1 ||
+      transfer.duration > 1440
+    )
+      return "Transfer deadlines must be valid global simulation times.";
+    const people = new Set<string>();
+    for (const person of transfer.personnel) {
+      if (owners.has(person.id))
+        return `Entity ${person.id} has more than one owner.`;
+      owners.set(person.id, transferId);
+      people.add(person.id);
+      if (person.currentJobId)
+        return "Travelling personnel cannot own local work.";
+    }
+    if (
+      Object.keys(transfer.responders).some(
+        (personId) => !people.has(personId),
+      ) ||
+      Object.keys(transfer.schedules).some((personId) => !people.has(personId))
+    )
+      return "Transit personal state requires an owned person.";
+    if (
+      transfer.id !== transferId ||
+      !state.sites[transfer.originId] ||
+      !state.sites[transfer.destinationId]
+    )
+      return "Transfer endpoints must exist.";
+    const objects = new Map(
+      transfer.objects.items.map((item) => [item.id, item]),
+    );
+    for (const item of transfer.objects.items) {
+      if (owners.has(item.id))
+        return `Entity ${item.id} has more than one owner.`;
+      owners.set(item.id, transferId);
+      if (item.location.kind === "transit") {
+        if (item.location.orderId !== transferId)
+          return "Transit payload belongs to another transfer.";
+      } else if (item.location.kind === "contained") {
+        const vessel = objects.get(item.location.vesselId);
+        if (
+          !vessel ||
+          vessel.kind !== "vessel" ||
+          vessel.location.kind !== "transit"
+        )
+          return "Contained transit cargo needs its vessel.";
+      } else return "Transit payload cannot have a site location.";
+      if (
+        item.reservedBy ||
+        item.installed ||
+        !Number.isInteger(item.quantity) ||
+        item.quantity <= 0
+      )
+        return "Invalid transit cargo state.";
+    }
+    if (
+      transfer.environment.sources.some(
+        (source) => !source.objectId || !objects.has(source.objectId),
+      )
+    )
+      return "Transit sources require a payload host.";
+  }
   return null;
 }
 
@@ -284,7 +395,7 @@ export function advanceSites(state: SimulationState): SimulationState {
       ),
     );
   }
-  const next = { ...state, ...clock, sites };
+  const next = advanceSiteTransfers({ ...state, ...clock, sites });
   const afterIssue = siteOwnershipIssue(next);
   if (afterIssue) throw new Error(afterIssue);
   return next;
@@ -296,6 +407,13 @@ export function siteDisposalReason(
 ): string | null {
   const site = state.sites[siteId];
   if (!site) return "This site no longer exists.";
+  if (
+    Object.values(state.transfers).some(
+      (transfer) =>
+        transfer.originId === siteId || transfer.destinationId === siteId,
+    )
+  )
+    return "Wait for active transfers before disposing this site.";
   if (
     site.personnel.length ||
     site.scp999 ||

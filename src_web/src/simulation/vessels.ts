@@ -4,7 +4,7 @@ import type { ExposureSource } from "./environment";
 import type { PhysicalObject } from "./objects";
 
 export function containingVessel(
-  state: SiteSimulationState,
+  state: Pick<SiteSimulationState, "objects">,
   objectId: string,
 ): PhysicalObject | undefined {
   const object = state.objects.items.find((item) => item.id === objectId);
@@ -16,7 +16,7 @@ export function containingVessel(
 }
 
 export function containingBarrier(
-  state: SiteSimulationState,
+  state: Pick<SiteSimulationState, "objects">,
   source: ExposureSource,
 ): PhysicalObject | undefined {
   if (!source.objectId) return undefined;
@@ -24,9 +24,9 @@ export function containingBarrier(
   return vessel?.vessel?.sealed && vessel.condition > 0 ? vessel : undefined;
 }
 
-export function advanceVesselWear<State extends SiteSimulationState>(
-  state: State,
-): State {
+export function advanceVesselWear<
+  State extends Pick<SiteSimulationState, "objects" | "environment">,
+>(state: State): State {
   const damage = new Map<string, number>();
   for (const source of state.environment.sources) {
     if (source.enabled === false) continue;

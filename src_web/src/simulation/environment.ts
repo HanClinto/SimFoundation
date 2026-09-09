@@ -293,9 +293,10 @@ export function setExposureSource<State extends SiteSimulationState>(
   const issue = exposureSourceIssue(state, policy, id);
   if (issue) return { state, code: issue };
   let number = 1;
+  const prefix = state.objects.idPrefix ?? "";
   while (
     state.environment.sources.some(
-      (source) => source.id === `exposure-${number}`,
+      (source) => source.id === `${prefix}exposure-${number}`,
     )
   )
     number += 1;
@@ -312,7 +313,7 @@ export function setExposureSource<State extends SiteSimulationState>(
         : policy.position),
     },
     enabled: policy.enabled ?? true,
-    id: id ?? `exposure-${number}`,
+    id: id ?? `${prefix}exposure-${number}`,
   };
   return {
     code: "accepted",
