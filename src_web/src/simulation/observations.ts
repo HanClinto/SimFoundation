@@ -48,10 +48,15 @@ export interface SiteObservations {
   readonly visibleEntityIds: readonly string[];
   readonly entities: Readonly<Record<string, EntityObservation>>;
   readonly knownRooms: readonly SiteRoom[];
-  readonly scp999: {
-    readonly state: Scp999State;
-    readonly observedTick: number;
-  } | null;
+  readonly entityStates: Readonly<
+    Record<
+      string,
+      {
+        readonly state: Scp999State;
+        readonly observedTick: number;
+      }
+    >
+  >;
   readonly cameras: readonly SiteCamera[];
   readonly cameraKits: number;
 }
@@ -119,7 +124,7 @@ export function createSiteObservations(world: SiteWorld): SiteObservations {
     visibleEntityIds: [],
     entities: {},
     knownRooms: structuredClone(world.map.rooms),
-    scp999: null,
+    entityStates: {},
     cameraKits: 3,
     cameras: [
       {
@@ -213,6 +218,7 @@ export function observeSite<State extends SiteSimulationState>(
     tileLastSeen[index] = state.tick;
   }
   const entities = { ...state.observations.entities };
+  const entityStates = { ...state.observations.entityStates };
   const objects = { ...state.observations.objects };
   for (const [id, observation] of Object.entries(objects)) {
     const position = objectPosition(observation.object, state.world.positions);
@@ -254,12 +260,22 @@ export function observeSite<State extends SiteSimulationState>(
           canObserve(map, sensor.position, position, sensor.range),
         )
         .map(({ id }) => id),
-      activity: person?.activity ?? state.scp999?.status ?? "Unknown activity",
+      activity:
+        person?.activity ??
+        state.entities.find((entity) => entity.id === id)?.status ??
+        "Unknown activity",
       moodAppearance: psychology?.moodAppearance ?? null,
       sanityAppearance: psychology?.sanityAppearance ?? null,
       blockedReason: state.routines.blockedReasons[id] ?? null,
     };
     visibleEntityIds.push(id);
+  }
+  for (const entity of state.entities) {
+    if (visibleEntityIds.includes(entity.id))
+      entityStates[entity.id] = {
+        state: structuredClone(entity),
+        observedTick: state.tick,
+      };
   }
   const rooms = new Map(
     state.observations.knownRooms.map((room) => [room.id, room]),
@@ -291,9 +307,7 @@ export function observeSite<State extends SiteSimulationState>(
       visibleEntityIds,
       entities,
       knownRooms: [...rooms.values()],
-      scp999: visibleEntityIds.includes("SCP-999")
-        ? { state: structuredClone(state.scp999), observedTick: state.tick }
-        : state.observations.scp999,
+      entityStates,
     },
   };
 }

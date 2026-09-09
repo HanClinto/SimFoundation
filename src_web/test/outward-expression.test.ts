@@ -33,7 +33,7 @@ describe("outward expression and local social perception", () => {
       ...person,
       stress: person.id === "person-emil-novak" ? 100 : 0,
     }));
-    const result = advanceScp999(state.scp999, people, 1, state.world);
+    const result = advanceScp999(state.entities[0]!, people, 1, state.world);
     expect(result.anomaly.targetPersonId).toBeNull();
   });
   it("can greet a nearby content person without a stress threshold", () => {
@@ -46,7 +46,7 @@ describe("outward expression and local social perception", () => {
         "person-mara-voss": { x: 58, y: 66 },
       },
     };
-    const result = advanceScp999(state.scp999, people, 1, world);
+    const result = advanceScp999(state.entities[0]!, people, 1, world);
     expect(result.anomaly).toMatchObject({
       status: "comforting",
       targetPersonId: "person-mara-voss",

@@ -222,11 +222,13 @@ describe("pawn map cues", () => {
     });
     const social = {
       ...initial,
-      scp999: {
-        ...initial.scp999,
-        status: "comforting" as const,
-        targetPersonId: person.id,
-      },
+      entities: [
+        {
+          ...initial.entities[0]!,
+          status: "comforting" as const,
+          targetPersonId: person.id,
+        },
+      ],
     };
     expect(pawnCues(social, person.id, "world")[0]).toMatchObject({
       kind: "speech",

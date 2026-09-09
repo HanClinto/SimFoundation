@@ -186,15 +186,15 @@ describe("facility observations", () => {
         ...initial.world,
         positions: { ...initial.world.positions, "SCP-999": hiddenPosition },
       },
-      scp999: { ...initial.scp999, status: "resting" as const },
+      entities: [{ ...initial.entities[0]!, status: "resting" as const }],
     };
     const observed = observeSite(changed);
     expect(observed.observations.entities["SCP-999"]?.position).toEqual(
       initial.world.positions["SCP-999"],
     );
     expect(observed.observations.visibleEntityIds).not.toContain("SCP-999");
-    expect(observed.observations.scp999?.state.status).toBe(
-      initial.scp999.status,
+    expect(observed.observations.entityStates["SCP-999"]?.state.status).toBe(
+      initial.entities[0]!.status,
     );
     expect(observed.observations.knownTiles[90 * 128 + 90]).toBeNull();
     const tiles = [...initial.world.map.tiles];

@@ -16,7 +16,12 @@ export function targetThumbnail(
 ): string {
   if (state.personnel.some((person) => person.id === id))
     return pawnPortrait(id);
-  if (id === "SCP-999") return resident;
+  if (
+    state.entities.some(
+      (entity) => entity.id === id && entity.definitionId === "scp-999",
+    )
+  )
+    return resident;
   if (state.observations.cameras.some((entry) => entry.id === id))
     return camera;
   const item = id.startsWith("object:")

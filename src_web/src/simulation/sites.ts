@@ -89,7 +89,7 @@ export function createSite(
       positions: {},
     },
     personnel: [],
-    scp999: null,
+    entities: [],
     combat: createCombatState(),
     jobs: [],
     actionQueues: {},
@@ -118,7 +118,7 @@ export function createSite(
       visibleEntityIds: [],
       entities: {},
       knownRooms: [],
-      scp999: null,
+      entityStates: {},
       cameraKits: 0,
       cameras: [],
     },
@@ -220,13 +220,13 @@ export function siteOwnershipIssue(state: SimulationState): string | null {
     const people = new Set(site.personnel.map((person) => person.id));
     const actors = new Set([
       ...people,
-      ...(site.scp999 ? [site.scp999.id] : []),
+      ...site.entities.map((entity) => entity.id),
     ]);
     const objects = new Map(site.objects.items.map((item) => [item.id, item]));
     const identities = [
       ...site.personnel.map((person) => person.id),
       ...site.objects.items.map((item) => item.id),
-      ...(site.scp999 ? [site.scp999.id] : []),
+      ...site.entities.map((entity) => entity.id),
       ...(site.combat.adversary ? [site.combat.adversary.id] : []),
     ];
     for (const id of identities) {
@@ -416,7 +416,7 @@ export function siteDisposalReason(
     return "Wait for active transfers before disposing this site.";
   if (
     site.personnel.length ||
-    site.scp999 ||
+    site.entities.length ||
     site.combat.adversary ||
     Object.keys(site.world.positions).length
   )

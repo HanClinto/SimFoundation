@@ -8,6 +8,33 @@ import {
 } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
 import { createInitialState, GAME_STATE_VERSION } from "./fixtures/work-state";
+import { createScp999State } from "../src/simulation/scp-999";
+
+it("round-trips multiple resident instances and rejects duplicate live identities", () => {
+  const initial = createInitialState();
+  const extra = createScp999State("resident-extra");
+  const state = {
+    ...initial,
+    entities: [...initial.entities, extra],
+    world: {
+      ...initial.world,
+      positions: { ...initial.world.positions, [extra.id]: { x: 54, y: 58 } },
+    },
+  };
+  const storage = memoryStorage();
+  expect(saveGameState(storage, state)).toBe(true);
+  const loaded = loadGameState(storage);
+  expect(loaded.status).toBe("loaded");
+  if (loaded.status !== "loaded")
+    throw new Error("Resident collection rejected");
+  expect(loaded.state.entities).toEqual(state.entities);
+  expect(loaded.state).not.toHaveProperty("scp999");
+  expect(createController(loaded.state).advance(6)).toEqual(
+    createController(state).advance(6),
+  );
+  saveGameState(storage, { ...state, entities: [...state.entities, extra] });
+  expect(loadGameState(storage).status).toBe("invalid");
+});
 
 function memoryStorage(initialValue: string | null = null): StoragePort {
   let value = initialValue;
@@ -65,7 +92,7 @@ describe("game persistence", () => {
     const loaded = loadGameState(storage);
     if (loaded.status !== "loaded") throw new Error("save did not load");
     const resumed = createController(loaded.state);
-    expect(loaded.state.scp999).toEqual(original.getSnapshot().game.scp999);
+    expect(loaded.state.entities).toEqual(original.getSnapshot().game.entities);
     expect(resumed.advance(20).game).toEqual(original.advance(20).game);
   });
 
@@ -172,7 +199,7 @@ describe("game persistence", () => {
 
     const brokenAnomaly = {
       ...state,
-      scp999: { ...state.scp999, status: "escaped" },
+      entities: [{ ...state.entities[0]!, status: "escaped" }],
     };
     expect(
       loadGameState(memoryStorage(JSON.stringify(brokenAnomaly))).status,

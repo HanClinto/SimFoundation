@@ -4,6 +4,40 @@ Status: approved direction, implementation started 2026-09-09; tracked in [#24](
 
 ## Implementation Status
 
+### Cleanup Ledger
+
+This is the implementation checklist for the latest entity-first direction. An unchecked item remains outstanding even if a prerequisite or partial implementation exists. Keep the existing M1-M7 gates below; these smaller tasks make omissions visible. UI rebinding follows the headless gate, not the other way around.
+
+- [x] E1 Separate instance identity from anomaly definition; remove hard-coded SCP-999 movement/target lookup and prove independent same-type instances.
+- [x] E2 Remove the dedicated resident slot from state, ticking, observations and save shape; advance the owned collection without implicit first-instance behavior.
+- [ ] E3 Remove the singleton adversary and responder-only target model; use entity IDs for targets, sensing, damage and encounter reports.
+- [ ] E4 Consolidate staff, autonomous pawns and physical objects into one canonical site entity collection; make role-specific lists derived, not duplicated owners.
+- [ ] E5 Share pawn movement, prerequisites, reservations, action progress, interruption and completion. Autonomous behavior selects intents, not a separate execution loop.
+- [ ] E6 Represent applicable needs and rates per pawn type, including no-food/no-rest cases; do not manufacture human personnel data for nonhuman actors.
+- [ ] E7 Enforce player-control permission at the headless command boundary independently of affiliation and autonomous action capability.
+- [ ] C1 Extract a pure command executor with stable accepted/unchanged/rejected results, affected/generated identities and small event records.
+- [ ] C2 Provide non-mutating previews using the same checks; test preview/execute parity and stale-command rejection without publication side effects.
+- [ ] A1 Unify action identity, source, target, phase, elapsed/progress and blocker projections across pawns and transit; remove old base/field reporting dependencies.
+- [ ] A2 Reconcile action timing at site tick and command boundaries; cancellation must use the same current-action identity rather than reconstructing another one.
+- [ ] T1 Factor transfer preparation, detachment and attachment into small helpers over complete entity records and carried/contained dependencies.
+- [ ] T2 Reconcile local jobs, appointments, queues, observations and attached behavior on departure/arrival; historical references may remain, live ownership may not.
+- [ ] T3 Converge existing vessel transport and expedition transport on the shared mechanism; preserve blocked arrivals, return trips, conditions and once-only ticking.
+- [ ] D1 Make dependency direction explicit: types/definitions -> local actions/systems -> site/campaign coordination -> application; remove site/transfer cycles and transitional campaign projections.
+- [ ] S1 Implement plain JSON campaign snapshots with a version and lightweight shape/ownership checks; no migrations or exhaustive duplicate gameplay validator.
+- [ ] S2 Define one simple authored site file format and headless instantiation path, with fresh IDs/internal-reference remapping distinct from exact save restoration.
+- [ ] S3 Load Site 828 as ordinary authored site data; do not automatically create its staff, stock, cameras or resident when creating other sites.
+- [ ] S4 Add reusable authored integration fixtures for scarce materials, blocked work, multiple same-type actors and containment stress; test outcomes through real commands.
+- [ ] Q1 Convert current expedition destinations into retained sites; revisits preserve changes and depletion and operations never own site lifetime.
+- [ ] Q2 Keep quest requirements adjacent to simulation, including required/optional objectives and durable cross-site accomplishments independent of cargo eligibility.
+- [ ] V1 Pass the headless end-to-end gate: multiple sites/actors, non-controllable autonomy, optional needs, real work, transit snapshot/restore, revisit and safe disposal.
+- [ ] V2 Remove obsolete code/tests/documentation as replacements land; bump incompatible development saves rather than keeping adapters for old gameplay.
+
+Validation per task: a focused behavior test first, then the repository gate for each publishable code group. Prefer a small set of ownership, replay and action-outcome tests over scripted UI sequences. No new SCP content or browser redesign in this cleanup pass.
+
+E1/E2 checkpoint: schema 50 removes `scp999` from live site state and replaces it with `entities`, currently containing resident records with separate `id` and `definitionId`. Observations use instance-keyed `entityStates`; no default resident is fabricated for unseen state or an expedition projection. All owned residents tick in stable ID order, maintaining independent position, target and cooldown. Existing map rendering, thumbnails and inspection resolve resident instance IDs. Current-save tests cover multiple residents and duplicate rejection; old saves are discarded without migration. The browser smoke check shows the fresh schema-50 resident and no obsolete field.
+
+This is not E4/E5 completion: `entities` currently holds only the converted resident type, and it still uses its specialized behavior executor. Staff and physical objects remain in their existing stores; combat still has a singleton adversary. Next tackle E3-E5 together where shared pawn action ownership demands it, deleting redundant execution rather than extending the resident-only collection as a permanent final model. The current SCP-specific record window is an existing adapter retained until UI rebinding, not the generic entity view promised by A1.
+
 ### Latest Scope Clarification
 
 The user explicitly approved replacing the dedicated SCP-999 slot and hard-coded adversary model with a shared entity/pawn system, including deleting and reimplementing unsuitable prototype behavior. This is the next headless priority, ahead of further save validation or browser bindings. The progress descriptions below describe the existing intermediate implementation, not acceptance of those specialized records as the final model.
@@ -18,7 +52,7 @@ The next checkpoint adds [sites.ts](../src/simulation/sites.ts): an ordinary ser
 
 Headless tests prove two staffed sites constructing at identical coordinates with independent stock, ordinary movement/relaxation queues returning to autonomy at both sites, unattended hazard damage, deterministic continuation after JSON round-trip and site-order changes, invalid cross-site commands/ownership rejection, and a new remote incident pausing even while another site is already Orange. An empty last site can be deleted and a new site created without reusing its ID.
 
-The browser still uses its existing controller and schema-49 saves. The new collection is not yet accepted by production save validation or autosave, and no disposal/site-directory UI is connected. The legacy base/field resolver remains only in that application's adapter during the cutover; do not preserve it as a permanent alternate engine. Shared executors already serve both entry paths. Remaining M1/M2 work includes production campaign validation, initial Site 828 conversion, resident/threat identity generalization, action timing/reporting integration and replacing browser bootstrap/state bindings. Retained expedition destinations and quest evaluation are not implemented. Existing generic validation is an ownership check on typed runtime state, not an unknown-JSON save parser.
+The browser still uses its existing controller and single-site schema-50 saves. The multi-site campaign collection is not yet accepted by production save validation or autosave, and no disposal/site-directory UI is connected. The legacy base/field resolver remains only in that application's adapter during the cutover; do not preserve it as a permanent alternate engine. Shared executors already serve both entry paths. Remaining M1/M2 work includes lightweight campaign loading, initial Site 828 conversion, shared entity/pawn execution, action timing/reporting integration and replacing browser bootstrap/state bindings. Retained expedition destinations and quest evaluation are not implemented. Existing generic validation is an ownership check on typed runtime state, not an unknown-JSON save parser.
 
 ### Prepared Transfer Checkpoint
 

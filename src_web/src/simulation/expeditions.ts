@@ -19,7 +19,6 @@ import {
   startEncounter,
 } from "./combat";
 import { observeSite } from "./observations";
-import { createScp999State } from "./scp-999";
 import { findRoute, isWalkable, stepWorld, closeAutomaticDoors } from "./world";
 import { advancePersonnel } from "./personnel";
 import { advanceExposure } from "./environment";
@@ -280,7 +279,7 @@ export function fieldState(state: GameState): GameState | null {
     personnel,
     jobs: [],
     clinicalCare: { reviewInterval: 0, clinicianIds: [] },
-    scp999: createScp999State(),
+    entities: [],
     objectOrders: [],
     vesselWork: { nextId: 1, orders: [] },
     storage: { nextId: 1, areas: [], blockedReasons: {} },

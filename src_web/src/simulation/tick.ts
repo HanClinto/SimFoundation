@@ -110,16 +110,32 @@ export function advanceSiteSimulation<State extends SiteSimulationState>(
       );
     },
   );
-  const scp999Result = state.scp999
-    ? advanceScp999(state.scp999, jobResult.personnel, tick, jobResult.world, [
-        ...state.personnel
-          .filter((person) => tacticallyUnavailable(state, person.id))
-          .map((person) => person.id),
-        ...Object.entries(state.routines.activities)
-          .filter(([, activity]) => activity.kind !== "break")
-          .map(([id]) => id),
-      ])
-    : { anomaly: null, personnel: jobResult.personnel, world: jobResult.world };
+  let personnel = jobResult.personnel;
+  let world = jobResult.world;
+  const unavailable = [
+    ...state.personnel
+      .filter((person) => tacticallyUnavailable(state, person.id))
+      .map((person) => person.id),
+    ...Object.entries(state.routines.activities)
+      .filter(([, activity]) => activity.kind !== "break")
+      .map(([id]) => id),
+  ];
+  const advanced = new Map(
+    [...state.entities]
+      .sort((first, second) => first.id.localeCompare(second.id))
+      .map((entity) => {
+        const result = advanceScp999(
+          entity,
+          personnel,
+          tick,
+          world,
+          unavailable,
+        );
+        personnel = result.personnel;
+        world = result.world;
+        return [entity.id, result.anomaly] as const;
+      }),
+  );
   return refreshMealSummary(
     discoverStorageWork(
       discoverSurfaceWork(
@@ -134,9 +150,11 @@ export function advanceSiteSimulation<State extends SiteSimulationState>(
                       tick,
                       gameMinute: state.gameMinute,
                       jobs: jobResult.jobs,
-                      personnel: scp999Result.personnel,
-                      scp999: scp999Result.anomaly,
-                      world: scp999Result.world,
+                      personnel,
+                      entities: state.entities.map(
+                        (entity) => advanced.get(entity.id)!,
+                      ),
+                      world,
                     }),
                   ),
                 ),

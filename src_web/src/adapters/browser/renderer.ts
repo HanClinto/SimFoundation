@@ -706,15 +706,16 @@ export function renderSite(
       physicalPawnPose(snapshot.game, id, recorded ? "recorded" : "world");
     const facing = visual?.facing ?? "right";
     const imageKey = `${id}:${pose}:${facing}`;
-    let image = id === "SCP-999" ? scp999 : workers.get(imageKey);
+    const resident = snapshot.game.entities.find((entity) => entity.id === id);
+    let image = resident ? scp999 : workers.get(imageKey);
     if (!image) {
       image = new Image();
       image.onload = () => canvas.dispatchEvent(new Event("assets-ready"));
       image.src = pawnMapSprite(id, pose, facing);
       workers.set(imageKey, image);
     }
-    const spriteWidth = (id === "SCP-999" ? 52 : 24) * camera.zoom;
-    const spriteHeight = (id === "SCP-999" ? 30 : 36) * camera.zoom;
+    const spriteWidth = (resident ? 52 : 24) * camera.zoom;
+    const spriteHeight = (resident ? 30 : 36) * camera.zoom;
     if (live && image.complete && image.naturalWidth > 0)
       context.drawImage(
         image,
@@ -827,7 +828,7 @@ export function renderSite(
   if (
     selectedPosition &&
     !snapshot.game.personnel.some(({ id }) => id === camera.selectedId) &&
-    camera.selectedId !== "SCP-999"
+    !snapshot.game.entities.some((entity) => entity.id === camera.selectedId)
   ) {
     const point = projectPosition(selectedPosition, camera, width, height);
     context.save();

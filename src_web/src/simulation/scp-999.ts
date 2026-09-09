@@ -14,7 +14,8 @@ const IMMEDIATE_STRESS_RELIEF = 4;
 const CALM_EFFECT_ID = "effect-comforted-by-999";
 
 export interface Scp999State {
-  readonly id: "SCP-999";
+  readonly id: string;
+  readonly definitionId: "scp-999";
   readonly status: "wandering" | "approaching" | "comforting" | "resting";
   readonly targetPersonId: string | null;
   readonly interactionEndsAtTick: number | null;
@@ -31,9 +32,10 @@ export interface Scp999AdvanceResult {
   readonly world: SiteWorld;
 }
 
-export function createScp999State(): Scp999State {
+export function createScp999State(id = "SCP-999"): Scp999State {
   return {
-    id: "SCP-999",
+    id,
+    definitionId: "scp-999",
     status: "wandering",
     targetPersonId: null,
     interactionEndsAtTick: null,
@@ -47,12 +49,13 @@ function hasCalmEffect(person: PersonnelRecord): boolean {
 }
 
 function selectTarget(
+  actorId: string,
   personnel: readonly PersonnelRecord[],
   world: SiteWorld,
   unavailableIds: readonly string[],
   currentTick: number,
 ): PersonnelRecord | null {
-  const origin = world.positions["SCP-999"];
+  const origin = world.positions[actorId];
   if (!origin) return null;
   const observableDistress = (person: PersonnelRecord) =>
     /distressed|unhappy|tense/.test(projectPsychology(person).moodAppearance) ||
@@ -87,7 +90,7 @@ function selectTarget(
       )
       .find((person) => {
         const position = world.positions[person.id];
-        const origin = world.positions["SCP-999"];
+        const origin = world.positions[actorId];
         return (
           position !== undefined &&
           origin !== undefined &&
@@ -120,7 +123,7 @@ export function advanceScp999(
   const previousTarget = personnel.find(
     ({ id }) => id === anomaly.targetPersonId,
   );
-  const origin = world.positions["SCP-999"];
+  const origin = world.positions[anomaly.id];
   const previousPosition = previousTarget
     ? world.positions[previousTarget.id]
     : undefined;
@@ -199,7 +202,7 @@ export function advanceScp999(
     previousPosition &&
     canObserve(world.map, origin, previousPosition, SOCIAL_PERCEPTION_RANGE)
       ? previousTarget
-      : selectTarget(personnel, world, unavailableIds, currentTick);
+      : selectTarget(anomaly.id, personnel, world, unavailableIds, currentTick);
   const targetPosition = target ? world.positions[target.id] : undefined;
   const route =
     origin && targetPosition
@@ -227,7 +230,7 @@ export function advanceScp999(
         interactionEndsAtTick: null,
       },
       personnel,
-      world: step ? stepWorld(world, "SCP-999", step) : world,
+      world: step ? stepWorld(world, anomaly.id, step) : world,
     };
   }
 
@@ -240,7 +243,7 @@ export function advanceScp999(
         interactionEndsAtTick: null,
       },
       personnel,
-      world: stepWorld(world, "SCP-999", route[0]!),
+      world: stepWorld(world, anomaly.id, route[0]!),
     };
   }
   return {

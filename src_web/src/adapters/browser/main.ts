@@ -633,6 +633,7 @@ function openPersonnelInspector(personId: string): void {
   windowManager.open(`personnel-inspector-${personId}`);
 }
 
+let inspectedResidentId = "SCP-999";
 const siteCamera = createSiteMap(
   canvas,
   requireElement<HTMLElement>("#camera-window"),
@@ -648,8 +649,12 @@ const siteCamera = createSiteMap(
       windowManager.open("storage-window");
       return;
     }
-    if (id === "SCP-999") windowManager.open("anomaly-window");
-    else if (id.startsWith("object:")) {
+    if (
+      controller.getSnapshot().game.entities.some((entity) => entity.id === id)
+    ) {
+      inspectedResidentId = id;
+      windowManager.open("anomaly-window");
+    } else if (id.startsWith("object:")) {
       const equipment = controller
         .getSnapshot()
         .game.objects.items.find((item) => item.id === id.slice(7));
@@ -1272,11 +1277,14 @@ function render(snapshot: ControllerSnapshot): void {
     snapshot.game.world,
     (id, priority) => controller.setWorkPriority(id, priority),
   );
+  const resident = snapshot.game.entities.find(
+    (entity) => entity.id === inspectedResidentId,
+  );
   const scp999TargetPerson = snapshot.game.personnel.find(
-    ({ id }) => id === snapshot.game.scp999.targetPersonId,
+    ({ id }) => id === resident?.targetPersonId,
   );
   const scp999LastPerson = snapshot.game.personnel.find(
-    ({ id }) => id === snapshot.game.scp999.lastInteraction?.personId,
+    ({ id }) => id === resident?.lastInteraction?.personId,
   );
   const scp999Labels = {
     wandering: "ROAMING",
@@ -1284,36 +1292,45 @@ function render(snapshot: ControllerSnapshot): void {
     comforting: "CONTACT IN PROGRESS",
     resting: "RECOVERY PERIOD",
   } as const;
-  scp999Status.textContent = scp999Labels[snapshot.game.scp999.status];
+  scp999Status.textContent = resident
+    ? scp999Labels[resident.status]
+    : "NO RECORDED INSTANCE";
   scp999Target.textContent = scp999TargetPerson?.name ?? "None";
   const scp999Minutes =
-    snapshot.game.scp999.status === "comforting"
+    resident?.status === "comforting"
       ? Math.max(
           0,
-          (snapshot.game.scp999.interactionEndsAtTick ?? snapshot.game.tick) -
+          (resident.interactionEndsAtTick ?? snapshot.game.tick) -
             snapshot.game.tick,
         )
       : Math.max(
           0,
-          snapshot.game.scp999.nextAvailableTick - snapshot.game.tick,
+          (resident?.nextAvailableTick ?? snapshot.game.tick) -
+            snapshot.game.tick,
         );
   scp999Timing.textContent =
-    snapshot.game.scp999.status === "comforting"
+    resident?.status === "comforting"
       ? `${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"} remaining`
-      : snapshot.game.scp999.status === "resting"
+      : resident?.status === "resting"
         ? `Available in ${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"}`
-        : snapshot.game.scp999.status === "approaching"
+        : resident?.status === "approaching"
           ? "Contact pending arrival"
-          : "Available";
-  scp999LastInteraction.textContent = snapshot.game.scp999.lastInteraction
-    ? `${scp999LastPerson?.name ?? "Unknown personnel"} / recorded ${formatGameTime(snapshot.game.gameMinute - snapshot.game.tick + snapshot.game.scp999.lastInteraction.completedTick)}`
+          : resident
+            ? "Available"
+            : "Unavailable";
+  scp999LastInteraction.textContent = resident?.lastInteraction
+    ? `${scp999LastPerson?.name ?? "Unknown personnel"} / recorded ${formatGameTime(snapshot.game.gameMinute - snapshot.game.tick + resident.lastInteraction.completedTick)}`
     : "No interaction recorded.";
-  if (!snapshot.game.observations.visibleEntityIds.includes("SCP-999")) {
-    const lastObserved = snapshot.game.observations.scp999?.observedTick;
+  if (
+    resident &&
+    !snapshot.game.observations.visibleEntityIds.includes(resident.id)
+  ) {
+    const lastObserved =
+      snapshot.game.observations.entityStates[resident.id]?.observedTick;
     scp999Status.textContent =
       lastObserved === undefined
         ? "NO RECORDED OBSERVATION"
-        : `LAST OBSERVED: ${scp999Labels[snapshot.game.scp999.status]}`;
+        : `LAST OBSERVED: ${scp999Labels[resident.status]}`;
     scp999Timing.textContent =
       lastObserved === undefined
         ? "Current state unknown"

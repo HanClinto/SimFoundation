@@ -176,10 +176,13 @@ export function pawnCues(
           : `Working: ${job.title}`,
     };
   } else if (
-    state.scp999.status === "comforting" &&
-    state.scp999.targetPersonId === personId &&
-    (perspective === "world" ||
-      state.observations.visibleEntityIds.includes("SCP-999"))
+    state.entities.some(
+      (entity) =>
+        entity.status === "comforting" &&
+        entity.targetPersonId === personId &&
+        (perspective === "world" ||
+          state.observations.visibleEntityIds.includes(entity.id)),
+    )
   ) {
     action = {
       icon: "chat",

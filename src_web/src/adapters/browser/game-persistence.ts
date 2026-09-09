@@ -522,7 +522,12 @@ function workerReferencesValid(state: GameState): boolean {
 }
 
 function isScp999State(value: unknown): boolean {
-  if (!isRecord(value) || value.id !== "SCP-999") return false;
+  if (
+    !isRecord(value) ||
+    !isNonEmptyString(value.id) ||
+    value.definitionId !== "scp-999"
+  )
+    return false;
   if (
     !isLiteral(value.status, [
       "wandering",
@@ -723,10 +728,14 @@ function isObservationState(value: unknown): boolean {
         isIntegerInRange(room.height, 1, 128 - room.y),
       128,
     ) &&
-    (value.scp999 === null ||
-      (isRecord(value.scp999) &&
-        isScp999State(value.scp999.state) &&
-        isIntegerInRange(value.scp999.observedTick, 0))) &&
+    isRecord(value.entityStates) &&
+    Object.entries(value.entityStates).every(
+      ([id, observation]) =>
+        isRecord(observation) &&
+        isScp999State(observation.state) &&
+        (observation.state as { id: string }).id === id &&
+        isIntegerInRange(observation.observedTick, 0),
+    ) &&
     isIntegerInRange(value.cameraKits, 0, 3) &&
     isArrayOf(
       value.cameras,
@@ -769,7 +778,10 @@ function observationReferencesValid(state: GameState): boolean {
     )
   )
     return false;
-  const entityIds = [...state.personnel.map(({ id }) => id), "SCP-999"];
+  const entityIds = [
+    ...state.personnel.map(({ id }) => id),
+    ...state.entities.map(({ id }) => id),
+  ];
   const sourceIds = new Set([
     ...entityIds,
     ...knowledge.cameras.map(({ id }) => id),
@@ -798,7 +810,11 @@ function observationReferencesValid(state: GameState): boolean {
     })
   )
     return false;
-  if (knowledge.scp999 && knowledge.scp999.observedTick > state.tick)
+  if (
+    Object.values(knowledge.entityStates).some(
+      (observation) => observation.observedTick > state.tick,
+    )
+  )
     return false;
   if (
     new Set(knowledge.cameras.map(({ id }) => id)).size !==
@@ -1894,7 +1910,7 @@ function isGameState(value: unknown): value is GameState {
   if (
     !isArrayOf(value.jobs, isSiteJob) ||
     !isArrayOf(value.personnel, isPersonnelRecord) ||
-    !isScp999State(value.scp999) ||
+    !isArrayOf(value.entities, isScp999State, 1000) ||
     !isSiteWorld(value.world) ||
     !isRoutineState(value.routines) ||
     !isObservationState(value.observations) ||
@@ -2017,7 +2033,7 @@ function isGameState(value: unknown): value is GameState {
   const away = awayPersonnel(state);
   const entityIds = [
     ...personIds.filter((id) => !away.includes(id)),
-    "SCP-999",
+    ...state.entities.map(({ id }) => id),
   ];
   return (
     combatStateValid(state) &&
@@ -2034,10 +2050,11 @@ function isGameState(value: unknown): value is GameState {
     vesselReferencesValid(state) &&
     storageReferencesValid(state) &&
     workerReferencesValid(state) &&
-    (state.scp999.targetPersonId === null ||
-      personIds.includes(state.scp999.targetPersonId)) &&
-    (state.scp999.lastInteraction === null ||
-      personIds.includes(state.scp999.lastInteraction.personId)) &&
+    state.entities.every(
+      (entity) =>
+        entity.targetPersonId === null ||
+        personIds.includes(entity.targetPersonId),
+    ) &&
     new Set(entityIds).size === entityIds.length &&
     Object.keys(state.world.positions).length === entityIds.length &&
     entityIds.every((id) => {

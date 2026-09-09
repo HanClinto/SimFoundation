@@ -1,5 +1,4 @@
 import type { ControllerSnapshot } from "../../application/controller";
-import { createScp999State } from "../../simulation/scp-999";
 import { objectBlocks, objectStations } from "../../simulation/objects";
 import { awayPersonnel } from "../../simulation/expeditions";
 
@@ -68,7 +67,9 @@ export function observedSnapshot(
           rooms: knowledge.knownRooms,
         },
       },
-      scp999: knowledge.scp999?.state ?? createScp999State(),
+      entities: Object.values(knowledge.entityStates).map(
+        (observation) => observation.state,
+      ),
       routines: {
         ...snapshot.game.routines,
         stations: [

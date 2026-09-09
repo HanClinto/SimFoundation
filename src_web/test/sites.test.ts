@@ -16,6 +16,71 @@ import { availableMaterials } from "../src/simulation/material-stock";
 import { surfaceAt } from "../src/simulation/materials";
 import { advancePersonnel } from "../src/simulation/personnel";
 import { reserveStack } from "../src/simulation/objects";
+import { createScp999State } from "../src/simulation/scp-999";
+
+it("ticks and observes multiple same-type residents independently in a site", () => {
+  const created = createSite(createSimulation(), {
+    name: "Resident test",
+    width: 20,
+    height: 20,
+  });
+  const siteId = created.siteId!;
+  const people = createInitialState().personnel.slice(0, 2);
+  const first = createScp999State("resident-a");
+  const second = createScp999State("resident-b");
+  const installed = updateSite(created.state, siteId, (site) => ({
+    ...site,
+    personnel: people,
+    entities: [second, first],
+    world: {
+      ...site.world,
+      positions: {
+        [people[0]!.id]: { x: 3, y: 3 },
+        [people[1]!.id]: { x: 13, y: 13 },
+        [first.id]: { x: 1, y: 3 },
+        [second.id]: { x: 11, y: 13 },
+      },
+    },
+  }));
+  expect(installed.reason).toBeNull();
+  let state = installed.state;
+  let reordered = {
+    ...state,
+    sites: {
+      ...state.sites,
+      [siteId]: { ...state.sites[siteId]!, entities: [first, second] },
+    },
+  };
+  for (let step = 0; step < 6; step += 1) {
+    state = advanceSites(state);
+    reordered = advanceSites(reordered);
+    expect(state.sites[siteId]!.world).toEqual(reordered.sites[siteId]!.world);
+    expect(state.sites[siteId]!.personnel).toEqual(
+      reordered.sites[siteId]!.personnel,
+    );
+    expect(advanceSites(JSON.parse(JSON.stringify(state)))).toEqual(
+      advanceSites(state),
+    );
+  }
+  const site = state.sites[siteId]!;
+  expect(site.entities.find((entity) => entity.id === first.id)).toMatchObject({
+    status: "resting",
+    lastInteraction: { personId: people[0]!.id },
+  });
+  expect(site.entities.find((entity) => entity.id === second.id)).toMatchObject(
+    { status: "resting", lastInteraction: { personId: people[1]!.id } },
+  );
+  expect(site.observations.entityStates[first.id]!.state.id).toBe(first.id);
+  expect(site.observations.entityStates[second.id]!.state.id).toBe(second.id);
+  expect(site.world.positions["SCP-999"]).toBeUndefined();
+  expect(site).not.toHaveProperty("scp999");
+  expect(
+    updateSite(state, siteId, (local) => ({
+      ...local,
+      entities: [...local.entities, first],
+    })).reason,
+  ).toContain("more than one owner");
+});
 
 it("retains site identity across repeated stack splits", () => {
   const material = createInitialState().objects.items.find(
@@ -55,7 +120,7 @@ it("creates equal, persistent sites without startup entities, stock or clocks", 
   expect(first.siteId).not.toBe(second.siteId);
   for (const site of Object.values(state.sites)) {
     expect(site.personnel).toEqual([]);
-    expect(site.scp999).toBeNull();
+    expect(site.entities).toEqual([]);
     expect(site.objects.items).toEqual([]);
     expect(site.jobs).toEqual([]);
     expect(site.actionQueues).toEqual({});

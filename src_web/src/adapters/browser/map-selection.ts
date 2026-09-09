@@ -125,7 +125,7 @@ export function createMapSelection(
       ? state.objects.items.find((item) => item.id === id.slice(7))
       : undefined;
     const source = state.environment.sources.find((source) => source.id === id);
-    const resident = id === "SCP-999" && !!entry;
+    const resident = state.entities.find((entity) => entity.id === id);
     portrait.hidden = !(person && entry) && !resident;
     if (!portrait.hidden) {
       const portraitUrl = resident ? residentUrl : pawnPortrait(person!.id);
@@ -146,7 +146,7 @@ export function createMapSelection(
         : object
           ? `${object.location.kind === "carried" ? "Being carried" : object.installed ? "Installed" : "Packed"} / ${object.condition.toFixed(0)}% condition${object.reservedBy ? " / Reserved for work" : ""}${isElectrical(object) && view === "world" ? ` / ${powerNetwork(state).readings[object.id]?.status ?? "disconnected"}` : ""}`
           : resident
-            ? state.scp999.status
+            ? resident.status
             : source
               ? `${source.kind} source / ${source.enabled === false ? "disabled" : "enabled"}`
               : "";

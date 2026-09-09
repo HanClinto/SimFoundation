@@ -21,7 +21,7 @@ import { createExpeditions, type ExpeditionState } from "./expeditions";
 import type { ActionQueues } from "./action-queue";
 import type { ActionTiming } from "./action-progress";
 
-export const GAME_STATE_VERSION = 49;
+export const GAME_STATE_VERSION = 50;
 
 export type IncidentLevel = "green" | "yellow" | "orange" | "red";
 
@@ -43,7 +43,7 @@ export interface SiteState {
   readonly incident: IncidentState;
   readonly jobs: readonly SiteJob[];
   readonly personnel: readonly PersonnelRecord[];
-  readonly scp999: Scp999State | null;
+  readonly entities: readonly Scp999State[];
   readonly world: SiteWorld;
   readonly clinicalCare: ClinicalCarePolicy;
   readonly routines: RoutineState;
@@ -60,7 +60,6 @@ export interface SiteSimulationState extends SiteState, SimulationClock {
 }
 
 export interface GameState extends SiteSimulationState {
-  readonly scp999: Scp999State;
   readonly version: typeof GAME_STATE_VERSION;
   readonly expeditions: ExpeditionState;
 }
@@ -95,7 +94,7 @@ export function createInitialState(seed = 9620): GameState {
     },
     jobs: [],
     personnel,
-    scp999: createScp999State(),
+    entities: [createScp999State()],
     world: furnishedWorld,
     clinicalCare: {
       reviewInterval: 0,

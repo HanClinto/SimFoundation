@@ -2,6 +2,46 @@ import { describe, expect, it } from "vitest";
 
 import { createInitialState } from "../src/simulation/state";
 import { advanceSimulation } from "../src/simulation/tick";
+import { advanceScp999, createScp999State } from "../src/simulation/scp-999";
+
+it("moves a resident by its instance identity without steering another instance", () => {
+  const initial = createInitialState();
+  const first = createScp999State("resident-first");
+  const second = createScp999State("resident-second");
+  const world = {
+    ...initial.world,
+    positions: {
+      "resident-first": { x: 54, y: 58 },
+      "resident-second": { x: 60, y: 58 },
+      [initial.personnel[0]!.id]: { x: 56, y: 58 },
+    },
+  };
+  const personnel = [initial.personnel[0]!];
+  const advancedFirst = advanceScp999(first, personnel, 1, world);
+  expect(advancedFirst.anomaly.id).toBe(first.id);
+  expect(advancedFirst.anomaly.status).toBe("approaching");
+  expect(advancedFirst.world.positions[first.id]).not.toEqual(
+    world.positions[first.id],
+  );
+  expect(advancedFirst.world.positions[second.id]).toEqual(
+    world.positions[second.id],
+  );
+  expect(advancedFirst.world.positions["SCP-999"]).toBeUndefined();
+  const advancedSecond = advanceScp999(
+    second,
+    personnel,
+    1,
+    advancedFirst.world,
+  );
+  expect(advancedSecond.world.positions[second.id]).not.toEqual(
+    world.positions[second.id],
+  );
+  expect(advancedSecond.world.positions[first.id]).toEqual(
+    advancedFirst.world.positions[first.id],
+  );
+  expect(first.targetPersonId).toBeNull();
+  expect(second.targetPersonId).toBeNull();
+});
 
 function advance(state: ReturnType<typeof createInitialState>, ticks: number) {
   let current = state;
@@ -37,7 +77,7 @@ describe("SCP-999", () => {
       },
     };
     const approaching = advanceSimulation(initial);
-    expect(approaching.scp999).toMatchObject({
+    expect(approaching.entities[0]!).toMatchObject({
       status: "approaching",
       targetPersonId: "person-emil-novak",
       interactionEndsAtTick: null,
@@ -53,11 +93,13 @@ describe("SCP-999", () => {
     let state = approaching;
     for (
       let tick = 0;
-      tick < 100 && state.scp999.lastInteraction === null;
+      tick < 100 && state.entities[0]!.lastInteraction === null;
       tick += 1
     )
       state = advanceSimulation(state);
-    expect(state.scp999.lastInteraction?.personId).toBe("person-emil-novak");
+    expect(state.entities[0]!.lastInteraction?.personId).toBe(
+      "person-emil-novak",
+    );
     const target = state.world.positions["person-emil-novak"]!;
     const origin = state.world.positions["SCP-999"]!;
     expect(
@@ -78,20 +120,20 @@ describe("SCP-999", () => {
       },
     };
     const interrupted = advanceSimulation(separated);
-    expect(interrupted.scp999).toMatchObject({
+    expect(interrupted.entities[0]!).toMatchObject({
       status: "wandering",
       targetPersonId: null,
       interactionEndsAtTick: null,
     });
-    expect(advance(interrupted, 3).scp999.lastInteraction).toBeNull();
+    expect(advance(interrupted, 3).entities[0]!.lastInteraction).toBeNull();
   });
 
   it("responds to nearby observable distress deterministically", () => {
     const first = advanceSimulation(contactState());
     const second = advanceSimulation(contactState());
 
-    expect(first.scp999).toEqual(second.scp999);
-    expect(first.scp999).toMatchObject({
+    expect(first.entities[0]!).toEqual(second.entities[0]!);
+    expect(first.entities[0]!).toMatchObject({
       status: "comforting",
       targetPersonId: "person-emil-novak",
       interactionEndsAtTick: 5,
@@ -104,7 +146,7 @@ describe("SCP-999", () => {
       ({ id }) => id === "person-emil-novak",
     );
 
-    expect(comforted.scp999).toMatchObject({
+    expect(comforted.entities[0]!).toMatchObject({
       status: "resting",
       targetPersonId: null,
       nextAvailableTick: 11,
@@ -123,7 +165,7 @@ describe("SCP-999", () => {
     );
 
     const resumed = advance(comforted, 6);
-    expect(resumed.scp999).toMatchObject({
+    expect(resumed.entities[0]!).toMatchObject({
       status: "comforting",
       targetPersonId: "person-jon-bell",
       interactionEndsAtTick: 15,
