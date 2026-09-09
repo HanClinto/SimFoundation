@@ -8,6 +8,7 @@
   },
   "scripts": {
     "archive:scp": "node scripts/archive-scp-recommendations.mjs",
+    "archive:scp:historical": "node scripts/archive-scp-recommendations.mjs --historical",
     "dev": "vite",
     "build": "tsc --noEmit && vite build && node scripts/verify-deployment-build.mjs",
     "preview": "vite preview",

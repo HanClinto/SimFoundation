@@ -10,8 +10,39 @@ const catalogPath = path.join(root, "catalog.json");
 const userAgent =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) " +
   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140 Safari/537.36";
-const requestedSlugs = new Set(process.argv.slice(2));
+const argumentsList = process.argv.slice(2);
+const historicalMode = argumentsList.includes("--historical");
+const requestedSlugs = new Set(
+  argumentsList.filter((argument) => argument !== "--historical"),
+);
 const virtualConsole = new VirtualConsole();
+const historicalEntries = [
+  {
+    slug: "scp-001-o5",
+    outputSlug: "scp-001-o5/historical",
+    idPrefix: "scp-001-o5-historical",
+    url: "https://web.archive.org/web/20260121181334id_/https://scp-wiki.wikidot.com/scp-001-o5",
+    canonicalUrl: "https://scp-wiki.wikidot.com/scp-001-o5",
+    archiveTimestamp: "2026-01-21T18:13:34Z",
+    author: "TheDuckman, also known as Bright",
+    sourceStatus:
+      "Removed by the SCP Wiki; retained here only as a historical reference copy.",
+    recommendation: "The Factory. Historical copy of the removed article.",
+  },
+  {
+    slug: "scp-963",
+    outputSlug: "scp-963/historical",
+    idPrefix: "scp-963-historical",
+    url: "https://web.archive.org/web/20260108022149id_/https://scp-wiki.wikidot.com/scp-963",
+    canonicalUrl: "https://scp-wiki.wikidot.com/scp-963",
+    archiveTimestamp: "2026-01-08T02:21:49Z",
+    author: "TheDuckman, also known as Bright",
+    sourceStatus:
+      "Removed by the SCP Wiki; retained here only as a historical reference copy.",
+    recommendation:
+      "Historical copy of the removed SCP-963 article referenced by the SCP Wiki removal notice.",
+  },
+];
 
 const sleep = (milliseconds) =>
   new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -263,7 +294,14 @@ function articleAuthor(article) {
   return "Unknown; consult the source page history and attribution block";
 }
 
-function archiveHtml({ title, url, retrieved, revisionLabel, article }) {
+function archiveHtml({
+  title,
+  url,
+  retrieved,
+  revisionLabel,
+  provenance,
+  article,
+}) {
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -284,7 +322,7 @@ function archiveHtml({ title, url, retrieved, revisionLabel, article }) {
 <body>
   <header>
     <h1>${title.replaceAll("&", "&amp;").replaceAll("<", "&lt;")}</h1>
-    <p class="archive-meta">Archived ${retrieved} from <a href="${url}">${url}</a>${revisionLabel ? `; ${revisionLabel}` : ""}. Source content is licensed under CC BY-SA 3.0 unless the source page states otherwise.</p>
+    <p class="archive-meta">Archived ${retrieved} from <a href="${url}">${url}</a>${revisionLabel ? `; ${revisionLabel}` : ""}. ${provenance} Source content is licensed under CC BY-SA 3.0 unless the source page states otherwise.</p>
   </header>
   <main>${article.innerHTML}</main>
 </body>
@@ -310,7 +348,7 @@ async function archive(entry, retrieved) {
     .forEach((element) => element.remove());
   const title =
     document.querySelector("#page-title")?.textContent?.trim() || entry.slug;
-  const author = articleAuthor(article);
+  const author = entry.author ?? articleAuthor(article);
   const pageInfo = document.querySelector("#page-info")?.textContent ?? "";
   const revisionMatch = pageInfo.match(/page revision:\s*(\d+)/i);
   const modifiedMatch = pageInfo.match(/last edited:\s*([^\n(]+)/i);
@@ -323,13 +361,14 @@ async function archive(entry, retrieved) {
     .filter(Boolean)
     .join(", ");
 
-  const outputDirectory = path.join(root, entry.slug);
+  const outputSlug = entry.outputSlug ?? entry.slug;
+  const outputDirectory = path.join(root, outputSlug);
   await mkdir(outputDirectory, { recursive: true });
   let assetCount = await localizeFrames(article, response.url, outputDirectory);
   assetCount += await localizeMedia(article, response.url, outputDirectory);
   const stem = `${retrieved}${revision === null ? "" : `-revision-${revision}`}`;
-  const textPath = `${entry.slug}/${stem}.txt`;
-  const htmlPath = `${entry.slug}/${stem}.html`;
+  const textPath = `${outputSlug}/${stem}.txt`;
+  const htmlPath = `${outputSlug}/${stem}.html`;
   await writeFile(path.join(root, textPath), `${articleText(article)}\n`);
   await writeFile(
     path.join(root, htmlPath),
@@ -338,21 +377,34 @@ async function archive(entry, retrieved) {
       url: response.url,
       retrieved,
       revisionLabel,
+      provenance: entry.archiveTimestamp
+        ? `Historical Internet Archive capture from ${entry.archiveTimestamp}. ${entry.sourceStatus}`
+        : "",
       article,
     }),
   );
 
-  const notesPath = `${entry.slug}/adaptation.md`;
+  const notesPath = `${outputSlug}/adaptation.md`;
   const notes = (await fileExists(path.join(root, notesPath)))
     ? notesPath
     : undefined;
 
   return {
-    id: `${entry.slug}-${stem}`,
+    id: `${entry.idPrefix ?? entry.slug}-${stem}`,
     title,
     author,
     url: response.url,
-    ...(response.url !== entry.url ? { requestedUrl: entry.url } : {}),
+    ...(entry.canonicalUrl ? { canonicalUrl: entry.canonicalUrl } : {}),
+    ...(entry.archiveTimestamp
+      ? {
+          archiveTimestamp: entry.archiveTimestamp,
+          sourceType: "internet-archive-snapshot",
+          sourceStatus: entry.sourceStatus,
+        }
+      : {}),
+    ...(!entry.archiveTimestamp && response.url !== entry.url
+      ? { requestedUrl: entry.url }
+      : {}),
     license: "CC-BY-SA-3.0",
     licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0/",
     revision,
@@ -371,7 +423,9 @@ async function archive(entry, retrieved) {
 }
 
 const markdown = await readFile(recommendationsPath, "utf8");
-let entries = recommendationEntries(markdown);
+let entries = historicalMode
+  ? historicalEntries
+  : recommendationEntries(markdown);
 if (requestedSlugs.size > 0) {
   entries = entries.filter((entry) => requestedSlugs.has(entry.slug));
 }

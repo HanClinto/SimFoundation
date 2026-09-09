@@ -1004,6 +1004,48 @@
       "assets": 0,
       "capture": "Article body archived as searchable text and standalone HTML with referenced media downloaded where available; navigation, rating controls, and account UI omitted.",
       "transformations": "Links were made absolute and downloaded media links were rewritten to local assets. Article markup and wording were otherwise retained."
+    },
+    {
+      "id": "scp-001-o5-historical-2026-09-09-revision-53",
+      "title": "SCP-001:O5",
+      "author": "TheDuckman, also known as Bright",
+      "url": "https://web.archive.org/web/20260121181334id_/https://scp-wiki.wikidot.com/scp-001-o5",
+      "canonicalUrl": "https://scp-wiki.wikidot.com/scp-001-o5",
+      "archiveTimestamp": "2026-01-21T18:13:34Z",
+      "sourceType": "internet-archive-snapshot",
+      "sourceStatus": "Removed by the SCP Wiki; retained here only as a historical reference copy.",
+      "license": "CC-BY-SA-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "revision": 53,
+      "sourceModified": "04 May 2025 20:37",
+      "retrieved": "2026-09-09",
+      "text": "scp-001-o5/historical/2026-09-09-revision-53.txt",
+      "html": "scp-001-o5/historical/2026-09-09-revision-53.html",
+      "recommendation": "The Factory. Historical copy of the removed article.",
+      "assets": 0,
+      "capture": "Article body archived as searchable text and standalone HTML with referenced media downloaded where available; navigation, rating controls, and account UI omitted.",
+      "transformations": "Links were made absolute and downloaded media links were rewritten to local assets. Article markup and wording were otherwise retained."
+    },
+    {
+      "id": "scp-963-historical-2026-09-09-revision-70",
+      "title": "SCP-963",
+      "author": "TheDuckman, also known as Bright",
+      "url": "https://web.archive.org/web/20260108022149id_/https://scp-wiki.wikidot.com/scp-963",
+      "canonicalUrl": "https://scp-wiki.wikidot.com/scp-963",
+      "archiveTimestamp": "2026-01-08T02:21:49Z",
+      "sourceType": "internet-archive-snapshot",
+      "sourceStatus": "Removed by the SCP Wiki; retained here only as a historical reference copy.",
+      "license": "CC-BY-SA-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "revision": 70,
+      "sourceModified": "29 Jan 2025 08:14",
+      "retrieved": "2026-09-09",
+      "text": "scp-963/historical/2026-09-09-revision-70.txt",
+      "html": "scp-963/historical/2026-09-09-revision-70.html",
+      "recommendation": "Historical copy of the removed SCP-963 article referenced by the SCP Wiki removal notice.",
+      "assets": 4,
+      "capture": "Article body archived as searchable text and standalone HTML with referenced media downloaded where available; navigation, rating controls, and account UI omitted.",
+      "transformations": "Links were made absolute and downloaded media links were rewritten to local assets. Article markup and wording were otherwise retained."
     }
   ]
 }
