@@ -18,7 +18,7 @@ On arrival, **Open field map** opens a second modeless map window for the 28x24 
 
 The operation desk is World-state inspection and mission management. The field map independently supports World and Recorded perspectives, with unknown tiles and remembered sightings in Recorded. **Control on Map** selects and centers the chosen responder without issuing work or clearing pending actions. It preserves the map's Follow setting and refuses control while the map is Recorded or in placement. Personal orders use the field map's queue policy; assembly, dispatch and recall remain team-level operations. The desk is not fog-limited mission reporting yet. Field doors are edited on the field map and cannot change same-coordinate doors in Site 828.
 
-Double-clicking personnel opens their dossier. Objects, sources, tiles, doors and 049-2 open a selection-specific Field Record with location, condition and relevant properties; only the explicit Orders button routes to Expedition Operations. Field Records retain their perspective and expedition identity, and become unavailable when that temporary location closes.
+Double-clicking personnel opens their dossier. Objects, sources, tiles, doors and 049-2 open a selection-specific Field Record with location, condition and relevant properties; only the explicit Response button routes to Expedition Operations. Field Records retain their perspective and expedition identity, and become unavailable when that temporary location closes.
 
 ## Encounter And Recovery
 

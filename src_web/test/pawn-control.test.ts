@@ -946,6 +946,8 @@ it("auto-expands only a sole target, renders icons and keeps order mode outside 
   view.select(state.personnel[0]!.id);
   const openFloor = () =>
     view.ground({ x: 60, y: 59 }, "tile:60,59:floor", { x: 80, y: 80 });
+  const modeLabel = document.querySelector(".pawn-order-settings summary")!;
+  expect(modeLabel.textContent).toBe("Queue");
   openFloor();
   expect(document.querySelectorAll("[data-menu-target]")).toHaveLength(1);
   expect(
@@ -960,6 +962,7 @@ it("auto-expands only a sole target, renders icons and keeps order mode outside 
     document.querySelector("[data-menu-target] img")!.getAttribute("src"),
   ).toBeTruthy();
   document.querySelector<HTMLButtonElement>('[data-order-mode="now"]')!.click();
+  expect(modeLabel.textContent).toBe("Do Now");
   view.close();
   openFloor();
   expect(
@@ -982,6 +985,50 @@ it("auto-expands only a sole target, renders icons and keeps order mode outside 
     document.querySelector<HTMLButtonElement>('[data-order-mode="now"]')!
       .disabled,
   ).toBe(true);
+  expect(modeLabel.textContent).toBe("Do Now");
+});
+
+it("keeps visible submission mode independent per map and keyboard-selectable", () => {
+  const { controller, window } = setup();
+  const first = document.querySelector<HTMLDetailsElement>(
+    ".pawn-order-settings",
+  )!;
+  const host = document.createElement("section");
+  host.innerHTML = "<div><canvas></canvas></div>";
+  document.body.append(host);
+  createPawnControl(
+    host.querySelector("canvas")!,
+    controller,
+    vi.fn(),
+    vi.fn(),
+  );
+  const second = host.querySelector(".pawn-order-settings")!;
+  first.open = true;
+  first
+    .querySelector("summary")!
+    .dispatchEvent(
+      new window.KeyboardEvent("keydown", { key: "End", bubbles: true }),
+    );
+  const now = first.querySelector<HTMLButtonElement>(
+    '[data-order-mode="now"]',
+  )!;
+  expect(document.activeElement).toBe(now);
+  now.click();
+  expect(first.querySelector("summary")!.textContent).toBe("Do Now");
+  expect(second.querySelector("summary")!.textContent).toBe("Queue");
+  first.open = true;
+  first
+    .querySelector("summary")!
+    .dispatchEvent(
+      new window.KeyboardEvent("keydown", { key: "Home", bubbles: true }),
+    );
+  const append = first.querySelector<HTMLButtonElement>(
+    '[data-order-mode="append"]',
+  )!;
+  expect(document.activeElement).toBe(append);
+  append.click();
+  expect(first.querySelector("summary")!.textContent).toBe("Queue");
+  expect(append.getAttribute("aria-checked")).toBe("true");
 });
 
 it("reorders pending tray tiles with drag and keyboard while keeping the current action pinned", () => {

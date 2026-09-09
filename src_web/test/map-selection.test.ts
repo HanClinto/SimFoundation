@@ -16,6 +16,14 @@ it("shows needs only in World view and routes object actions without directly mo
   const panel = createMapSelection(document.body, controller, inspect, move);
   const snapshot = controller.getSnapshot();
   panel.render(snapshot, snapshot.game.personnel[0]!.id, "world");
+  const response = [...panel.element.querySelectorAll("button")].find(
+    (button) => button.textContent === "Response",
+  )!;
+  response.click();
+  expect(inspect).toHaveBeenCalledWith(
+    `tactical:${snapshot.game.personnel[0]!.id}`,
+    "world",
+  );
   expect(
     panel.element.querySelector<HTMLElement>("[data-selection-needs]")!.hidden,
   ).toBe(false);

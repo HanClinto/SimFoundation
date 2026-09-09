@@ -50,7 +50,8 @@ export function createMapSelection(
   )!;
   const ordersButton = document.createElement("button");
   ordersButton.type = "button";
-  ordersButton.textContent = "Orders";
+  ordersButton.textContent = "Response";
+  ordersButton.title = "Open response operations for this person";
   ordersButton.hidden = true;
   element.querySelector(".map-selection-actions")!.append(ordersButton);
   const controlButton = document.createElement("button");

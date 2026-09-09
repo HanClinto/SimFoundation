@@ -86,7 +86,8 @@ export function createPawnControl(
   const settings = document.createElement("details");
   settings.className = "pawn-order-settings";
   const settingsLabel = document.createElement("summary");
-  settingsLabel.textContent = "Orders";
+  settingsLabel.textContent = "Queue";
+  settingsLabel.title = "New orders: Add to Queue";
   const settingsMenu = document.createElement("ul");
   settingsMenu.className = "menu";
   settingsMenu.setAttribute("role", "menu");
@@ -107,6 +108,7 @@ export function createPawnControl(
       mode = value === "now" ? "now" : "append";
       for (const button of modes)
         button.setAttribute("aria-checked", String(button === option));
+      settingsLabel.textContent = mode === "now" ? "Do Now" : "Queue";
       settingsLabel.title = `New orders: ${label}`;
       settings.open = false;
       updateMenu();

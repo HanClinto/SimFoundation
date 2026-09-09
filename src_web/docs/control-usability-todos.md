@@ -27,10 +27,11 @@ Status: implementation in progress. Check items only after their scoped checks p
 
 ## 3. Clear Command Mode and Inspector Names
 
-- [ ] Replace the closed toolbar label Orders with a compact visible Queue / Do Now mode control using the existing menu/radio pattern or segmented control.
-- [ ] Rename the selected-person Orders inspector link to Tactical or Response; ensure base/field routing still reaches the appropriate inspector.
+- [x] Replace the closed toolbar label Orders with a compact visible Queue / Do Now mode control using the existing menu/radio pattern or segmented control.
+- [x] Rename the selected-person Orders inspector link to Tactical or Response; ensure base/field routing still reaches the appropriate inspector.
 - Acceptance: the active submission policy is visible without opening a menu; keyboard semantics and per-map independence remain; no two unrelated controls are both labelled Orders.
 - Validation: menu mode persistence, keyboard selection, base/field independence, narrow toolbar layout.
+- Verified: closed summary reflects Queue/Do Now, existing radio-menu keyboard navigation and per-map independence are preserved, and Response retains the shared tactical-record routing. Browser confirmed 560px toolbar fit, immediate label update, Response opening Tactical Response and unchanged save. All 367 tests and full build gate passed.
 
 ## 4. Consistent Object Location and Inspection
 
