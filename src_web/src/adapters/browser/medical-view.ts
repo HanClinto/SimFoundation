@@ -209,6 +209,12 @@ function updateMedicalChart(
           )
           .join(", "),
       ),
+      ...(effect.causes ?? []).map((cause) =>
+        textElement(
+          "small",
+          `Inflicted by ${cause.sourceName} at ${cause.locationName} / tick ${cause.tick} / simulation minute ${cause.gameMinute}`,
+        ),
+      ),
     );
     return item;
   });

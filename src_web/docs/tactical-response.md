@@ -1,6 +1,6 @@
 # Tactical Response
 
-Implemented first encounter, tracked in [#21](https://github.com/HanClinto/SimFoundation/issues/21), with direct map interactions from [#23](https://github.com/HanClinto/SimFoundation/issues/23). Save schema 40 requires a fresh development site.
+Implemented first encounter, tracked in [#21](https://github.com/HanClinto/SimFoundation/issues/21), with direct map interactions from [#23](https://github.com/HanClinto/SimFoundation/issues/23). Injury provenance uses save schema 49; older development saves are discarded without migration.
 
 ## Orders
 
@@ -30,6 +30,8 @@ The instance moves every second simulation tick, detects participants within six
 At zero functional health, a responder is incapacitated and cannot move, work, or provide sight. A Stabilize order physically approaches a reachable treatment position on the same or a cardinally adjacent tile, then completes six preparation steps, consuming one kit. Travel consumes no kit. Range and sight are checked throughout, and a blocked route retains the order with a reason. Stabilization stops deterioration; an incapacitated responder requires a further 12 recovery steps before they can withdraw at 25 functional health.
 
 Stabilization is not full healing. A persistent tactical-trauma effect remains assessable through the clinical system; tactical status is not automatically a clinical diagnosis. This slice does not implement permanent staff death, automatic treatment, or casualty carrying. Additional staff can be drafted to assist incapacitated participants. If no one has usable supplies, recovery requires restarting the development scenario; no free resupply button is provided.
+
+Each successful hit appends an injury cause containing the attacker's ID and display name, map ID and location name, tick and simulation minute. The medical chart shows these records directly alongside the active injury. Later hits append rather than overwrite earlier causes; deterioration and stabilization do not add causes. Location and name snapshots remain valid after expedition return removes the temporary map or another encounter replaces the attacker. Starting injuries without an authored cause remain unattributed rather than receiving an invented history. This records provenance on the existing aggregate trauma effect, not a new wound, healing or diagnosis system.
 
 ## Withdrawal And Records
 

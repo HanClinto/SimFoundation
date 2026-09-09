@@ -47,6 +47,15 @@ export type BodyRegion =
   | "leftFoot"
   | "rightFoot";
 
+export interface InjuryCause {
+  readonly sourceId: string;
+  readonly sourceName: string;
+  readonly mapId: string;
+  readonly locationName: string;
+  readonly tick: number;
+  readonly gameMinute: number;
+}
+
 export interface PersonnelEffect {
   readonly id: string;
   readonly name: string;
@@ -56,6 +65,7 @@ export interface PersonnelEffect {
   readonly physicalHealthPenalty: number;
   readonly stressRecoveryPerTick: number;
   readonly expiresAtTick: number | null;
+  readonly causes?: readonly InjuryCause[];
 }
 
 export interface AssessmentConclusion {

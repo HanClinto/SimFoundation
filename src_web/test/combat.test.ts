@@ -73,6 +73,19 @@ it("patrols the depot without hidden target knowledge, opens doors and attacks a
       (responder) => responder.injuries > 0,
     ),
   ).toBe(true);
+  const injury = state.personnel
+    .flatMap((person) => person.effects)
+    .find((effect) => effect.causes?.length);
+  expect(injury?.causes).toEqual([
+    {
+      sourceId: "SCP-049-2",
+      sourceName: "SCP-049-2",
+      mapId: state.expeditions.active!.site!.world.map.id,
+      locationName: "Relay Depot 14",
+      tick: state.tick,
+      gameMinute: state.gameMinute,
+    },
+  ]);
   expect(load(state).status).toBe("loaded");
 });
 function encounter() {
@@ -272,6 +285,23 @@ it("incapacitates an exposed responder and requires adjacent stabilization plus 
         (effect) => effect.id === `effect-tactical-trauma-${first}`,
       ),
   ).toBe(true);
+  const causes = state.personnel
+    .find((person) => person.id === first)!
+    .effects.find(
+      (effect) => effect.id === `effect-tactical-trauma-${first}`,
+    )!.causes!;
+  expect(causes.length).toBeGreaterThan(1);
+  expect(causes).toHaveLength(state.combat.responders[first]!.injuries);
+  for (const [index, cause] of causes.entries()) {
+    expect(cause).toMatchObject({
+      sourceId: "SCP-049-2",
+      sourceName: "SCP-049-2",
+      mapId: state.world.map.id,
+      locationName: state.siteName,
+    });
+    expect(cause.gameMinute - cause.tick).toBe(state.gameMinute - state.tick);
+    if (index > 0) expect(cause.tick).toBeGreaterThan(causes[index - 1]!.tick);
+  }
   expect(load(state).status).toBe("loaded");
   expect(orderResponder(state, first, "move", { x: 60, y: 55 }).code).toBe(
     "incapacitated",
@@ -308,7 +338,66 @@ it("incapacitates an exposed responder and requires adjacent stabilization plus 
     health: 25,
     stabilized: true,
   });
+  expect(
+    state.personnel
+      .find((person) => person.id === first)!
+      .effects.find(
+        (effect) => effect.id === `effect-tactical-trauma-${first}`,
+      )!.causes,
+  ).toEqual(causes);
+  const restored = load(state);
+  expect(restored.status).toBe("loaded");
+  if (restored.status !== "loaded") throw new Error("Injury save rejected");
+  expect(restored.state.personnel).toEqual(state.personnel);
+  expect(advanceSimulation(restored.state)).toEqual(advanceSimulation(state));
   expect(load(state).status).toBe("loaded");
+});
+
+it("rejects malformed injury causes while preserving references to departed sources", () => {
+  const initial = createInitialState();
+  const cause = {
+    sourceId: "departed-attacker",
+    sourceName: "SCP-049-2",
+    mapId: "field-expedition-1",
+    locationName: "Relay Depot 14",
+    tick: 0,
+    gameMinute: initial.gameMinute,
+  };
+  const state = {
+    ...initial,
+    personnel: initial.personnel.map((person) => ({
+      ...person,
+      effects: person.effects.map((effect) =>
+        effect.kind === "injury" ? { ...effect, causes: [cause] } : effect,
+      ),
+    })),
+  };
+  const restored = load(state);
+  expect(restored.status).toBe("loaded");
+  if (restored.status !== "loaded")
+    throw new Error("Historical cause rejected");
+  expect(restored.state.personnel).toEqual(state.personnel);
+  for (const patch of [
+    { sourceId: "" },
+    { sourceName: "" },
+    { mapId: "" },
+    { locationName: "" },
+    { tick: -1 },
+    { gameMinute: 0.5 },
+  ]) {
+    const corrupted = {
+      ...state,
+      personnel: state.personnel.map((person) => ({
+        ...person,
+        effects: person.effects.map((effect) =>
+          effect.causes
+            ? { ...effect, causes: [{ ...cause, ...patch }] }
+            : effect,
+        ),
+      })),
+    };
+    expect(load(corrupted).status).toBe("invalid");
+  }
 });
 
 it("rejects malformed tactical saves and does not update unseen adversary memory", () => {

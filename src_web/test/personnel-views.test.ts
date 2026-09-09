@@ -195,4 +195,45 @@ describe("personnel reference windows", () => {
     expect(chart.querySelector(".anatomy-illustration")).not.toBeNull();
     expect(chart.textContent).toContain("Deep right forearm laceration");
   });
+  it("shows each retained injury cause without requiring a live attacker or map", () => {
+    const state = createInitialState();
+    const person = state.personnel.find(
+      (person) => person.id === "person-lena-ortiz",
+    )!;
+    const causes = [
+      {
+        sourceId: "SCP-049-2",
+        sourceName: "SCP-049-2",
+        mapId: "field-expedition-1",
+        locationName: "Relay Depot 14",
+        tick: 42,
+        gameMinute: 522,
+      },
+      {
+        sourceId: "another-attacker",
+        sourceName: "Another attacker",
+        mapId: "field-expedition-2",
+        locationName: "Other location",
+        tick: 82,
+        gameMinute: 562,
+      },
+    ];
+    const injured = {
+      ...person,
+      effects: person.effects.map((effect) =>
+        effect.kind === "injury" ? { ...effect, causes } : effect,
+      ),
+    };
+    const windows = createPersonnelMedicalWindows(document.body, [injured]);
+    updatePersonnelMedicalWindows(windows, [injured], 100);
+    const chart = windows.medicalCharts[0]!;
+    expect(chart.textContent).toContain(
+      "Inflicted by SCP-049-2 at Relay Depot 14 / tick 42 / simulation minute 522",
+    );
+    expect(chart.textContent).toContain(
+      "Inflicted by Another attacker at Other location / tick 82 / simulation minute 562",
+    );
+    updatePersonnelMedicalWindows(windows, [injured], 101);
+    expect(chart.textContent!.match(/Inflicted by/g)).toHaveLength(2);
+  });
 });

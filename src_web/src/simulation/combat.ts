@@ -1,4 +1,5 @@
 import type { GameState } from "./state";
+import type { InjuryCause } from "./personnel";
 import { recordDoorOpening } from "./action-progress";
 import {
   findRoute,
@@ -529,6 +530,7 @@ export function advanceCombat(state: GameState): GameState {
   let responders = { ...state.combat.responders };
   let adversary = state.combat.adversary;
   let events = [...state.combat.events];
+  const injuryCauses: Record<string, InjuryCause> = {};
   const report = (text: string) => {
     events.push({ tick: state.tick, text });
     events = events.slice(-40);
@@ -786,6 +788,14 @@ export function advanceCombat(state: GameState): GameState {
         else {
           const victim = responders[targetId] ?? readyResponder();
           const health = Math.max(0, victim.health - 35);
+          injuryCauses[targetId] = {
+            sourceId: adversary.id,
+            sourceName: adversary.id,
+            mapId: state.world.map.id,
+            locationName: state.siteName,
+            tick: state.tick,
+            gameMinute: state.gameMinute,
+          };
           responders[targetId] = {
             ...victim,
             health,
@@ -798,7 +808,7 @@ export function advanceCombat(state: GameState): GameState {
           };
           adversary = { ...adversary, phase: "recovering", remaining: 4 };
           report(
-            `${state.personnel.find((person) => person.id === targetId)!.name} injured${health === 0 ? " and incapacitated" : ""}.`,
+            `${state.personnel.find((person) => person.id === targetId)!.name} injured by ${adversary.id}${health === 0 ? " and incapacitated" : ""}.`,
           );
         }
       } else if (
@@ -945,6 +955,9 @@ export function advanceCombat(state: GameState): GameState {
       if (!responder || (!responder.drafted && !responder.incapacitated))
         return person;
       const effectId = `effect-tactical-trauma-${person.id}`;
+      const previousCauses =
+        person.effects.find((effect) => effect.id === effectId)?.causes ?? [];
+      const cause = injuryCauses[person.id];
       const effects =
         responder.injuries > 0
           ? [
@@ -961,6 +974,7 @@ export function advanceCombat(state: GameState): GameState {
                 physicalHealthPenalty: Math.min(60, responder.injuries * 10),
                 stressRecoveryPerTick: 0,
                 expiresAtTick: null,
+                causes: cause ? [...previousCauses, cause] : previousCauses,
               },
             ]
           : person.effects;

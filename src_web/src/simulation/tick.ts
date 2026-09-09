@@ -62,13 +62,12 @@ function advanceSiteSimulation(state: GameState): GameState {
       ),
     ]),
   };
-  state = advanceCombat({ ...state, tick });
+  state = advanceCombat({ ...state, tick, gameMinute: state.gameMinute + 1 });
   state = advanceRoutines(
     refreshMealSummary(
       discoverClinicalWork({
         ...state,
         tick,
-        gameMinute: state.gameMinute + 1,
         personnel: state.personnel.map((person) =>
           advancePersonnel(person, tick),
         ),

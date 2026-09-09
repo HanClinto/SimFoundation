@@ -186,7 +186,20 @@ function isPersonnelEffect(value: unknown): boolean {
     value.physicalHealthPenalty >= 0 &&
     isFiniteNumber(value.stressRecoveryPerTick) &&
     value.stressRecoveryPerTick >= 0 &&
-    isNullableTick(value.expiresAtTick)
+    isNullableTick(value.expiresAtTick) &&
+    (value.causes === undefined ||
+      (value.kind === "injury" &&
+        isArrayOf(
+          value.causes,
+          (cause) =>
+            isRecord(cause) &&
+            isNonEmptyString(cause.sourceId) &&
+            isNonEmptyString(cause.sourceName) &&
+            isNonEmptyString(cause.mapId) &&
+            isNonEmptyString(cause.locationName) &&
+            isIntegerInRange(cause.tick, 0) &&
+            isIntegerInRange(cause.gameMinute, 0),
+        )))
   );
 }
 

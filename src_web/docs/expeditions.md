@@ -51,6 +51,8 @@ Arrival restores each member's base position once, retains injuries/effects, equ
 
 The temporary site's state is removed from the save only after the transfer succeeds. The field window closes. Unrecovered field items are not copied home. A later retry generates a fresh operation identity, not a duplicate object identity. Current history is bounded to 20 return reports.
 
+Combat injury causes remain attached to personnel after return, including the attacker, field location and simulation time. The medical chart does not need the temporary map or attacker to still exist. This provenance is recorded from schema 49 onward; older saves are discarded, not migrated.
+
 ## Scope And Remaining Work
 
 Two authored notices and one active expedition at a time. No mission deadlines, notification generator, strategic map, fuel, animated vehicles, expedition food supply, selectable physical weapon inventory, staff death/abandonment, living captive transport, or simultaneous field teams. Current combat incapacitates rather than permanently kills personnel, so return accounting requires the entire enlisted team to be recoverable. If all available help and medical kits are exhausted, this development slice has no rescue reinforcement or free-healing command.

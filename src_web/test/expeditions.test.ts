@@ -15,13 +15,100 @@ import {
 import { advanceSimulation } from "../src/simulation/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
-import { orderResponder } from "../src/simulation/combat";
+import { advanceCombat, orderResponder } from "../src/simulation/combat";
 import { setSurface } from "../src/simulation/materials";
 
 const loaded = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });
 
 const team = ["person-caleb-ward", "person-lena-ortiz"];
+it("retains an inflicted injury's field provenance after stabilization and return", () => {
+  const controller = createController(createInitialState());
+  controller.enlistExpedition("notice-depot", team);
+  for (
+    let tick = 0;
+    tick < 180 && !expeditionAssembled(controller.getSnapshot().game);
+    tick++
+  )
+    controller.advance();
+  expect(controller.dispatchExpedition().code).toBe("accepted");
+  let state = controller.advance(30).game;
+  let field = fieldState(state)!;
+  field = advanceCombat({
+    ...field,
+    combat: {
+      ...field.combat,
+      adversary: {
+        ...field.combat.adversary!,
+        position: { x: 5, y: 12 },
+        phase: "preparing",
+        remaining: 1,
+        targetId: team[0]!,
+      },
+    },
+  });
+  const effectId = `effect-tactical-trauma-${team[0]}`;
+  const causes = field.personnel
+    .find((person) => person.id === team[0])!
+    .effects.find((effect) => effect.id === effectId)!.causes;
+  expect(causes).toHaveLength(1);
+  state = storeFieldState(state, {
+    ...field,
+    combat: {
+      ...field.combat,
+      status: "neutralized",
+      adversary: {
+        ...field.combat.adversary!,
+        health: 0,
+        phase: "ready",
+        remaining: 0,
+        targetId: null,
+      },
+    },
+  });
+  const returning = createController(state);
+  expect(
+    returning.orderFieldResponder(
+      state.expeditions.active!.id,
+      team[1]!,
+      "stabilize",
+      undefined,
+      team[0]!,
+    ).code,
+  ).toBe("accepted");
+  for (
+    let tick = 0;
+    tick < 50 &&
+    !fieldState(returning.getSnapshot().game)!.combat.responders[team[0]!]!
+      .stabilized;
+    tick++
+  )
+    returning.advance();
+  expect(
+    fieldState(returning.getSnapshot().game)!.combat.responders[team[0]!]!
+      .stabilized,
+  ).toBe(true);
+  expect(returning.recallExpedition().code).toBe("accepted");
+  for (
+    let tick = 0;
+    tick < 180 && returning.getSnapshot().game.expeditions.active;
+    tick++
+  )
+    returning.advance();
+  const result = returning.getSnapshot().game;
+  expect(result.expeditions.active).toBeNull();
+  expect(
+    result.personnel
+      .find((person) => person.id === team[0])!
+      .effects.find((effect) => effect.id === effectId)!.causes,
+  ).toEqual(causes);
+  const restored = loaded(result);
+  expect(restored.status).toBe("loaded");
+  if (restored.status !== "loaded")
+    throw new Error("Returned injury save rejected");
+  expect(restored.state.personnel).toEqual(result.personnel);
+});
+
 it("previews lifecycle commands without changing state and returns execution's reason", () => {
   const controller = createController(createInitialState());
   controller.setRunning(true);
