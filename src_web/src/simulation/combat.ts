@@ -517,7 +517,10 @@ function attackRoute(
   return best;
 }
 
-export function advanceCombat(state: GameState): GameState {
+export function advanceCombat(
+  state: GameState,
+  withdrawal: "distance" | "explicit" = "distance",
+): GameState {
   for (const [id, responder] of Object.entries(state.combat.responders)) {
     if (
       responder.returnToAutonomy &&
@@ -909,9 +912,8 @@ export function advanceCombat(state: GameState): GameState {
           distance(state.world.positions[id]!, adversary!.origin) >
             ENCOUNTER_RADIUS,
       );
-      const fieldEncounter =
-        state.expeditions.active?.site?.world.map.id === state.world.map.id;
-      withdrawalTicks = withdrawn && !fieldEncounter ? withdrawalTicks + 1 : 0;
+      withdrawalTicks =
+        withdrawn && withdrawal === "distance" ? withdrawalTicks + 1 : 0;
       if (withdrawalTicks >= 8) {
         status = "withdrawn";
         adversary = {

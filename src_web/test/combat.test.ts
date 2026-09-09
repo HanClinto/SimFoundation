@@ -20,6 +20,30 @@ import { fieldState } from "../src/simulation/expeditions";
 
 const first = "person-caleb-ward";
 const second = "person-lena-ortiz";
+it("uses the supplied withdrawal policy rather than inferring it from a field map", () => {
+  const controller = createController(createInitialState());
+  controller.enlistExpedition("notice-depot", [first, second]);
+  controller.advance(100);
+  controller.dispatchExpedition();
+  const arrival = controller.advance(30).game;
+  let distance = fieldState(arrival)!;
+  let explicit = distance;
+  for (let step = 0; step < 8; step += 1) {
+    distance = advanceCombat(
+      { ...distance, tick: distance.tick + 1 },
+      "distance",
+    );
+    explicit = advanceCombat(
+      { ...explicit, tick: explicit.tick + 1 },
+      "explicit",
+    );
+  }
+  expect(distance.combat.status).toBe("withdrawn");
+  expect(explicit.combat.status).toBe("active");
+  expect(explicit.combat.withdrawalTicks).toBe(0);
+  expect(arrival.expeditions.active!.site!.combat.status).toBe("active");
+});
+
 it("patrols the depot without hidden target knowledge, opens doors and attacks a visible responder", () => {
   const controller = createController(createInitialState());
   controller.enlistExpedition("notice-depot", [first, second]);
@@ -37,8 +61,11 @@ it("patrols the depot without hidden target knowledge, opens doors and attacks a
   };
   const visited = new Set<string>();
   for (let tick = 0; tick < 64; tick += 1) {
-    field = advanceCombat({ ...field, tick: field.tick + 1 });
-    alternate = advanceCombat({ ...alternate, tick: alternate.tick + 1 });
+    field = advanceCombat({ ...field, tick: field.tick + 1 }, "explicit");
+    alternate = advanceCombat(
+      { ...alternate, tick: alternate.tick + 1 },
+      "explicit",
+    );
     expect(field.combat.adversary!.position).toEqual(
       alternate.combat.adversary!.position,
     );

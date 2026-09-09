@@ -2,6 +2,8 @@
 
 This document defines the initial implementation boundaries for the web game. It is intentionally more stable than the folder layout: modules may move, but dependency direction and state ownership should remain explicit.
 
+Approved next direction: [persistent multi-site simulation](decisions/008-persistent-multi-site-simulation.md), with a [staged refactor plan](multi-site-refactor.md), tracked in [#24](https://github.com/HanClinto/SimFoundation/issues/24). The first internal checkpoint separates site/clock state types, makes the global coordinator supply the local tick clock, and passes combat withdrawal policy explicitly. Persistent site ownership is not implemented yet. The base/temporary-expedition descriptions below document current behavior, not the target architecture; site lifetime and simulation will become independent of expeditions and quests.
+
 ## Goals
 
 - Run the complete simulation headlessly in Node without browser globals.

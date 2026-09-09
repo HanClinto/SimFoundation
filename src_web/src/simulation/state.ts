@@ -30,15 +30,15 @@ export interface IncidentState {
   readonly summary: string;
 }
 
-export interface GameState {
-  readonly actionTimings: Readonly<Record<string, ActionTiming>>;
-  readonly actionQueues: ActionQueues;
-  readonly expeditions: ExpeditionState;
-  readonly combat: CombatState;
-  readonly version: typeof GAME_STATE_VERSION;
-  readonly seed: number;
+export interface SimulationClock {
   readonly tick: number;
   readonly gameMinute: number;
+}
+
+export interface SiteState {
+  readonly actionTimings: Readonly<Record<string, ActionTiming>>;
+  readonly actionQueues: ActionQueues;
+  readonly combat: CombatState;
   readonly siteName: string;
   readonly incident: IncidentState;
   readonly jobs: readonly SiteJob[];
@@ -53,6 +53,15 @@ export interface GameState {
   readonly objectOrders: readonly ObjectOrder[];
   readonly storage: StorageState;
   readonly vesselWork: VesselWork;
+}
+
+export interface SiteSimulationState extends SiteState, SimulationClock {
+  readonly seed: number;
+}
+
+export interface GameState extends SiteSimulationState {
+  readonly version: typeof GAME_STATE_VERSION;
+  readonly expeditions: ExpeditionState;
 }
 
 export function createInitialState(seed = 9620): GameState {

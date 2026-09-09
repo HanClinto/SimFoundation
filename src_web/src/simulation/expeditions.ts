@@ -782,7 +782,7 @@ export function advanceExpedition(state: GameState): GameState {
       field.combat.adversary ? [field.combat.adversary.position] : [],
     ),
   };
-  field = advanceCombat(field);
+  field = advanceCombat(field, "explicit");
   const orders = active.recoveryOrders.map((order) => {
     if (order.phase === "delivered") return order;
     const responder = field.combat.responders[order.personId]!;

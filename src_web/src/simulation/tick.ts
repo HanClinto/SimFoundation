@@ -17,22 +17,31 @@ import {
 import { advanceJobs } from "./jobs";
 import { advancePersonnel } from "./personnel";
 import { advanceScp999 } from "./scp-999";
-import type { GameState } from "./state";
+import type { GameState, SimulationClock } from "./state";
 import { discoverClinicalWork } from "./clinical";
 import { advanceRoutines, routineUnavailableIds } from "./routines";
 
 export function advanceSimulation(state: GameState): GameState {
   state = trackActionTimes(advanceActionQueues(state));
+  const clock: SimulationClock = {
+    tick: state.tick + 1,
+    gameMinute: state.gameMinute + 1,
+  };
   const away = awayPersonnel(state);
   if (!away.length)
     return trackActionTimes(
-      advanceActionQueues(advanceExpedition(advanceSiteSimulation(state))),
+      advanceActionQueues(
+        advanceExpedition(advanceSiteSimulation(state, clock)),
+      ),
     );
   const roster = state.personnel;
-  const local = advanceSiteSimulation({
-    ...state,
-    personnel: roster.filter((person) => !away.includes(person.id)),
-  });
+  const local = advanceSiteSimulation(
+    {
+      ...state,
+      personnel: roster.filter((person) => !away.includes(person.id)),
+    },
+    clock,
+  );
   return trackActionTimes(
     advanceActionQueues(
       advanceExpedition({
@@ -46,8 +55,11 @@ export function advanceSimulation(state: GameState): GameState {
   );
 }
 
-function advanceSiteSimulation(state: GameState): GameState {
-  const tick = state.tick + 1;
+export function advanceSiteSimulation(
+  state: GameState,
+  clock: SimulationClock,
+): GameState {
+  const { tick } = clock;
   state = {
     ...state,
     world: closeAutomaticDoors(state.world, [
@@ -62,7 +74,7 @@ function advanceSiteSimulation(state: GameState): GameState {
       ),
     ]),
   };
-  state = advanceCombat({ ...state, tick, gameMinute: state.gameMinute + 1 });
+  state = advanceCombat({ ...state, ...clock });
   state = advanceRoutines(
     refreshMealSummary(
       discoverClinicalWork({
