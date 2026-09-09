@@ -7,11 +7,11 @@ import {
   exposurePosition,
   type ExposureCommandCode,
   type ExposureSourcePolicy,
-} from "../../simulation/environment";
-import { surfaceAt } from "../../simulation/materials";
-import { containingBarrier } from "../../simulation/vessels";
-import { OBJECT_DEFINITIONS } from "../../simulation/objects";
-import type { TilePosition } from "../../simulation/world";
+} from "../../simulation_legacy/environment";
+import { surfaceAt } from "../../simulation_legacy/materials";
+import { containingBarrier } from "../../simulation_legacy/vessels";
+import { OBJECT_DEFINITIONS } from "../../simulation_legacy/objects";
+import type { TilePosition } from "../../simulation_legacy/world";
 import type { PlacementRequest } from "./placement";
 
 const messages: Record<ExposureCommandCode, string> = {

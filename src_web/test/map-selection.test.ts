@@ -2,7 +2,7 @@ import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createMapSelection } from "../src/adapters/browser/map-selection";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 
 afterEach(() => vi.unstubAllGlobals());
 it("shows needs only in World view and routes object actions without directly moving inventory", () => {

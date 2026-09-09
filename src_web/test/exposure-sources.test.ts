@@ -1,23 +1,23 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   advanceExposure,
   exposureTiles,
   setExposureSource,
   removeExposureSource,
   discoverSurfaceWork,
-} from "../src/simulation/environment";
+} from "../src/simulation_legacy/environment";
 import {
   damageSurface,
   setSurface,
   surfaceAt,
-} from "../src/simulation/materials";
-import { observeSite } from "../src/simulation/observations";
-import { setDoorPolicy } from "../src/simulation/world";
+} from "../src/simulation_legacy/materials";
+import { observeSite } from "../src/simulation_legacy/observations";
+import { setDoorPolicy } from "../src/simulation_legacy/world";
 import { createController } from "../src/application/controller";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { advanceSimulation } from "../src/simulation/tick";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 const policy = {
   name: "Corrosive source",

@@ -1,16 +1,16 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   discoverStorageWork,
   setStorageArea,
   storageStatus,
   type StoragePolicy,
-} from "../src/simulation/storage";
-import { setExposureSource } from "../src/simulation/environment";
-import { orderObjectMove } from "../src/simulation/object-work";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/storage";
+import { setExposureSource } from "../src/simulation_legacy/environment";
+import { orderObjectMove } from "../src/simulation_legacy/object-work";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { reservedObject } from "../src/simulation/objects";
+import { reservedObject } from "../src/simulation_legacy/objects";
 
 function verifySave(state: ReturnType<typeof createInitialState>) {
   const loaded = loadGameState({

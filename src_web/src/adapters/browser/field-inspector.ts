@@ -2,10 +2,16 @@ import type { ControllerSnapshot } from "../../application/controller";
 import { fieldSnapshot } from "./expedition-controller";
 import { observedSnapshot } from "./observed-view";
 import { engineeringRecord, exposureMapPosition } from "./map-objects";
-import { OBJECT_DEFINITIONS, objectPosition } from "../../simulation/objects";
-import { ENCOUNTER_RADIUS, adversaryBehavior } from "../../simulation/combat";
+import {
+  OBJECT_DEFINITIONS,
+  objectPosition,
+} from "../../simulation_legacy/objects";
+import {
+  ENCOUNTER_RADIUS,
+  adversaryBehavior,
+} from "../../simulation_legacy/combat";
 import type { MapPerspective } from "./map-settings";
-import type { TilePosition } from "../../simulation/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 export function fieldInspectionTarget(id: string): {
   kind: "orders" | "personnel" | "record";

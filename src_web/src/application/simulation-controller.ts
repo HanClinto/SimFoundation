@@ -6,38 +6,44 @@ import {
   updateSite,
   type SimulationState,
   type SiteSetup,
-} from "../simulation/sites";
-import type { IncidentLevel } from "../simulation/state";
+} from "../simulation_legacy/sites";
+import type { IncidentLevel } from "../simulation_legacy/state";
 import {
   dispatchFreight,
   returnFreight,
   type FreightRequest,
-} from "../simulation/site-transfers";
-import { siteActions } from "../simulation/site-actions";
-import type { ActionIntent } from "../simulation/action-queue-core";
+} from "../simulation_legacy/site-transfers";
+import { siteActions } from "../simulation_legacy/site-actions";
+import type { ActionIntent } from "../simulation_legacy/action-queue-core";
 import {
   orderSurfaceWork,
   cancelSurfaceWork,
   setExposureSource,
   type ExposureSourcePolicy,
   type SurfaceOperation,
-} from "../simulation/environment";
-import { orderObjectMove, cancelObjectMove } from "../simulation/object-work";
+} from "../simulation_legacy/environment";
+import {
+  orderObjectMove,
+  cancelObjectMove,
+} from "../simulation_legacy/object-work";
 import {
   craftVessel,
   orderVesselAction,
   cancelVesselWork,
   type VesselAction,
-} from "../simulation/vessel-work";
-import { setWorkPriority, type WorkPriority } from "../simulation/jobs";
+} from "../simulation_legacy/vessel-work";
+import { setWorkPriority, type WorkPriority } from "../simulation_legacy/jobs";
 import {
   setDoorPolicy,
   tileAt,
   type DoorPolicy,
   type TilePosition,
-} from "../simulation/world";
-import type { MaterialId, SurfaceLayer } from "../simulation/materials";
-import { objectFootprint, type ObjectOrientation } from "../simulation/objects";
+} from "../simulation_legacy/world";
+import type { MaterialId, SurfaceLayer } from "../simulation_legacy/materials";
+import {
+  objectFootprint,
+  type ObjectOrientation,
+} from "../simulation_legacy/objects";
 
 export type SimulationCommand =
   | { readonly kind: "dispatch-freight"; readonly request: FreightRequest }

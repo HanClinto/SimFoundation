@@ -3,11 +3,11 @@ import {
   objectFootprint,
   objectPosition,
   type PhysicalObject,
-} from "../../simulation/objects";
-import type { GameState } from "../../simulation/state";
-import type { TilePosition } from "../../simulation/world";
-import { MATERIALS } from "../../simulation/materials";
-import { isElectrical, powerNetwork } from "../../simulation/power";
+} from "../../simulation_legacy/objects";
+import type { GameState } from "../../simulation_legacy/state";
+import type { TilePosition } from "../../simulation_legacy/world";
+import { MATERIALS } from "../../simulation_legacy/materials";
+import { isElectrical, powerNetwork } from "../../simulation_legacy/power";
 
 export function vesselAppearance(
   item: PhysicalObject,

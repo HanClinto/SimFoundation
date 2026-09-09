@@ -4,9 +4,9 @@ import {
   createSimulation,
   createSite,
   updateSite,
-} from "../src/simulation/sites";
-import { createInitialState } from "../src/simulation/state";
-import type { PhysicalObject } from "../src/simulation/objects";
+} from "../src/simulation_legacy/sites";
+import { createInitialState } from "../src/simulation_legacy/state";
+import type { PhysicalObject } from "../src/simulation_legacy/objects";
 
 it("runs all retained sites on one pausable clock with detached snapshots", () => {
   const controller = createSimulationController(createSimulation());

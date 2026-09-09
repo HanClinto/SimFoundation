@@ -5,9 +5,9 @@ import {
   advanceJobs,
   authorizeJob,
   type SiteJob,
-} from "../src/simulation/jobs";
+} from "../src/simulation_legacy/jobs";
 import { createInitialState, createTestJobs } from "./fixtures/work-state";
-import { advanceSimulation } from "../src/simulation/tick";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 describe("site jobs", () => {
   it("preempts routine work for emergencies without losing progress or taking a cargo carrier", () => {

@@ -2,7 +2,7 @@ import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createExposureWindow } from "../src/adapters/browser/exposure-view";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import type { PlacementRequest } from "../src/adapters/browser/placement";
 
 afterEach(() => vi.unstubAllGlobals());

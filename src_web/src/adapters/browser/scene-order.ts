@@ -1,6 +1,6 @@
-import type { GameState } from "../../simulation/state";
-import type { PhysicalObject } from "../../simulation/objects";
-import type { TilePosition } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import type { PhysicalObject } from "../../simulation_legacy/objects";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 export interface SceneEntry {
   readonly id: string;

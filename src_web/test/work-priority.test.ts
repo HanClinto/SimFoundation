@@ -1,15 +1,15 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
 import {
   advanceJobs,
   effectiveJobPriority,
   setWorkPriority,
-} from "../src/simulation/jobs";
+} from "../src/simulation_legacy/jobs";
 import { createInitialState, createTestJobs } from "./fixtures/work-state";
-import { createInitialState as createSite } from "../src/simulation/state";
+import { createInitialState as createSite } from "../src/simulation_legacy/state";
 import { createController } from "../src/application/controller";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { advanceSimulation } from "../src/simulation/tick";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 function fixture() {
   const initial = createInitialState();

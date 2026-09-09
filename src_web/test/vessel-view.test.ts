@@ -1,7 +1,7 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createController } from "../src/application/controller";
 import { createVesselWindow } from "../src/adapters/browser/vessel-view";
 import { createExposureWindow } from "../src/adapters/browser/exposure-view";

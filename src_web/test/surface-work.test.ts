@@ -1,7 +1,7 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { damageSurface, surfaceAt } from "../src/simulation/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { damageSurface, surfaceAt } from "../src/simulation_legacy/materials";
 import {
   orderSurfaceWork,
   advanceExposure,
@@ -9,9 +9,9 @@ import {
   advanceSurfaceWork,
   discoverSurfaceWork,
   observeStructuralDamage,
-} from "../src/simulation/environment";
-import { advanceSimulation } from "../src/simulation/tick";
-import { observeSite } from "../src/simulation/observations";
+} from "../src/simulation_legacy/environment";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
+import { observeSite } from "../src/simulation_legacy/observations";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
 

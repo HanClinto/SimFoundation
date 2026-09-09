@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { scheduleCoverage } from "../src/adapters/browser/schedule-coverage";
-import { createInitialState } from "../src/simulation/state";
-import { setPersonnelSchedule } from "../src/simulation/routines";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { setPersonnelSchedule } from "../src/simulation_legacy/routines";
 describe("skill coverage", () => {
   it("counts scheduled recorded skills without claiming exclusive task allocations", () => {
     const state = createInitialState();

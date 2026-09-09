@@ -11,10 +11,10 @@ import {
   lastClinicalReview,
   type SurveyKind,
   type ClinicalCarePolicy,
-} from "../../simulation/clinical";
+} from "../../simulation_legacy/clinical";
 import { recordAge } from "./personnel-records";
 import { createAssignmentView } from "./assignment-view";
-import { routineUnavailableIds } from "../../simulation/routines";
+import { routineUnavailableIds } from "../../simulation_legacy/routines";
 import { observedSnapshot } from "./observed-view";
 
 export function createClinicalCareView(

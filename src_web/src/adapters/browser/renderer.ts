@@ -1,7 +1,7 @@
 import type { ControllerSnapshot } from "../../application/controller";
-import { lightField } from "../../simulation/lighting";
+import { lightField } from "../../simulation_legacy/lighting";
 import { drawPowerNetwork } from "./power-art";
-import { powerNetwork } from "../../simulation/power";
+import { powerNetwork } from "../../simulation_legacy/power";
 import { sceneOrder, foregroundWallOpacity } from "./scene-order";
 import { drawExpeditionMarker } from "./expedition-art";
 import {
@@ -10,7 +10,7 @@ import {
   drawResponseStatus,
 } from "./combat-art";
 import { drawEmissionEffects, emissionMotes } from "./emission-effects";
-import { type TilePosition } from "../../simulation/world";
+import { type TilePosition } from "../../simulation_legacy/world";
 import { observedSnapshot } from "./observed-view";
 import { pawnMapSprite } from "./pawn-art";
 import scp999Url from "./assets/site-999.svg";
@@ -18,11 +18,14 @@ import bedUrl from "./assets/station-bed.svg";
 import mealUrl from "./assets/station-meal.svg";
 import breakUrl from "./assets/station-break.svg";
 import cameraUrl from "./assets/camera.svg";
-import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
-import { cameraInstalled } from "../../simulation/observations";
+import {
+  MATERIALS,
+  type SurfaceLayer,
+} from "../../simulation_legacy/materials";
+import { cameraInstalled } from "../../simulation_legacy/observations";
 import { drawWorkSites, workSiteVisuals } from "./work-art";
-import { exposureTiles } from "../../simulation/environment";
-import { containingBarrier } from "../../simulation/vessels";
+import { exposureTiles } from "../../simulation_legacy/environment";
+import { containingBarrier } from "../../simulation_legacy/vessels";
 import { exposureMapPosition, mapObjects } from "./map-objects";
 import {
   DEFAULT_MAP_OVERLAYS,
@@ -31,7 +34,7 @@ import {
   type MapPerspective,
 } from "./map-settings";
 import type { PlacementTile } from "./placement";
-import { storageTiles } from "../../simulation/storage";
+import { storageTiles } from "../../simulation_legacy/storage";
 import { drawPhysicalObjects, drawObjectGlyph } from "./object-art";
 import { physicalPawnPose, type PawnVisual } from "./pawn-visuals";
 import { layoutPawnBubbles, drawPawnBubbles } from "./pawn-bubbles";

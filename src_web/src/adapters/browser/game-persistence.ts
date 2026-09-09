@@ -1,4 +1,7 @@
-import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
+import {
+  GAME_STATE_VERSION,
+  type GameState,
+} from "../../simulation_legacy/state";
 
 export const GAME_STATE_STORAGE_KEY = "scp-site-manager.game-state.v1";
 

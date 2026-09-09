@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { createInitialState } from "../src/simulation/state";
-import { advanceSimulation } from "../src/simulation/tick";
-import { advanceScp999, createScp999State } from "../src/simulation/scp-999";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
+import {
+  advanceScp999,
+  createScp999State,
+} from "../src/simulation_legacy/scp-999";
 
 it("moves a resident by its instance identity without steering another instance", () => {
   const initial = createInitialState();

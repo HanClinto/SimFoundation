@@ -6,18 +6,18 @@ import {
   putDownObject,
   reserveStack,
   type ObjectStore,
-} from "../src/simulation/objects";
-import { createInitialState } from "../src/simulation/state";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/objects";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import {
   orderObjectMove,
   cancelObjectMove,
-} from "../src/simulation/object-work";
+} from "../src/simulation_legacy/object-work";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { orderSurfaceWork } from "../src/simulation/environment";
+import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 import { createController } from "../src/application/controller";
-import { advanceRoutines } from "../src/simulation/routines";
-import { observeSite } from "../src/simulation/observations";
+import { advanceRoutines } from "../src/simulation_legacy/routines";
+import { observeSite } from "../src/simulation_legacy/observations";
 import { observedSnapshot } from "../src/adapters/browser/observed-view";
 
 const stock = (): ObjectStore => ({

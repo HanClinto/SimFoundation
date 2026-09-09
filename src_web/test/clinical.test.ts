@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 describe("clinical work", () => {

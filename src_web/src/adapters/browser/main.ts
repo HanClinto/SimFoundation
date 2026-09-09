@@ -6,7 +6,7 @@ import {
   createController,
   type ControllerSnapshot,
 } from "../../application/controller";
-import { createInitialState } from "../../simulation/state";
+import { createInitialState } from "../../simulation_legacy/state";
 import alarmIconUrl from "./assets/alarm.svg";
 import cameraIconUrl from "./assets/camera.svg";
 import controlIconUrl from "./assets/control.svg";
@@ -36,7 +36,7 @@ import { createClinicalCareView } from "./clinical-care-view";
 import { createDayPlanner } from "./day-planner-view";
 import { observedSnapshot } from "./observed-view";
 import { createSurveillanceView } from "./surveillance-view";
-import { MATERIALS } from "../../simulation/materials";
+import { MATERIALS } from "../../simulation_legacy/materials";
 import { createEngineeringWindow } from "./engineering-view";
 import { createObjectsWindow } from "./objects-view";
 import { createPowerWindow } from "./power-view";
@@ -47,7 +47,7 @@ import {
   expeditionMapController,
   fieldSnapshot,
 } from "./expedition-controller";
-import { isElectrical } from "../../simulation/power";
+import { isElectrical } from "../../simulation_legacy/power";
 import { createStorageWindow } from "./storage-view";
 import { createExposureWindow } from "./exposure-view";
 import { createVesselWindow } from "./vessel-view";

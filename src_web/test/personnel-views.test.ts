@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   createPersonnelInspectorWindows,
   updatePersonnelInspectors,
@@ -11,12 +11,12 @@ import {
 } from "../src/adapters/browser/medical-view";
 import { createClinicalCareView } from "../src/adapters/browser/clinical-care-view";
 import { createController } from "../src/application/controller";
-import { completeAssessment } from "../src/simulation/clinical";
+import { completeAssessment } from "../src/simulation_legacy/clinical";
 import {
   deriveMood,
   deriveSanity,
   derivePhysicalHealth,
-} from "../src/simulation/personnel";
+} from "../src/simulation_legacy/personnel";
 
 beforeEach(() => {
   const window = new JSDOM("<!doctype html><html><body></body></html>").window;

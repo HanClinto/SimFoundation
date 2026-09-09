@@ -2,7 +2,10 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import { scheduleAt, type ScheduleBlock } from "../../simulation/routines";
+import {
+  scheduleAt,
+  type ScheduleBlock,
+} from "../../simulation_legacy/routines";
 import { pawnPortrait } from "./pawn-art";
 import { observedSnapshot } from "./observed-view";
 import { scheduleCoverage } from "./schedule-coverage";

@@ -1,7 +1,7 @@
-import type { GameState } from "../../simulation/state";
-import { EXPEDITION_ASSEMBLY } from "../../simulation/expeditions";
-import { expeditionScenario } from "../../simulation/expedition-site";
-import type { TilePosition } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import { EXPEDITION_ASSEMBLY } from "../../simulation_legacy/expeditions";
+import { expeditionScenario } from "../../simulation_legacy/expedition-site";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 export function drawExpeditionMarker(
   context: CanvasRenderingContext2D,

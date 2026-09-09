@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { routineProgress } from "../src/simulation/routines";
-import { submitAction } from "../src/simulation/action-queue";
-import { advanceSimulation } from "../src/simulation/tick";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { routineProgress } from "../src/simulation_legacy/routines";
+import { submitAction } from "../src/simulation_legacy/action-queue";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 it.each([
   ["sleep", "bed-1"],

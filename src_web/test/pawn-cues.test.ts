@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { pawnCues } from "../src/adapters/browser/pawn-cues";
-import { orderSurfaceWork } from "../src/simulation/environment";
+import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 import {
   layoutPawnBubbles,
   bubbleAt,

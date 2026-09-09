@@ -1,6 +1,6 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   enlistExpedition,
   cancelExpedition,
@@ -11,12 +11,12 @@ import {
   recoverExpeditionObject,
   cancelRecovery,
   storeFieldState,
-} from "../src/simulation/expeditions";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/expeditions";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
-import { advanceCombat, orderResponder } from "../src/simulation/combat";
-import { setSurface } from "../src/simulation/materials";
+import { advanceCombat, orderResponder } from "../src/simulation_legacy/combat";
+import { setSurface } from "../src/simulation_legacy/materials";
 
 const loaded = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });

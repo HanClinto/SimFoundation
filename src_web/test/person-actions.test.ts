@@ -1,25 +1,25 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   automaticAction,
   cancelAutomaticAction,
   personCurrentAction,
   cancelPersonAction,
-} from "../src/simulation/person-actions";
-import { submitAction } from "../src/simulation/action-queue";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/person-actions";
+import { submitAction } from "../src/simulation_legacy/action-queue";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { editActionQueue } from "../src/simulation/action-queue";
+import { editActionQueue } from "../src/simulation_legacy/action-queue";
 import { createTestJobs } from "./fixtures/work-state";
 import {
   advanceRoutines,
   setPersonnelSchedule,
-} from "../src/simulation/routines";
-import { orderSurfaceWork } from "../src/simulation/environment";
-import { requestAssessment } from "../src/simulation/clinical";
-import { draftResponder } from "../src/simulation/combat";
+} from "../src/simulation_legacy/routines";
+import { orderSurfaceWork } from "../src/simulation_legacy/environment";
+import { requestAssessment } from "../src/simulation_legacy/clinical";
+import { draftResponder } from "../src/simulation_legacy/combat";
 import { createController } from "../src/application/controller";
-import { fieldState } from "../src/simulation/expeditions";
+import { fieldState } from "../src/simulation_legacy/expeditions";
 import { expeditionMapController } from "../src/adapters/browser/expedition-controller";
 
 const loaded = (state: ReturnType<typeof createInitialState>) =>

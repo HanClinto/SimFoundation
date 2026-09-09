@@ -3,11 +3,11 @@ import { createInitialState, type GameState } from "./fixtures/work-state";
 import {
   advanceRoutines,
   setPersonnelSchedule,
-} from "../src/simulation/routines";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/routines";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { createController } from "../src/application/controller";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { consumeSupply } from "../src/simulation/objects";
+import { consumeSupply } from "../src/simulation_legacy/objects";
 
 describe("needs-driven routines", () => {
   it("staggered free-time recreation uses real seats and restores nothing during travel", () => {

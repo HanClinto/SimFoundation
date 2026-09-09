@@ -1,10 +1,10 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { submitAction } from "../src/simulation/action-queue";
-import { advanceSimulation } from "../src/simulation/tick";
-import { setSurface } from "../src/simulation/materials";
-import { currentActionIdentity } from "../src/simulation/action-progress";
-import { actionExecutionStep } from "../src/simulation/action-steps";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { submitAction } from "../src/simulation_legacy/action-queue";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
+import { setSurface } from "../src/simulation_legacy/materials";
+import { currentActionIdentity } from "../src/simulation_legacy/action-progress";
+import { actionExecutionStep } from "../src/simulation_legacy/action-steps";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
 import { createTestJobs } from "./fixtures/work-state";

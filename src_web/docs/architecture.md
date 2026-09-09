@@ -1,5 +1,7 @@
 # SCPSiteManager Architecture
 
+Current replacement boundary: the old simulation lives in `src/simulation_legacy`, and existing UI/application bindings explicitly use it. The new headless core in `src/simulation` has no legacy dependencies and uses immutable tick inputs, entity-owned proposals and deterministic resolution. See [decision 009](decisions/009-replacement-simulation-core.md) and the [new core guide](../src/simulation/README.md). Historical implementation details below refer to the archived prototype unless stated otherwise.
+
 This document defines the initial implementation boundaries for the web game. It is intentionally more stable than the folder layout: modules may move, but dependency direction and state ownership should remain explicit.
 
 Approved next direction: [persistent multi-site simulation](decisions/008-persistent-multi-site-simulation.md), with a [staged refactor plan](multi-site-refactor.md), tracked in [#24](https://github.com/HanClinto/SimFoundation/issues/24). The headless site collection and scoped application controller now run persistent sites through shared local systems and personal queue execution, without campaign fields in local state. Ownership, work isolation, replay and per-site incidents are tested. Browser bootstrap/save conversion and transfers are still pending; the base/temporary-expedition descriptions below document the current browser implementation rather than the target architecture. See the plan's implementation status for the exact remaining work.

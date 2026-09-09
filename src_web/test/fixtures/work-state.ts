@@ -1,6 +1,9 @@
-import { createInitialState as createSimulationState } from "../../src/simulation/state";
-import type { SiteJob } from "../../src/simulation/jobs";
-export { GAME_STATE_VERSION, type GameState } from "../../src/simulation/state";
+import { createInitialState as createSimulationState } from "../../src/simulation_legacy/state";
+import type { SiteJob } from "../../src/simulation_legacy/jobs";
+export {
+  GAME_STATE_VERSION,
+  type GameState,
+} from "../../src/simulation_legacy/state";
 
 export function createTestJobs(): readonly SiteJob[] {
   return [

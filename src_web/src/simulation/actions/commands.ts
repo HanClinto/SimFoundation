@@ -1,0 +1,129 @@
+import type { Action, Entity, Simulation } from "../model";
+import { floorAt } from "../world/spatial";
+
+export type Command =
+  | {
+      readonly kind: "enqueue";
+      readonly siteId: string;
+      readonly entityId: string;
+      readonly action: Action;
+    }
+  | {
+      readonly kind: "cancel";
+      readonly siteId: string;
+      readonly entityId: string;
+      readonly actionId: string;
+    }
+  | {
+      readonly kind: "autonomy";
+      readonly siteId: string;
+      readonly entityId: string;
+      readonly enabled: boolean;
+    };
+
+export interface CommandContext {
+  readonly source: "player" | "script" | "debug";
+  readonly debugEnabled?: boolean;
+}
+
+export interface CommandResult {
+  readonly state: Simulation;
+  readonly code: "accepted" | "unchanged" | "rejected";
+  readonly reason: string | null;
+  readonly actionId?: string;
+}
+
+export function executeCommand(
+  state: Simulation,
+  command: Command,
+  context: CommandContext = { source: "player" },
+): CommandResult {
+  const fail = (reason: string): CommandResult => ({
+    state,
+    code: "rejected",
+    reason,
+  });
+  const site = state.sites[command.siteId];
+  const entity = site?.entities[command.entityId];
+  if (!site || !entity || entity.kind !== "pawn")
+    return fail("Choose a pawn at an existing site.");
+  if (context.source === "debug" && !context.debugEnabled)
+    return fail("Debug control is disabled.");
+  if (context.source === "player" && !entity.playerControllable)
+    return fail("Player control is unavailable.");
+  let updated: Entity;
+  let actionId: string | undefined;
+  if (command.kind === "autonomy") {
+    if (entity.autonomy === command.enabled)
+      return { state, code: "unchanged", reason: null };
+    updated = { ...entity, autonomy: command.enabled };
+  } else if (command.kind === "cancel") {
+    if (!entity.queue.some((entry) => entry.id === command.actionId))
+      return fail("This action no longer exists.");
+    updated = {
+      ...entity,
+      queue: entity.queue.filter((entry) => entry.id !== command.actionId),
+    };
+  } else {
+    if (entity.queue.length >= 8) return fail("The action queue is full.");
+    const action = command.action;
+    if (
+      action.kind === "move" &&
+      (!entity.mobile || !floorAt(site, action.destination))
+    )
+      return fail("Invalid movement destination or capability.");
+    if (
+      action.kind === "wait" &&
+      (!Number.isSafeInteger(action.ticks) || action.ticks < 1)
+    )
+      return fail("Wait duration must be positive whole ticks.");
+    if (
+      "targetId" in action &&
+      (!site.entities[action.targetId] || action.targetId === entity.id)
+    )
+      return fail("Choose another entity at this site.");
+    actionId = `action-${state.nextActionId}`;
+    updated = {
+      ...entity,
+      queue: [
+        ...entity.queue,
+        {
+          id: actionId,
+          source: context.source,
+          action: structuredClone(action),
+          elapsed: 0,
+          blockedReason: null,
+        },
+      ],
+    };
+  }
+  return {
+    code: "accepted",
+    reason: null,
+    ...(actionId ? { actionId } : {}),
+    state: {
+      ...state,
+      nextActionId: state.nextActionId + (actionId ? 1 : 0),
+      sites: {
+        ...state.sites,
+        [site.id]: {
+          ...site,
+          entities: { ...site.entities, [entity.id]: updated },
+        },
+      },
+    },
+  };
+}
+
+export function previewCommand(
+  state: Simulation,
+  command: Command,
+  context?: CommandContext,
+): Omit<CommandResult, "state"> {
+  const { state: proposed, ...result } = executeCommand(
+    state,
+    command,
+    context,
+  );
+  return result;
+}

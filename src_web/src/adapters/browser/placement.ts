@@ -1,5 +1,5 @@
 import type { ControllerSnapshot } from "../../application/controller";
-import type { TilePosition } from "../../simulation/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 export interface PlacementTile {
   readonly position: TilePosition;

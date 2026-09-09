@@ -5,14 +5,14 @@ import {
   isWalkable,
   stepWorld,
   type SiteWorld,
-} from "../src/simulation/world";
-import { surfacesForTile } from "../src/simulation/materials";
-import { createInitialState } from "../src/simulation/state";
+} from "../src/simulation_legacy/world";
+import { surfacesForTile } from "../src/simulation_legacy/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createController } from "../src/application/controller";
-import { orderObjectMove } from "../src/simulation/object-work";
-import { advanceSimulation } from "../src/simulation/tick";
+import { orderObjectMove } from "../src/simulation_legacy/object-work";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { canObserve } from "../src/simulation/observations";
+import { canObserve } from "../src/simulation_legacy/observations";
 import { pawnCues } from "../src/adapters/browser/pawn-cues";
 
 function corridor(): SiteWorld {

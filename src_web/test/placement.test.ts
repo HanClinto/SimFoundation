@@ -1,7 +1,7 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it, vi } from "vitest";
 import { createPlacementSession } from "../src/adapters/browser/placement";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createController } from "../src/application/controller";
 import { cameraPlacement } from "../src/adapters/browser/surveillance-view";
 

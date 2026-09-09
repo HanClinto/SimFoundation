@@ -2,7 +2,7 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import { fieldState } from "../../simulation/expeditions";
+import { fieldState } from "../../simulation_legacy/expeditions";
 
 export function fieldSnapshot(
   snapshot: ControllerSnapshot,

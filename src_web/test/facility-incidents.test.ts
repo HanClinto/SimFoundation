@@ -2,12 +2,12 @@ import { expect, it } from "vitest";
 import {
   observeFacilityIncidents,
   recordedVesselIncident,
-} from "../src/simulation/facility-incidents";
-import { createInitialState } from "../src/simulation/state";
-import type { PhysicalObject } from "../src/simulation/objects";
-import { vesselTransitForecast } from "../src/simulation/vessels";
+} from "../src/simulation_legacy/facility-incidents";
+import { createInitialState } from "../src/simulation_legacy/state";
+import type { PhysicalObject } from "../src/simulation_legacy/objects";
+import { vesselTransitForecast } from "../src/simulation_legacy/vessels";
 import { incidentResponse } from "../src/adapters/browser/incident-response";
-import { advanceSimulation } from "../src/simulation/tick";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 function fixture(condition: number) {
   const initial = createInitialState();

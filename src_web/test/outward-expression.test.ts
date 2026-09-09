@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   deriveSanity,
   projectPsychology,
   assessPsychologicalState,
-} from "../src/simulation/personnel";
-import { advanceScp999 } from "../src/simulation/scp-999";
+} from "../src/simulation_legacy/personnel";
+import { advanceScp999 } from "../src/simulation_legacy/scp-999";
 
 describe("outward expression and local social perception", () => {
   it("allows composed outward presentation despite distress", () => {

@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createEncounterSandboxWindow } from "../src/adapters/browser/encounter-sandbox-view";
 import {
   createPlacementSession,

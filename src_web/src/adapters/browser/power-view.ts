@@ -7,13 +7,16 @@ import {
   isElectrical,
   powerNetwork,
   type ElectricalKind,
-} from "../../simulation/power";
-import { OBJECT_DEFINITIONS, objectPosition } from "../../simulation/objects";
-import type { TilePosition } from "../../simulation/world";
+} from "../../simulation_legacy/power";
+import {
+  OBJECT_DEFINITIONS,
+  objectPosition,
+} from "../../simulation_legacy/objects";
+import type { TilePosition } from "../../simulation_legacy/world";
 import type { PlacementRequest } from "./placement";
 import type { MapPerspective } from "./map-settings";
 import { observedSnapshot } from "./observed-view";
-import { availableMaterials } from "../../simulation/material-stock";
+import { availableMaterials } from "../../simulation_legacy/material-stock";
 
 export function createPowerWindow(
   host: HTMLElement,

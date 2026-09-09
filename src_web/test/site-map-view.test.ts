@@ -1,9 +1,9 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createSiteMap } from "../src/adapters/browser/site-map-view";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { renderSite } from "../src/adapters/browser/renderer";
 import { layoutPawnBubbles } from "../src/adapters/browser/pawn-bubbles";
 vi.mock("../src/adapters/browser/renderer", async (importOriginal) => ({

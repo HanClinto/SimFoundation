@@ -1,15 +1,15 @@
 import { expect, it, vi } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   setExposureSource,
   exposureTiles,
-} from "../src/simulation/environment";
+} from "../src/simulation_legacy/environment";
 import {
   emissionMotes,
   drawEmissionEffects,
   MAX_EMISSION_MOTES,
 } from "../src/adapters/browser/emission-effects";
-import type { PhysicalObject } from "../src/simulation/objects";
+import type { PhysicalObject } from "../src/simulation_legacy/objects";
 
 const source = {
   name: "Effect",

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   mealCollectionPoint,
   servingMealCount,
@@ -8,17 +8,17 @@ import {
   discoverStorageWork,
   incomingQuantity,
   removeStorageArea,
-} from "../src/simulation/storage";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/storage";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import {
   orderObjectMove,
   cancelObjectMove,
-} from "../src/simulation/object-work";
+} from "../src/simulation_legacy/object-work";
 import {
   mergeGroundStack,
   reserveSupply,
   type ObjectStore,
-} from "../src/simulation/objects";
+} from "../src/simulation_legacy/objects";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 describe("designated storage", () => {

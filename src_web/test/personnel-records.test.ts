@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   createStartingPersonnel,
   assessPhysicalHealth,
-} from "../src/simulation/personnel";
+} from "../src/simulation_legacy/personnel";
 import {
   recordedInfluences,
   recordAge,

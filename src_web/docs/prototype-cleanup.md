@@ -29,7 +29,7 @@ The current window is specifically SCP-999 resident status/contact reporting, no
 
 Deleted completely: dedicated blueprint state, authoring APIs, hauling/building/commissioning executor, tick hook, cross-system exclusions, project art, save validators, register and annex-only tests. Schema 45 rejects older saves. Generic surface construction remains; current material-stock accounting and generic work authorization survive in `material-stock.ts`, not a legacy annex adapter.
 
-Evidence anchors: [desktop shell](../src/adapters/browser/main.ts), [clinical coverage display](../src/adapters/browser/clinical-care-view.ts), [clinical eligibility](../src/simulation/clinical.ts), [initial state](../src/simulation/state.ts), [current material stock](../src/simulation/material-stock.ts).
+Evidence anchors: [desktop shell](../src/adapters/browser/main.ts), [clinical coverage display](../src/adapters/browser/clinical-care-view.ts), [clinical eligibility](../src/simulation_legacy/clinical.ts), [initial state](../src/simulation_legacy/state.ts), [current material stock](../src/simulation_legacy/material-stock.ts).
 
 The observed dependency chain is misleading: the archive displays a gate, clinical controls wait on that gate, and a research-labelled construction task never supplies it. These are not three parts of an implemented research loop.
 

@@ -1,9 +1,9 @@
-import type { GameState } from "../../simulation/state";
+import type { GameState } from "../../simulation_legacy/state";
 import { pawnPortrait } from "./pawn-art";
 import { drawObjectGlyph } from "./object-art";
 import { drawAdversary } from "./combat-art";
 import { MATERIAL_ART } from "./material-art";
-import type { TilePosition } from "../../simulation/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 import fallback from "./assets/folder.svg";
 import resident from "./assets/site-999.svg";
 import camera from "./assets/camera.svg";

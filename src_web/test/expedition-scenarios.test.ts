@@ -1,14 +1,17 @@
 import { expect, it } from "vitest";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
-import { expeditionAssembled, fieldState } from "../src/simulation/expeditions";
+import { createInitialState } from "../src/simulation_legacy/state";
+import {
+  expeditionAssembled,
+  fieldState,
+} from "../src/simulation_legacy/expeditions";
 import {
   expeditionScenario,
   expeditionRecoveryComplete,
-} from "../src/simulation/expedition-site";
+} from "../src/simulation_legacy/expedition-site";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { actionProgress } from "../src/simulation/action-progress";
-import { findRoute } from "../src/simulation/world";
+import { actionProgress } from "../src/simulation_legacy/action-progress";
+import { findRoute } from "../src/simulation_legacy/world";
 
 it.each([2, 3])(
   "plays the transfer scenario through recovery of %i cases and return using the shared lifecycle",

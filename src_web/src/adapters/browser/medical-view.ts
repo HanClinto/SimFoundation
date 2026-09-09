@@ -5,11 +5,11 @@ import {
   latestPsychologicalAssessment,
   type BodyRegion,
   type PersonnelRecord,
-} from "../../simulation/personnel";
+} from "../../simulation_legacy/personnel";
 import anatomyUrl from "./assets/anatomy-figure.svg";
 import { recordAge } from "./personnel-records";
-import type { SiteJob } from "../../simulation/jobs";
-import { lastClinicalReview } from "../../simulation/clinical";
+import type { SiteJob } from "../../simulation_legacy/jobs";
+import { lastClinicalReview } from "../../simulation_legacy/clinical";
 
 const BODY_REGIONS: readonly [BodyRegion, string][] = [
   ["head", "Head"],

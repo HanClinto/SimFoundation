@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   engineeringRecord,
   mapObjects,
 } from "../src/adapters/browser/map-objects";
-import { damageSurface } from "../src/simulation/materials";
+import { damageSurface } from "../src/simulation_legacy/materials";
 
 describe("map inspection", () => {
   it("separates current world positions from recorded sightings without changing knowledge", () => {

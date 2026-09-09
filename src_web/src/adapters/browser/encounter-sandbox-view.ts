@@ -2,7 +2,7 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import type { TacticalCode } from "../../simulation/combat";
+import type { TacticalCode } from "../../simulation_legacy/combat";
 import type { PlacementRequest } from "./placement";
 
 const messages: Record<TacticalCode, string> = {

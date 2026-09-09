@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   sceneOrder,
   foregroundWallOpacity,

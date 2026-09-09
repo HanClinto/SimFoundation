@@ -1,7 +1,10 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { updateWorkOrders } from "../src/adapters/browser/work-orders-view";
-import { setWorkPriority, type WorkPriority } from "../src/simulation/jobs";
+import {
+  setWorkPriority,
+  type WorkPriority,
+} from "../src/simulation_legacy/jobs";
 import { createInitialState, createTestJobs } from "./fixtures/work-state";
 
 afterEach(() => vi.unstubAllGlobals());

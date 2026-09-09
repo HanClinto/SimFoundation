@@ -1,9 +1,9 @@
-import type { GameState } from "../../simulation/state";
-import { isActiveSurfaceOrder } from "../../simulation/environment";
-import { MATERIALS, type MaterialId } from "../../simulation/materials";
-import { sameTile, type TilePosition } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import { isActiveSurfaceOrder } from "../../simulation_legacy/environment";
+import { MATERIALS, type MaterialId } from "../../simulation_legacy/materials";
+import { sameTile, type TilePosition } from "../../simulation_legacy/world";
 import type { MapPerspective } from "./map-settings";
-import { isElectrical } from "../../simulation/power";
+import { isElectrical } from "../../simulation_legacy/power";
 
 export interface WorkVisual {
   readonly id: string;

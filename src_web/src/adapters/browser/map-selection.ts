@@ -2,17 +2,17 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import { MATERIALS } from "../../simulation/materials";
-import { OBJECT_DEFINITIONS } from "../../simulation/objects";
-import type { DoorPolicy, TilePosition } from "../../simulation/world";
+import { MATERIALS } from "../../simulation_legacy/materials";
+import { OBJECT_DEFINITIONS } from "../../simulation_legacy/objects";
+import type { DoorPolicy, TilePosition } from "../../simulation_legacy/world";
 import { pawnCues } from "./pawn-cues";
 import { observedSnapshot } from "./observed-view";
 import { mapObjects } from "./map-objects";
 import type { MapPerspective } from "./map-settings";
 import { pawnPortrait } from "./pawn-art";
 import residentUrl from "./assets/site-999.svg";
-import { isElectrical, powerNetwork } from "../../simulation/power";
-import { adversaryBehavior } from "../../simulation/combat";
+import { isElectrical, powerNetwork } from "../../simulation_legacy/power";
+import { adversaryBehavior } from "../../simulation_legacy/combat";
 
 export function createMapSelection(
   host: HTMLElement,

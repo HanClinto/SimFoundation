@@ -2,11 +2,11 @@ import { expect, it } from "vitest";
 import {
   createInitialState,
   type SimulationClock,
-} from "../src/simulation/state";
+} from "../src/simulation_legacy/state";
 import {
   advanceSimulation,
   advanceSiteSimulation,
-} from "../src/simulation/tick";
+} from "../src/simulation_legacy/tick";
 
 it("uses the supplied clock without advancing it inside the local runner", () => {
   const initial = createInitialState();

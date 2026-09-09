@@ -1,6 +1,6 @@
 import type { ControllerSnapshot } from "../../application/controller";
-import { objectBlocks, objectStations } from "../../simulation/objects";
-import { awayPersonnel } from "../../simulation/expeditions";
+import { objectBlocks, objectStations } from "../../simulation_legacy/objects";
+import { awayPersonnel } from "../../simulation_legacy/expeditions";
 
 const projections = new WeakMap<ControllerSnapshot, ControllerSnapshot>();
 

@@ -1,18 +1,24 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   orderSurfaceWork,
   cancelSurfaceWork,
-} from "../src/simulation/environment";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/environment";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { reservedObject, reserveSupply } from "../src/simulation/objects";
-import { availableMaterials } from "../src/simulation/material-stock";
-import { craftVessel, cancelVesselWork } from "../src/simulation/vessel-work";
+import {
+  reservedObject,
+  reserveSupply,
+} from "../src/simulation_legacy/objects";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
+import {
+  craftVessel,
+  cancelVesselWork,
+} from "../src/simulation_legacy/vessel-work";
 import {
   orderObjectMove,
   cancelObjectMove,
-} from "../src/simulation/object-work";
+} from "../src/simulation_legacy/object-work";
 
 function stockScenario(quantity: number) {
   const initial = createInitialState();

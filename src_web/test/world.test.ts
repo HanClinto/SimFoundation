@@ -1,4 +1,4 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { describe, expect, it } from "vitest";
 import {
   createStartingMap,
@@ -6,13 +6,13 @@ import {
   isWalkable,
   tileAt,
   type SiteMap,
-} from "../src/simulation/world";
+} from "../src/simulation_legacy/world";
 import {
   surfaceAt,
   surfaceTile,
   type MaterialId,
-} from "../src/simulation/materials";
-import { createInitialState } from "../src/simulation/state";
+} from "../src/simulation_legacy/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 describe("physical site map", () => {

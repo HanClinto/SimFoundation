@@ -2,21 +2,21 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import type { ActionIntent } from "../../simulation/action-queue";
+import type { ActionIntent } from "../../simulation_legacy/action-queue";
 import { mapObjects } from "./map-objects";
 import { targetThumbnail } from "./target-thumbnail";
 import {
   actionExecutionStep,
   type ActionExecutionStep,
-} from "../../simulation/action-steps";
+} from "../../simulation_legacy/action-steps";
 import {
   actionProgress,
   type ActionProgress,
-} from "../../simulation/action-progress";
+} from "../../simulation_legacy/action-progress";
 import {
   automaticAction,
   personCurrentAction,
-} from "../../simulation/person-actions";
+} from "../../simulation_legacy/person-actions";
 
 const verbs = {
   eat: "Eat",

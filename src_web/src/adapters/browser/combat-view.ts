@@ -8,10 +8,10 @@ import {
   RESPONSE_RANGE,
   ENCOUNTER_RADIUS,
   type TacticalCode,
-} from "../../simulation/combat";
-import type { TilePosition } from "../../simulation/world";
+} from "../../simulation_legacy/combat";
+import type { TilePosition } from "../../simulation_legacy/world";
 import type { MapPerspective } from "./map-settings";
-import { expeditionMember } from "../../simulation/expeditions";
+import { expeditionMember } from "../../simulation_legacy/expeditions";
 
 const messages: Record<TacticalCode, string> = {
   accepted: "Order accepted.",

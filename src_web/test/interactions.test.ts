@@ -1,21 +1,24 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   interactionOptions,
   performInteraction,
-} from "../src/simulation/interactions";
-import { goHere } from "../src/simulation/direct-control";
+} from "../src/simulation_legacy/interactions";
+import { goHere } from "../src/simulation_legacy/direct-control";
 import {
   draftResponder,
   startEncounter,
   advanceCombat,
-} from "../src/simulation/combat";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/combat";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { createController } from "../src/application/controller";
 import { expeditionMapController } from "../src/adapters/browser/expedition-controller";
-import { fieldState, storeFieldState } from "../src/simulation/expeditions";
+import {
+  fieldState,
+  storeFieldState,
+} from "../src/simulation_legacy/expeditions";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { requestAssessment } from "../src/simulation/clinical";
+import { requestAssessment } from "../src/simulation_legacy/clinical";
 
 it("cancels manual travel without teleporting or resetting action recovery", () => {
   const initial = createInitialState();

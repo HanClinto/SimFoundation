@@ -1,4 +1,4 @@
-import type { GameState } from "../../simulation/state";
+import type { GameState } from "../../simulation_legacy/state";
 export const COVERAGE_SKILLS = [
   "research",
   "engineering",

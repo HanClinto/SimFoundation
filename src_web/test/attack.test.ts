@@ -1,15 +1,18 @@
 import { expect, it } from "vitest";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
-import { fieldState, storeFieldState } from "../src/simulation/expeditions";
-import { advanceCombat, orderResponder } from "../src/simulation/combat";
+import { createInitialState } from "../src/simulation_legacy/state";
+import {
+  fieldState,
+  storeFieldState,
+} from "../src/simulation_legacy/expeditions";
+import { advanceCombat, orderResponder } from "../src/simulation_legacy/combat";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import {
   performInteraction,
   interactionOptions,
-} from "../src/simulation/interactions";
-import { setSurface } from "../src/simulation/materials";
-import { setDoorPolicy } from "../src/simulation/world";
+} from "../src/simulation_legacy/interactions";
+import { setSurface } from "../src/simulation_legacy/materials";
+import { setDoorPolicy } from "../src/simulation_legacy/world";
 
 function fieldEncounter() {
   const controller = createController(createInitialState());

@@ -8,7 +8,7 @@ import {
 } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
 import { createInitialState, GAME_STATE_VERSION } from "./fixtures/work-state";
-import { createScp999State } from "../src/simulation/scp-999";
+import { createScp999State } from "../src/simulation_legacy/scp-999";
 
 it("round-trips multiple resident instances", () => {
   const initial = createInitialState();

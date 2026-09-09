@@ -1,12 +1,12 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { goHere } from "../src/simulation/direct-control";
-import { advanceSimulation } from "../src/simulation/tick";
-import { draftResponder } from "../src/simulation/combat";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { goHere } from "../src/simulation_legacy/direct-control";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
+import { draftResponder } from "../src/simulation_legacy/combat";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { createController } from "../src/application/controller";
-import { requestAssessment } from "../src/simulation/clinical";
-import { orderSurfaceWork } from "../src/simulation/environment";
+import { requestAssessment } from "../src/simulation_legacy/clinical";
+import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 
 it("moves physically with temporary manual control then resumes autonomy", () => {
   const initial = createInitialState();

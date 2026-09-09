@@ -2,10 +2,10 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import type { TilePosition } from "../../simulation/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 import { observedSnapshot } from "./observed-view";
 import { mapObjects } from "./map-objects";
-import { storageContains } from "../../simulation/storage";
+import { storageContains } from "../../simulation_legacy/storage";
 import { layoutPawnBubbles, bubbleAt, type PawnBubble } from "./pawn-bubbles";
 import { pawnCues } from "./pawn-cues";
 import { createPawnVisuals, type PawnVisual } from "./pawn-visuals";

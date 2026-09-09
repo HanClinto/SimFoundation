@@ -1,8 +1,8 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createVesselAlerts } from "../src/adapters/browser/vessel-alert-view";
-import type { PhysicalObject } from "../src/simulation/objects";
+import type { PhysicalObject } from "../src/simulation_legacy/objects";
 
 afterEach(() => vi.unstubAllGlobals());
 it("links recorded warnings to inspection while retaining buttons across tick updates", () => {

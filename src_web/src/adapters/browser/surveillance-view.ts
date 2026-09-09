@@ -26,9 +26,9 @@ import type {
 import {
   cameraInstalled,
   type CameraPlacementCode,
-} from "../../simulation/observations";
-import type { TilePosition } from "../../simulation/world";
-import { powerNetwork } from "../../simulation/power";
+} from "../../simulation_legacy/observations";
+import type { TilePosition } from "../../simulation_legacy/world";
+import { powerNetwork } from "../../simulation_legacy/power";
 
 export const cameraMessages: Record<CameraPlacementCode, string> = {
   "installed-order": "Camera installation assigned to engineering.",

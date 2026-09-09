@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createBrowserRuntime } from "../src/adapters/browser/runtime";
 import { incidentResponse } from "../src/adapters/browser/incident-response";
 

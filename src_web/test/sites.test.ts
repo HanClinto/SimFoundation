@@ -6,17 +6,17 @@ import {
   disposeSite,
   siteContext,
   updateSite,
-} from "../src/simulation/sites";
+} from "../src/simulation_legacy/sites";
 import {
   orderSurfaceWork,
   setExposureSource,
-} from "../src/simulation/environment";
-import { createInitialState } from "../src/simulation/state";
-import { availableMaterials } from "../src/simulation/material-stock";
-import { surfaceAt } from "../src/simulation/materials";
-import { advancePersonnel } from "../src/simulation/personnel";
-import { reserveStack } from "../src/simulation/objects";
-import { createScp999State } from "../src/simulation/scp-999";
+} from "../src/simulation_legacy/environment";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
+import { surfaceAt } from "../src/simulation_legacy/materials";
+import { advancePersonnel } from "../src/simulation_legacy/personnel";
+import { reserveStack } from "../src/simulation_legacy/objects";
+import { createScp999State } from "../src/simulation_legacy/scp-999";
 
 it("ticks and observes multiple same-type residents independently in a site", () => {
   const created = createSite(createSimulation(), {

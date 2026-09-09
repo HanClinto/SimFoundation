@@ -1,8 +1,8 @@
 import type {
   PersonnelRecord,
   PersonnelSkill,
-} from "../../simulation/personnel";
-import type { SiteJob } from "../../simulation/jobs";
+} from "../../simulation_legacy/personnel";
+import type { SiteJob } from "../../simulation_legacy/jobs";
 import { pawnPortrait } from "./pawn-art";
 
 export interface AssignmentViewOptions {

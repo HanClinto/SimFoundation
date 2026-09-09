@@ -1,10 +1,10 @@
 import { expect, it, vi } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   drawObjectGlyph,
   vesselAppearance,
 } from "../src/adapters/browser/object-art";
-import type { PhysicalObject } from "../src/simulation/objects";
+import type { PhysicalObject } from "../src/simulation_legacy/objects";
 
 const vessel: PhysicalObject = {
   id: "case",

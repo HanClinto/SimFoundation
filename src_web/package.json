@@ -13,6 +13,7 @@
     "build": "tsc --noEmit && vite build && node scripts/verify-deployment-build.mjs",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:simulation": "vitest run test/simulation/",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

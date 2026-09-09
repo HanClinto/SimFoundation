@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createExpeditionsWindow } from "../src/adapters/browser/expeditions-view";
 afterEach(() => vi.unstubAllGlobals());
 it("reports declared scenario completion rather than treating two cases as complete", () => {

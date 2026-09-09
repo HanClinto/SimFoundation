@@ -2,7 +2,7 @@ import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createSiteMap } from "../src/adapters/browser/site-map-view";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { renderSite } from "../src/adapters/browser/renderer";
 vi.mock("../src/adapters/browser/renderer", async (original) => ({
   ...(await original<object>()),

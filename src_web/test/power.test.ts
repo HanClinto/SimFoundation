@@ -1,23 +1,26 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { powerNetwork, setUtilityEnabled } from "../src/simulation/power";
-import type { PhysicalObject } from "../src/simulation/objects";
+import { createInitialState } from "../src/simulation_legacy/state";
+import {
+  powerNetwork,
+  setUtilityEnabled,
+} from "../src/simulation_legacy/power";
+import type { PhysicalObject } from "../src/simulation_legacy/objects";
 import {
   orderVesselAction,
   cancelVesselWork,
-} from "../src/simulation/vessel-work";
-import { orderObjectMove } from "../src/simulation/object-work";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/vessel-work";
+import { orderObjectMove } from "../src/simulation_legacy/object-work";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { lightField } from "../src/simulation/lighting";
-import { setSurface } from "../src/simulation/materials";
+import { lightField } from "../src/simulation_legacy/lighting";
+import { setSurface } from "../src/simulation_legacy/materials";
 import {
   advanceExposure,
   setExposureSource,
-} from "../src/simulation/environment";
-import { observeSite } from "../src/simulation/observations";
-import { storageQuantity } from "../src/simulation/storage";
+} from "../src/simulation_legacy/environment";
+import { observeSite } from "../src/simulation_legacy/observations";
+import { storageQuantity } from "../src/simulation_legacy/storage";
 
 const device = (
   id: string,

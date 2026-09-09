@@ -1,4 +1,4 @@
-import type { IncidentLevel } from "../../simulation/state";
+import type { IncidentLevel } from "../../simulation_legacy/state";
 
 export function incidentResponse(
   previous: IncidentLevel | null | undefined,

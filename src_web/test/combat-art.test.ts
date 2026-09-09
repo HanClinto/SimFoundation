@@ -1,14 +1,14 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   draftResponder,
   startEncounter,
   observeCombat,
-} from "../src/simulation/combat";
+} from "../src/simulation_legacy/combat";
 import { tacticalRange } from "../src/adapters/browser/combat-art";
 import { observedSnapshot } from "../src/adapters/browser/observed-view";
 import { mapObjects } from "../src/adapters/browser/map-objects";
-import { setSurface } from "../src/simulation/materials";
+import { setSurface } from "../src/simulation_legacy/materials";
 
 it("limits response range to drafted staff and distinguishes visible from obstructed tiles", () => {
   const initial = createInitialState();

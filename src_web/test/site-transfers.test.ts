@@ -6,13 +6,13 @@ import {
   updateSite,
   disposeSite,
   siteOwnershipIssue,
-} from "../src/simulation/sites";
-import { dispatchFreight } from "../src/simulation/site-transfers";
-import type { PhysicalObject } from "../src/simulation/objects";
-import { availableMaterials } from "../src/simulation/material-stock";
-import { MATERIALS, setSurface } from "../src/simulation/materials";
-import { createInitialState } from "../src/simulation/state";
-import { advancePersonnel } from "../src/simulation/personnel";
+} from "../src/simulation_legacy/sites";
+import { dispatchFreight } from "../src/simulation_legacy/site-transfers";
+import type { PhysicalObject } from "../src/simulation_legacy/objects";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
+import { MATERIALS, setSurface } from "../src/simulation_legacy/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { advancePersonnel } from "../src/simulation_legacy/personnel";
 
 const loading = { x: 2, y: 2 };
 const arrival = { x: 5, y: 5 };

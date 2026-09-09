@@ -1,0 +1,117 @@
+import type { Action, Entity, Simulation, Site } from "../model";
+import { floorAt, positionOf, samePosition } from "../world/spatial";
+
+export interface SiteTemplate {
+  readonly name: string;
+  readonly terrain: readonly string[];
+  readonly entities: readonly Entity[];
+}
+
+export function instantiateSite(
+  state: Simulation,
+  template: SiteTemplate,
+): { state: Simulation; siteId: string } {
+  const siteId = `site-${state.nextSiteId}`;
+  if (state.sites[siteId]) throw new Error("Site ID is already in use.");
+  const ids = new Map(
+    template.entities.map((entity) => [entity.id, `${siteId}:${entity.id}`]),
+  );
+  if (ids.size !== template.entities.length)
+    throw new Error("Template entity IDs must be unique.");
+  const reference = (id: string) => {
+    const target = ids.get(id);
+    if (!target) throw new Error(`Unknown local template reference: ${id}`);
+    return target;
+  };
+  const entities = template.entities.map((source): Entity => {
+    const entity = structuredClone(source);
+    const location =
+      entity.location.kind === "ground"
+        ? entity.location
+        : {
+            kind: "carried" as const,
+            carrierId: reference(entity.location.carrierId),
+          };
+    if (entity.kind !== "pawn")
+      return { ...entity, id: reference(entity.id), location };
+    return {
+      ...entity,
+      id: reference(entity.id),
+      location,
+      queue: entity.queue.map((entry, index) => {
+        const action: Action =
+          "targetId" in entry.action
+            ? { ...entry.action, targetId: reference(entry.action.targetId) }
+            : entry.action;
+        return {
+          ...entry,
+          id: `${reference(entity.id)}:initial-action-${index}`,
+          action,
+        };
+      }),
+    };
+  });
+  const site: Site = {
+    id: siteId,
+    name: template.name,
+    terrain: [...template.terrain],
+    entities: Object.fromEntries(entities.map((entity) => [entity.id, entity])),
+  };
+  if (
+    !site.terrain.length ||
+    !site.terrain[0]!.length ||
+    site.terrain.some(
+      (row) => row.length !== site.terrain[0]!.length || /[^.#]/.test(row),
+    )
+  )
+    throw new Error(
+      "Use a rectangular terrain map containing only '.' and '#'.",
+    );
+  for (const entity of entities) {
+    const position = positionOf(site, entity.id);
+    if (!position || !floorAt(site, position))
+      throw new Error(
+        "Entity locations must resolve to a floor tile without carrier cycles.",
+      );
+    if (
+      entity.kind === "door" &&
+      (entity.location.kind !== "ground" ||
+        entities.some(
+          (other) =>
+            other.id !== entity.id &&
+            other.kind === "door" &&
+            other.location.kind === "ground" &&
+            samePosition(other.location.position, position),
+        ))
+    )
+      throw new Error("Doors need distinct ground locations.");
+  }
+  return {
+    siteId,
+    state: {
+      ...state,
+      nextSiteId: state.nextSiteId + 1,
+      sites: { ...state.sites, [siteId]: site },
+    },
+  };
+}
+
+export function disposeSite(
+  state: Simulation,
+  siteId: string,
+): { state: Simulation; reason: string | null } {
+  const site = state.sites[siteId];
+  if (!site) return { state, reason: "Site does not exist." };
+  if (Object.keys(site.entities).length)
+    return { state, reason: "Remove the site's entities first." };
+  if (
+    Object.values(state.transfers).some(
+      (transfer) =>
+        transfer.originId === siteId || transfer.destinationId === siteId,
+    )
+  )
+    return { state, reason: "The site is an active transfer endpoint." };
+  const sites = { ...state.sites };
+  delete sites[siteId];
+  return { state: { ...state, sites }, reason: null };
+}

@@ -10,9 +10,9 @@ import {
   assessWorkPreferences,
   projectBiases,
   projectPsychology,
-} from "../src/simulation/personnel";
-import { createInitialState } from "../src/simulation/state";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/personnel";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 describe("personnel simulation", () => {
   it("creates six serializable personnel with stable identities", () => {

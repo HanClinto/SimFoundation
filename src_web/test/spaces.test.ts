@@ -1,10 +1,13 @@
 import { expect, it } from "vitest";
-import { deriveSpaces, spaceBoundary } from "../src/simulation/spaces";
-import type { TileKind } from "../src/simulation/world";
-import { createInitialState } from "../src/simulation/state";
-import { advanceExposure, exposureTiles } from "../src/simulation/environment";
+import { deriveSpaces, spaceBoundary } from "../src/simulation_legacy/spaces";
+import type { TileKind } from "../src/simulation_legacy/world";
+import { createInitialState } from "../src/simulation_legacy/state";
+import {
+  advanceExposure,
+  exposureTiles,
+} from "../src/simulation_legacy/environment";
 import { engineeringRecord } from "../src/adapters/browser/map-objects";
-import { surfacesForTile } from "../src/simulation/materials";
+import { surfacesForTile } from "../src/simulation_legacy/materials";
 import { spaceProjection } from "../src/adapters/browser/space-projection";
 
 it("reuses immutable render topology without caching across dimensions or changed tiles", () => {

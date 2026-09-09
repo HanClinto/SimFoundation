@@ -1,26 +1,29 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { objectPosition, type PhysicalObject } from "../src/simulation/objects";
+import { createInitialState } from "../src/simulation_legacy/state";
+import {
+  objectPosition,
+  type PhysicalObject,
+} from "../src/simulation_legacy/objects";
 import {
   advanceVesselWear,
   containingBarrier,
-} from "../src/simulation/vessels";
+} from "../src/simulation_legacy/vessels";
 import {
   advanceExposure,
   exposurePosition,
   exposureTiles,
   setExposureSource,
-} from "../src/simulation/environment";
+} from "../src/simulation_legacy/environment";
 import {
   advanceVesselWork,
   cancelVesselWork,
   craftVessel,
   orderVesselAction,
-} from "../src/simulation/vessel-work";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/vessel-work";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { storageAccepts } from "../src/simulation/storage";
+import { storageAccepts } from "../src/simulation_legacy/storage";
 
 function verifySave(state: ReturnType<typeof createInitialState>) {
   const loaded = loadGameState({

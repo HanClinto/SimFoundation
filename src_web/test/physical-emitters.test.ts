@@ -1,17 +1,17 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   advanceExposure,
   exposurePosition,
   exposureTiles,
   setExposureSource,
-} from "../src/simulation/environment";
+} from "../src/simulation_legacy/environment";
 import {
   cancelObjectMove,
   orderObjectMove,
-} from "../src/simulation/object-work";
-import { surfaceAt } from "../src/simulation/materials";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/object-work";
+import { surfaceAt } from "../src/simulation_legacy/materials";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { exposureMapPosition } from "../src/adapters/browser/map-objects";
 import { pawnCues } from "../src/adapters/browser/pawn-cues";

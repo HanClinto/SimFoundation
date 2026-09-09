@@ -2,8 +2,8 @@ import type {
   MaterialId,
   TileSurfaces,
   Surface,
-} from "../../simulation/materials";
-import type { TileKind } from "../../simulation/world";
+} from "../../simulation_legacy/materials";
+import type { TileKind } from "../../simulation_legacy/world";
 
 export const MATERIAL_ART = {
   concrete: {

@@ -1,6 +1,6 @@
-import type { GameState } from "../../simulation/state";
-import { exposureTiles } from "../../simulation/environment";
-import type { TilePosition } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import { exposureTiles } from "../../simulation_legacy/environment";
+import type { TilePosition } from "../../simulation_legacy/world";
 import type { MapPerspective } from "./map-settings";
 
 export interface EmissionMote {

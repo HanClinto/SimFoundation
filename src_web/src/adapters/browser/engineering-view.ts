@@ -6,18 +6,18 @@ import {
   MATERIALS,
   type MaterialId,
   type SurfaceLayer,
-} from "../../simulation/materials";
-import { sameTile } from "../../simulation/world";
-import type { DoorPolicy, TilePosition } from "../../simulation/world";
+} from "../../simulation_legacy/materials";
+import { sameTile } from "../../simulation_legacy/world";
+import type { DoorPolicy, TilePosition } from "../../simulation_legacy/world";
 import { engineeringRecord } from "./map-objects";
-import { availableMaterials } from "../../simulation/material-stock";
+import { availableMaterials } from "../../simulation_legacy/material-stock";
 import type { MapPerspective } from "./map-settings";
 import type { PlacementRequest } from "./placement";
-import { isActiveSurfaceOrder } from "../../simulation/environment";
+import { isActiveSurfaceOrder } from "../../simulation_legacy/environment";
 import type {
   SurfaceOperation,
   SurfaceOrderCode,
-} from "../../simulation/environment";
+} from "../../simulation_legacy/environment";
 
 const surfaceMessages: Record<SurfaceOrderCode, string> = {
   accepted: "Surface work ordered.",

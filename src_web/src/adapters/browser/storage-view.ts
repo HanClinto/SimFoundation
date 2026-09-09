@@ -2,7 +2,10 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import { OBJECT_DEFINITIONS, type ObjectKind } from "../../simulation/objects";
+import {
+  OBJECT_DEFINITIONS,
+  type ObjectKind,
+} from "../../simulation_legacy/objects";
 import {
   incomingQuantity,
   storageQuantity,
@@ -10,9 +13,9 @@ import {
   storageTiles,
   type StorageCommandCode,
   type StoragePolicy,
-} from "../../simulation/storage";
+} from "../../simulation_legacy/storage";
 import type { PlacementRequest } from "./placement";
-import type { TilePosition } from "../../simulation/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 const messages: Record<StorageCommandCode, string> = {
   accepted: "Storage policy saved.",

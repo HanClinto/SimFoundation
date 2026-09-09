@@ -1,12 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { createStartingMap, isWalkable, tileAt } from "../src/simulation/world";
+import {
+  createStartingMap,
+  isWalkable,
+  tileAt,
+} from "../src/simulation_legacy/world";
 import {
   damageSurface,
   replaceSurface,
   surfaceAt,
-} from "../src/simulation/materials";
-import { createInitialState } from "../src/simulation/state";
-import { observeSite } from "../src/simulation/observations";
+} from "../src/simulation_legacy/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { observeSite } from "../src/simulation_legacy/observations";
 import { observedSnapshot } from "../src/adapters/browser/observed-view";
 
 describe("map materials", () => {

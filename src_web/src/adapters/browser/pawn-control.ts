@@ -3,7 +3,7 @@ import type {
   GameController,
 } from "../../application/controller";
 import type { MapPerspective } from "./map-settings";
-import type { TilePosition } from "../../simulation/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 import { pawnPortrait } from "./pawn-art";
 import { targetThumbnail } from "./target-thumbnail";
 import { mapObjects } from "./map-objects";
@@ -12,12 +12,12 @@ import { createActionQueueView } from "./action-queue-view";
 import {
   automaticAction,
   personCurrentAction,
-} from "../../simulation/person-actions";
-import type { ActionIntent } from "../../simulation/action-queue";
+} from "../../simulation_legacy/person-actions";
+import type { ActionIntent } from "../../simulation_legacy/action-queue";
 import {
   currentPersonAction,
   type PersonInteraction,
-} from "../../simulation/interactions";
+} from "../../simulation_legacy/interactions";
 
 const reasons = {
   accepted: "",

@@ -4,7 +4,7 @@ import {
   deriveSanity,
   type PersonnelItem,
   type PersonnelRecord,
-} from "../../simulation/personnel";
+} from "../../simulation_legacy/personnel";
 import { equipmentIllustration } from "./equipment-art";
 import figureUrl from "./assets/personnel-figure.svg";
 import { pawnPortrait } from "./pawn-art";

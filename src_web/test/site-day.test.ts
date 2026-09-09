@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { advanceSimulation } from "../src/simulation/tick";
-import { authorizeSiteWork } from "../src/simulation/material-stock";
-import { setClinicalCarePolicy } from "../src/simulation/clinical";
-import { installCamera } from "../src/simulation/observations";
-import { orderSurfaceWork } from "../src/simulation/environment";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
+import { authorizeSiteWork } from "../src/simulation_legacy/material-stock";
+import { setClinicalCarePolicy } from "../src/simulation_legacy/clinical";
+import { installCamera } from "../src/simulation_legacy/observations";
+import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 describe("integrated site operations", () => {

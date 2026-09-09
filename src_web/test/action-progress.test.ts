@@ -1,17 +1,17 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   actionProgress,
   trackActionTimes,
-} from "../src/simulation/action-progress";
-import { submitAction } from "../src/simulation/action-queue";
-import { findRoute } from "../src/simulation/world";
-import { setSurface } from "../src/simulation/materials";
+} from "../src/simulation_legacy/action-progress";
+import { submitAction } from "../src/simulation_legacy/action-queue";
+import { findRoute } from "../src/simulation_legacy/world";
+import { setSurface } from "../src/simulation_legacy/materials";
 import { createController } from "../src/application/controller";
-import { advanceSimulation } from "../src/simulation/tick";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { fieldState } from "../src/simulation/expeditions";
-import { setDoorPolicy } from "../src/simulation/world";
+import { fieldState } from "../src/simulation_legacy/expeditions";
+import { setDoorPolicy } from "../src/simulation_legacy/world";
 
 const load = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });

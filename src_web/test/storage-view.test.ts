@@ -2,7 +2,7 @@ import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createStorageWindow } from "../src/adapters/browser/storage-view";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import type { PlacementRequest } from "../src/adapters/browser/placement";
 afterEach(() => vi.unstubAllGlobals());
 it("uses shared placement to relocate policies, applies filters, and leaves stock where it is", () => {

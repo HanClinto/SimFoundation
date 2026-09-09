@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   draftResponder,
   previewDraftResponder,
@@ -8,15 +8,15 @@ import {
   startEncounter,
   engagementIssue,
   observeCombat,
-} from "../src/simulation/combat";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/combat";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { setSurface } from "../src/simulation/materials";
-import { orderSurfaceWork } from "../src/simulation/environment";
-import { requestAssessment } from "../src/simulation/clinical";
+import { setSurface } from "../src/simulation_legacy/materials";
+import { orderSurfaceWork } from "../src/simulation_legacy/environment";
+import { requestAssessment } from "../src/simulation_legacy/clinical";
 import { createController } from "../src/application/controller";
-import { advanceCombat } from "../src/simulation/combat";
-import { fieldState } from "../src/simulation/expeditions";
+import { advanceCombat } from "../src/simulation_legacy/combat";
+import { fieldState } from "../src/simulation_legacy/expeditions";
 
 const first = "person-caleb-ward";
 const second = "person-lena-ortiz";

@@ -1,11 +1,11 @@
-import type { GameState } from "../../simulation/state";
+import type { GameState } from "../../simulation_legacy/state";
 import {
   RESPONSE_RANGE,
   ENCOUNTER_RADIUS,
   type AdversaryState,
-} from "../../simulation/combat";
-import { canObserve } from "../../simulation/observations";
-import type { TilePosition } from "../../simulation/world";
+} from "../../simulation_legacy/combat";
+import { canObserve } from "../../simulation_legacy/observations";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 export function tacticalRange(
   state: GameState,

@@ -1,16 +1,16 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   cancelSurfaceWork,
   orderSurfaceWork,
-} from "../src/simulation/environment";
-import { advanceSimulation } from "../src/simulation/tick";
-import { surfaceAt } from "../src/simulation/materials";
-import { reservedObject } from "../src/simulation/objects";
+} from "../src/simulation_legacy/environment";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
+import { surfaceAt } from "../src/simulation_legacy/materials";
+import { reservedObject } from "../src/simulation_legacy/objects";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { cameraPlacementIssue } from "../src/simulation/observations";
-import { setDoorPolicy } from "../src/simulation/world";
+import { cameraPlacementIssue } from "../src/simulation_legacy/observations";
+import { setDoorPolicy } from "../src/simulation_legacy/world";
 
 function verifySave(state: ReturnType<typeof createInitialState>) {
   const loaded = loadGameState({

@@ -1,6 +1,6 @@
-import type { GameState } from "../../simulation/state";
-import { isElectrical, powerNetwork } from "../../simulation/power";
-import type { TilePosition } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import { isElectrical, powerNetwork } from "../../simulation_legacy/power";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 export function drawPowerNetwork(
   context: CanvasRenderingContext2D,

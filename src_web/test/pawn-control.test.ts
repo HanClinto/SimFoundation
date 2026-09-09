@@ -1,13 +1,13 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { createPawnControl } from "../src/adapters/browser/pawn-control";
-import { advanceSimulation } from "../src/simulation/tick";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { fieldSnapshot } from "../src/adapters/browser/expedition-controller";
-import { submitAction } from "../src/simulation/action-queue";
-import { routineProgress } from "../src/simulation/routines";
-import { setSurface } from "../src/simulation/materials";
+import { submitAction } from "../src/simulation_legacy/action-queue";
+import { routineProgress } from "../src/simulation_legacy/routines";
+import { setSurface } from "../src/simulation_legacy/materials";
 
 afterEach(() => vi.unstubAllGlobals());
 function setup(initial = createInitialState()) {

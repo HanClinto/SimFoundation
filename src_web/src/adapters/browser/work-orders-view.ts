@@ -2,9 +2,9 @@ import {
   effectiveJobPriority,
   type SiteJob,
   type WorkPriority,
-} from "../../simulation/jobs";
-import type { PersonnelRecord } from "../../simulation/personnel";
-import type { SiteWorld } from "../../simulation/world";
+} from "../../simulation_legacy/jobs";
+import type { PersonnelRecord } from "../../simulation_legacy/personnel";
+import type { SiteWorld } from "../../simulation_legacy/world";
 
 function titleCase(value: string): string {
   return value.replace(

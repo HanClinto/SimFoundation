@@ -7,12 +7,12 @@ import {
   objectFootprint,
   objectPosition,
   type ObjectOrientation,
-} from "../../simulation/objects";
-import type { ObjectCommandCode } from "../../simulation/object-work";
+} from "../../simulation_legacy/objects";
+import type { ObjectCommandCode } from "../../simulation_legacy/object-work";
 import type { PlacementRequest } from "./placement";
 import type { MapPerspective } from "./map-settings";
 import { observedSnapshot } from "./observed-view";
-import type { TilePosition } from "../../simulation/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 const messages: Record<ObjectCommandCode, string> = {
   accepted: "Object transfer queued.",

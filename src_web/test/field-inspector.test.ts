@@ -1,7 +1,7 @@
 import { expect, it, vi, afterEach } from "vitest";
 import { JSDOM } from "jsdom";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   createFieldInspector,
   fieldInspectionTarget,

@@ -1,5 +1,5 @@
-import type { GameState } from "../../simulation/state";
-import type { TilePosition } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import type { TilePosition } from "../../simulation_legacy/world";
 import type { MapPerspective } from "./map-settings";
 import { pawnCues, type PawnCue, type PawnCueIcon } from "./pawn-cues";
 

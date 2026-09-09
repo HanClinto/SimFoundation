@@ -5,7 +5,7 @@ import {
   pawnPortrait,
   type PawnPose,
 } from "../src/adapters/browser/pawn-art";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 
 afterEach(() => vi.unstubAllGlobals());
 

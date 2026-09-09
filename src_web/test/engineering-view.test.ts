@@ -1,10 +1,10 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createEngineeringWindow } from "../src/adapters/browser/engineering-view";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
-import { surfaceAt } from "../src/simulation/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { surfaceAt } from "../src/simulation_legacy/materials";
 import type { PlacementRequest } from "../src/adapters/browser/placement";
 afterEach(() => vi.unstubAllGlobals());
 it("updates pending cancellation feedback after the carrier releases its delivery", () => {

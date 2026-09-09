@@ -1,7 +1,7 @@
 import {
   latestPhysicalAssessment,
   type PersonnelRecord,
-} from "../../simulation/personnel";
+} from "../../simulation_legacy/personnel";
 
 export function recordedInfluences(person: PersonnelRecord): readonly string[] {
   const assessment = latestPhysicalAssessment(person);

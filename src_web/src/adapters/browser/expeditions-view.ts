@@ -7,14 +7,14 @@ import {
   expeditionAssembled,
   EXPEDITION_ASSEMBLY,
   type ExpeditionCode,
-} from "../../simulation/expeditions";
-import { readyResponder } from "../../simulation/combat";
+} from "../../simulation_legacy/expeditions";
+import { readyResponder } from "../../simulation_legacy/combat";
 import {
   expeditionRecoveryComplete,
   expeditionScenario,
-} from "../../simulation/expedition-site";
-import { OBJECT_DEFINITIONS } from "../../simulation/objects";
-import type { TilePosition } from "../../simulation/world";
+} from "../../simulation_legacy/expedition-site";
+import { OBJECT_DEFINITIONS } from "../../simulation_legacy/objects";
+import type { TilePosition } from "../../simulation_legacy/world";
 
 const messages: Record<ExpeditionCode, string> = {
   accepted: "Expedition order accepted.",

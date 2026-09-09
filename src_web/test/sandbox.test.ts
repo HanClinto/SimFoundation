@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { advanceSimulation } from "../src/simulation/tick";
-import { orderSurfaceWork } from "../src/simulation/environment";
-import { surfaceAt } from "../src/simulation/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
+import { orderSurfaceWork } from "../src/simulation_legacy/environment";
+import { surfaceAt } from "../src/simulation_legacy/materials";
 
 it("starts without scripted objectives or automatic exposure scenarios", () => {
   const state = createInitialState();

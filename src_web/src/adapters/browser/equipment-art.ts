@@ -1,5 +1,5 @@
 import atlasSource from "./assets/equipment-atlas.svg?raw";
-import type { PersonnelItem } from "../../simulation/personnel";
+import type { PersonnelItem } from "../../simulation_legacy/personnel";
 
 const illustrations = new Map<string, string>();
 

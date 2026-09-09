@@ -1,8 +1,8 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import { workSiteVisuals } from "../src/adapters/browser/work-art";
-import type { SiteJob } from "../src/simulation/jobs";
-import type { SurfaceOrder } from "../src/simulation/environment";
+import type { SiteJob } from "../src/simulation_legacy/jobs";
+import type { SurfaceOrder } from "../src/simulation_legacy/environment";
 import { drawSurfaceDamage } from "../src/adapters/browser/material-art";
 
 const initial = createInitialState();

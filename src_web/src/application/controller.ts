@@ -3,15 +3,15 @@ import {
   installCamera,
   setCameraEnabled,
   type CameraPlacementCode,
-} from "../simulation/observations";
-import { isElectrical, setUtilityEnabled } from "../simulation/power";
-import { goHere } from "../simulation/direct-control";
-import { trackActionTimes } from "../simulation/action-progress";
-import { isPersonalRoutineAction } from "../simulation/routines";
+} from "../simulation_legacy/observations";
+import { isElectrical, setUtilityEnabled } from "../simulation_legacy/power";
+import { goHere } from "../simulation_legacy/direct-control";
+import { trackActionTimes } from "../simulation_legacy/action-progress";
+import { isPersonalRoutineAction } from "../simulation_legacy/routines";
 import {
   cancelAutomaticAction,
   cancelPersonAction,
-} from "../simulation/person-actions";
+} from "../simulation_legacy/person-actions";
 import {
   submitAction,
   queueEligibility,
@@ -19,13 +19,13 @@ import {
   discardActionQueue,
   invalidateActionQueues,
   type ActionIntent,
-} from "../simulation/action-queue";
+} from "../simulation_legacy/action-queue";
 import {
   interactionOptions,
   performInteraction,
   type InteractionOption,
   type InteractionRequest,
-} from "../simulation/interactions";
+} from "../simulation_legacy/interactions";
 import {
   enlistExpedition,
   cancelExpedition,
@@ -37,7 +37,7 @@ import {
   storeFieldState,
   expeditionMember,
   type ExpeditionCode,
-} from "../simulation/expeditions";
+} from "../simulation_legacy/expeditions";
 import {
   draftResponder,
   orderResponder,
@@ -46,30 +46,33 @@ import {
   observeCombat,
   type TacticalCode,
   type TacticalOrder,
-} from "../simulation/combat";
-import { advanceSimulation } from "../simulation/tick";
-import { setWorkPriority, type WorkPriority } from "../simulation/jobs";
+} from "../simulation_legacy/combat";
+import { advanceSimulation } from "../simulation_legacy/tick";
+import { setWorkPriority, type WorkPriority } from "../simulation_legacy/jobs";
 import {
   craftVessel,
   orderVesselAction,
   cancelVesselWork,
   type VesselAction,
   type VesselCommandCode,
-} from "../simulation/vessel-work";
+} from "../simulation_legacy/vessel-work";
 import {
   setStorageArea,
   removeStorageArea,
   storagePlacementIssue,
   type StoragePolicy,
   type StorageCommandCode,
-} from "../simulation/storage";
+} from "../simulation_legacy/storage";
 import {
   orderObjectMove,
   cancelObjectMove,
   objectPlacementIssue,
   type ObjectCommandCode,
-} from "../simulation/object-work";
-import { objectFootprint, type ObjectOrientation } from "../simulation/objects";
+} from "../simulation_legacy/object-work";
+import {
+  objectFootprint,
+  type ObjectOrientation,
+} from "../simulation_legacy/objects";
 import {
   orderSurfaceWork,
   cancelSurfaceWork,
@@ -80,25 +83,28 @@ import {
   type ExposureCommandCode,
   type SurfaceOperation,
   type SurfaceOrderCode,
-} from "../simulation/environment";
-import { type MaterialId, type SurfaceLayer } from "../simulation/materials";
-import { observeSite } from "../simulation/observations";
-import type { GameState } from "../simulation/state";
-import { authorizeSiteWork } from "../simulation/material-stock";
+} from "../simulation_legacy/environment";
+import {
+  type MaterialId,
+  type SurfaceLayer,
+} from "../simulation_legacy/materials";
+import { observeSite } from "../simulation_legacy/observations";
+import type { GameState } from "../simulation_legacy/state";
+import { authorizeSiteWork } from "../simulation_legacy/material-stock";
 import {
   setDoorPolicy,
   type DoorPolicy,
   type TilePosition,
-} from "../simulation/world";
+} from "../simulation_legacy/world";
 import {
   requestAssessment,
   setClinicalCarePolicy,
   type ClinicalCarePolicy,
-} from "../simulation/clinical";
+} from "../simulation_legacy/clinical";
 import {
   setPersonnelSchedule,
   type ScheduleBlock,
-} from "../simulation/routines";
+} from "../simulation_legacy/routines";
 
 export interface ControllerSnapshot {
   readonly game: GameState;

@@ -1,11 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   completeAssessment,
   discoverClinicalWork,
   setClinicalCarePolicy,
   ASSESSMENT_REQUIREMENTS,
-} from "../src/simulation/clinical";
+} from "../src/simulation_legacy/clinical";
 import { createController } from "../src/application/controller";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 

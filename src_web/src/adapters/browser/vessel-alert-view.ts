@@ -1,5 +1,5 @@
-import type { GameState } from "../../simulation/state";
-import { VESSEL_WARNING_INTEGRITY } from "../../simulation/facility-incidents";
+import type { GameState } from "../../simulation_legacy/state";
+import { VESSEL_WARNING_INTEGRITY } from "../../simulation_legacy/facility-incidents";
 
 export function createVesselAlerts(
   host: HTMLElement,

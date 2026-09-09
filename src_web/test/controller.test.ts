@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 
 describe("game controller", () => {
   it("loads and advances without browser globals", () => {

@@ -1,16 +1,19 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   orderPersonalRoutine,
   advanceRoutines,
   cancelPersonalRoutine,
-} from "../src/simulation/routines";
-import { submitAction, editActionQueue } from "../src/simulation/action-queue";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/routines";
+import {
+  submitAction,
+  editActionQueue,
+} from "../src/simulation_legacy/action-queue";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { interactionOptions } from "../src/simulation/interactions";
+import { interactionOptions } from "../src/simulation_legacy/interactions";
 import { createController } from "../src/application/controller";
-import { objectBlocks } from "../src/simulation/objects";
+import { objectBlocks } from "../src/simulation_legacy/objects";
 import { pawnCues } from "../src/adapters/browser/pawn-cues";
 
 const load = (state: ReturnType<typeof createInitialState>) =>

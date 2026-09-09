@@ -1,16 +1,22 @@
-import type { GameState } from "../../simulation/state";
+import type { GameState } from "../../simulation_legacy/state";
 import {
   exposurePosition,
   isActiveSurfaceOrder,
   type ExposureSource,
-} from "../../simulation/environment";
-import { spaceBoundary } from "../../simulation/spaces";
+} from "../../simulation_legacy/environment";
+import { spaceBoundary } from "../../simulation_legacy/spaces";
 import { spaceProjection } from "./space-projection";
-import { MATERIALS, type SurfaceLayer } from "../../simulation/materials";
-import { sameTile } from "../../simulation/world";
-import type { TilePosition } from "../../simulation/world";
+import {
+  MATERIALS,
+  type SurfaceLayer,
+} from "../../simulation_legacy/materials";
+import { sameTile } from "../../simulation_legacy/world";
+import type { TilePosition } from "../../simulation_legacy/world";
 import type { MapPerspective } from "./map-settings";
-import { OBJECT_DEFINITIONS, objectPosition } from "../../simulation/objects";
+import {
+  OBJECT_DEFINITIONS,
+  objectPosition,
+} from "../../simulation_legacy/objects";
 
 export function exposureMapPosition(
   state: GameState,

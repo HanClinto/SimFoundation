@@ -1,13 +1,19 @@
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { submitAction, editActionQueue } from "../src/simulation/action-queue";
-import { advanceSimulation } from "../src/simulation/tick";
+import { createInitialState } from "../src/simulation_legacy/state";
+import {
+  submitAction,
+  editActionQueue,
+} from "../src/simulation_legacy/action-queue";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { createController } from "../src/application/controller";
-import { setSurface } from "../src/simulation/materials";
-import { fieldState, storeFieldState } from "../src/simulation/expeditions";
+import { setSurface } from "../src/simulation_legacy/materials";
+import {
+  fieldState,
+  storeFieldState,
+} from "../src/simulation_legacy/expeditions";
 import { expeditionMapController } from "../src/adapters/browser/expedition-controller";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { draftResponder } from "../src/simulation/combat";
+import { draftResponder } from "../src/simulation_legacy/combat";
 
 const load = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });

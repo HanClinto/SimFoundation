@@ -1,9 +1,9 @@
-import type { GameState } from "../../simulation/state";
-import { objectEmits } from "../../simulation/vessels";
-import { OBJECT_DEFINITIONS } from "../../simulation/objects";
-import { projectPsychology } from "../../simulation/personnel";
-import { scheduleAt } from "../../simulation/routines";
-import { sameTile } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import { objectEmits } from "../../simulation_legacy/vessels";
+import { OBJECT_DEFINITIONS } from "../../simulation_legacy/objects";
+import { projectPsychology } from "../../simulation_legacy/personnel";
+import { scheduleAt } from "../../simulation_legacy/routines";
+import { sameTile } from "../../simulation_legacy/world";
 import type { MapPerspective } from "./map-settings";
 
 export type PawnCueIcon =

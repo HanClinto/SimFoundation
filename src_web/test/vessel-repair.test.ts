@@ -1,12 +1,12 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
+import { createInitialState } from "../src/simulation_legacy/state";
 import {
   cancelVesselWork,
   craftVessel,
   orderVesselAction,
-} from "../src/simulation/vessel-work";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/vessel-work";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
 function verifySave(state: ReturnType<typeof createInitialState>) {

@@ -2,19 +2,22 @@ import type {
   ControllerSnapshot,
   GameController,
 } from "../../application/controller";
-import { MATERIALS, type MaterialId } from "../../simulation/materials";
-import { OBJECT_DEFINITIONS, objectPosition } from "../../simulation/objects";
+import { MATERIALS, type MaterialId } from "../../simulation_legacy/materials";
+import {
+  OBJECT_DEFINITIONS,
+  objectPosition,
+} from "../../simulation_legacy/objects";
 import {
   activeVesselOrder,
   vesselCost,
   vesselOrderCost,
   type VesselCommandCode,
-} from "../../simulation/vessel-work";
+} from "../../simulation_legacy/vessel-work";
 import {
   vesselTransitForecast,
   vesselWearRate,
-} from "../../simulation/vessels";
-import type { TilePosition } from "../../simulation/world";
+} from "../../simulation_legacy/vessels";
+import type { TilePosition } from "../../simulation_legacy/world";
 import type { PlacementRequest } from "./placement";
 
 const messages: Record<VesselCommandCode, string> = {

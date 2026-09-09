@@ -4,8 +4,11 @@ import {
   MATERIAL_ART,
   visibleSurface,
 } from "../src/adapters/browser/material-art";
-import { createInitialState } from "../src/simulation/state";
-import { replaceSurface, type MaterialId } from "../src/simulation/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
+import {
+  replaceSurface,
+  type MaterialId,
+} from "../src/simulation_legacy/materials";
 import { DEFAULT_MAP_OVERLAYS } from "../src/adapters/browser/map-settings";
 
 afterEach(() => vi.unstubAllGlobals());

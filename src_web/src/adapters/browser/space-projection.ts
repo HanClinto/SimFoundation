@@ -1,5 +1,5 @@
-import { deriveSpaces, type SpaceMap } from "../../simulation/spaces";
-import type { TileKind } from "../../simulation/world";
+import { deriveSpaces, type SpaceMap } from "../../simulation_legacy/spaces";
+import type { TileKind } from "../../simulation_legacy/world";
 
 const projections = new WeakMap<
   readonly (TileKind | null | undefined)[],

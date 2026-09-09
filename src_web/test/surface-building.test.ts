@@ -1,17 +1,20 @@
-import { availableMaterials } from "../src/simulation/material-stock";
+import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it } from "vitest";
-import { createInitialState } from "../src/simulation/state";
-import { setSurface, surfaceAt } from "../src/simulation/materials";
+import { createInitialState } from "../src/simulation_legacy/state";
+import { setSurface, surfaceAt } from "../src/simulation_legacy/materials";
 import {
   advanceSurfaceWork,
   orderSurfaceWork,
   type SurfaceOperation,
-} from "../src/simulation/environment";
-import { advanceSimulation } from "../src/simulation/tick";
+} from "../src/simulation_legacy/environment";
+import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { orderObjectMove } from "../src/simulation/object-work";
-import { removeStorageArea, setStorageArea } from "../src/simulation/storage";
-import { cameraPlacementIssue } from "../src/simulation/observations";
+import { orderObjectMove } from "../src/simulation_legacy/object-work";
+import {
+  removeStorageArea,
+  setStorageArea,
+} from "../src/simulation_legacy/storage";
+import { cameraPlacementIssue } from "../src/simulation_legacy/observations";
 
 it("workers pave soil, build a barrier, remove it, and install an automatic door using finite stock", () => {
   let state: ReturnType<typeof createInitialState> = createInitialState();

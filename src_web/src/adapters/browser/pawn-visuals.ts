@@ -1,6 +1,6 @@
-import type { GameState } from "../../simulation/state";
-import type { PhysicalObject } from "../../simulation/objects";
-import { sameTile, type TilePosition } from "../../simulation/world";
+import type { GameState } from "../../simulation_legacy/state";
+import type { PhysicalObject } from "../../simulation_legacy/objects";
+import { sameTile, type TilePosition } from "../../simulation_legacy/world";
 import type { MapPerspective } from "./map-settings";
 import type { PawnPose } from "./pawn-art";
 

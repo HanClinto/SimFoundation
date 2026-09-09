@@ -5,10 +5,10 @@ import {
   installCamera,
   setCameraEnabled,
   cameraInstalled,
-} from "../src/simulation/observations";
+} from "../src/simulation_legacy/observations";
 import { createController } from "../src/application/controller";
-import { createInitialState } from "../src/simulation/state";
-import type { SiteMap } from "../src/simulation/world";
+import { createInitialState } from "../src/simulation_legacy/state";
+import type { SiteMap } from "../src/simulation_legacy/world";
 import { observedSnapshot } from "../src/adapters/browser/observed-view";
 import { loadGameState } from "../src/adapters/browser/game-persistence";
 
