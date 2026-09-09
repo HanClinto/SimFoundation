@@ -1,6 +1,6 @@
 import type { GameState } from "../../simulation/state";
 import { EXPEDITION_ASSEMBLY } from "../../simulation/expeditions";
-import { FIELD_EXTRACTION } from "../../simulation/expedition-site";
+import { expeditionScenario } from "../../simulation/expedition-site";
 import type { TilePosition } from "../../simulation/world";
 
 export function drawExpeditionMarker(
@@ -12,7 +12,11 @@ export function drawExpeditionMarker(
   const active = state.expeditions.active;
   if (!active) return;
   const field = active.site?.world.map.id === state.world.map.id;
-  const point = project(field ? FIELD_EXTRACTION : EXPEDITION_ASSEMBLY);
+  const point = project(
+    field
+      ? expeditionScenario(active.noticeId).extraction
+      : EXPEDITION_ASSEMBLY,
+  );
   context.save();
   context.translate(point.x, point.y);
   context.scale(zoom, zoom);

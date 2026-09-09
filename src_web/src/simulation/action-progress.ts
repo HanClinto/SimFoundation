@@ -4,7 +4,7 @@ import { routineProgress } from "./routines";
 import { findRoute, sameTile, type TilePosition } from "./world";
 import { mealCollectionPoint } from "./storage";
 import { fieldState } from "./expeditions";
-import { FIELD_EXTRACTION } from "./expedition-site";
+import { expeditionScenario } from "./expedition-site";
 
 export interface ActionTiming {
   readonly mapId: string;
@@ -148,7 +148,7 @@ export function actionProgress(
       );
       destination =
         recovery.phase === "carrying"
-          ? FIELD_EXTRACTION
+          ? expeditionScenario(mission!.noticeId).extraction
           : item?.location.kind === "ground"
             ? item.location.position
             : null;

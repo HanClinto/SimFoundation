@@ -1,4 +1,8 @@
 import { GAME_STATE_VERSION, type GameState } from "../../simulation/state";
+import {
+  EXPEDITION_SCENARIOS,
+  expeditionScenario,
+} from "../../simulation/expedition-site";
 import { combatStateValid } from "./combat-persistence";
 import { actionQueuesValid } from "./queue-persistence";
 import {
@@ -1517,6 +1521,9 @@ function expeditionsValid(state: GameState): boolean {
       (notice) =>
         isRecord(notice) &&
         isNonEmptyString(notice.id) &&
+        EXPEDITION_SCENARIOS.some(
+          (scenario) => scenario.noticeId === notice.id,
+        ) &&
         isNonEmptyString(notice.title) &&
         isNonEmptyString(notice.report) &&
         isLiteral(notice.status, ["available", "assigned", "resolved"]),
@@ -1528,6 +1535,9 @@ function expeditionsValid(state: GameState): boolean {
         isRecord(entry) &&
         isNonEmptyString(entry.id) &&
         isNonEmptyString(entry.noticeId) &&
+        EXPEDITION_SCENARIOS.some(
+          (scenario) => scenario.noticeId === entry.noticeId,
+        ) &&
         isIntegerInRange(entry.returnedAt, 0, state.tick) &&
         isArrayOf(entry.team, isNonEmptyString, 3) &&
         isArrayOf(entry.cargo, isNonEmptyString, 20),
@@ -1548,6 +1558,9 @@ function expeditionsValid(state: GameState): boolean {
   if (
     !isRecord(active) ||
     !isNonEmptyString(active.id) ||
+    !EXPEDITION_SCENARIOS.some(
+      (scenario) => scenario.noticeId === active.noticeId,
+    ) ||
     !/^expedition-[1-9]\d*$/.test(active.id) ||
     Number(active.id.slice(11)) >= expeditions.nextId ||
     !isLiteral(active.phase, [
@@ -1572,7 +1585,7 @@ function expeditionsValid(state: GameState): boolean {
         isTilePosition(active.returnPositions[id]) &&
         sameTile(active.returnPositions[id]!, EXPEDITION_ASSEMBLY),
     ) ||
-    !isArrayOf(active.cargo, isNonEmptyString, 2) ||
+    !isArrayOf(active.cargo, isNonEmptyString, 20) ||
     new Set(active.cargo).size !== active.cargo.length ||
     !isArrayOf(
       active.recoveryOrders,
@@ -1583,7 +1596,7 @@ function expeditionsValid(state: GameState): boolean {
         isIntegerInRange(order.progress, 0, 6) &&
         isLiteral(order.phase, ["collecting", "carrying", "delivered"]) &&
         isNullableString(order.blockedReason),
-      2,
+      20,
     )
   )
     return false;
@@ -1606,10 +1619,15 @@ function expeditionsValid(state: GameState): boolean {
     )
   )
     return false;
+  const scenario = expeditionScenario(active.noticeId);
   const travelling = active.phase === "outbound" || active.phase === "inbound";
   if (
     travelling
-      ? !isIntegerInRange(active.arrivesAt, 0, state.tick + 30)
+      ? !isIntegerInRange(
+          active.arrivesAt,
+          0,
+          state.tick + scenario.travelMinutes,
+        )
       : active.arrivesAt !== null
   )
     return false;
@@ -1639,10 +1657,11 @@ function expeditionsValid(state: GameState): boolean {
     !isSurfaceRecord(active.site.world.map.surfaces)
   )
     return false;
+  const authoredSite = scenario.createSite(active.id);
   if (
     active.site.world.map.id !== `field-${active.id}` ||
-    active.site.world.map.width !== 28 ||
-    active.site.world.map.height !== 24
+    active.site.world.map.width !== authoredSite.world.map.width ||
+    active.site.world.map.height !== authoredSite.world.map.height
   )
     return false;
   if (
@@ -1672,16 +1691,18 @@ function expeditionsValid(state: GameState): boolean {
   )
     return false;
   const site = active.site;
-  const expectedObjects = [`${active.id}-archive`, `${active.id}-specimen`];
+  const expectedObjects = authoredSite.objects.items.map((item) => item.id);
   if (
-    site.objects.items.length !== 2 ||
-    new Set(site.objects.items.map((item) => item.id)).size !== 2 ||
+    site.objects.items.length !== expectedObjects.length ||
+    new Set(site.objects.items.map((item) => item.id)).size !==
+      expectedObjects.length ||
     site.objects.items.some(
       (item) =>
         !expectedObjects.includes(item.id) ||
         state.objects.items.some((base) => base.id === item.id) ||
         item.kind !==
-          (item.id.endsWith("-archive") ? "archive-case" : "anomaly-case") ||
+          authoredSite.objects.items.find((authored) => authored.id === item.id)
+            ?.kind ||
         item.quantity !== 1 ||
         item.installed ||
         !["ground", "carried"].includes(item.location.kind) ||
@@ -1735,12 +1756,18 @@ function expeditionsValid(state: GameState): boolean {
           (item) =>
             item.id === id &&
             item.location.kind === "ground" &&
-            sameTile(item.location.position, { x: 4, y: 12 }),
+            sameTile(item.location.position, scenario.extraction),
         ),
     ) ||
-    site.environment.sources.length !== 1 ||
-    site.environment.sources[0]!.id !== `${active.id}-emission` ||
-    site.environment.sources[0]!.objectId !== `${active.id}-specimen` ||
+    site.environment.sources.length !==
+      authoredSite.environment.sources.length ||
+    site.environment.sources.some(
+      (source) =>
+        !authoredSite.environment.sources.some(
+          (authored) =>
+            authored.id === source.id && authored.objectId === source.objectId,
+        ),
+    ) ||
     site.environment.orders.length ||
     site.observations.cameras.length
   )
@@ -1785,10 +1812,13 @@ function expeditionsValid(state: GameState): boolean {
   )
     return false;
   if (
-    site.observations.knownTiles.length !== 28 * 24 ||
-    site.observations.tileLastSeen.length !== 28 * 24 ||
+    site.observations.knownTiles.length !==
+      site.world.map.width * site.world.map.height ||
+    site.observations.tileLastSeen.length !==
+      site.world.map.width * site.world.map.height ||
     site.observations.visibleTiles.some(
-      (index) => index < 0 || index >= 28 * 24,
+      (index) =>
+        index < 0 || index >= site.world.map.width * site.world.map.height,
     ) ||
     new Set(site.observations.visibleTiles).size !==
       site.observations.visibleTiles.length ||
@@ -1798,7 +1828,7 @@ function expeditionsValid(state: GameState): boolean {
         !active.team.includes(id) ||
         !site.observations.entities[id] ||
         !site.observations.visibleTiles.includes(
-          site.observations.entities[id]!.position.y * 28 +
+          site.observations.entities[id]!.position.y * site.world.map.width +
             site.observations.entities[id]!.position.x,
         ),
     ) ||

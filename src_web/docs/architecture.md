@@ -144,7 +144,7 @@ Save validation ties the player routine's kind/station to its active queue inten
 
 The controller exposes queue submission and edit commands separately from legacy immediate tactical commands. Accepted immediate commands discard that person's competing queue; expedition phase/location changes invalidate location-bound intentions. Browser queue rows are keyed by persistent sequence ID so stale cancellation cannot remove a different pending action. The menu's Subject > Object > Verb path is presentation-only; neither the active browser pawn nor optional future modifier branches create separate authoritative actors or execution progress.
 
-### Expeditions (Schema 38)
+### Expeditions (Scenario Definitions: Schema 48)
 
 `expeditions.ts` owns notices, an active manifest, supply reserves, lifecycle deadlines, recovery orders and bounded return history. The active field site holds its own world, objects, observations, combat and environment; global personnel are referenced by ID. Away staff have no base position or base responder state. A base-only roster is used for local simulation, then the global roster is reconciled and field systems advance on the same clock. This excludes away staff from home jobs and observation without deleting their schedules, clinical history, equipment or identity.
 
@@ -152,7 +152,7 @@ The controller exposes queue submission and edit commands separately from legacy
 
 Application commands explicitly scope field actions with the expedition ID. Base draft/order commands reject enlisted staff. Field doors never target the base map, and UI map focus is not a source of authority. `expedition-controller.ts` supplies a browser map projection; root snapshots alone are autosaved. Shared canvas CSS is class-based to support multiple independently sized map windows.
 
-The depot map factory and objective validation are deliberately authored for one mission. No nested full GameState, copy of global personnel, generated material rewards or alternate time source is stored in the field. See [decision 003](decisions/003-expedition-location-ownership.md) and the [expedition guide](expeditions.md).
+`expedition-site.ts` owns authored scenario definitions: notice text, site name, travel time, extraction, recovery target IDs, optional encounter position and a site factory. The depot and noncombat service store exercise the same executor. Completion is identity-based and shared by return status and reporting. Save validation derives map dimensions, expected objects and source bindings from the selected factory rather than depot constants. No nested full GameState, copy of global personnel, generated material rewards or alternate time source is stored in the field. See [decision 003](decisions/003-expedition-location-ownership.md), [decision 007](decisions/007-authored-expedition-scenarios.md) and the [expedition guide](expeditions.md).
 
 ### Tactical Response (Schema 37)
 

@@ -4,6 +4,45 @@ import { createController } from "../src/application/controller";
 import { createInitialState } from "../src/simulation/state";
 import { createExpeditionsWindow } from "../src/adapters/browser/expeditions-view";
 afterEach(() => vi.unstubAllGlobals());
+it("reports declared scenario completion rather than treating two cases as complete", () => {
+  const window = new JSDOM().window;
+  vi.stubGlobal("document", window.document);
+  vi.stubGlobal("Option", window.Option);
+  const state = createInitialState();
+  const controller = createController(state);
+  const view = createExpeditionsWindow(
+    document.body,
+    controller,
+    vi.fn(),
+    vi.fn(),
+    () => null,
+    vi.fn(),
+  );
+  const history = {
+    id: "expedition-1",
+    noticeId: "notice-records-transfer",
+    returnedAt: 0,
+    team: ["person-caleb-ward", "person-lena-ortiz"],
+    cargo: ["expedition-1-case-a", "expedition-1-case-b"],
+  };
+  const renderHistory = (cargo: string[]) =>
+    view.render({
+      running: false,
+      game: {
+        ...state,
+        expeditions: { ...state.expeditions, history: [{ ...history, cargo }] },
+      },
+    });
+  renderHistory(history.cargo);
+  expect(
+    view.element.querySelector("[data-expedition-history]")!.textContent,
+  ).toContain("Partial recovery");
+  renderHistory([...history.cargo, "expedition-1-case-c"]);
+  expect(
+    view.element.querySelector("[data-expedition-history]")!.textContent,
+  ).toContain("Recovery complete");
+  expect(controller.getSnapshot().game).toEqual(state);
+});
 it("updates paused manifest eligibility without rewriting inputs or changing simulation state", () => {
   const window = new JSDOM().window;
   vi.stubGlobal("document", window.document);

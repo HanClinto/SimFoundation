@@ -7,8 +7,9 @@ import {
 } from "./combat";
 import { sameTile, type TilePosition } from "./world";
 import {
-  createExpeditionSite,
-  FIELD_EXTRACTION,
+  EXPEDITION_SCENARIOS,
+  expeditionScenario,
+  expeditionRecoveryComplete,
   type ExpeditionSite,
 } from "./expedition-site";
 import {
@@ -75,15 +76,12 @@ export const createExpeditions = (): ExpeditionState => ({
   nextId: 1,
   active: null,
   history: [],
-  notices: [
-    {
-      id: "notice-depot",
-      title: "Unscheduled activity at Relay Depot 14",
-      report:
-        "The night operator reports movement inside a sealed records store. A courier has failed to return. Recover the sealed archive and investigate the source of the disturbance.",
-      status: "available",
-    },
-  ],
+  notices: EXPEDITION_SCENARIOS.map((scenario) => ({
+    id: scenario.noticeId,
+    title: scenario.title,
+    report: scenario.report,
+    status: "available",
+  })),
 });
 export type ExpeditionCode =
   | "accepted"
@@ -278,7 +276,7 @@ export function fieldState(state: GameState): GameState | null {
   return {
     ...state,
     ...active.site,
-    siteName: "Relay Depot 14",
+    siteName: expeditionScenario(active.noticeId).siteName,
     personnel,
     jobs: [],
     clinicalCare: { reviewInterval: 0, clinicianIds: [] },
@@ -365,7 +363,8 @@ export function dispatchExpedition(state: GameState): ExpeditionResult {
       code: "busy",
       reason: "Stabilize all team injuries before dispatch.",
     };
-  const site = createExpeditionSite(active.id);
+  const scenario = expeditionScenario(active.noticeId);
+  const site = scenario.createSite(active.id);
   const responders = Object.fromEntries(
     active.team.map((id) => [
       id,
@@ -428,7 +427,7 @@ export function dispatchExpedition(state: GameState): ExpeditionResult {
         active: {
           ...active,
           phase: "outbound",
-          arrivesAt: state.tick + 30,
+          arrivesAt: state.tick + scenario.travelMinutes,
           site: { ...site, combat: { ...site.combat, responders } },
         },
       },
@@ -451,7 +450,12 @@ export function recoverExpeditionObject(
   )
     return { state, code: "not-ready" };
   const item = field.objects.items.find((item) => item.id === objectId);
-  if (!item || !["archive-case", "anomaly-case"].includes(item.kind))
+  if (
+    !item ||
+    !expeditionScenario(active.noticeId).recoveryTargets.some(
+      (target) => item.id === `${active.id}-${target}`,
+    )
+  )
     return { state, code: "not-found" };
   if (
     item.location.kind !== "ground" ||
@@ -539,7 +543,12 @@ export function recallExpedition(state: GameState): ExpeditionResult {
         "Stabilize injured team members and wait for incapacitated responders to recover before regrouping.",
     };
   for (const id of active.team) {
-    const ordered = orderResponder(field, id, "retreat", FIELD_EXTRACTION);
+    const ordered = orderResponder(
+      field,
+      id,
+      "retreat",
+      expeditionScenario(active.noticeId).extraction,
+    );
     if (ordered.code !== "accepted")
       return {
         state,
@@ -636,12 +645,19 @@ export function advanceExpedition(state: GameState): GameState {
         positions: Object.fromEntries(
           active.team.map((id, index) => [
             id,
-            { x: FIELD_EXTRACTION.x, y: FIELD_EXTRACTION.y + index },
+            {
+              x: expeditionScenario(active.noticeId).extraction.x,
+              y: expeditionScenario(active.noticeId).extraction.y + index,
+            },
           ]),
         ),
       },
     };
-    field = startEncounter(field, { x: 20, y: 9 }).state;
+    const encounterPosition = expeditionScenario(
+      active.noticeId,
+    ).encounterPosition;
+    if (encounterPosition)
+      field = startEncounter(field, encounterPosition).state;
     field = observeCombat(observeSite(field));
     const arrived = storeFieldState(state, field);
     return {
@@ -733,7 +749,13 @@ export function advanceExpedition(state: GameState): GameState {
           notice.id === active.noticeId
             ? {
                 ...notice,
-                status: active.cargo.length ? "resolved" : "available",
+                status: expeditionRecoveryComplete(
+                  active.noticeId,
+                  active.id,
+                  active.cargo,
+                )
+                  ? "resolved"
+                  : "available",
               }
             : notice,
         ),
@@ -776,7 +798,7 @@ export function advanceExpedition(state: GameState): GameState {
     const origin = field.world.positions[order.personId]!;
     const destination =
       order.phase === "carrying"
-        ? FIELD_EXTRACTION
+        ? expeditionScenario(active.noticeId).extraction
         : item.location.kind === "ground"
           ? item.location.position
           : origin;
@@ -811,7 +833,9 @@ export function advanceExpedition(state: GameState): GameState {
                     ? { kind: "carried" as const, personId: order.personId }
                     : {
                         kind: "ground" as const,
-                        position: { ...FIELD_EXTRACTION },
+                        position: {
+                          ...expeditionScenario(active.noticeId).extraction,
+                        },
                       },
                 reservedBy:
                   order.phase === "collecting"
@@ -848,7 +872,10 @@ export function advanceExpedition(state: GameState): GameState {
     active.phase === "regrouping" &&
     active.team.every(
       (id) =>
-        sameTile(field.world.positions[id]!, FIELD_EXTRACTION) &&
+        sameTile(
+          field.world.positions[id]!,
+          expeditionScenario(active.noticeId).extraction,
+        ) &&
         !field.combat.responders[id]!.incapacitated &&
         (!field.combat.responders[id]!.injuries ||
           field.combat.responders[id]!.stabilized) &&
@@ -866,7 +893,8 @@ export function advanceExpedition(state: GameState): GameState {
         ...(ready
           ? {
               phase: "inbound",
-              arrivesAt: state.tick + 30,
+              arrivesAt:
+                state.tick + expeditionScenario(active.noticeId).travelMinutes,
               site: {
                 ...next.expeditions.active!.site!,
                 world: { ...field.world, positions: {} },

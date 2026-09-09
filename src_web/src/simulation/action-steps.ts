@@ -3,7 +3,7 @@ import { actionProgress, currentActionIdentity } from "./action-progress";
 import { personCurrentAction } from "./person-actions";
 import { sameTile, type TilePosition } from "./world";
 import { mealCollectionPoint } from "./storage";
-import { FIELD_EXTRACTION } from "./expedition-site";
+import { expeditionScenario } from "./expedition-site";
 
 export interface ActionExecutionStep {
   readonly parentKey: string;
@@ -122,7 +122,7 @@ export function actionExecutionStep(
       );
       const position =
         recovery.phase === "carrying"
-          ? FIELD_EXTRACTION
+          ? expeditionScenario(state.expeditions.active!.noticeId).extraction
           : item?.location.kind === "ground"
             ? item.location.position
             : undefined;

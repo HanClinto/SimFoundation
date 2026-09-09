@@ -1,10 +1,15 @@
 # Expedition Operations
 
-Implemented first expedition loop, tracked in [#22](https://github.com/HanClinto/SimFoundation/issues/22). Save schema 38 requires a fresh development site.
+The expedition loop originated in [#22](https://github.com/HanClinto/SimFoundation/issues/22). Scenario definitions and shared execution are separated in schema 48, which discards older development saves without migration.
 
 ## Notice And Manifest
 
-Open **Expeditions** in the facility inspector. The initial notice reports unscheduled activity at Relay Depot 14 and requests recovery of a sealed archive. It is an original authored side operation, not a generated campaign or a claim about a canonical SCP location.
+Open **Expeditions** in the facility inspector. Two original authored operations are available, not a generated campaign or claims about canonical SCP locations:
+
+| Location        | Travel Each Way | Map / Extraction | Objectives                                        |
+| --------------- | --------------- | ---------------- | ------------------------------------------------- |
+| Relay Depot 14  | 30 minutes      | 28x24 / 4,12     | Archive and anomalous specimen; one active 049-2  |
+| Service Store 3 | 12 minutes      | 16x14 / 2,6      | Three archive cases; no threat or emission source |
 
 Select two or three staff. The manifest displays their existing equipped items; those same personnel records, equipment and personal inventory remain authoritative throughout the journey. Allocate ammunition and medical kits within each responder's current tactical supply. Unallocated supplies remain reserved at the base and are recombined with unspent field supplies after return. Draft/release or repeated travel never replenishes the loadout. The prior tactical system's fixed response weapon is still an abstraction; this slice does not add equipment swapping or derive weapon damage from descriptive paper-doll items.
 
@@ -14,15 +19,17 @@ Lifecycle buttons use immutable previews of the same commands they execute. Team
 
 ## Departure And Field Map
 
-**Dispatch** becomes available when everyone reaches assembly with no pending action recovery. Unstabilized injuries and an active base encounter block departure. The outbound trip takes 30 simulation minutes. Departing staff lose their base-map positions and cannot be assigned base jobs or contribute base sight. Site 828 continues advancing with the staff who remain. Needs and effects advance once per shared tick, including transit.
+**Dispatch** becomes available when everyone reaches assembly with no pending action recovery. Unstabilized injuries and an active base encounter block departure. Travel time comes from the selected scenario. Departing staff lose their base-map positions and cannot be assigned base jobs or contribute base sight. Site 828 continues advancing with the staff who remain. Needs and effects advance once per shared tick, including transit.
 
-On arrival, **Open field map** opens a second modeless map window for the 28x24 depot. The base map stays available independently. The depot uses the same tile/surface records, doors, pathfinding, combat, observation, and exposure rules. It has separate world state, objects, knowledge and tactical state. The extraction point is marked at 4,12.
+On arrival, **Open field map** opens a second modeless map window named for the location. The base map stays available independently. Both scenarios use the same tile/surface records, doors, pathfinding, combat, observation, and exposure rules. Each has separate world state, objects, knowledge and tactical state, with its own marked extraction point.
 
 The operation desk is World-state inspection and mission management. The field map independently supports World and Recorded perspectives, with unknown tiles and remembered sightings in Recorded. **Control on Map** selects and centers the chosen responder without issuing work or clearing pending actions. It preserves the map's Follow setting and refuses control while the map is Recorded or in placement. Personal orders use the field map's queue policy; assembly, dispatch and recall remain team-level operations. The desk is not fog-limited mission reporting yet. Field doors are edited on the field map and cannot change same-coordinate doors in Site 828.
 
 Double-clicking personnel opens their dossier. Objects, sources, tiles, doors and 049-2 open a selection-specific Field Record with location, condition and relevant properties; only the explicit Response button routes to Expedition Operations. Field Records retain their perspective and expedition identity, and become unavailable when that temporary location closes.
 
 ## Encounter And Recovery
+
+The following encounter and specimen details apply to Relay Depot 14. Service Store 3 instead contains three archive cases, without an adversary or emission source; it uses the same physical recovery actions.
 
 One already-provoked 049-2 occupies the records store. The existing [tactical rules](tactical-response.md) apply, including preparation, recovery, finite ammunition, line of sight, injury and stabilization. Unlike the standalone sandbox, merely remaining outside its response radius does not end the field operation; extraction controls the mission lifecycle. The existing pursuit boundary remains a first-slice limitation.
 
@@ -38,14 +45,14 @@ The specimen is an original low-intensity corrosion emitter: dose 0.2, radius 1.
 
 **Regroup / return** orders the whole team to extraction. In-progress cargo recovery must finish or be cancelled first. Incapacitated or deteriorating staff require stabilization before recall. If someone becomes unstable during regrouping, the operation returns to field control so the team can help them and try recall again. Stabilized casualties retain the existing delay before they can move; no one is silently left behind.
 
-When every responder is physically at extraction, stable and out of action recovery, the inbound trip begins and takes 30 minutes. If the home arrival tile is blocked, arrival waits rather than placing staff in a wall. If recovered emission sources cannot fit the base's source registry, the transfer also waits and reports the limitation. Clear the relevant condition to allow completion.
+When every responder is physically at extraction, stable and out of action recovery, the inbound trip begins and takes the scenario's travel time. If the home arrival tile is blocked, arrival waits rather than placing staff in a wall. If recovered emission sources cannot fit the base's source registry, the transfer also waits and reports the limitation. Clear the relevant condition to allow completion.
 
-Arrival restores each member's base position once, retains injuries/effects, equipment, spent ammunition and consumed medical kits, and deposits manifested cargo at the arrival point. The specimen's attached source transfers with its identity. Staff previously drafted or returning injured remain drafted for review; others return to ordinary scheduling. A return report lists the people and objects recovered. Empty-handed withdrawal makes the notice available again; returning cargo resolves the notice and records whether recovery was partial or complete.
+Arrival restores each member's base position once, retains injuries/effects, equipment, spent ammunition and consumed medical kits, and deposits manifested cargo at the arrival point. The specimen's attached source transfers with its identity. Staff previously drafted or returning injured remain drafted for review; others return to ordinary scheduling. A return report lists the people and objects recovered. Only returning every declared objective object resolves the notice. Partial and empty-handed returns make it available again; reporting uses the same identity-based completion rule.
 
 The temporary site's state is removed from the save only after the transfer succeeds. The field window closes. Unrecovered field items are not copied home. A later retry generates a fresh operation identity, not a duplicate object identity. Current history is bounded to 20 return reports.
 
 ## Scope And Remaining Work
 
-One authored notice and one active expedition at a time. No mission deadlines, notification generator, strategic map, fuel, animated vehicles, expedition food supply, selectable physical weapon inventory, staff death/abandonment, living captive transport, or simultaneous field teams. Current combat incapacitates rather than permanently kills personnel, so return accounting requires the entire enlisted team to be recoverable. If all available help and medical kits are exhausted, this development slice has no rescue reinforcement or free-healing command.
+Two authored notices and one active expedition at a time. No mission deadlines, notification generator, strategic map, fuel, animated vehicles, expedition food supply, selectable physical weapon inventory, staff death/abandonment, living captive transport, or simultaneous field teams. Current combat incapacitates rather than permanently kills personnel, so return accounting requires the entire enlisted team to be recoverable. If all available help and medical kits are exhausted, this development slice has no rescue reinforcement or free-healing command.
 
-Future missions can build on the location/identity transfer boundary, but map generation and objective validation remain specific to this first depot. A broader mission catalog, casualty evacuation, and living restraint/capture should be independent validated extensions, not claims implied by this first implementation.
+`expedition-site.ts` declares each scenario's map factory, objective IDs, extraction, travel time and optional encounter position. Shared execution, progress, rendering and save validation consume that definition. The service store is also a headless integration scenario for physical recovery, cancellation, reload, partial/full return and one-time transfer. A broader mission catalog, casualty evacuation, and living restraint/capture remain independent extensions, not a general quest engine hidden behind these definitions.

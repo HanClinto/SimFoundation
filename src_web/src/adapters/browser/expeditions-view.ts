@@ -9,6 +9,10 @@ import {
   type ExpeditionCode,
 } from "../../simulation/expeditions";
 import { readyResponder } from "../../simulation/combat";
+import {
+  expeditionRecoveryComplete,
+  expeditionScenario,
+} from "../../simulation/expedition-site";
 import { OBJECT_DEFINITIONS } from "../../simulation/objects";
 import type { TilePosition } from "../../simulation/world";
 
@@ -266,7 +270,7 @@ export function createExpeditionsWindow(
     const assembled = expeditionAssembled(state);
     element.querySelector("[data-expedition-status]")!.textContent = !active
       ? "No team dispatched."
-      : `${active.id} / ${active.phase}${active.arrivesAt !== null ? ` / ${Math.max(0, active.arrivesAt - state.tick)} minutes to arrival` : active.phase === "assembling" ? (assembled ? " / Team assembled" : " / Gathering at departure point") : ""} / ${active.cargo.length} recovered object(s)`;
+      : `${active.id} / ${active.phase}${active.arrivesAt !== null ? ` / ${Math.max(0, active.arrivesAt - state.tick)} minutes to arrival` : active.phase === "assembling" ? (assembled ? " / Team assembled" : " / Gathering at departure point") : ""} / ${active.cargo.length} of ${expeditionScenario(active.noticeId).recoveryTargets.length} recovered object(s)`;
     if (active?.phase === "inbound" && active.arrivesAt! <= state.tick)
       element.querySelector("[data-expedition-status]")!.textContent +=
         " / Awaiting a clear home arrival point or available exposure-source capacity.";
@@ -322,7 +326,7 @@ export function createExpeditionsWindow(
     element.querySelector("[data-expedition-history]")!.replaceChildren(
       ...state.expeditions.history.map((entry) => {
         const item = document.createElement("li");
-        item.textContent = `${entry.id}: ${entry.team.map((id) => state.personnel.find((person) => person.id === id)?.name ?? id).join(", ")} returned / ${entry.cargo.length === 2 ? "Recovery complete" : entry.cargo.length ? "Partial recovery" : "Withdrawn without cargo"} / ${entry.cargo
+        item.textContent = `${entry.id}: ${entry.team.map((id) => state.personnel.find((person) => person.id === id)?.name ?? id).join(", ")} returned / ${expeditionRecoveryComplete(entry.noticeId, entry.id, entry.cargo) ? "Recovery complete" : entry.cargo.length ? "Partial recovery" : "Withdrawn without cargo"} / ${entry.cargo
           .map((id) => state.objects.items.find((item) => item.id === id))
           .filter((item) => !!item)
           .map((item) => OBJECT_DEFINITIONS[item!.kind].name)

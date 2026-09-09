@@ -863,7 +863,7 @@ for (const input of fieldWindow.querySelectorAll<HTMLInputElement>(
 ))
   input.name = `field-${input.name}`;
 fieldWindow.querySelector(".title-bar-text")!.textContent =
-  "Expedition - Relay Depot 14";
+  "Expedition Field Map";
 fieldWindow
   .querySelector("canvas")!
   .setAttribute("aria-label", "Isometric expedition field map");
@@ -936,6 +936,8 @@ const showField = () => {
   )
     return;
   fieldCamera.render(snapshot);
+  fieldWindow.querySelector(".title-bar-text")!.textContent =
+    `Expedition - ${snapshot.game.siteName}`;
   windowManager.open("expedition-map-window");
 };
 const expeditionsView = createExpeditionsWindow(
@@ -1227,6 +1229,9 @@ function render(snapshot: ControllerSnapshot): void {
   fieldInspector.render(snapshot);
   expeditionsView.render(snapshot);
   const field = fieldSnapshot(snapshot);
+  if (field)
+    fieldWindow.querySelector(".title-bar-text")!.textContent =
+      `Expedition - ${field.game.siteName}`;
   const fieldTime =
     fieldWindow.querySelector(".camera-selection")?.previousElementSibling;
   if (fieldTime)

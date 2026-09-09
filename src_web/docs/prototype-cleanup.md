@@ -72,16 +72,16 @@ The initial visual pass verified no archive window/shortcuts/status, no Plan Ann
 1. Completed: remove the anomalous-screening branch and unused trait-reveal records/algorithms entirely.
 2. Completed development visibility pass: live health, psychology, needs, preferences, traits and contributors are directly visible. Medical charts show real active effects. Ordinary appointments/history remain as simulated work, not gates; further simplification of report types is deferred rather than replaced with a new psychology framework.
 3. Completed in schema 47: removed saved material availability, preferred stockpile position, surface spending counter and fixed 160-unit save budget. Physical stacks/reservations now determine availability and spending. Starter quantities remain scenario content; no procurement framework was added.
-4. Preserve authored field missions as playable integration test beds. Separate scenario setup and objectives from map lifecycle, travel, combat and hauling, so the same small scenario can be exercised by a player or a high-level test. Do not delete useful quest scenarios just for being authored.
+4. Completed in schema 48: authored scenario definitions now supply setup and objectives to shared expedition execution. The depot remains playable; Service Store 3 exercises different dimensions, travel, extraction and three recovery objects without combat. Both are integration test beds, not a generic quest engine.
 
 ### Scenario-Backed Accounting Review
 
 - [x] Use small scenarios with 23 and 240 relocated materials to expose fixed-budget and stockpile assumptions.
 - [x] Exercise surface/vessel reservation, cancellation, consumption, reload and hauling exclusion through real commands. Verify physical quantities and reservation ownership rather than exact UI sequences or fixed completion ticks.
-- Reuse the expedition depot to exercise outbound supplies, recovered cargo and return without assuming every mission always has two objects or a particular threat.
-- Keep the scenario definition inspectable/playable; avoid a general quest engine or a large UI automation framework until there is a second concrete scenario that needs it.
+- [x] Preserve the depot and exercise the same lifecycle with three cases and no threat in Service Store 3, including partial/full recovery, cancellation, reload and conserved ammunition.
+- [x] Keep both definitions inspectable/playable without a general quest engine or a large UI automation framework.
 
-The material-accounting pass is complete; authored mission setup separation remains the next approved priority. See [physical material accounting](decisions/006-physical-material-accounting.md). Existing expedition scenarios remain available and their gameplay rules are unchanged.
+The material-accounting and authored mission separation passes are complete. See [physical material accounting](decisions/006-physical-material-accounting.md) and [authored expedition scenarios](decisions/007-authored-expedition-scenarios.md). Partial recovery now leaves a notice available; only all declared objective identities resolve it. Team sizing, supplies and recovery timing remain unchanged.
 
 These are prioritized review candidates, not newly implemented mechanics or commitments to a replacement framework.
 
