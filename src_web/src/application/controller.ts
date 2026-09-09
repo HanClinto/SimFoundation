@@ -183,10 +183,34 @@ export interface GameController {
         { readonly ammunition: number; readonly medicalSupplies: number }
       >
     >,
-  ): { code: ExpeditionCode; snapshot: ControllerSnapshot };
-  cancelExpedition(): { code: ExpeditionCode; snapshot: ControllerSnapshot };
-  dispatchExpedition(): { code: ExpeditionCode; snapshot: ControllerSnapshot };
-  recallExpedition(): { code: ExpeditionCode; snapshot: ControllerSnapshot };
+  ): {
+    code: ExpeditionCode;
+    reason: string | null;
+    snapshot: ControllerSnapshot;
+  };
+  previewEnlistExpedition(
+    noticeId: string,
+    team: readonly string[],
+    loadouts?: Parameters<typeof enlistExpedition>[3],
+  ): string | null;
+  previewCancelExpedition(): string | null;
+  previewDispatchExpedition(): string | null;
+  previewRecallExpedition(): string | null;
+  cancelExpedition(): {
+    code: ExpeditionCode;
+    reason: string | null;
+    snapshot: ControllerSnapshot;
+  };
+  dispatchExpedition(): {
+    code: ExpeditionCode;
+    reason: string | null;
+    snapshot: ControllerSnapshot;
+  };
+  recallExpedition(): {
+    code: ExpeditionCode;
+    reason: string | null;
+    snapshot: ControllerSnapshot;
+  };
   cancelRecovery(
     expeditionId: string,
     personId: string,
@@ -456,25 +480,37 @@ export function createController(initialState: GameState): GameController {
     previewGoHere(mapId, personId, destination) {
       return goHere(state, mapId, personId, destination).code;
     },
+    previewEnlistExpedition(noticeId, team, loadouts) {
+      return enlistExpedition(state, noticeId, team, loadouts).reason;
+    },
+    previewCancelExpedition() {
+      return cancelExpedition(state).reason;
+    },
+    previewDispatchExpedition() {
+      return dispatchExpedition(state).reason;
+    },
+    previewRecallExpedition() {
+      return recallExpedition(state).reason;
+    },
     enlistExpedition(noticeId, team, loadouts) {
       const result = enlistExpedition(state, noticeId, team, loadouts);
       state = result.state;
-      return { code: result.code, snapshot: publish() };
+      return { code: result.code, reason: result.reason, snapshot: publish() };
     },
     cancelExpedition() {
       const result = cancelExpedition(state);
       state = result.state;
-      return { code: result.code, snapshot: publish() };
+      return { code: result.code, reason: result.reason, snapshot: publish() };
     },
     dispatchExpedition() {
       const result = dispatchExpedition(state);
       state = result.state;
-      return { code: result.code, snapshot: publish() };
+      return { code: result.code, reason: result.reason, snapshot: publish() };
     },
     recallExpedition() {
       const result = recallExpedition(state);
       state = result.state;
-      return { code: result.code, snapshot: publish() };
+      return { code: result.code, reason: result.reason, snapshot: publish() };
     },
     cancelRecovery(expeditionId, personId) {
       if (state.expeditions.active?.id !== expeditionId)

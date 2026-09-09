@@ -90,35 +90,70 @@ export function createExpeditionsWindow(
   }
   const apply = (result: {
     code: ExpeditionCode;
+    reason: string | null;
     snapshot: ControllerSnapshot;
   }) => {
     render(result.snapshot);
-    feedback.textContent = messages[result.code];
+    feedback.textContent = result.reason ?? messages[result.code];
   };
   notice.addEventListener("change", () => render(current));
   responder.addEventListener("change", () => render(current));
-  button("enlist").addEventListener("click", () => {
+  function manifestInput() {
     const rows = Array.from(table.querySelectorAll<HTMLElement>("tr")).filter(
       (row) =>
         row.querySelector<HTMLInputElement>('input[type="checkbox"]')!.checked,
     );
+    return {
+      team: rows.map((row) => row.dataset.personId!),
+      loadouts: Object.fromEntries(
+        rows.map((row) => [
+          row.dataset.personId!,
+          {
+            ammunition: Number(
+              row.querySelector<HTMLInputElement>("[data-rounds]")!.value ||
+                "NaN",
+            ),
+            medicalSupplies: Number(
+              row.querySelector<HTMLInputElement>("[data-kits]")!.value ||
+                "NaN",
+            ),
+          },
+        ]),
+      ),
+    };
+  }
+  function updateLifecycleControls() {
+    const manifest = manifestInput();
+    const reasons = {
+      enlist: controller.previewEnlistExpedition(
+        notice.value,
+        manifest.team,
+        manifest.loadouts,
+      ),
+      dispatch: controller.previewDispatchExpedition(),
+      cancel: controller.previewCancelExpedition(),
+      recall: controller.previewRecallExpedition(),
+    };
+    const titles = {
+      enlist: "Assemble the selected team with this loadout.",
+      dispatch: "Dispatch the assembled team to the field site.",
+      cancel: "Cancel assembly and release the mission's team assignment.",
+      recall: "Regroup the whole team at extraction for return.",
+    };
+    for (const action of ["enlist", "dispatch", "cancel", "recall"] as const) {
+      button(action).disabled = !!reasons[action];
+      button(action).title = reasons[action] ?? titles[action];
+    }
+  }
+  table.addEventListener("input", updateLifecycleControls);
+  table.addEventListener("change", updateLifecycleControls);
+  button("enlist").addEventListener("click", () => {
+    const manifest = manifestInput();
     apply(
       controller.enlistExpedition(
         notice.value,
-        rows.map((row) => row.dataset.personId!),
-        Object.fromEntries(
-          rows.map((row) => [
-            row.dataset.personId!,
-            {
-              ammunition: Number(
-                row.querySelector<HTMLInputElement>("[data-rounds]")!.value,
-              ),
-              medicalSupplies: Number(
-                row.querySelector<HTMLInputElement>("[data-kits]")!.value,
-              ),
-            },
-          ]),
-        ),
+        manifest.team,
+        manifest.loadouts,
       ),
     );
   });
@@ -220,14 +255,6 @@ export function createExpeditionsWindow(
       row.querySelector<HTMLInputElement>("[data-kits]")!.max = String(
         supply.medicalSupplies,
       );
-      if (!active) {
-        const rounds = row.querySelector<HTMLInputElement>("[data-rounds]")!;
-        const kits = row.querySelector<HTMLInputElement>("[data-kits]")!;
-        if (Number(rounds.value) > supply.ammunition)
-          rounds.value = String(supply.ammunition);
-        if (Number(kits.value) > supply.medicalSupplies)
-          kits.value = String(supply.medicalSupplies);
-      }
     }
     const people = state.personnel.filter((person) =>
       active?.team.includes(person.id),
@@ -243,16 +270,10 @@ export function createExpeditionsWindow(
     if (active?.phase === "inbound" && active.arrivesAt! <= state.tick)
       element.querySelector("[data-expedition-status]")!.textContent +=
         " / Awaiting a clear home arrival point or available exposure-source capacity.";
-    button("enlist").disabled =
-      !!active ||
-      state.expeditions.notices.find((entry) => entry.id === notice.value)
-        ?.status !== "available";
-    button("dispatch").disabled = active?.phase !== "assembling" || !assembled;
-    button("cancel").disabled = active?.phase !== "assembling";
+    updateLifecycleControls();
     button("map").disabled = !["field", "regrouping"].includes(
       active?.phase ?? "",
     );
-    button("recall").disabled = active?.phase !== "field";
     button("find").disabled =
       !["field", "regrouping"].includes(active?.phase ?? "") ||
       !field?.world.positions[responder.value];

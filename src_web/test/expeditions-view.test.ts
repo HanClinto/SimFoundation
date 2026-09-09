@@ -4,6 +4,65 @@ import { createController } from "../src/application/controller";
 import { createInitialState } from "../src/simulation/state";
 import { createExpeditionsWindow } from "../src/adapters/browser/expeditions-view";
 afterEach(() => vi.unstubAllGlobals());
+it("updates paused manifest eligibility without rewriting inputs or changing simulation state", () => {
+  const window = new JSDOM().window;
+  vi.stubGlobal("document", window.document);
+  vi.stubGlobal("Option", window.Option);
+  const controller = createController(createInitialState());
+  controller.setRunning(false);
+  const view = createExpeditionsWindow(
+    document.body,
+    controller,
+    vi.fn(),
+    vi.fn(),
+    () => null,
+    vi.fn(),
+  );
+  const enlist = view.element.querySelector<HTMLButtonElement>(
+    "[data-expedition-enlist]",
+  )!;
+  const row = view.element.querySelector(
+    '[data-person-id="person-caleb-ward"]',
+  )!;
+  const checked = row.querySelector<HTMLInputElement>(
+    'input[type="checkbox"]',
+  )!;
+  const rounds = row.querySelector<HTMLInputElement>("[data-rounds]")!;
+  const before = controller.getSnapshot();
+  expect(enlist.disabled).toBe(false);
+  checked.click();
+  expect(enlist.disabled).toBe(true);
+  expect(enlist.title).toContain("two or three");
+  checked.click();
+  for (const value of ["99", "-1", "1.5", ""]) {
+    rounds.value = value;
+    rounds.dispatchEvent(new window.Event("input", { bubbles: true }));
+    expect(enlist.disabled).toBe(true);
+    expect(enlist.title).toContain("available supplies");
+    view.render(controller.getSnapshot());
+    expect(rounds.value).toBe(value);
+  }
+  rounds.value = "8";
+  rounds.dispatchEvent(new window.Event("input", { bubbles: true }));
+  expect(enlist.disabled).toBe(false);
+  expect(controller.getSnapshot()).toEqual(before);
+  enlist.click();
+  const dispatch = view.element.querySelector<HTMLButtonElement>(
+    "[data-expedition-dispatch]",
+  )!;
+  expect(dispatch.title).toContain("reach assembly");
+  controller.setRunning(true);
+  view.render(controller.advance(100));
+  expect(dispatch.disabled).toBe(false);
+  controller.cancelExpedition();
+  const cancelled = controller.getSnapshot();
+  dispatch.click();
+  expect(controller.getSnapshot()).toEqual(cancelled);
+  expect(
+    view.element.querySelector("[data-expedition-feedback]")!.textContent,
+  ).toContain("Assemble a team");
+});
+
 it("submits a finite team loadout and waits for physical assembly before dispatch", () => {
   const window = new JSDOM().window;
   vi.stubGlobal("document", window.document);

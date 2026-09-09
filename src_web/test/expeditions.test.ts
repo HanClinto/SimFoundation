@@ -21,6 +21,69 @@ const loaded = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });
 
 const team = ["person-caleb-ward", "person-lena-ortiz"];
+it("previews lifecycle commands without changing state and returns execution's reason", () => {
+  const controller = createController(createInitialState());
+  controller.setRunning(true);
+  const before = controller.getSnapshot();
+  const invalid = { [team[0]!]: { ammunition: 99, medicalSupplies: 1 } };
+  const reason = controller.previewEnlistExpedition(
+    "notice-depot",
+    team,
+    invalid,
+  );
+  expect(reason).toContain("available supplies");
+  expect(
+    controller.previewEnlistExpedition("notice-depot", [team[0]!]),
+  ).toContain("two or three");
+  expect(controller.previewCancelExpedition()).toContain("assembling");
+  expect(controller.previewDispatchExpedition()).toContain("Assemble");
+  expect(controller.previewRecallExpedition()).toContain("field");
+  expect(controller.getSnapshot()).toEqual(before);
+  expect(
+    controller.enlistExpedition("notice-depot", team, invalid).reason,
+  ).toBe(reason);
+  expect(controller.getSnapshot()).toEqual(before);
+  expect(controller.previewEnlistExpedition("notice-depot", team)).toBeNull();
+  expect(controller.getSnapshot()).toEqual(before);
+  controller.enlistExpedition("notice-depot", team);
+  const assembling = controller.getSnapshot();
+  expect(controller.previewDispatchExpedition()).toContain("reach assembly");
+  expect(controller.previewCancelExpedition()).toBeNull();
+  expect(controller.getSnapshot()).toEqual(assembling);
+  controller.advance(100);
+  const assembled = controller.getSnapshot();
+  expect(controller.previewDispatchExpedition()).toBeNull();
+  expect(controller.getSnapshot()).toEqual(assembled);
+  const injured = {
+    ...assembled.game,
+    combat: {
+      ...assembled.game.combat,
+      responders: {
+        ...assembled.game.combat.responders,
+        [team[0]!]: {
+          ...assembled.game.combat.responders[team[0]!]!,
+          injuries: 1,
+          stabilized: false,
+        },
+      },
+    },
+  };
+  expect(dispatchExpedition(injured).reason).toContain("Stabilize");
+  expect(dispatchExpedition(injured).state).toBe(injured);
+  expect(
+    dispatchExpedition({
+      ...assembled.game,
+      combat: { ...assembled.game.combat, status: "active" },
+    }).reason,
+  ).toContain("base encounter");
+  controller.dispatchExpedition();
+  controller.advance(30);
+  const arrived = controller.getSnapshot();
+  expect(controller.previewRecallExpedition()).toBeNull();
+  expect(controller.getSnapshot()).toEqual(arrived);
+  expect(controller.recallExpedition().reason).toBeNull();
+});
+
 it("assembles the enlisted team physically without copying equipment or consuming supplies", () => {
   const initial = createInitialState();
   const result = enlistExpedition(initial, "notice-depot", team);
@@ -54,6 +117,21 @@ it("rejects duplicate or busy teams atomically", () => {
   ).toBe("invalid-team");
   const issued = enlistExpedition(state, "notice-depot", team).state;
   expect(enlistExpedition(issued, "notice-depot", team).state).toBe(issued);
+  const blocked = {
+    ...state,
+    world: {
+      ...state.world,
+      map: setSurface(state.world.map, { x: 63, y: 63 }, "structure", {
+        kind: "wall",
+        material: "steel",
+        integrity: 100,
+      }),
+    },
+  };
+  expect(enlistExpedition(blocked, "notice-depot", team).reason).toContain(
+    "assembly point",
+  );
+  expect(enlistExpedition(blocked, "notice-depot", team).state).toBe(blocked);
 });
 
 it("travels to a temporary map and returns the same team and equipment while the base clock advances", () => {
@@ -138,6 +216,7 @@ it("recovers physical field cargo, regroups and returns it exactly once with per
     state = result.state;
   }
   expect(recallExpedition(state).code).toBe("busy");
+  expect(recallExpedition(state).reason).toContain("cargo recovery");
   const phases = new Set<string>();
   for (let tick = 0; tick < 150; tick += 1) {
     state = advanceSimulation(state);

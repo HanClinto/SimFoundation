@@ -1,6 +1,10 @@
 import type { GameState } from "./state";
 import { recordDoorOpening } from "./action-progress";
-import { draftResponder, orderResponder } from "./combat";
+import {
+  draftResponder,
+  orderResponder,
+  previewDraftResponder,
+} from "./combat";
 import { sameTile, type TilePosition } from "./world";
 import {
   createExpeditionSite,
@@ -89,6 +93,12 @@ export type ExpeditionCode =
   | "unreachable"
   | "not-ready";
 
+export interface ExpeditionResult {
+  readonly state: GameState;
+  readonly code: ExpeditionCode;
+  readonly reason: string | null;
+}
+
 export function enlistExpedition(
   state: GameState,
   noticeId: string,
@@ -99,32 +109,62 @@ export function enlistExpedition(
       { readonly ammunition: number; readonly medicalSupplies: number }
     >
   >,
-): { state: GameState; code: ExpeditionCode } {
-  if (state.expeditions.active || state.combat.status === "active")
-    return { state, code: "busy" };
+): ExpeditionResult {
+  if (state.expeditions.active)
+    return {
+      state,
+      code: "busy",
+      reason:
+        "Finish or cancel the current expedition before assembling another team.",
+    };
+  if (state.combat.status === "active")
+    return {
+      state,
+      code: "busy",
+      reason: "Resolve the active base encounter before assembling a team.",
+    };
   if (
     !state.expeditions.notices.some(
       (notice) => notice.id === noticeId && notice.status === "available",
     )
   )
-    return { state, code: "not-found" };
+    return {
+      state,
+      code: "not-found",
+      reason: "Select an available expedition notice.",
+    };
   if (
     team.length < 2 ||
     team.length > 3 ||
     new Set(team).size !== team.length ||
     team.some((id) => !state.personnel.some((person) => person.id === id))
   )
-    return { state, code: "invalid-team" };
+    return {
+      state,
+      code: "invalid-team",
+      reason: "Select two or three distinct available staff.",
+    };
   let next = state;
   const reserves: Record<
     string,
     { ammunition: number; medicalSupplies: number }
   > = {};
   for (const id of [...team].sort()) {
+    const name = state.personnel.find((person) => person.id === id)!.name;
     const drafted = draftResponder(next, id, true);
-    if (drafted.code !== "accepted") return { state, code: "busy" };
+    if (drafted.code !== "accepted")
+      return {
+        state,
+        code: "busy",
+        reason: `${name}: ${previewDraftResponder(next, id, true).reason}`,
+      };
     const move = orderResponder(drafted.state, id, "move", EXPEDITION_ASSEMBLY);
-    if (move.code !== "accepted") return { state, code: "unreachable" };
+    if (move.code !== "accepted")
+      return {
+        state,
+        code: "unreachable",
+        reason: `${name} cannot begin movement to the assembly point (${move.code}).`,
+      };
     next = move.state;
     const responder = next.combat.responders[id]!;
     const loadout = loadouts?.[id] ?? responder;
@@ -136,7 +176,11 @@ export function enlistExpedition(
       loadout.medicalSupplies < 0 ||
       loadout.medicalSupplies > responder.medicalSupplies
     )
-      return { state, code: "invalid-team" };
+      return {
+        state,
+        code: "invalid-team",
+        reason: `${name}: choose whole non-negative rounds and kits within available supplies (${responder.ammunition} rounds, ${responder.medicalSupplies} kits).`,
+      };
     reserves[id] = {
       ammunition: responder.ammunition - loadout.ammunition,
       medicalSupplies: responder.medicalSupplies - loadout.medicalSupplies,
@@ -161,6 +205,7 @@ export function enlistExpedition(
   };
   return {
     code: "accepted",
+    reason: null,
     state: {
       ...next,
       expeditions: {
@@ -175,13 +220,14 @@ export function enlistExpedition(
   };
 }
 
-export function cancelExpedition(state: GameState): {
-  state: GameState;
-  code: ExpeditionCode;
-} {
+export function cancelExpedition(state: GameState): ExpeditionResult {
   const active = state.expeditions.active;
   if (!active || active.phase !== "assembling")
-    return { state, code: "not-ready" };
+    return {
+      state,
+      code: "not-ready",
+      reason: "Only an assembling team can cancel assembly.",
+    };
   let next: GameState = {
     ...state,
     expeditions: {
@@ -199,7 +245,7 @@ export function cancelExpedition(state: GameState): {
     if (!active.previouslyDrafted.includes(id))
       next = draftResponder(next, id, false).state;
   }
-  return { state: next, code: "accepted" };
+  return { state: next, code: "accepted", reason: null };
 }
 
 export function expeditionAssembled(state: GameState): boolean {
@@ -292,14 +338,27 @@ export function storeFieldState(state: GameState, field: GameState): GameState {
   };
 }
 
-export function dispatchExpedition(state: GameState): {
-  state: GameState;
-  code: ExpeditionCode;
-} {
+export function dispatchExpedition(state: GameState): ExpeditionResult {
   const active = state.expeditions.active;
-  if (!active || active.phase !== "assembling" || !expeditionAssembled(state))
-    return { state, code: "not-ready" };
-  if (state.combat.status === "active") return { state, code: "busy" };
+  if (!active || active.phase !== "assembling")
+    return {
+      state,
+      code: "not-ready",
+      reason: "Assemble a team before dispatching it.",
+    };
+  if (!expeditionAssembled(state))
+    return {
+      state,
+      code: "not-ready",
+      reason:
+        "Wait for every team member to reach assembly and finish action recovery.",
+    };
+  if (state.combat.status === "active")
+    return {
+      state,
+      code: "busy",
+      reason: "Resolve the active base encounter before dispatch.",
+    };
   if (
     active.team.some(
       (id) =>
@@ -307,7 +366,11 @@ export function dispatchExpedition(state: GameState): {
         !state.combat.responders[id]!.stabilized,
     )
   )
-    return { state, code: "busy" };
+    return {
+      state,
+      code: "busy",
+      reason: "Stabilize all team injuries before dispatch.",
+    };
   const site = createExpeditionSite(active.id);
   const responders = Object.fromEntries(
     active.team.map((id) => [
@@ -331,6 +394,7 @@ export function dispatchExpedition(state: GameState): {
   );
   return {
     code: "accepted",
+    reason: null,
     state: {
       ...state,
       world: {
@@ -450,16 +514,23 @@ export function recoverExpeditionObject(
   };
 }
 
-export function recallExpedition(state: GameState): {
-  state: GameState;
-  code: ExpeditionCode;
-} {
+export function recallExpedition(state: GameState): ExpeditionResult {
   const active = state.expeditions.active;
   let field = fieldState(state);
   if (!active || active.phase !== "field" || !field)
-    return { state, code: "not-ready" };
+    return {
+      state,
+      code: "not-ready",
+      reason: "Regroup is available only while the team is in the field.",
+    };
+  if (active.recoveryOrders.some((order) => order.phase !== "delivered"))
+    return {
+      state,
+      code: "busy",
+      reason:
+        "Finish or cancel active cargo recovery on the field map before regrouping.",
+    };
   if (
-    active.recoveryOrders.some((order) => order.phase !== "delivered") ||
     active.team.some(
       (id) =>
         field!.combat.responders[id]!.incapacitated ||
@@ -467,15 +538,26 @@ export function recallExpedition(state: GameState): {
           !field!.combat.responders[id]!.stabilized),
     )
   )
-    return { state, code: "busy" };
+    return {
+      state,
+      code: "busy",
+      reason:
+        "Stabilize injured team members and wait for incapacitated responders to recover before regrouping.",
+    };
   for (const id of active.team) {
     const ordered = orderResponder(field, id, "retreat", FIELD_EXTRACTION);
-    if (ordered.code !== "accepted") return { state, code: "unreachable" };
+    if (ordered.code !== "accepted")
+      return {
+        state,
+        code: "unreachable",
+        reason: `${state.personnel.find((person) => person.id === id)?.name ?? id} cannot begin movement to extraction (${ordered.code}).`,
+      };
     field = ordered.state;
   }
   const next = storeFieldState(state, field);
   return {
     code: "accepted",
+    reason: null,
     state: {
       ...next,
       expeditions: {

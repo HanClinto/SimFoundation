@@ -44,14 +44,15 @@ Status: implementation in progress. Check items only after their scoped checks p
 
 ## 5. Truthful Availability and Reasons
 
-- [ ] Remaining inspector actions derive enabled state and explanations from the same preview/validation as execution.
+- [x] Remaining operational inspector actions derive enabled state and explanations from the same preview/validation as execution.
 - [x] Draft/Release: shared immutable simulation preview drives execution and controller/UI eligibility, with specific cargo, clinical, injury/recovery, active-encounter and expedition reasons. Recorded short-circuits live previews; stale clicks recheck current state. Already-current duty is disabled as a no-op; enabled tooltips disclose personal-order replacement/clearing.
-- [ ] Mission assembly/dispatch/recall and remaining lifecycle actions: apply the same preview/reason contract and verify live input updates and stale-state rejection.
+- [x] Mission assembly/dispatch/recall and Cancel Assembly: apply the same preview/reason contract and verify live input updates and stale-state rejection.
 - Audit Draft/Release, mission assemble/dispatch/recall, and retained recovery/lifecycle controls after duplicate personal actions are removed.
 - Disabled actions expose a specific tooltip/reason rather than an unrelated generic busy explanation. Recheck on execution to handle stale state.
 - Acceptance: preview is immutable; enabled/disabled agrees with execution for tested snapshots; cargo, clinical, incapacitation, team ownership and map availability have meaningful reasons. Recorded exposes no live-only state.
 - Validation: table-driven preview/execution cases and UI tests for disabled reasons; avoid broad controller refactoring without a failing contract.
 - Duty checkpoint verified: preview/execution parity and immutability, cargo refusal, both clinical participants, incapacitation, unstable injury, recovery cooldown, encounter team and expedition assignment. Browser confirmed disabled cargo-specific tooltip, Recorded-only restriction and unchanged rejected state. Full gate passed with 369 tests; no new duty rules or save schema change.
+- Lifecycle checkpoint verified: controller previews reuse immutable command results with specific reasons. Manifest edits refresh eligibility while paused and retain invalid values. Tests cover team size, blank/fractional/excess supplies, atomic rejection, preview immutability, assembly route, arrival/recovery wait, encounter/injury/cargo restrictions and stale Dispatch. Browser confirmed immediate invalid-loadout/team-size feedback and assembly-wait tooltip in an isolated fixture; no live expedition was issued. Full gate passed with 371 tests. Sandbox placement remains under item 6.
 
 ## 6. Separate Sandbox Creation From Operations
 
