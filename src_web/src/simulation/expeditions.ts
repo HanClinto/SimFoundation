@@ -283,10 +283,6 @@ export function fieldState(state: GameState): GameState | null {
     jobs: [],
     clinicalCare: { reviewInterval: 0, clinicianIds: [] },
     scp999: createScp999State(),
-    construction: {
-      availableMaterials: 0,
-      stockpile: FIELD_EXTRACTION,
-    },
     objectOrders: [],
     vesselWork: { nextId: 1, orders: [] },
     storage: { nextId: 1, areas: [], blockedReasons: {} },

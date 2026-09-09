@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import {
@@ -494,7 +495,7 @@ it("completes home construction without borrowing expedition personnel or suppli
     ).toHaveLength(0);
   }
   expect(state.environment.orders[0]!.phase).toBe("completed");
-  expect(state.construction.availableMaterials).toBe(156);
+  expect(availableMaterials(state.objects)).toBe(156);
   expect(state.expeditions.active!.phase).toBe("field");
   expect(
     Object.values(state.expeditions.active!.site!.combat.responders).every(

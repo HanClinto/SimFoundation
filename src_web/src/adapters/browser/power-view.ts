@@ -13,6 +13,7 @@ import type { TilePosition } from "../../simulation/world";
 import type { PlacementRequest } from "./placement";
 import type { MapPerspective } from "./map-settings";
 import { observedSnapshot } from "./observed-view";
+import { availableMaterials } from "../../simulation/material-stock";
 
 export function createPowerWindow(
   host: HTMLElement,
@@ -230,7 +231,7 @@ export function createPowerWindow(
               ? "Equipment is reserved for work."
               : equipment.condition >= 100
                 ? "Equipment is undamaged."
-                : current.game.construction.availableMaterials < 8
+                : availableMaterials(current.game.objects) < 8
                   ? "Repair requires 8 available materials."
                   : "Repair service kit: 8 materials.";
     const button = (attribute: string) =>
@@ -241,7 +242,7 @@ export function createPowerWindow(
       equipment.location.kind !== "ground" ||
       !!equipment.reservedBy ||
       equipment.condition >= 100 ||
-      current.game.construction.availableMaterials <
+      availableMaterials(current.game.objects) <
         ELECTRICAL[equipment.kind as ElectricalKind].repairCost;
     element.querySelector("[data-power-repair-reason]")!.textContent =
       repairReason;

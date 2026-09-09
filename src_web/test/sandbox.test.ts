@@ -9,7 +9,7 @@ it("starts without scripted objectives or automatic exposure scenarios", () => {
   expect(state.jobs).toEqual([]);
   expect(state.environment.sources).toEqual([]);
   expect(state).not.toHaveProperty("scp9620");
-  expect(state.construction).not.toHaveProperty("researchLaboratoryId");
+  expect(state).not.toHaveProperty("construction");
   expect(advanceSimulation(state).jobs).toEqual([]);
 });
 

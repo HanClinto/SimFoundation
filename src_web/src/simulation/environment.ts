@@ -96,7 +96,6 @@ export function cancelSurfaceWork(
     (!cargo || cargo.location.kind !== "ground")
   )
     return state;
-  const cost = surfaceOrderCost(order);
   return {
     ...state,
     objects: cargo
@@ -111,13 +110,8 @@ export function cancelSurfaceWork(
         ? { ...person, currentJobId: null, activity: "Surface work cancelled" }
         : person,
     ),
-    construction: {
-      ...state.construction,
-      availableMaterials: state.construction.availableMaterials + cost,
-    },
     environment: {
       ...state.environment,
-      spentMaterials: state.environment.spentMaterials - cost,
       orders: state.environment.orders.map((candidate) =>
         candidate === order
           ? {
@@ -349,7 +343,6 @@ export function removeExposureSource(state: GameState, id: string): GameState {
 }
 export interface EnvironmentState {
   readonly automaticRepairs: boolean;
-  readonly spentMaterials: number;
   readonly nextOrder: number;
   readonly orders: readonly SurfaceOrder[];
   readonly sources: readonly ExposureSource[];
@@ -357,7 +350,6 @@ export interface EnvironmentState {
 export function createEnvironment(): EnvironmentState {
   return {
     automaticRepairs: false,
-    spentMaterials: 0,
     nextOrder: 1,
     orders: [],
     sources: [],
@@ -493,8 +485,6 @@ export function orderSurfaceWork(
   );
   if (!workSite) return { state, code: "unreachable" };
   const cost = surfaceOrderCost({ material, operation });
-  if (state.construction.availableMaterials < cost)
-    return { state, code: "insufficient-materials" };
   const id = `surface-${state.environment.nextOrder}`;
   const reserved =
     operation === "remove"
@@ -503,7 +493,7 @@ export function orderSurfaceWork(
           state.objects,
           "materials",
           cost,
-          state.construction.stockpile,
+          workSite,
           `job-${id}`,
           true,
         );
@@ -542,7 +532,7 @@ export function orderSurfaceWork(
       const cargo = reservedObject(reserved.store, `job-${id}`)!;
       return cargo.location.kind === "ground"
         ? cargo.location.position
-        : state.construction.stockpile;
+        : workSite;
     })(),
   };
   return {
@@ -551,14 +541,9 @@ export function orderSurfaceWork(
       ...state,
       objects: reserved.store,
       jobs: [...state.jobs, job],
-      construction: {
-        ...state.construction,
-        availableMaterials: state.construction.availableMaterials - cost,
-      },
       environment: {
         ...state.environment,
         nextOrder: state.environment.nextOrder + 1,
-        spentMaterials: state.environment.spentMaterials + cost,
         orders: [
           ...state.environment.orders,
           {

@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import { powerNetwork, setUtilityEnabled } from "../src/simulation/power";
@@ -143,7 +144,7 @@ it("repairs failed electrical equipment only after material delivery and enginee
   const ordered = orderVesselAction(state, "broken-light", "repair");
   expect(ordered.code).toBe("accepted");
   state = ordered.state;
-  expect(state.construction.availableMaterials).toBe(152);
+  expect(availableMaterials(state.objects)).toBe(152);
   const phases = new Set<string>();
   for (let tick = 0; tick < 350; tick += 1) {
     state = advanceSimulation(state);
@@ -232,7 +233,7 @@ it("restores the starter lights and cameras after a physical generator repair, w
     ordered.state,
     ordered.state.vesselWork.orders[0]!.id,
   );
-  expect(cancelled.construction.availableMaterials).toBe(160);
+  expect(availableMaterials(cancelled.objects)).toBe(160);
   expect(
     cancelled.objects.items.find((item) => item.id === "generator-main")!
       .reservedBy,
@@ -250,7 +251,7 @@ it("restores the starter lights and cameras after a physical generator repair, w
     expect(lightField(state).size).toBe(0);
   }
   expect(state.vesselWork.orders[0]!.phase).toBe("completed");
-  expect(state.construction.availableMaterials).toBe(152);
+  expect(availableMaterials(state.objects)).toBe(152);
   expect(lightField(state).size).toBeGreaterThan(0);
   for (const camera of state.observations.cameras)
     expect(powerNetwork(state).readings[camera.id]!.status).toBe("powered");

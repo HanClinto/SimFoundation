@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import { objectPosition, type PhysicalObject } from "../src/simulation/objects";
@@ -37,7 +38,7 @@ it("fabricates with real materials, loads staged cargo and seals through worker 
     { x: 66, y: 65 },
     "ceramic",
   ).state;
-  expect(state.construction.availableMaterials).toBe(148);
+  expect(availableMaterials(state.objects)).toBe(148);
   verifySave(state);
   for (
     let tick = 0;
@@ -106,10 +107,6 @@ it("fabricates with real materials, loads staged cargo and seals through worker 
             : item,
         ),
       },
-    },
-    {
-      ...state,
-      construction: { ...state.construction, availableMaterials: 160 },
     },
   ])
     expect(
@@ -356,9 +353,9 @@ it("locates contained cargo through its vessel and carrier without recursive con
 it("cancels fabrication once without spawning a case or losing materials", () => {
   const initial = createInitialState();
   const queued = craftVessel(initial, { x: 66, y: 65 }, "composite").state;
-  expect(queued.construction.availableMaterials).toBe(136);
+  expect(availableMaterials(queued.objects)).toBe(136);
   const cancelled = cancelVesselWork(queued, queued.vesselWork.orders[0]!.id);
-  expect(cancelled.construction.availableMaterials).toBe(160);
+  expect(availableMaterials(cancelled.objects)).toBe(160);
   expect(
     cancelled.objects.items.filter((item) => item.kind === "vessel"),
   ).toEqual([]);

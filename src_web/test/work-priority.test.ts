@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import {
   advanceJobs,
@@ -100,7 +101,7 @@ it("preserves the override, cargo ownership and resource ledger across physical 
   const edited = controller.setWorkPriority(jobId, "high").game;
   expect(edited.objects).toEqual(queued.objects);
   expect(edited.personnel).toEqual(queued.personnel);
-  expect(edited.construction).toEqual(queued.construction);
+  expect(edited.objects).toEqual(queued.objects);
   const phases = new Set<string>();
   let state = edited;
   for (
@@ -127,7 +128,7 @@ it("preserves the override, cargo ownership and resource ledger across physical 
   }
   expect(phases).toEqual(new Set(["collecting", "delivering", "working"]));
   expect(state.vesselWork.orders[0]!.phase).toBe("completed");
-  expect(state.construction.availableMaterials).toBe(144);
+  expect(availableMaterials(state.objects)).toBe(144);
   expect(controller.setWorkPriority(jobId, "low").game.jobs).toEqual(
     state.jobs,
   );

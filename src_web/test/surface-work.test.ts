@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import { damageSurface, surfaceAt } from "../src/simulation/materials";
@@ -30,7 +31,7 @@ describe("general surface work", () => {
         ...queued.world,
         positions: {
           ...queued.world.positions,
-          [carrier.id]: queued.construction.stockpile,
+          [carrier.id]: queued.jobs[0]!.workSite,
         },
       },
       personnel: queued.personnel.map((person) =>
@@ -144,7 +145,7 @@ describe("general surface work", () => {
     expect(surfaceAt(state.world.map, position, "floor")?.material).toBe(
       "concrete",
     );
-    expect(state.construction.availableMaterials).toBe(156);
+    expect(availableMaterials(state.objects)).toBe(156);
   });
   it("queues only current observed damage, deduplicates targets, and conserves finite stock", () => {
     const initial = createInitialState();
@@ -169,12 +170,18 @@ describe("general surface work", () => {
     expect(queued.environment.orders).toHaveLength(1);
     expect(discoverSurfaceWork(queued).environment.orders).toHaveLength(1);
     expect(
-      queued.construction.availableMaterials +
-        queued.environment.spentMaterials,
+      queued.objects.items
+        .filter((item) => item.kind === "materials")
+        .reduce((sum, item) => sum + item.quantity, 0),
     ).toBe(160);
     const empty = {
       ...damaged,
-      construction: { ...damaged.construction, availableMaterials: 0 },
+      objects: {
+        ...damaged.objects,
+        items: damaged.objects.items.filter(
+          (item) => item.kind !== "materials",
+        ),
+      },
     };
     expect(
       orderSurfaceWork(observeSite(empty), position, "structure", "steel").code,
@@ -250,7 +257,6 @@ describe("general surface work", () => {
     const state = createInitialState();
     const surface = state.world.map.surfaces[54 * 128 + 61]!;
     for (const changed of [
-      { ...state, environment: { ...state.environment, spentMaterials: 6 } },
       {
         ...state,
         world: {

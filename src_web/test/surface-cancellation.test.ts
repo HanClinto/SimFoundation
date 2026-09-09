@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import {
@@ -33,8 +34,7 @@ it("cancels before pickup once, releases the worker and stock, and permits repla
   const order = state.environment.orders[0]!;
   const cancelled = cancelSurfaceWork(state, order.id);
   expect(cancelled.environment.orders[0]!.phase).toBe("cancelled");
-  expect(cancelled.construction.availableMaterials).toBe(160);
-  expect(cancelled.environment.spentMaterials).toBe(0);
+  expect(availableMaterials(cancelled.objects)).toBe(160);
   expect(cancelled.jobs.some((job) => job.id === order.jobId)).toBe(false);
   expect(
     cancelled.personnel.some((person) => person.currentJobId === order.jobId),
@@ -66,7 +66,7 @@ it("defers cancellation of carried supplies until real delivery then releases th
   const cargo = reservedObject(state.objects, order.jobId)!;
   expect(cargo.location.kind).toBe("carried");
   state = cancelSurfaceWork(state, order.id);
-  expect(state.construction.availableMaterials).toBe(156);
+  expect(availableMaterials(state.objects)).toBe(156);
   expect(reservedObject(state.objects, order.jobId)).toEqual(cargo);
   expect(cancelSurfaceWork(state, order.id)).toBe(state);
   const destination = state.jobs.find(
@@ -82,7 +82,7 @@ it("defers cancellation of carried supplies until real delivery then releases th
   };
   for (let tick = 0; tick < 12; tick += 1) state = advanceSimulation(state);
   expect(state.environment.orders[0]!.phase).toBe("delivering");
-  expect(state.construction.availableMaterials).toBe(156);
+  expect(availableMaterials(state.objects)).toBe(156);
   expect(reservedObject(state.objects, order.jobId)?.location.kind).toBe(
     "carried",
   );
@@ -109,8 +109,7 @@ it("defers cancellation of carried supplies until real delivery then releases th
     reservedBy: null,
     location: { kind: "ground", position: destination },
   });
-  expect(state.construction.availableMaterials).toBe(160);
-  expect(state.environment.spentMaterials).toBe(0);
+  expect(availableMaterials(state.objects)).toBe(160);
   verifySave(state);
   expect(
     state.objects.items
@@ -145,7 +144,7 @@ it("cancels fitting and demolition without changing a layer or retaining footpri
   state = cancelSurfaceWork(state, state.environment.orders.at(-1)!.id);
   expect(surfaceAt(state.world.map, position, "floor")).toEqual(before);
   expect(cameraPlacementIssue(state, position)).toBeNull();
-  expect(state.construction.availableMaterials).toBe(160);
+  expect(availableMaterials(state.objects)).toBe(160);
   verifySave(state);
 });
 

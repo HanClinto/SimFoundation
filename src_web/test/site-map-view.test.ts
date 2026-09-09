@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { createSiteMap } from "../src/adapters/browser/site-map-view";
@@ -174,9 +175,7 @@ it("combines independent layers without changing pinned placement and cancels wi
     .querySelector<HTMLButtonElement>('[data-camera-action="cancel"]')!
     .click();
   expect(confirm).toHaveBeenCalledOnce();
-  expect(controller.getSnapshot().game.construction.availableMaterials).toBe(
-    160,
-  );
+  expect(availableMaterials(controller.getSnapshot().game.objects)).toBe(160);
   pointer("dblclick");
   expect(open).toHaveBeenLastCalledWith("tile:10,20:structure", "world");
   const floor = document.createElement("input");

@@ -92,14 +92,6 @@ export function vesselOrderCost(
       ? MATERIALS[order.material].cost * 2
       : 0;
 }
-export function vesselMaterialCommitted(state: GameState): number {
-  return state.vesselWork.orders.reduce(
-    (sum, order) =>
-      sum + (order.phase !== "cancelled" ? vesselOrderCost(order) : 0),
-    0,
-  );
-}
-
 export function vesselPlacementIssue(
   state: GameState,
   position: TilePosition,
@@ -209,13 +201,11 @@ export function craftVessel(
   if (state.vesselWork.orders.length >= 1000) return { state, code: "busy" };
   const id = `vessel-order-${state.vesselWork.nextId}`;
   const jobId = `job-${id}`;
-  if (state.construction.availableMaterials < vesselCost(material))
-    return { state, code: "insufficient-materials" };
   const supply = reserveSupply(
     state.objects,
     "materials",
     vesselCost(material),
-    state.construction.stockpile,
+    position,
     jobId,
     true,
   );
@@ -246,11 +236,6 @@ export function craftVessel(
       {
         ...state,
         objects: supply.store,
-        construction: {
-          ...state.construction,
-          availableMaterials:
-            state.construction.availableMaterials - vesselCost(material),
-        },
       },
       order,
       jobFor(state, order, origin, "logistics"),
@@ -306,13 +291,11 @@ export function orderVesselAction(
     const jobId = `job-${id}`;
     const material = vessel.vessel?.material ?? "steel";
     const cost = vesselOrderCost({ action, material });
-    if (state.construction.availableMaterials < cost)
-      return { state, code: "insufficient-materials" };
     const supply = reserveSupply(
       state.objects,
       "materials",
       cost,
-      state.construction.stockpile,
+      origin,
       jobId,
       true,
     );
@@ -349,10 +332,6 @@ export function orderVesselAction(
             items: supply.store.items.map((item) =>
               item.id === vessel.id ? { ...item, reservedBy: jobId } : item,
             ),
-          },
-          construction: {
-            ...state.construction,
-            availableMaterials: state.construction.availableMaterials - cost,
           },
         },
         order,
@@ -779,11 +758,6 @@ export function cancelVesselWork(state: GameState, id: string): GameState {
         ? { ...person, currentJobId: null, activity: "Vessel work cancelled" }
         : person,
     ),
-    construction: {
-      ...state.construction,
-      availableMaterials:
-        state.construction.availableMaterials + vesselOrderCost(order),
-    },
     vesselWork: {
       ...state.vesselWork,
       orders: state.vesselWork.orders.map((candidate) =>

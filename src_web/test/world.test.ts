@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { describe, expect, it } from "vitest";
 import {
   createStartingMap,
@@ -49,7 +50,7 @@ describe("physical site map", () => {
     for (const cell of Object.values(map.surfaces))
       if (cell.structure?.kind === "door")
         expect(cell.structure.material).toBe("steel");
-    expect(state.construction.availableMaterials).toBe(160);
+    expect(availableMaterials(state.objects)).toBe(160);
     expect(state.environment.orders).toEqual([]);
     expect(state.observations.knownSurfaces).toEqual(map.surfaces);
     expect(

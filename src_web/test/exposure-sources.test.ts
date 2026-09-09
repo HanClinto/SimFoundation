@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import {
@@ -178,7 +179,7 @@ it("lets a generic source trigger observed barrier failure and physical maintena
     phase: "collecting",
     position: { x: 61, y: 54 },
   });
-  expect(state.construction.availableMaterials).toBe(158);
+  expect(availableMaterials(state.objects)).toBe(158);
   state = setExposureSource(
     state,
     { ...policy, radius: 1, enabled: false },
@@ -210,7 +211,7 @@ it("lets a generic source trigger observed barrier failure and physical maintena
     surfaceAt(state.world.map, { x: 61, y: 54 }, "structure")?.integrity,
   ).toBe(100);
   expect(state.incident.level).toBe("green");
-  expect(state.construction.availableMaterials).toBe(158);
+  expect(availableMaterials(state.objects)).toBe(158);
   for (const [index, cell] of Object.entries(initial.world.map.surfaces))
     expect(state.world.map.surfaces[Number(index)]?.floor).toEqual(cell.floor);
 });

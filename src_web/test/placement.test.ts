@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it, vi } from "vitest";
 import { createPlacementSession } from "../src/adapters/browser/placement";
 import { createInitialState } from "../src/simulation/state";
@@ -38,7 +39,5 @@ it("lets a device owner supply placement through the shared contract", () => {
   expect(camera.preview(controller.getSnapshot()).tiles).toHaveLength(1);
   expect(camera.confirm(controller.getSnapshot()).accepted).toBe(true);
   expect(controller.getSnapshot().game.observations.cameraKits).toBe(2);
-  expect(controller.getSnapshot().game.construction.availableMaterials).toBe(
-    160,
-  );
+  expect(availableMaterials(controller.getSnapshot().game.objects)).toBe(160);
 });

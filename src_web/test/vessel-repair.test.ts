@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import {
@@ -47,7 +48,7 @@ it("repairs the existing empty open case through physical material delivery and 
   const queued = orderVesselAction(initial, "vessel-1", "repair");
   expect(queued.code).toBe("accepted");
   let state = queued.state;
-  expect(state.construction.availableMaterials).toBe(136);
+  expect(availableMaterials(state.objects)).toBe(136);
   verifySave(state);
   expect(
     state.objects.items.find((item) => item.id === "vessel-1")!.condition,
@@ -84,7 +85,7 @@ it("cancels unused repair stock once and retains transported stock until deliver
   let state = orderVesselAction(wornCase(), "vessel-1", "repair").state;
   const orderId = state.vesselWork.orders.at(-1)!.id;
   const cancelled = cancelVesselWork(state, orderId);
-  expect(cancelled.construction.availableMaterials).toBe(144);
+  expect(availableMaterials(cancelled.objects)).toBe(144);
   expect(
     cancelled.objects.items.find((item) => item.id === "vessel-1")!.reservedBy,
   ).toBeNull();
@@ -109,20 +110,16 @@ it("cancels unused repair stock once and retains transported stock until deliver
     state = advanceSimulation(state);
   expect(state.vesselWork.orders.at(-1)!.phase).toBe("working");
   state = cancelVesselWork(state, secondId);
-  expect(state.construction.availableMaterials).toBe(144);
+  expect(availableMaterials(state.objects)).toBe(144);
   expect(
     state.objects.items.find((item) => item.id === "vessel-1")!.condition,
   ).toBe(0);
   verifySave(state);
 });
 
-it("rejects corrupt repair material, host reservation, and cost ledgers", () => {
+it("rejects corrupt repair material and host reservations", () => {
   const state = orderVesselAction(wornCase(), "vessel-1", "repair").state;
   for (const invalid of [
-    {
-      ...state,
-      construction: { ...state.construction, availableMaterials: 144 },
-    },
     {
       ...state,
       vesselWork: {
@@ -187,7 +184,10 @@ it("refuses repair around loaded or sealed contents and preserves resources on r
   });
   const emptyStock = {
     ...initial,
-    construction: { ...initial.construction, availableMaterials: 0 },
+    objects: {
+      ...initial.objects,
+      items: initial.objects.items.filter((item) => item.kind !== "materials"),
+    },
   };
   expect(orderVesselAction(emptyStock, "vessel-1", "repair")).toEqual({
     state: emptyStock,

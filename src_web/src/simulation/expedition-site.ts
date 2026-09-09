@@ -115,7 +115,6 @@ export function createExpeditionSite(id: string): ExpeditionSite {
     combat: createCombatState(),
     environment: {
       automaticRepairs: false,
-      spentMaterials: 0,
       nextOrder: 1,
       orders: [],
       sources: [

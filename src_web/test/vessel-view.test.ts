@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createInitialState } from "../src/simulation/state";
@@ -48,9 +49,7 @@ it("repairs an empty case through delivered supplies and reports why repair is u
   expect(repair.disabled).toBe(false);
   expect(repair.textContent).toContain("8 units");
   repair.click();
-  expect(controller.getSnapshot().game.construction.availableMaterials).toBe(
-    136,
-  );
+  expect(availableMaterials(controller.getSnapshot().game.objects)).toBe(136);
   expect(repair.disabled).toBe(true);
   for (
     let tick = 0;

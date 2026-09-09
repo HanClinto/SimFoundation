@@ -1,14 +1,19 @@
 import { authorizeJob } from "./jobs";
 import type { GameState } from "./state";
-import type { TilePosition } from "./world";
+import type { ObjectStore } from "./objects";
 
-export interface MaterialStock {
-  readonly availableMaterials: number;
-  readonly stockpile: TilePosition;
-}
-
-export function createMaterialStock(): MaterialStock {
-  return { availableMaterials: 160, stockpile: { x: 67, y: 68 } };
+export function availableMaterials(objects: ObjectStore): number {
+  return objects.items.reduce(
+    (total, item) =>
+      total +
+      (item.kind === "materials" &&
+      item.location.kind === "ground" &&
+      !item.installed &&
+      !item.reservedBy
+        ? item.quantity
+        : 0),
+    0,
+  );
 }
 
 export function authorizeSiteWork(state: GameState, jobId: string): GameState {

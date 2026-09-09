@@ -10,7 +10,6 @@ import { isElectrical } from "../../simulation/power";
 import {
   activeVesselOrder,
   vesselOrderCost,
-  vesselMaterialCommitted,
 } from "../../simulation/vessel-work";
 import {
   isActiveSurfaceOrder,
@@ -42,7 +41,6 @@ import {
   tileAt,
   type SiteWorld,
 } from "../../simulation/world";
-import type { MaterialStock } from "../../simulation/material-stock";
 
 export const GAME_STATE_STORAGE_KEY = "scp-site-manager.game-state.v1";
 
@@ -443,27 +441,6 @@ function isSiteWorld(value: unknown): value is SiteWorld {
       isIntegerInRange(position.x, 0, width - 1) &&
       isIntegerInRange(position.y, 0, height - 1) &&
       (map.tiles as unknown[])[position.y * width + position.x] !== "wall",
-  );
-}
-
-function isMaterialStock(value: unknown): value is MaterialStock {
-  return (
-    isRecord(value) &&
-    isIntegerInRange(value.availableMaterials, 0, 160) &&
-    isRecord(value.stockpile) &&
-    isIntegerInRange(value.stockpile.x, 0, 127) &&
-    isIntegerInRange(value.stockpile.y, 0, 127)
-  );
-}
-
-function materialStockReferencesValid(state: GameState): boolean {
-  const construction = state.construction;
-  if (tileAt(state.world.map, construction.stockpile) === null) return false;
-  return (
-    construction.availableMaterials +
-      vesselMaterialCommitted(state) +
-      state.environment.spentMaterials ===
-    160
   );
 }
 
@@ -868,7 +845,6 @@ function isEnvironment(value: unknown): boolean {
   return (
     isRecord(value) &&
     typeof value.automaticRepairs === "boolean" &&
-    isIntegerInRange(value.spentMaterials, 0, 160) &&
     isIntegerInRange(value.nextOrder, 1) &&
     isArrayOf(
       value.orders,
@@ -951,11 +927,6 @@ function environmentReferencesValid(state: GameState): boolean {
     environment.nextOrder !== environment.orders.length + 1 ||
     new Set(environment.orders.map((order) => order.id)).size !==
       environment.orders.length
-  )
-    return false;
-  if (
-    environment.spentMaterials !==
-    environment.orders.reduce((sum, order) => sum + surfaceOrderCost(order), 0)
   )
     return false;
   if (
@@ -1209,7 +1180,6 @@ function objectsValid(state: GameState): boolean {
     JSON.stringify(state.world.map.objectBlocks ?? [])
   )
     return false;
-  const materials = items.filter((item) => item.kind === "materials");
   const occupied = new Set<number>();
   const conduit = new Set<number>();
   for (const item of items)
@@ -1257,27 +1227,6 @@ function objectsValid(state: GameState): boolean {
       )
         return false;
     }
-  const manualMoves = new Set(state.objectOrders.map((order) => order.jobId));
-  const unreserved = materials
-    .filter(
-      (item) =>
-        item.location.kind !== "consumed" &&
-        (!item.reservedBy || manualMoves.has(item.reservedBy)),
-    )
-    .reduce((sum, item) => sum + item.quantity, 0);
-  if (unreserved !== state.construction.availableMaterials) return false;
-  const materialUsed =
-    state.vesselWork.orders
-      .filter((order) => order.phase === "completed")
-      .reduce((sum, order) => sum + vesselOrderCost(order), 0) +
-    state.environment.orders
-      .filter((order) => order.phase === "completed")
-      .reduce((sum, order) => sum + surfaceOrderCost(order), 0);
-  if (
-    materials.reduce((sum, item) => sum + item.quantity, 0) + materialUsed !==
-    160
-  )
-    return false;
   const carriedMeals = items
     .filter(
       (item) =>
@@ -1904,7 +1853,6 @@ function isGameState(value: unknown): value is GameState {
     !isArrayOf(value.personnel, isPersonnelRecord) ||
     !isScp999State(value.scp999) ||
     !isSiteWorld(value.world) ||
-    !isMaterialStock(value.construction) ||
     !isRoutineState(value.routines) ||
     !isObservationState(value.observations) ||
     !isEnvironment(value.environment) ||
@@ -2036,7 +1984,6 @@ function isGameState(value: unknown): value is GameState {
     state.clinicalCare.clinicianIds.every((id) =>
       state.personnel.some((person) => person.id === id),
     ) &&
-    materialStockReferencesValid(state) &&
     routineReferencesValid(state) &&
     observationReferencesValid(state) &&
     environmentReferencesValid(state) &&

@@ -71,17 +71,17 @@ The initial visual pass verified no archive window/shortcuts/status, no Plan Ann
 
 1. Completed: remove the anomalous-screening branch and unused trait-reveal records/algorithms entirely.
 2. Completed development visibility pass: live health, psychology, needs, preferences, traits and contributors are directly visible. Medical charts show real active effects. Ordinary appointments/history remain as simulated work, not gates; further simplification of report types is deferred rather than replaced with a new psychology framework.
-3. Consolidate material stock and spending around physical stacks and reservations. The current fixed 160-unit conservation budget and preferred stockpile coordinate still reflect the starter scenario; replacing those assumptions should accompany a real supply/procurement need, not a generic inventory rewrite.
+3. Completed in schema 47: removed saved material availability, preferred stockpile position, surface spending counter and fixed 160-unit save budget. Physical stacks/reservations now determine availability and spending. Starter quantities remain scenario content; no procurement framework was added.
 4. Preserve authored field missions as playable integration test beds. Separate scenario setup and objectives from map lifecycle, travel, combat and hauling, so the same small scenario can be exercised by a player or a high-level test. Do not delete useful quest scenarios just for being authored.
 
-### Next: Scenario-Backed Accounting Review
+### Scenario-Backed Accounting Review
 
-- Use a small scenario with a non-default quantity/location of materials to expose fixed 160-unit and stockpile assumptions before changing accounting.
-- Exercise reserve, pickup, delivery, cancellation and consumption through real commands. Verify physical quantities and reservation ownership rather than exact UI sequences or fixed completion ticks.
+- [x] Use small scenarios with 23 and 240 relocated materials to expose fixed-budget and stockpile assumptions.
+- [x] Exercise surface/vessel reservation, cancellation, consumption, reload and hauling exclusion through real commands. Verify physical quantities and reservation ownership rather than exact UI sequences or fixed completion ticks.
 - Reuse the expedition depot to exercise outbound supplies, recovered cargo and return without assuming every mission always has two objects or a particular threat.
 - Keep the scenario definition inspectable/playable; avoid a general quest engine or a large UI automation framework until there is a second concrete scenario that needs it.
 
-These next items are approved priorities, not completed accounting or mission-engine changes. The personnel cleanup does not alter inventory or expedition rules.
+The material-accounting pass is complete; authored mission setup separation remains the next approved priority. See [physical material accounting](decisions/006-physical-material-accounting.md). Existing expedition scenarios remain available and their gameplay rules are unchanged.
 
 These are prioritized review candidates, not newly implemented mechanics or commitments to a replacement framework.
 

@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createEngineeringWindow } from "../src/adapters/browser/engineering-view";
@@ -79,9 +80,7 @@ it("previews single-tile building and queues work without instantly installing s
   expect(controller.getSnapshot().game.environment.orders[0]!.phase).toBe(
     "cancelled",
   );
-  expect(controller.getSnapshot().game.construction.availableMaterials).toBe(
-    160,
-  );
+  expect(availableMaterials(controller.getSnapshot().game.objects)).toBe(160);
   expect(cancel.disabled).toBe(true);
   expect(
     view.element.querySelector("[data-surface-feedback]")!.textContent,
@@ -123,7 +122,12 @@ it("explains an empty selection, absent layers, pending orders and insufficient 
     ...state,
     game: {
       ...state.game,
-      construction: { ...state.game.construction, availableMaterials: 0 },
+      objects: {
+        ...state.game.objects,
+        items: state.game.objects.items.filter(
+          (item) => item.kind !== "materials",
+        ),
+      },
     },
   });
   expect(reason.textContent).toBe(

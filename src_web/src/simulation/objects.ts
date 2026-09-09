@@ -413,7 +413,18 @@ export function reserveSupply(
   const total = stacks.reduce((sum, item) => sum + item.quantity, 0);
   if (total < quantity || !stacks[0]) {
     if (allowOtherLocations) {
-      for (const item of store.items)
+      const nearby = [...store.items].sort((first, second) => {
+        const distance = (item: PhysicalObject) =>
+          item.location.kind === "ground"
+            ? Math.abs(item.location.position.x - position.x) +
+              Math.abs(item.location.position.y - position.y)
+            : Infinity;
+        return (
+          distance(first) - distance(second) ||
+          first.id.localeCompare(second.id)
+        );
+      });
+      for (const item of nearby)
         if (
           item.kind === kind &&
           !item.reservedBy &&

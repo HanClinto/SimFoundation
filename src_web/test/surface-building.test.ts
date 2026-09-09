@@ -1,3 +1,4 @@
+import { availableMaterials } from "../src/simulation/material-stock";
 import { expect, it } from "vitest";
 import { createInitialState } from "../src/simulation/state";
 import { setSurface, surfaceAt } from "../src/simulation/materials";
@@ -29,11 +30,11 @@ it("workers pave soil, build a barrier, remove it, and install an automatic door
         !surfaceAt(state.world.map, position, "structure"))
         ? "floor"
         : "structure";
-    const before = state.construction.availableMaterials;
+    const before = availableMaterials(state.objects);
     const queued = orderSurfaceWork(state, position, layer, "steel", operation);
     expect(queued.code).toBe("accepted");
     state = queued.state;
-    expect(state.construction.availableMaterials).toBe(
+    expect(availableMaterials(state.objects)).toBe(
       before - (operation === "remove" ? 0 : 4),
     );
     for (
@@ -65,8 +66,7 @@ it("workers pave soil, build a barrier, remove it, and install an automatic door
       );
   }
   expect(state.world.map.tiles[position.y * 128 + position.x]).toBe("grass");
-  expect(state.construction.availableMaterials).toBe(148);
-  expect(state.environment.spentMaterials).toBe(12);
+  expect(availableMaterials(state.objects)).toBe(148);
 }, 20000);
 
 it("rejects unsupported, occupied and conflicting footprint work without spending resources", () => {
@@ -115,7 +115,7 @@ it("rejects unsupported, occupied and conflicting footprint work without spendin
       "remove",
     ).code,
   ).toBe("occupied");
-  expect(initial.construction.availableMaterials).toBe(160);
+  expect(availableMaterials(initial.objects)).toBe(160);
 });
 
 it("waits for late obstructions before fitting without consuming supplies", () => {
@@ -209,14 +209,6 @@ it("rejects corrupt operation types, phase combinations and removal ledgers", ()
       }).status,
     ).toBe("invalid");
   }
-  const invalid = {
-    ...state,
-    environment: { ...state.environment, spentMaterials: 4 },
-  };
-  expect(
-    loadGameState({ getItem: () => JSON.stringify(invalid), setItem: () => {} })
-      .status,
-  ).toBe("invalid");
 });
 
 it("installs and removes independent layers without retaining removed door policies", () => {
@@ -266,7 +258,7 @@ it("allows remodeling the former material-store tile after its supplies and desi
   };
   let state = orderSurfaceWork(
     relocated,
-    initial.construction.stockpile,
+    { x: 67, y: 68 },
     "structure",
     "steel",
     "wall",

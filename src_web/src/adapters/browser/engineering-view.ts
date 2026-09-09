@@ -10,6 +10,7 @@ import {
 import { sameTile } from "../../simulation/world";
 import type { DoorPolicy, TilePosition } from "../../simulation/world";
 import { engineeringRecord } from "./map-objects";
+import { availableMaterials } from "../../simulation/material-stock";
 import type { MapPerspective } from "./map-settings";
 import type { PlacementRequest } from "./placement";
 import { isActiveSurfaceOrder } from "../../simulation/environment";
@@ -239,7 +240,7 @@ export function createEngineeringWindow(
     }
     automatic.checked = snapshot.game.environment.automaticRepairs;
     element.querySelector("[data-surface-stock]")!.textContent =
-      `${snapshot.game.construction.availableMaterials} material units in store`;
+      `${availableMaterials(snapshot.game.objects)} material units available on the ground`;
     const layer = layerSelect.value as SurfaceLayer;
     const surfaces =
       perspective === "world"
@@ -276,8 +277,8 @@ export function createEngineeringWindow(
         ? `No ${layer} ${perspective === "recorded" ? "on record" : "installed"} at this tile.`
         : pending
           ? `Replacement already queued: ${pending.phase}.`
-          : snapshot.game.construction.availableMaterials < cost
-            ? `Replacement requires ${cost} material units; ${snapshot.game.construction.availableMaterials} available.`
+          : availableMaterials(snapshot.game.objects) < cost
+            ? `Replacement requires ${cost} material units; ${availableMaterials(snapshot.game.objects)} available.`
             : "";
     replace.disabled = reason !== "";
     replace.title = reason || "Queue material delivery and installation";
