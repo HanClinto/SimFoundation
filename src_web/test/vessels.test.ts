@@ -85,36 +85,6 @@ it("fabricates with real materials, loads staged cargo and seals through worker 
     orderVesselAction(state, vesselId, "unload", undefined, { x: 65, y: 65 })
       .code,
   ).toBe("sealed");
-  for (const invalid of [
-    {
-      ...state,
-      objects: {
-        ...state.objects,
-        items: state.objects.items.map((item) =>
-          item.id === vesselId
-            ? { ...item, vessel: { material: "invalid", sealed: true } }
-            : item,
-        ),
-      },
-    },
-    {
-      ...state,
-      objects: {
-        ...state.objects,
-        items: state.objects.items.map((item) =>
-          item.id === "spare-break-seat"
-            ? { ...item, location: { kind: "contained", vesselId } }
-            : item,
-        ),
-      },
-    },
-  ])
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(invalid),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
   state = setExposureSource(state, {
     name: "Cargo",
     objectId: "spare-meal-seat",
@@ -146,23 +116,6 @@ it("fabricates with real materials, loads staged cargo and seals through worker 
   )!.condition;
   verifySave(state);
   expect(exposurePosition(state, state.environment.sources[0]!)).toBeNull();
-  const corruptTransit = {
-    ...state,
-    vesselWork: {
-      ...state.vesselWork,
-      orders: state.vesselWork.orders.map((order) =>
-        order.phase === "transit"
-          ? { ...order, transport: { ...order.transport, arrivesAt: null } }
-          : order,
-      ),
-    },
-  };
-  expect(
-    loadGameState({
-      getItem: () => JSON.stringify(corruptTransit),
-      setItem: () => {},
-    }).status,
-  ).toBe("invalid");
   expect(cancelVesselWork(state, state.vesselWork.orders.at(-1)!.id)).toBe(
     state,
   );

@@ -155,16 +155,6 @@ it("persists generic elapsed time, freezes it when paused and resets a replaced 
   expect(
     actionProgress(restored.getSnapshot().game, actorId)?.elapsedMinutes,
   ).toBe(0);
-  for (const invalid of [
-    { startedTick: 99999 },
-    { startedTick: -1 },
-    { key: "" },
-    { mapId: "disposed-field" },
-  ]) {
-    const corrupted = structuredClone(after);
-    Object.assign(corrupted.actionTimings[actorId]!, invalid);
-    expect(load(corrupted).status).not.toBe("loaded");
-  }
 });
 
 it("starts a player timer at handoff rather than including its time pending behind a routine", () => {

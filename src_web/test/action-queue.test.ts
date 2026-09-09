@@ -349,38 +349,6 @@ it("reserves field cargo only when its entry starts and safely puts down cancell
   expect(load(controller.getSnapshot().game).status).toBe("loaded");
 });
 
-it("rejects malformed serialized queues and does not reinterpret locations", () => {
-  const initial = createInitialState();
-  const actorId = initial.personnel[0]!.id;
-  const intent = {
-    mapId: initial.world.map.id,
-    actorId,
-    action: "move" as const,
-    destination: initial.world.positions[actorId]!,
-  };
-  const state = submitAction(submitAction(initial, intent).state, intent).state;
-  expect(load(state).status).toBe("loaded");
-  for (const corrupt of [
-    (value: typeof state) => {
-      (value.actionQueues[actorId]!.pending as unknown[]).push(null);
-    },
-    (value: typeof state) => {
-      Object.assign(value.actionQueues[actorId]!.current.intent, {
-        mapId: "disposed-map",
-      });
-    },
-    (value: typeof state) => {
-      Object.assign(value.actionQueues[actorId]!.pending[0]!, {
-        sequence: value.actionQueues[actorId]!.current.intent.sequence,
-      });
-    },
-  ]) {
-    const invalid = structuredClone(state);
-    corrupt(invalid);
-    expect(load(invalid).status).not.toBe("loaded");
-  }
-});
-
 it("finishes stabilization and recovery before starting the next intention, spending only one kit", () => {
   const initial = createInitialState();
   const actorId = initial.personnel[0]!.id;

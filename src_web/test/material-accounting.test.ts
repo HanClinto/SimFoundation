@@ -64,21 +64,6 @@ it.each([23, 240])(
     });
     expect(total()).toBe(quantity);
     expect(availableMaterials(state.objects)).toBe(quantity - 4);
-    const corrupted = {
-      ...state,
-      objects: {
-        ...state.objects,
-        items: state.objects.items.map((item) =>
-          item.reservedBy === order.jobId ? { ...item, quantity: 3 } : item,
-        ),
-      },
-    };
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(corrupted),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
     checkSave();
     state = cancelSurfaceWork(state, order.id);
     expect(total()).toBe(quantity);

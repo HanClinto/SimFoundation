@@ -171,32 +171,6 @@ describe("designated storage", () => {
       orderObjectMove(state, "spare-bed", { x: 57, y: 67 }, "east", true).code,
     ).toBe("occupied");
   });
-  it("rejects corrupt storage policies and overlapping saved areas", () => {
-    const state = createInitialState();
-    for (const patch of [
-      { target: 1001 },
-      { capacity: -1 },
-      { capacity: 25 },
-      { accepts: ["unknown"] },
-      { origin: { x: 67, y: 68 } },
-    ]) {
-      const value = {
-        ...state,
-        storage: {
-          ...state.storage,
-          areas: state.storage.areas.map((area, index) =>
-            index === 0 ? { ...area, ...patch } : area,
-          ),
-        },
-      };
-      expect(
-        loadGameState({
-          getItem: () => JSON.stringify(value),
-          setItem: () => {},
-        }).status,
-      ).toBe("invalid");
-    }
-  });
   it("saves a manual meal reservation and cancellation before a simulation tick", () => {
     const initial = createInitialState();
     const ordered = orderObjectMove(

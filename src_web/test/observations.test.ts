@@ -122,16 +122,6 @@ describe("facility observations", () => {
       setItem: () => {},
     });
     expect(load.status).toBe("loaded");
-    expect(
-      loadGameState({
-        getItem: () =>
-          JSON.stringify({
-            ...state,
-            observations: { ...state.observations, knownTiles: [] },
-          }),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
   });
   it("uses finite kits and waits for physical camera installation", () => {
     const initial = createInitialState();

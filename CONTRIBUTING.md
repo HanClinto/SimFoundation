@@ -26,7 +26,7 @@ The simulation must remain importable in Node without DOM, Canvas, storage, time
 
 ## Definition of Done for a Change
 
-- Development saves are disposable. Never add save migrations, backward-compatibility adapters, or retained gameplay implementations for old saves. Bump the save version for incompatible changes, discard incompatible saves, and start fresh. Current-version persistence and corruption validation still matter.
+- Development saves are disposable. Never add save migrations, backward-compatibility adapters, or retained gameplay implementations for old saves. Bump the save version for incompatible changes, discard incompatible saves, and start fresh. Save/load is plain JSON with a root-object check, version check and error handling. Do not add deep gameplay validation to persistence; verify invariants in simulation commands and tests. Keep deterministic save/reload coverage.
 - Prioritize inspectable simulation while developing: personnel summaries show live values, traits and effects, not assessment-gated information. Defer new UI fog-of-war until behavior is working and tuned.
 - Authored quest/expedition scenarios can be playable integration test beds. Test outcomes and ownership/resource invariants through real commands; avoid rigid UI scripts, exact completion ticks or preserving obsolete mechanics merely for a fixture.
 - Player-visible behavior and exclusions match the issue.

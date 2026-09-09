@@ -10,7 +10,7 @@ import { createController } from "../src/application/controller";
 import { createInitialState, GAME_STATE_VERSION } from "./fixtures/work-state";
 import { createScp999State } from "../src/simulation/scp-999";
 
-it("round-trips multiple resident instances and rejects duplicate live identities", () => {
+it("round-trips multiple resident instances", () => {
   const initial = createInitialState();
   const extra = createScp999State("resident-extra");
   const state = {
@@ -32,8 +32,6 @@ it("round-trips multiple resident instances and rejects duplicate live identitie
   expect(createController(loaded.state).advance(6)).toEqual(
     createController(state).advance(6),
   );
-  saveGameState(storage, { ...state, entities: [...state.entities, extra] });
-  expect(loadGameState(storage).status).toBe("invalid");
 });
 
 function memoryStorage(initialValue: string | null = null): StoragePort {
@@ -49,39 +47,29 @@ function memoryStorage(initialValue: string | null = null): StoragePort {
 }
 
 describe("game persistence", () => {
-  it("rejects malformed maps and missing, duplicate, or obstructed occupants", () => {
-    const state = createInitialState();
-    const positions = { ...state.world.positions };
-    delete positions["person-mara-voss"];
-    const brokenWorlds = [
-      { ...state.world, map: { ...state.world.map, tiles: [] } },
-      { ...state.world, map: { ...state.world.map, width: 10000 } },
-      { ...state.world, map: { ...state.world.map, rooms: [{ id: "bad" }] } },
-      { ...state.world, positions },
-      {
-        ...state.world,
-        positions: { ...state.world.positions, stranger: { x: 62, y: 62 } },
-      },
-      {
-        ...state.world,
-        positions: {
-          ...state.world.positions,
-          "person-mara-voss": { x: 48, y: 48 },
-        },
-      },
-      {
-        ...state.world,
-        positions: {
-          ...state.world.positions,
-          "person-mara-voss": { x: 128, y: 50 },
-        },
-      },
-    ];
-    for (const world of brokenWorlds)
-      expect(
-        loadGameState(memoryStorage(JSON.stringify({ ...state, world })))
-          .status,
-      ).toBe("invalid");
+  it.each(["null", "[]", "true", "42", '"text"'])(
+    "rejects non-object roots: %s",
+    (value) => {
+      expect(loadGameState(memoryStorage(value))).toEqual({
+        status: "invalid",
+        state: null,
+      });
+    },
+  );
+
+  it("loads current-version contents without validating gameplay", () => {
+    const value = {
+      version: GAME_STATE_VERSION,
+      customScenario: { anything: [1, 2, 3] },
+    };
+    expect(loadGameState(memoryStorage(JSON.stringify(value)))).toEqual({
+      status: "loaded",
+      state: value,
+    });
+    expect(loadGameState(memoryStorage("{}"))).toEqual({
+      status: "incompatible",
+      state: null,
+    });
   });
 
   it("continues a worker's journey identically after save and reload", () => {
@@ -153,70 +141,14 @@ describe("game persistence", () => {
     expect(saveGameState(unavailable, createInitialState())).toBe(false);
   });
 
-  it("rejects corrupted nested jobs, personnel, Effects, and anomalies", () => {
+  it("leaves the previous save intact when serialization fails", () => {
+    const storage = memoryStorage();
     const state = createInitialState();
-    const brokenJob = {
-      ...state,
-      jobs: [{ id: "incomplete-job" }],
-    };
-    expect(loadGameState(memoryStorage(JSON.stringify(brokenJob))).status).toBe(
-      "invalid",
-    );
-
-    const firstPerson = state.personnel[0];
-    if (!firstPerson) throw new Error("starting person missing");
-    const brokenPersonnel = {
-      ...state,
-      personnel: [{ ...firstPerson, skills: null }],
-    };
-    expect(
-      loadGameState(memoryStorage(JSON.stringify(brokenPersonnel))).status,
-    ).toBe("invalid");
-
-    const brokenEffect = {
-      ...state,
-      personnel: [
-        {
-          ...firstPerson,
-          effects: [
-            {
-              id: "bad-effect",
-              name: "Bad effect",
-              kind: "memory",
-              severity: "minor",
-              bodyRegions: [],
-              physicalHealthPenalty: 0,
-              stressRecoveryPerTick: 1,
-              expiresAtTick: "later",
-            },
-          ],
-        },
-      ],
-    };
-    expect(
-      loadGameState(memoryStorage(JSON.stringify(brokenEffect))).status,
-    ).toBe("invalid");
-
-    const brokenAnomaly = {
-      ...state,
-      entities: [{ ...state.entities[0]!, status: "escaped" }],
-    };
-    expect(
-      loadGameState(memoryStorage(JSON.stringify(brokenAnomaly))).status,
-    ).toBe("invalid");
-
-    const brokenPsychology = {
-      ...state,
-      personnel: [
-        {
-          ...firstPerson,
-          psychologicalAssessments: [{ moodEstimate: "certain" }],
-        },
-      ],
-    };
-    expect(
-      loadGameState(memoryStorage(JSON.stringify(brokenPsychology))).status,
-    ).toBe("invalid");
+    expect(saveGameState(storage, state)).toBe(true);
+    const circular = { ...state, extra: {} as { self?: unknown } };
+    circular.extra.self = circular;
+    expect(saveGameState(storage, circular)).toBe(false);
+    expect(loadGameState(storage)).toEqual({ status: "loaded", state });
   });
 
   it("continues deterministically after load and another save cycle", () => {

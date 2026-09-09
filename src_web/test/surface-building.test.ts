@@ -179,38 +179,6 @@ it("waits for late obstructions before fitting without consuming supplies", () =
   );
 });
 
-it("rejects corrupt operation types, phase combinations and removal ledgers", () => {
-  const state = orderSurfaceWork(
-    createInitialState(),
-    { x: 61, y: 54 },
-    "structure",
-    "steel",
-    "remove",
-  ).state;
-  for (const replacement of [
-    { operation: "instant" },
-    { operation: "floor" },
-    { phase: "collecting" },
-  ]) {
-    const invalid = {
-      ...state,
-      environment: {
-        ...state.environment,
-        orders: state.environment.orders.map((order) => ({
-          ...order,
-          ...replacement,
-        })),
-      },
-    };
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(invalid),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
-  }
-});
-
 it("installs and removes independent layers without retaining removed door policies", () => {
   const initial = createInitialState().world.map;
   const position = { x: 80, y: 65 };

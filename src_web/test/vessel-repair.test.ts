@@ -121,36 +121,6 @@ it("cancels unused repair stock once and retains transported stock until deliver
   verifySave(state);
 });
 
-it("rejects corrupt repair material and host reservations", () => {
-  const state = orderVesselAction(wornCase(), "vessel-1", "repair").state;
-  for (const invalid of [
-    {
-      ...state,
-      vesselWork: {
-        ...state.vesselWork,
-        orders: state.vesselWork.orders.map((order) =>
-          order.action === "repair" ? { ...order, material: "ceramic" } : order,
-        ),
-      },
-    },
-    {
-      ...state,
-      objects: {
-        ...state.objects,
-        items: state.objects.items.map((item) =>
-          item.id === "vessel-1" ? { ...item, reservedBy: null } : item,
-        ),
-      },
-    },
-  ])
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(invalid),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
-});
-
 it("refuses repair around loaded or sealed contents and preserves resources on rejection", () => {
   const initial = wornCase();
   const sealed = {

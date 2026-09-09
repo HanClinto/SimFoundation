@@ -132,12 +132,4 @@ it("preserves the override, cargo ownership and resource ledger across physical 
   expect(controller.setWorkPriority(jobId, "low").game.jobs).toEqual(
     state.jobs,
   );
-  const invalid = {
-    ...edited,
-    jobs: edited.jobs.map((job) => ({ ...job, priorityOverride: "emergency" })),
-  };
-  expect(
-    loadGameState({ getItem: () => JSON.stringify(invalid), setItem: () => {} })
-      .status,
-  ).toBe("invalid");
 });

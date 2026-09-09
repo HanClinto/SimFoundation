@@ -46,22 +46,6 @@ it("previews without mutation and round-trips enabled source controls determinis
     expect(loaded.status).toBe("loaded");
     if (loaded.status === "loaded")
       expect(advanceSimulation(loaded.state)).toEqual(advanceSimulation(state));
-    const invalid = {
-      ...state,
-      environment: {
-        ...state.environment,
-        sources: state.environment.sources.map((source) => ({
-          ...source,
-          enabled: "yes",
-        })),
-      },
-    };
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(invalid),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
   }
 });
 

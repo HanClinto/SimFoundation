@@ -404,68 +404,6 @@ it("cancels recovery without deleting carried cargo and refuses unsafe recall", 
   expect(recallExpedition(state).code).toBe("busy");
 });
 
-it("rejects duplicated map membership, tampered field topology, cargo claims and supply inflation", () => {
-  const controller = createController(createInitialState());
-  controller.enlistExpedition("notice-depot", team);
-  controller.advance(100);
-  controller.dispatchExpedition();
-  const state = controller.advance(30).game;
-  const active = state.expeditions.active!;
-  expect(
-    loaded({
-      ...state,
-      world: {
-        ...state.world,
-        positions: { ...state.world.positions, [team[0]!]: { x: 63, y: 63 } },
-      },
-    }).status,
-  ).toBe("invalid");
-  const alteredTiles = [...active.site!.world.map.tiles];
-  alteredTiles[12 * 28 + 4] = "wall";
-  expect(
-    loaded({
-      ...state,
-      expeditions: {
-        ...state.expeditions,
-        active: {
-          ...active,
-          site: {
-            ...active.site!,
-            world: {
-              ...active.site!.world,
-              map: { ...active.site!.world.map, tiles: alteredTiles },
-            },
-          },
-        },
-      },
-    }).status,
-  ).toBe("invalid");
-  expect(
-    loaded({
-      ...state,
-      expeditions: {
-        ...state.expeditions,
-        active: { ...active, cargo: [`${active.id}-specimen`] },
-      },
-    }).status,
-  ).toBe("invalid");
-  expect(
-    loaded({
-      ...state,
-      expeditions: {
-        ...state.expeditions,
-        active: {
-          ...active,
-          reserves: {
-            ...active.reserves,
-            [team[0]!]: { ammunition: 12, medicalSupplies: 2 },
-          },
-        },
-      },
-    }).status,
-  ).toBe("invalid");
-});
-
 it("replays field actions deterministically while independent base work advances", () => {
   const controller = createController(createInitialState());
   controller.enlistExpedition("notice-depot", team);

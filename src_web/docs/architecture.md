@@ -78,6 +78,8 @@ The initial browser target is desktop only, with a minimum virtual workspace rat
 
 The browser stores authoritative game state under `scp-site-manager.game-state.v1`, separately from window layout. Published simulation changes autosave, and explicit Save Site/Load Site commands use the same record. Only exact current-version development saves load. Startup discards and overwrites malformed or incompatible records with a fresh session when storage is writable. Never implement save migrations or retain obsolete gameplay for backward compatibility during development; bump the schema and start fresh. Running/paused state remains browser state and is not serialized. Schema 45 removes all annex state.
 
+Persistence simplification (2026-09-09): [game-persistence.ts](../src/adapters/browser/game-persistence.ts) is only JSON serialization/deserialization, a non-null non-array root-object check, an exact version check and error handling. Current-version nested contents are trusted, not validated or repaired. Malformed JSON is rejected; semantically invalid current-version data may fail later during simulation. The former deep validator and its combat/queue helper modules have been deleted, not moved. Historical save-validation descriptions elsewhere in this document describe removed checks, not requirements to restore them. Command invariants and deterministic save/reload tests remain.
+
 Resident anomaly records are authoritative simulation state. The first implementation stores SCP-999's protocol state, target, interaction boundary, cooldown, and last completed contact. The browser Anomaly Registry only projects those records; target choice and personnel Effects remain deterministic headless behavior.
 
 SCP-999 uses the same map and cardinal routing as personnel. It approaches an available reachable target, starts its four-tick contact only from the same or an adjacent tile, and interrupts without granting Calm when the target moves away or starts work. When no suitable target exists it follows a deterministic common-room roaming pattern. Approach, contact, cooldown, position, and target all survive save/reload; the registry distinguishes approach from actual contact.
@@ -164,7 +166,7 @@ Tactical movement and actions run after door closing and before routines/jobs. D
 
 The adversary's position belongs to the optional encounter record, not the fixed personnel/resident position registry. Its position is included in manual/automatic door obstruction checks. It currently targets only the enrollment roster; generalized hostile interactions with civilians, other anomalies, construction occupancy, or destructible objects remain future work. Renderer/map selection project its location independently, with remembered sightings in Recorded view. Live tactical health, events and response controls are World-only.
 
-`combat-persistence.ts` validates responder IDs, supply bounds, action timers, targets, injury-state consistency, encounter membership, map bounds, observation timestamps, event history, and absence of contradictory job/routine/cargo ownership. Schema 37 requires a fresh development save.
+Combat state is serialized as ordinary game data. The former combat-specific save validator was removed in the persistence simplification; command safety and deterministic combat/reload tests remain.
 
 ### Electrical Utilities (Schema 36)
 

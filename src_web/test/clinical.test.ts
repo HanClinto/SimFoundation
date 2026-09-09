@@ -101,7 +101,7 @@ describe("clinical work", () => {
       }),
     ).toThrow("Invalid clinical care policy");
   });
-  it("round-trips clinician and patient reservations and rejects invalid clinical records", () => {
+  it("round-trips clinician and patient reservations", () => {
     const original = createController(createInitialState());
     original.orderPhysicalAssessment("person-lena-ortiz");
     const state = original.advance(4).game;
@@ -114,23 +114,6 @@ describe("clinical work", () => {
     expect(createController(loaded.state).advance(70).game).toEqual(
       original.advance(70).game,
     );
-    for (const assessment of [
-      { patientId: "missing", kind: "physical" },
-      { patientId: "person-lena-ortiz", kind: "invalid" },
-    ]) {
-      const invalid = {
-        ...state,
-        jobs: state.jobs.map((job) =>
-          job.assessment ? { ...job, assessment } : job,
-        ),
-      };
-      expect(
-        loadGameState({
-          getItem: () => JSON.stringify(invalid),
-          setItem: () => {},
-        }).status,
-      ).toBe("invalid");
-    }
   });
   it("requires a medic and patient to attend before producing a report", () => {
     const controller = createController(createInitialState());

@@ -11,8 +11,6 @@ import { loadGameState } from "../src/adapters/browser/game-persistence";
 import { interactionOptions } from "../src/simulation/interactions";
 import { createController } from "../src/application/controller";
 import { objectBlocks } from "../src/simulation/objects";
-import { combatStateValid } from "../src/adapters/browser/combat-persistence";
-import { actionQueuesValid } from "../src/adapters/browser/queue-persistence";
 import { pawnCues } from "../src/adapters/browser/pawn-cues";
 
 const load = (state: ReturnType<typeof createInitialState>) =>
@@ -278,8 +276,6 @@ it("keeps a damaged target blocked rather than silently moving to another seat o
     blockedReason: "Routine destination is no longer reachable.",
   });
   expect(state.actionQueues[actorId]!.pending).toHaveLength(1);
-  expect(combatStateValid(state), "combat ownership").toBe(true);
-  expect(actionQueuesValid(state), "queue ownership").toBe(true);
   expect(load(state).status).toBe("loaded");
 });
 
@@ -311,7 +307,7 @@ it("cancels before meal pickup without spending food and preserves explicit draf
   ).toBe(true);
 });
 
-it("offers implemented routine verbs for matching objects and rejects malformed routine saves", () => {
+it("offers implemented routine verbs for matching objects", () => {
   const state = quietState();
   const actorId = state.personnel[0]!.id;
   expect(
@@ -333,15 +329,4 @@ it("offers implemented routine verbs for matching objects and rejects malformed 
       "object:break-seat-1",
     ),
   ).toMatchObject([{ action: "relax", reason: null }]);
-  const next = submitAction(state, {
-    mapId: state.world.map.id,
-    actorId,
-    action: "relax",
-    targetId: "object:break-seat-1",
-  }).state;
-  const corrupt = structuredClone(next);
-  Object.assign(corrupt.actionQueues[actorId]!.current.intent, {
-    action: "eat",
-  });
-  expect(load(corrupt).status).not.toBe("loaded");
 });

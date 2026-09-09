@@ -23,7 +23,7 @@ This is the implementation checklist for the latest entity-first direction. An u
 - [ ] T2 Reconcile local jobs, appointments, queues, observations and attached behavior on departure/arrival; historical references may remain, live ownership may not.
 - [ ] T3 Converge existing vessel transport and expedition transport on the shared mechanism; preserve blocked arrivals, return trips, conditions and once-only ticking.
 - [ ] D1 Make dependency direction explicit: types/definitions -> local actions/systems -> site/campaign coordination -> application; remove site/transfer cycles and transitional campaign projections.
-- [ ] S1 Implement plain JSON campaign snapshots with a version and lightweight shape/ownership checks; no migrations or exhaustive duplicate gameplay validator.
+- [ ] S1 Connect plain JSON campaign snapshots with root-object/version checks and error handling; no deep validation or migrations. Existing browser persistence has already been stripped down to this contract.
 - [ ] S2 Define one simple authored site file format and headless instantiation path, with fresh IDs/internal-reference remapping distinct from exact save restoration.
 - [ ] S3 Load Site 828 as ordinary authored site data; do not automatically create its staff, stock, cameras or resident when creating other sites.
 - [ ] S4 Add reusable authored integration fixtures for scarce materials, blocked work, multiple same-type actors and containment stress; test outcomes through real commands.
@@ -39,6 +39,8 @@ E1/E2 checkpoint: schema 50 removes `scp999` from live site state and replaces i
 This is not E4/E5 completion: `entities` currently holds only the converted resident type, and it still uses its specialized behavior executor. Staff and physical objects remain in their existing stores; combat still has a singleton adversary. Next tackle E3-E5 together where shared pawn action ownership demands it, deleting redundant execution rather than extending the resident-only collection as a permanent final model. The current SCP-specific record window is an existing adapter retained until UI rebinding, not the generic entity view promised by A1.
 
 ### Latest Scope Clarification
+
+Persistence simplification is implemented: the existing browser save adapter is plain JSON plus root/version checks and try/catch. Deep gameplay validation and the combat/queue validator modules are deleted, with loader-only corruption assertions removed. Ownership checks remain in simulation commands, not save loading. This supersedes earlier proposals in this plan to validate ownership/reference graphs on load. Campaign snapshot integration remains S1 work, but must use the same small contract without rebuilding the deleted validator.
 
 The user explicitly approved replacing the dedicated SCP-999 slot and hard-coded adversary model with a shared entity/pawn system, including deleting and reimplementing unsuitable prototype behavior. This is the next headless priority, ahead of further save validation or browser bindings. The progress descriptions below describe the existing intermediate implementation, not acceptance of those specialized records as the final model.
 

@@ -38,29 +38,6 @@ describe("parallel clinical surveys", () => {
         .status,
     ).toBe("loaded");
   });
-  it("rejects corrupted survey cadences and reports", () => {
-    const state = createInitialState();
-    const invalid = [
-      {
-        ...state,
-        clinicalCare: { ...state.clinicalCare, moodReviewInterval: "often" },
-      },
-      {
-        ...state,
-        personnel: state.personnel.map((person) => ({
-          ...person,
-          clinicalSurveys: [{ kind: "mood" }],
-        })),
-      },
-    ];
-    for (const save of invalid)
-      expect(
-        loadGameState({
-          getItem: () => JSON.stringify(save),
-          setItem: () => {},
-        }).status,
-      ).toBe("invalid");
-  });
   it("discovers independently scheduled reviews without duplicate referrals", () => {
     const state = setClinicalCarePolicy(createInitialState(), {
       reviewInterval: 240,

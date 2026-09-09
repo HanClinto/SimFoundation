@@ -253,50 +253,6 @@ describe("general surface work", () => {
     });
     expect(cleared.environment.orders[0]?.phase).toBe("completed");
   });
-  it("rejects contradictory topology, invalid materials and malformed work ledgers", () => {
-    const state = createInitialState();
-    const surface = state.world.map.surfaces[54 * 128 + 61]!;
-    for (const changed of [
-      {
-        ...state,
-        world: {
-          ...state.world,
-          map: {
-            ...state.world.map,
-            surfaces: {
-              ...state.world.map.surfaces,
-              [54 * 128 + 61]: {
-                ...surface,
-                structure: { ...surface.structure, integrity: 0 },
-              },
-            },
-          },
-        },
-      },
-      {
-        ...state,
-        world: {
-          ...state.world,
-          map: {
-            ...state.world.map,
-            surfaces: {
-              ...state.world.map.surfaces,
-              [54 * 128 + 61]: {
-                ...surface,
-                floor: { ...surface.floor, material: "unobtainium" },
-              },
-            },
-          },
-        },
-      },
-    ])
-      expect(
-        loadGameState({
-          getItem: () => JSON.stringify(changed),
-          setItem: () => {},
-        }).status,
-      ).toBe("invalid");
-  });
   it("damages reachable surfaces rather than named barrier tiles", () => {
     const state = createInitialState();
     const source = {

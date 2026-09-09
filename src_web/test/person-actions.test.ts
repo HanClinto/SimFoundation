@@ -568,7 +568,7 @@ it("keeps a carrier's job claim through the pickup-to-delivery stage transition"
   expect(loaded(state).status).toBe("loaded");
 });
 
-it("adopts clinical commitments without permitting unsafe cancellation and rejects malformed handoff metadata", () => {
+it("adopts clinical commitments without permitting unsafe cancellation", () => {
   const actorId = "person-caleb-ward";
   let state = advanceSimulation(
     requestAssessment(createInitialState(), actorId, "mood"),
@@ -589,7 +589,4 @@ it("adopts clinical commitments without permitting unsafe cancellation and rejec
     waitingFor: owner.key,
   });
   expect(loaded(state).status).toBe("loaded");
-  const invalid = structuredClone(state);
-  Object.assign(invalid.actionQueues[actorId]!.current, { waitingFor: 5 });
-  expect(loaded(invalid).status).not.toBe("loaded");
 });

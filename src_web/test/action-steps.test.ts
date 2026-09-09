@@ -57,14 +57,6 @@ it("records actual door opening under the movement parent without injecting anot
     actionExecutionStep(next, actorId),
   );
   expect(advanceSimulation(saved.state)).toEqual(advanceSimulation(next));
-  const invalid = structuredClone(next);
-  Object.assign(invalid.actionTimings[actorId]!.doorStep!, {
-    tick: next.tick + 1,
-  });
-  expect(
-    loadGameState({ getItem: () => JSON.stringify(invalid), setItem: () => {} })
-      .status,
-  ).not.toBe("loaded");
   const replaced = createController(next);
   replaced.queueAction(
     { mapId: state.world.map.id, actorId, action: "hold" },

@@ -154,24 +154,10 @@ it("blocks a newly emitting delivery without dropping its cargo, then resumes wh
   verifySave(state);
 });
 
-it("rejects invalid emission policies while retaining valid legacy defaults", () => {
+it("rejects invalid emission policies in the storage command", () => {
   const initial = createInitialState();
   verifySave(initial);
   expect(
     setStorageArea(initial, { ...area, emission: "unsafe" as "active" }).code,
   ).toBe("invalid-policy");
-  const invalid = {
-    ...initial,
-    storage: {
-      ...initial.storage,
-      areas: initial.storage.areas.map((item) => ({
-        ...item,
-        emission: "unsafe",
-      })),
-    },
-  };
-  expect(
-    loadGameState({ getItem: () => JSON.stringify(invalid), setItem: () => {} })
-      .status,
-  ).toBe("invalid");
 });

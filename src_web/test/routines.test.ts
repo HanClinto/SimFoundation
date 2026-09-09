@@ -229,16 +229,6 @@ describe("needs-driven routines", () => {
     expect(createController(result.state).advance(70).game).toEqual(
       controller.advance(70).game,
     );
-    const corrupt = {
-      ...saved,
-      routines: { ...saved.routines, pantryMeals: 999 },
-    };
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(corrupt),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
   });
   it("critical needs interrupt work without losing its progress or duplicating a reservation", () => {
     const controller = createController(createInitialState());

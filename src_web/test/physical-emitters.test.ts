@@ -165,7 +165,7 @@ it("applies damage at the host's current position without damaging floors or lea
   expect(advanceExposure(disabled)).toBe(disabled);
 });
 
-it("rejects invalid attachment saves and hides unobserved object movement", () => {
+it("hides unobserved object movement", () => {
   const state = setExposureSource(createInitialState(), policy).state;
   const source = state.environment.sources[0]!;
   const observed = exposureMapPosition(state, source, "recorded");
@@ -198,18 +198,6 @@ it("rejects invalid attachment saves and hides unobserved object movement", () =
       "recorded",
     ),
   ).toBeNull();
-  for (const objectId of ["missing", "stock-materials", 42, ""]) {
-    const invalid = {
-      ...state,
-      environment: { ...state.environment, sources: [{ ...source, objectId }] },
-    };
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(invalid),
-        setItem: () => {},
-      }).status,
-    ).toBe("invalid");
-  }
 });
 
 it("rejects split/merge supplies and missing objects, and has no fallback emission for absent hosts", () => {

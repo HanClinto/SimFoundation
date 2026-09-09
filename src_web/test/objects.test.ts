@@ -142,40 +142,6 @@ describe("physical objects", () => {
         ?.location,
     ).toEqual(remembered.object.location);
   });
-  it("rejects duplicate object identity, quantity creation and invalid carrier ownership", () => {
-    const state = createInitialState();
-    const item = state.objects.items[0]!;
-    for (const objects of [
-      { ...state.objects, items: [...state.objects.items, item] },
-      {
-        ...state.objects,
-        items: state.objects.items.map((candidate) =>
-          candidate.id === "stock-materials"
-            ? { ...candidate, quantity: 161 }
-            : candidate,
-        ),
-      },
-      {
-        ...state.objects,
-        items: state.objects.items.map((candidate) =>
-          candidate.id === item.id
-            ? {
-                ...candidate,
-                installed: false,
-                location: { kind: "carried", personId: "missing" },
-                reservedBy: "missing-job",
-              }
-            : candidate,
-        ),
-      },
-    ])
-      expect(
-        loadGameState({
-          getItem: () => JSON.stringify({ ...state, objects }),
-          setItem: () => {},
-        }).status,
-      ).toBe("invalid");
-  });
   it("waits for an occupied bed and cannot be forced through its use reservation", () => {
     const initial = createInitialState();
     const person = initial.personnel[0]!;

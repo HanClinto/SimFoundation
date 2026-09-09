@@ -139,26 +139,10 @@ it("stalls committed hauling behind a held door and resumes through automatic pa
   ).toBe(160);
 });
 
-it("rejects corrupt saved policies and refuses to close on a pawn or loose cargo", () => {
+it("refuses to close on a pawn or loose cargo", () => {
   const initial = createInitialState();
   const door = { x: 61, y: 55 };
   const index = door.y * 128 + door.x;
-  for (const doorPolicies of [
-    { [index]: "invalid" },
-    { 0: "automatic" },
-    { [index]: "held-closed" },
-  ]) {
-    const invalid = {
-      ...initial,
-      world: { ...initial.world, map: { ...initial.world.map, doorPolicies } },
-    };
-    expect(
-      loadGameState({
-        getItem: () => JSON.stringify(invalid),
-        setItem: () => {},
-      }).status,
-    ).not.toBe("loaded");
-  }
   const controller = createController({
     ...initial,
     world: {
