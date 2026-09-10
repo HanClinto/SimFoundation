@@ -2,6 +2,8 @@
 
 Draft for review, 2026-09-09. Companion to the [59-work proposal catalog](scp-expedition-proposals.md), which contains the source links, individual missions, scores, caveats and additional candidates. This is a recommended content portfolio and dependency order, not an approved implementation schedule.
 
+Implementation checkpoint: the replacement CLI now has bounded [SCP-1867](../src/simulation/catalog/quests/scp1867/README.md) and [SCP-1370](../src/simulation/catalog/quests/scp1370/README.md) quests with ordinary physical recovery, source-specific study and test-only pass/fail setups. They use local intake areas, not the full inter-site return loop proposed below. Blackwood's finding is a named lead, not a campaign unlock; SCP-1370's glass bay abstracts display containment. SCP-294 and the remaining portfolio are not implemented by this checkpoint.
+
 ## Recommendation
 
 Build a small set of complete expedition-to-facility stories before increasing the anomaly count. Start with **SCP-1867, SCP-1370 and a bounded SCP-294**. Follow with **SCP-507 and SCP-2295** once living recovery and medical intake are real, then use **SCP-1295** to bring facility-style work into the field. Reserve **SCP-173 and SCP-3008** as showcase milestones, not the next two enemy types.

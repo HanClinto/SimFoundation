@@ -20,6 +20,8 @@ import { responseScenario } from "../simulation/catalog/quests/response/setup";
 import { dailyScenario } from "../simulation/catalog/quests/daily/setup";
 import { colonyScenario } from "../simulation/catalog/quests/colony/setup";
 import { consumptionScenario } from "../simulation/catalog/quests/consumption/setup";
+import { scp1867Scenario } from "../simulation/catalog/quests/scp1867/setup";
+import { scp1370Scenario } from "../simulation/catalog/quests/scp1370/setup";
 
 export const scenarios: Readonly<
   Record<string, { site: SiteTemplate; quest?: Quest }>
@@ -29,6 +31,8 @@ export const scenarios: Readonly<
   sight: { site: sightSite as SiteTemplate },
   colony: colonyScenario,
   consumption: consumptionScenario,
+  scp1867: scp1867Scenario,
+  scp1370: scp1370Scenario,
 };
 
 export interface ScenarioSession {

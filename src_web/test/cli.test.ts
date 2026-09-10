@@ -49,3 +49,25 @@ it("issues real player commands and rejects invalid tick counts", () => {
       .output,
   ).toContain("accepted");
 });
+
+it("shows SCP briefings and source context and submits ordinary study commands", () => {
+  const console = openConsole("scp1867");
+  const before = JSON.stringify(console);
+  expect(executeLine(console, "brief").output).toContain("Djoric");
+  expect(executeLine(console, "brief").output).toContain(
+    "both independent records",
+  );
+  expect(executeLine(console, "inspect journal").output).toContain(
+    "not an independent corroboration",
+  );
+  expect(JSON.stringify(console)).toBe(before);
+  expect(() => executeLine(console, "study investigator bench")).toThrow(
+    "plan ID",
+  );
+  expect(
+    executeLine(console, "study investigator bench marsh-lead").output,
+  ).toContain("accepted");
+  expect(executeLine(openConsole("scp1370"), "brief").output).toContain(
+    "Sorts",
+  );
+});

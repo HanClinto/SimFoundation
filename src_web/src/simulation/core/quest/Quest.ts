@@ -16,7 +16,11 @@ export type Condition =
   | { kind: "stock"; materialId: string; minimum: number }
   | { kind: "acting"; actor: string; value: boolean }
   | { kind: "distance"; first: string; second: string; minimum: number }
-  | { kind: "elapsed"; ticks: number };
+  | { kind: "elapsed"; ticks: number }
+  | { kind: "finding"; station: string; planId: string }
+  | { kind: "ground-at"; entity: string; x: number; y: number }
+  | { kind: "door-closed"; entity: string }
+  | { kind: "lost"; entity: string; minimumIntegrity: number };
 
 export interface Objective {
   id: string;
@@ -27,6 +31,13 @@ export interface Objective {
 export interface Quest {
   id: string;
   name: string;
+  briefing?: string;
+  sources?: readonly {
+    title: string;
+    author: string;
+    url: string;
+    license: string;
+  }[];
   deadline: number;
   objectives: readonly Objective[];
   failures: readonly Objective[];
@@ -67,6 +78,37 @@ export function conditionMet(
   const site = state.sites[progress.siteId];
   const resolve = (local: string) => `${progress.siteId}:${local}`;
   switch (condition.kind) {
+    case "finding": {
+      const station = site?.entities[resolve(condition.station)];
+      return (
+        station?.kind === "facility" &&
+        !!station.study?.findings.some(
+          (finding) => finding.planId === condition.planId,
+        )
+      );
+    }
+    case "ground-at": {
+      const entity = site?.entities[resolve(condition.entity)];
+      return (
+        entity?.location.kind === "ground" &&
+        entity.location.position.x === condition.x &&
+        entity.location.position.y === condition.y
+      );
+    }
+    case "door-closed": {
+      const entity = site?.entities[resolve(condition.entity)];
+      return (
+        entity?.kind === "door" && !entity.open && (entity.integrity ?? 100) > 0
+      );
+    }
+    case "lost": {
+      const entity = site?.entities[resolve(condition.entity)];
+      return (
+        !entity ||
+        entity.amount <= 0 ||
+        (entity.integrity ?? 100) < condition.minimumIntegrity
+      );
+    }
     case "elapsed":
       return state.tick - progress.startedTick >= condition.ticks;
     case "event":

@@ -18,6 +18,16 @@ import { Researcher } from "./actors/staff/Researcher";
 import { Soldier } from "./actors/staff/Soldier";
 import { Medic } from "./actors/staff/Medic";
 import { HostileGuard } from "./actors/threats/HostileGuard";
+import { SCP1370 } from "./actors/anomalies/SCP1370";
+import {
+  BlackwoodJournal,
+  BlackwoodSpecimen,
+  IndependentSurvey,
+  LaboratoryDossier,
+  UnverifiedDevice,
+  CorroborationBench,
+} from "./quests/scp1867/collection";
+import { ExhibitObservationStation } from "./quests/scp1370/display";
 
 export const entities: EntityTemplates = Object.fromEntries(
   [
@@ -33,6 +43,14 @@ export const entities: EntityTemplates = Object.fromEntries(
     Soldier,
     Medic,
     HostileGuard,
+    SCP1370,
+    BlackwoodJournal,
+    BlackwoodSpecimen,
+    IndependentSurvey,
+    LaboratoryDossier,
+    UnverifiedDevice,
+    CorroborationBench,
+    ExhibitObservationStation,
   ].map((entry) => [entry.id, entry]),
 );
 

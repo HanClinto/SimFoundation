@@ -6,7 +6,7 @@ import {
 } from "../../application/ScenarioSession";
 import { conditionMet } from "../../simulation/core/quest/Quest";
 import { executeCommand } from "../../simulation/core/ControlPolicy";
-import { materials } from "../../simulation/catalog";
+import { entities as catalog, materials } from "../../simulation/catalog";
 import type { Entity } from "../../simulation/core/entity/Entity";
 import { chooseConcern } from "../../simulation/core/entity/pawn/concerns/Concerns";
 import { chooseNeedAction } from "../../simulation/core/entity/pawn/Needs";
@@ -101,9 +101,10 @@ export function renderMap(console: ConsoleState): string {
   ].join("\n");
 }
 
-export const help = `map | status | events | sites | site <id>
-step [ticks] | run [maximum ticks] | load <response|daily|sight|colony|consumption>
+export const help = `map | brief | status | events | sites | site <id>
+step [ticks] | run [maximum ticks] | load <response|daily|sight|colony|consumption|scp1867|scp1370>
 inspect <token|id> | move <actor> <x> <y>
+study <actor> <station> <planId>
 order <actor> <action JSON> | autonomy <actor> <on|off> | cancel <actor> [actionId]
 save <path> | restore <path> | help | quit`;
 
@@ -139,6 +140,21 @@ export function executeLine(
       return finish(renderMap(next));
     case "status":
       return finish(questStatus(next));
+    case "brief": {
+      const quest = scenarios[console.session.scenario]?.quest;
+      return finish(
+        quest
+          ? [
+              quest.name,
+              quest.briefing ?? "See status for the scenario objectives.",
+              ...(quest.sources ?? []).map(
+                (source) =>
+                  `${source.title} by ${source.author} | ${source.license} | ${source.url}`,
+              ),
+            ].join("\n")
+          : "Inspection sandbox: no quest briefing.",
+      );
+    }
     case "events":
       return finish(
         console.session.events
@@ -179,6 +195,8 @@ export function executeLine(
         JSON.stringify(
           {
             entity,
+            description: catalog[entity.definitionId]?.description,
+            attribution: catalog[entity.definitionId]?.attribution,
             ...(context
               ? {
                   concern: chooseConcern(context),
@@ -192,6 +210,7 @@ export function executeLine(
       );
     }
     case "move":
+    case "study":
     case "order":
     case "autonomy":
     case "cancel": {
@@ -222,7 +241,14 @@ export function executeLine(
                 kind: "move",
                 destination: { x: Number(args[1]), y: Number(args[2]) },
               }
-            : JSON.parse(args.slice(1).join(" "));
+            : command === "study"
+              ? {
+                  kind: "study",
+                  targetId: args[1]!,
+                  planId: args[2]!,
+                  workTicks: 0,
+                }
+              : JSON.parse(args.slice(1).join(" "));
         const kinds = [
           "move",
           "take",
@@ -237,6 +263,7 @@ export function executeLine(
           "attack",
           "treat",
           "flee",
+          "study",
         ];
         if (
           !action ||
@@ -254,6 +281,11 @@ export function executeLine(
           if (!Number.isSafeInteger(action.ticks) || action.ticks < 1)
             throw new Error("Wait needs a positive integer duration.");
         } else {
+          if (
+            action.kind === "study" &&
+            (typeof action.planId !== "string" || !action.planId)
+          )
+            throw new Error("Study needs a plan ID; inspect the station.");
           action = {
             ...action,
             targetId: resolve(console, action.targetId).id,
@@ -267,6 +299,7 @@ export function executeLine(
               "exercise",
               "attack",
               "treat",
+              "study",
             ].includes(action.kind)
           )
             action = { ...action, workTicks: 0 } as ActionState;

@@ -9,6 +9,12 @@ export interface EntityTemplate {
   readonly id: string;
   readonly name: string;
   readonly description: string;
+  readonly attribution?: {
+    author: string;
+    source: string;
+    license: string;
+    adaptation: string;
+  };
   readonly defaults:
     | Omit<Pawn, InstanceFields>
     | Omit<Item, InstanceFields>

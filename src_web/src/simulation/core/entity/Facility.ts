@@ -1,6 +1,7 @@
 import type { EntityBase } from "./Entity";
 import type { Site } from "../site/Site";
 import type { ActivityKind } from "./pawn/actions/Action";
+import type { StudyPlan, Finding } from "./Study";
 
 export interface Activity {
   duration: number;
@@ -11,6 +12,7 @@ export interface Facility extends EntityBase {
   kind: "facility";
   activities: Partial<Record<ActivityKind, Activity>>;
   research?: { progress: number };
+  study?: { plans: readonly StudyPlan[]; findings: Finding[] };
 }
 
 export function facilityInUse(

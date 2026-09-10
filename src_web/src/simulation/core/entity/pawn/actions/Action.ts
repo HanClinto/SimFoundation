@@ -5,6 +5,7 @@ import type { Materials } from "../../../material/Material";
 import type { TickEvent } from "../../../Simulation";
 import type { AttackState } from "./Attack";
 import type { TreatState } from "./Treat";
+import type { StudyState } from "./Study";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -15,6 +16,7 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | StudyState
   | AttackState
   | TreatState
   | { kind: "flee"; targetId: string }

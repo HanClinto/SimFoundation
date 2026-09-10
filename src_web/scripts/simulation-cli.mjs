@@ -44,7 +44,7 @@ try {
       renderMap(consoleState) +
         "\n" +
         questStatus(consoleState) +
-        "\nType help for commands.",
+        "\nType brief for mission context or help for commands.",
     );
     const terminal = !!process.stdin.isTTY;
     const input = createInterface({

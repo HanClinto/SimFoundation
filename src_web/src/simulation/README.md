@@ -31,6 +31,7 @@ simulation/
 			Entity.ts
 			EntityTemplate.ts
 			Consumption.ts
+			Study.ts
 			Item.ts
 			Door.ts
 			Facility.ts
@@ -57,6 +58,7 @@ simulation/
 					Sleep.ts
 					Relax.ts
 					Research.ts
+					Study.ts
 					Read.ts
 					Exercise.ts
 					Attack.ts
@@ -82,6 +84,7 @@ simulation/
 		actors/staff/Soldier.ts
 		actors/staff/Medic.ts
 		actors/threats/HostileGuard.ts
+		actors/anomalies/SCP1370.ts
 		entities/doors/AutomaticSteelDoor.ts
 		entities/supplies/PackagedMeal.ts
 		entities/furniture/Bed.ts
@@ -101,6 +104,8 @@ simulation/
 			daily/{quest.ts,setup.ts}
 			colony/{quest.ts,setup.ts}
 			consumption/{quest.ts,setup.ts}
+			scp1867/{quest.ts,setup.ts,collection.ts,README.md}
+			scp1370/{quest.ts,setup.ts,display.ts,README.md}
 		sites/tests/SharedActions.json
 		sites/tests/RestAndResearch.json
 		sites/tests/DailyLife.json
@@ -122,7 +127,7 @@ When implemented, named anomalies belong under `catalog/actors/anomalies` and or
 - **EntityTemplate** describes a named model: stable definition ID, display name, description, and initial defaults. Multiple instances share a definition ID, never an instance ID or mutable defaults. The generic contract lives in [EntityTemplate.ts](core/entity/EntityTemplate.ts); concrete models live in the catalog. There is no universal Definition abstraction.
 - **Material** describes what an entity is made of. A steel ingot and a steel door can share a material without sharing their entity kind. Instance `amount` is remaining abstract material units, not a weight simulation.
 
-Catalog entries are intentionally small, wiki-like records. For example, [FieldAgent.ts](catalog/actors/staff/FieldAgent.ts) gives its description, capabilities, needs, and diet; [AutomaticSteelDoor.ts](catalog/entities/doors/AutomaticSteelDoor.ts) selects steel and automatic operation. [Door.ts](core/entity/Door.ts) contains the mechanics. Add source/attribution/license metadata with externally sourced content; no new SCP content is authored in this slice.
+Catalog entries are intentionally small, wiki-like records. For example, [FieldAgent.ts](catalog/actors/staff/FieldAgent.ts) gives its description, capabilities, needs, and diet; [AutomaticSteelDoor.ts](catalog/entities/doors/AutomaticSteelDoor.ts) selects steel and automatic operation. [Door.ts](core/entity/Door.ts) contains the mechanics. SCP-derived entries include attribution and explicit adaptation notes, also exposed by CLI inspection. The first source-backed quests are SCP-1867 collection corroboration and SCP-1370 gallery recovery.
 
 Named content may eventually need unique behavior beside its catalog entry. Add a narrow core behavior interface when such a feature is implemented; do not put named-definition tests in the coordinator or prebuild an ECS/plugin framework. Display documentation can later be generated from catalog metadata; a wiki generator is not implemented here.
 
@@ -311,7 +316,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 10 introduces eating rate, diet efficiency and nutrition/integrity state, discarding earlier experimental shapes; there are no migrations or deep save validators. CLI session saves also retain quest counters/status and the most recent 100 events, with a session root version and matching simulation version. These are trusted development saves, not a hardened external input format.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 11 adds physical study plans and findings, discarding earlier experimental shapes; there are no migrations or deep save validators. CLI session saves also retain quest counters/status and the most recent 100 events, with a session root version and matching simulation version. These are trusted development saves, not a hardened external input format.
 
 ## Command-Line Console
 
@@ -322,12 +327,14 @@ npm run sim
 npm run sim -- --scenario daily
 npm run sim -- --scenario colony
 npm run sim -- --scenario consumption
+npm run sim -- --scenario scp1867
+npm run sim -- --scenario scp1370
 npm run sim -- --scenario response --batch --ticks 40
 npm run sim -- --scenario colony --batch --ticks 1100
 npm run benchmark:simulation -- 40
 ```
 
-`response`, `daily`, `colony` and `consumption` have quest conditions; `sight` is an inspection sandbox. The Consumption setup leaves a diner with autonomy off and a two-portion meal; the player must issue an eating order before the deadline. The CLI adapter uses the same [ScenarioSession](../application/ScenarioSession.ts) as the tests, not the archived browser controller. Vite is only a local TypeScript module loader in middleware mode; no game HTTP server is started.
+`response`, `daily`, `colony`, `consumption`, `scp1867` and `scp1370` have quest conditions; `sight` is an inspection sandbox. The Consumption setup leaves a diner with autonomy off and a two-portion meal; the player must issue an eating order before the deadline. The SCP quests likewise require player-directed recovery and study, not automatic quest-solving scripts. The CLI adapter uses the same [ScenarioSession](../application/ScenarioSession.ts) as the tests, not the archived browser controller. Vite is only a local TypeScript module loader in middleware mode; no game HTTP server is started.
 
 To try partial consumption: `load consumption`, `order diner {"kind":"eat","targetId":"meal"}`, `step 3`, `cancel diner`, then `inspect meal`. The meal retains 1.7 units. You can move away, save/restore, and order eating again; the quest succeeds when the diner is fed and at least a quarter portion remains. `run` alone does not solve this scenario because gameplay setup does not include the test answer.
 
@@ -335,6 +342,7 @@ Each map cell contains its terrain character followed by a two-character entity 
 
 ```text
 help
+brief
 map
 status
 step 10
@@ -350,16 +358,33 @@ site site-1
 save /tmp/my-simulation.json
 restore /tmp/my-simulation.json
 load response
+load scp1867
+brief
+inspect bench
+study investigator bench marsh-lead
 quit
 ```
 
-`inspect` returns authoritative entity data plus currently discoverable concerns and a need-action candidate without changing state. `step` advances exactly the requested ticks even after a quest ends. `run` stops at quest success/failure or its supplied limit. Commands use ordinary player permission and physical execution; there is no hidden force-complete command. JSON orders accept local target IDs/tokens and normalize new activity progress. Pending orders retain their usual deferred eligibility checks.
+`brief` shows mission context and source credits. `inspect` returns authoritative entity data, catalog description/attribution and currently discoverable concerns and a need-action candidate without changing state. `study <actor> <station> <planId>` submits a normal study action; inspect the station for its plans and recorded findings. `step` advances exactly the requested ticks even after a quest ends. `run` stops at quest success/failure or its supplied limit. Commands use ordinary player permission and physical execution; there is no hidden force-complete command. JSON orders accept local target IDs/tokens and normalize new activity progress. Pending orders retain their usual deferred eligibility checks.
+
+## Source-Backed SCP Quests
+
+The first two candidates come from the [prioritized portfolio](../../docs/scp-expedition-priorities.md). Each is playable through the CLI and uses the same authored setup as its test-only answer keys. Sources and scenario-specific departures from canon are documented beside the quest.
+
+- [SCP-1867: Corroborate the collection](catalog/quests/scp1867/README.md): recover a journal and preserved specimen from a vault to temporary intake, then compare them against an independent survey and laboratory dossier. All four sources must be nearby and intact. Blackwood's own journal is not counted as an independent source. The resulting named, dated finding preserves provenance and identifies an original game-authored follow-up lead. Blackwood himself remains at the outpost off-map.
+- [SCP-1370: A place in the gallery](catalog/quests/scp1370/README.md): carefully carry the toppled sapient exhibit into a glass display bay, perform controlled observation, return to reception and leave the door closed. Its identity remains a pawn during carrying. There is no combat or external power requirement; damaging it fails the mission. The bay abstracts an adequately sized enclosure, not a full container simulation.
+
+[Study.ts](core/entity/pawn/actions/Study.ts) is the shared physical executor. A facility's `study.plans` declares a plan ID, title, required source definition IDs, productive duration, and authored finding. The worker approaches through ordinary routing. Distinct matching source instances must remain within one tile of the station, on the ground or carried by that worker, with positive amount/integrity. Missing sources or interrupted approach reset progress. The station is exclusive while productive study is active, using the same queue-derived ownership as other facility work.
+
+Completion writes one finding per plan at that station, with the actor ID, global tick and actual source IDs. Repeating a completed plan does not duplicate the finding or consume evidence. Save/reload preserves partial work and findings. This is named evidence, not spending the earlier Research action's generic progress counter. The initial plans are explicit orders, not new autonomous needs. Source-specific result text belongs in the catalog; core contains no SCP-ID switches.
+
+These quests use one persistent local map with an intake area, not a complete expedition-to-home campaign. The Blackwood lead is not yet an unlocked playable destination. Portable cases, resident aquarium care, independently walking SCP-1370, dialogue and extensive containment systems are deliberately deferred. SCP-294 remains the next candidate once dispensing can conserve input/output identities. No new images or browser bindings are added.
 
 Save requires a new filename and never overwrites an existing file. Restore replaces the session with its saved simulation and quest state. Batch mode accepts `--restore <path>` as an alternative starting session, and returns exit code 0 for success/sandbox, 1 for quest failure, 2 for an active quest whose requested tick limit expired. Input can also be piped to the ordinary console. This is a developer/playtest surface, not a shipped UI or network API.
 
 ## Quests As Integration Tests
 
-[Quest.ts](core/quest/Quest.ts) observes state and events; it never orders actors, owns sites, or fabricates success. Catalog quests define named objectives, failure conditions and a deadline. The initial condition set covers matched events, need bounds, entity amount, aggregate material stock, ability to act, separation distance, and elapsed ticks. Entity references are local IDs in the attached site, resolved to its instantiated IDs. Multi-site references, branches, rewards and a scripting language are not implemented yet.
+[Quest.ts](core/quest/Quest.ts) observes state and events; it never orders actors, owns sites, or fabricates success. Catalog quests define named objectives, failure conditions and a deadline. Conditions cover matched events, need bounds, entity amount, aggregate material stock, ability to act, separation, elapsed ticks, recorded findings, ground delivery locations, closed doors, and lost/damaged evidence. Entity references are local IDs in the attached site, resolved to its instantiated IDs. Multi-site references, branches, rewards and a scripting language are not implemented yet.
 
 [Response](catalog/quests/response/quest.ts) succeeds when the soldier attacks, researcher withdraws and gains separation, and medic treats the casualty. It fails for soldier/civilian incapacitation or an incomplete deadline. [Daily life](catalog/quests/daily/quest.ts) requires sustained work/care and retained food. [Colony](catalog/quests/colony/quest.ts) checks a 12-worker, 42x26 site with shared facilities, a medic, a bleeding worker and finite food for at least 1000 ticks. Its resource condition is total food, not even usage of individual piles. [Consumption](catalog/quests/consumption/quest.ts) checks completion of eating, satiety and retained leftovers; it can fail by incapacity or deadline.
 
