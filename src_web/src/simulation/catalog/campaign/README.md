@@ -282,6 +282,9 @@ controlled study, staff wound/blood care, equipment repair/rearm and cell
 fallback session. It keeps a real worker assigned to upkeep while the others
 recover. Delaying fallback until after all medical/maintenance work is not
 equivalent: a lapsed cell can release its hostile while staff are occupied.
+The main example uses the local `capture` goal for the routine field sequence;
+the lower-level intervention and custody transcripts remain available for
+exception handling and primitive-equivalence checks.
 
 Safe later transfer does not require a breach. Carry the original transport
 band back to the cell and apply it while effective containment holds the awake

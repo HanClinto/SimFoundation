@@ -20,16 +20,12 @@ site intervention
 order alex move 4 3
 finish alex
 step 12
-order alex subdue specimen
+order alex capture specimen @held 2 3
 finish alex
 order casey treat alex
 finish casey
 order casey treat alex
 finish casey
-order alex restrain specimen @held
-finish alex
-order alex take specimen
-finish alex
 prepare home alex casey
 finish alex casey
 send home alex casey
