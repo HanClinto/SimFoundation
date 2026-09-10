@@ -242,6 +242,7 @@ export function renderMap(console: ConsoleState): string {
 }
 
 export const help = `map | brief | status | events | sites | site <id>
+events <alarms|here|route|site-id|entity-id|stable-label> (retained history only)
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 reserve <home|route> <devon|riley> (finite physical emergency dispatch)
@@ -401,12 +402,38 @@ export function executeLine(
           : "Inspection sandbox: no quest briefing.",
       );
     }
-    case "events":
+    case "events": {
+      if (args.length > 1)
+        throw new Error(
+          "Use events [alarms|here|route|site-id|entity-id|stable-label].",
+        );
+      let events = console.session.events;
+      const filter = args[0];
+      if (filter === "alarms")
+        events = events.filter((event) =>
+          ["warning", "breached", "escaped", "died"].includes(event.kind),
+        );
+      else if (filter) {
+        const siteId =
+          filter === "here"
+            ? console.siteId
+            : (console.session.campaign?.siteIds[filter] ??
+              (console.session.state.sites[filter] ? filter : undefined));
+        if (siteId) events = events.filter((event) => event.siteId === siteId);
+        else {
+          const entity = resolve(console, filter, undefined, true);
+          events = events.filter(
+            (event) =>
+              event.entityId === entity.id || event.targetId === entity.id,
+          );
+        }
+      }
       return finish(
-        console.session.events
-          .map((event) => JSON.stringify(event))
-          .join("\n") || "No recent events.",
+        `${filter ? `Retained history only (up to 100 events), filter ${filter}:\n` : ""}` +
+          (events.map((event) => JSON.stringify(event)).join("\n") ||
+            "No recent events."),
       );
+    }
     case "finish": {
       if (console.session.phase !== "running")
         throw new Error("Start the mission before advancing work.");

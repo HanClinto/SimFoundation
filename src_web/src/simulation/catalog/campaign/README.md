@@ -44,6 +44,12 @@ remains deliberate fixed-duration advancement, and `finish` remains scoped to
 the chosen commitments. Neither rolls back a fatal or breached tick. Batch
 mode returns incomplete status (exit2) if an alarm stopped its run.
 
+Use `events alarms`, `events here`, `events <route|site-id>` or
+`events <entity-id|stable-label>` to filter the existing dated history.
+Entity filters include events targeting that entity as well as its own work.
+These commands are read-only and explicitly show retained history only; they
+do not reconstruct events older than the saved100-entry limit.
+
 Within an order, `@held` means that worker's actual directly carried object:
 `order alex deliver @held 7 4` delivers a collected portion without copying its
 generated ID. `order alex pack vial @held` uses the carried case. It never
