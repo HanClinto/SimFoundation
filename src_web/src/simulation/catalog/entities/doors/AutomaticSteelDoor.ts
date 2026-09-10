@@ -10,6 +10,7 @@ export const AutomaticSteelDoor = {
     kind: "door",
     carryable: false,
     blocksMovement: true,
+    blocksSight: true,
     materialId: Steel.id,
     amount: 1,
     open: false,

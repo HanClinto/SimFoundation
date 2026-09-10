@@ -67,6 +67,7 @@ simulation/
 			Site.ts
 			EntityPlacement.ts
 			TileMap.ts
+			Tile.ts
 			Pathfinding.ts
 			Visibility.ts
 			Transfer.ts
@@ -94,6 +95,7 @@ simulation/
 		sites/tests/RestAndResearch.json
 		sites/tests/DailyLife.json
 		sites/tests/ThreatAndCasualty.json
+		sites/tests/SightAndPassage.json
 		index.ts
 ```
 
@@ -150,7 +152,9 @@ A **cause** is a fact the pawn observes, such as a hostile actor or a bleeding p
 
 Optional [Response.ts](core/entity/pawn/Response.ts) data specifies faction, hostile factions, sight range, flee/confront policy and attack/medical capabilities. Catalog staff are not special-cased in the core: Soldier confronts because its data allows attacking, Researcher flees, and Medic treats when immediate danger does not take precedence. Faction hostility is explicit observer policy, not an assumption about every other faction. Medical supply charges and attack capability values are prototypes, not equipment or qualifications systems.
 
-[Visibility.ts](core/site/Visibility.ts) uses the existing pathfinding library's line expansion within Manhattan sight range. Walls and closed doors block sight, including blocked diagonal corners. Ordinary items, furniture and other pawns do not occlude sight in this slice. There is no hearing, shared radio knowledge, observation memory or pursuit of last-known positions. A lost target is not tracked through walls by Attack or Treat. No Fear or Sanity bar is added: perceived danger creates a concern directly. Social remains deferred.
+`Response` is a plain data interface, not a class that executes behaviors or a framework for adding needs. Its current bundling of perception, faction policy and capabilities is provisional. New ordinary needs extend need data/action offers, not this interface. If equipment, skills or perception gain their own mechanics, move those responsibilities to their actual owners rather than turning Response into a growing list of unrelated settings.
+
+[Visibility.ts](core/site/Visibility.ts) uses the existing pathfinding library's line expansion within Manhattan sight range. Tile and ground-entity `blocksSight` properties determine transparency independently of movement; diagonal corner checks use the same sight rules. Catalog walls, closed steel doors and bookshelves obscure sight; pawns, low furniture and meals do not. There is no hearing, shared radio knowledge, observation memory or pursuit of last-known positions. A lost target is not tracked through walls by Attack or Treat. No Fear or Sanity bar is added: perceived danger creates a concern directly. Social remains deferred.
 
 ### Physical Responses
 
@@ -227,7 +231,22 @@ The current policy favors specialists when all facilities are available: researc
 
 Entities declare `blocksMovement`: true prevents sharing their ground tile, false permits it. Catalog staff block by default, loose meals do not, and any other placed item can block without being a pawn. Carried entities never independently obstruct their carrier's tile. The moving actor is excluded from its own obstruction query. All ground entities on a tile are considered; one blocking entity is enough to prevent entry.
 
+Tiles and entities separately declare `blocksSight`. Neither obstruction implies the other:
+
+| Example                      | Blocks Movement | Blocks Sight |
+| ---------------------------- | --------------- | ------------ |
+| Solid wall or tall bookshelf | yes             | yes          |
+| Glass wall or low crate      | yes             | no           |
+| Dense mist                   | no              | yes          |
+| Open floor or loose meal     | no              | no           |
+
+[Tile.ts](core/site/Tile.ts) defines the two tile properties and the basic `.` (open) and `#` (solid) symbols. An authored site's optional `tiles` dictionary supplies additional symbols or overrides defaults. [SightAndPassage.json](catalog/sites/tests/SightAndPassage.json) uses `g` for transparent impassable glass and `m` for opaque passable mist. Core knows those properties, not those example names. `tileAt` is the shared lookup; `floorAt` means terrain permits movement, not that the terrain is optically clear. Unknown/out-of-bounds tiles permit neither movement nor sight. Site instantiation checks defined symbols and clones the dictionary; save restore preserves it.
+
+Sight checks all ground entities along the line. Carried items do not independently occlude sight. The observer and target entities do not occlude their own sight test, so an opaque object itself can be seen while still hiding entities behind it. Other opaque entities sharing the target or observer tile still block, as does an opaque terrain tile. Mist is binary opacity here, not distance attenuation, diffusion, height or volumetric fog. These are simulation properties, not new rendering assets.
+
 [TileMap.ts](core/site/TileMap.ts) exposes `traversalAt(site, position, actorId)`, returning clear, blocked with a reason, or an automatic door that must be opened. Door state determines its passage: open allows entry, closed automatic requires opening, and other closed doors block. An automatic door never masks another obstruction sharing its tile. The door requirement is not a third occupancy class.
+
+Doors remain an explicit domain exception: an open door does not obstruct movement or sight; a closed door uses its `blocksSight` property and the existing opening policy. Thus a closed glass door can transmit sight while blocking entry, and a closed opaque automatic door can be part of a planned route without being immediately traversable. Opening a door does not override opaque terrain or another blocker on its tile. The catalog must place doors on movement-permitting terrain.
 
 [Pathfinding.ts](core/site/Pathfinding.ts) and Move use that same query. A\* can plan through a door that can be opened, while actual stepping must open it first. Move rechecks before entry; no separate pawn-only occupancy rule exists. Movement orders can target currently occupied floor, since it may clear before execution; accepting an intention does not guarantee a route. Transfer arrivals require clear traversal and cannot remotely open doors. Routing allows departure from an already shared origin (for example after putting down cargo), but does not authorize entry into another obstructed tile.
 
@@ -249,7 +268,7 @@ For now, **only loose items are consumable**. Material matching alone does not a
 
 ## Sites, Transfers, And Saves
 
-[SharedActions.json](catalog/sites/tests/SharedActions.json) is an authored site: rectangular `.` floor / `#` wall rows plus placements naming catalog templates, local IDs, locations, and optional instance overrides. [EntityPlacement.ts](core/site/EntityPlacement.ts) owns placement data and instance construction beside site loading, separate from the reusable entity-template contract. Overrides replace supplied top-level fields; they are not a recursive patch language and cannot change entity kind. `instantiateSite` clones defaults, allocates fresh site/entity IDs, and remaps carried references, queued targets, and initial action IDs. Site instantiation checks geometry/references; this is trusted developer content, not a hardened mod loader.
+[SharedActions.json](catalog/sites/tests/SharedActions.json) is an authored site: rectangular terrain rows, an optional tile-property dictionary, and placements naming catalog templates, local IDs, locations, and optional instance overrides. [EntityPlacement.ts](core/site/EntityPlacement.ts) owns placement data and instance construction beside site loading, separate from the reusable entity-template contract. Overrides replace supplied top-level fields; they are not a recursive patch language and cannot change entity kind. `instantiateSite` clones defaults, allocates fresh site/entity IDs, and remaps carried references, queued targets, and initial action IDs. Site instantiation checks geometry/references; this is trusted developer content, not a hardened mod loader.
 
 ```ts
 import { entities, materials } from "./catalog";
@@ -267,7 +286,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 7 adds wound conditions and response actions and discards earlier experimental shapes; there are no migrations or deep save validators.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 8 adds independent sight obstruction and authored tile properties and discards earlier experimental shapes; there are no migrations or deep save validators.
 
 ## Verification And Scope
 

@@ -10,6 +10,7 @@ export const Bookshelf = {
     kind: "facility",
     carryable: true,
     blocksMovement: true,
+    blocksSight: true,
     materialId: Wood.id,
     amount: 1,
     activities: {

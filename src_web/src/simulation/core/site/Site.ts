@@ -3,18 +3,21 @@ import type { Simulation } from "../Simulation";
 import type { ActionState } from "../entity/pawn/actions/Action";
 import type { EntityTemplates } from "../entity/EntityTemplate";
 import { instantiateEntity, type EntityPlacement } from "./EntityPlacement";
-import { floorAt, positionOf, samePosition } from "./TileMap";
+import { floorAt, positionOf, samePosition, tileAt } from "./TileMap";
+import type { Tile } from "./Tile";
 
 export interface Site {
   id: string;
   name: string;
   terrain: readonly string[];
+  tiles?: Readonly<Record<string, Tile>>;
   entities: Record<string, Entity>;
 }
 
 export interface SiteTemplate {
   readonly name: string;
   readonly terrain: readonly string[];
+  readonly tiles?: Readonly<Record<string, Tile>>;
   readonly entities: readonly EntityPlacement[];
 }
 
@@ -67,18 +70,22 @@ export function instantiateSite(
     id: siteId,
     name: template.name,
     terrain: [...template.terrain],
+    ...(template.tiles ? { tiles: structuredClone(template.tiles) } : {}),
     entities: Object.fromEntries(entities.map((entity) => [entity.id, entity])),
   };
   if (
     !site.terrain.length ||
     !site.terrain[0]!.length ||
     site.terrain.some(
-      (row) => row.length !== site.terrain[0]!.length || /[^.#]/.test(row),
+      (row, rowIndex) =>
+        row.length !== site.terrain[0]!.length ||
+        [...row].some(
+          (_symbol, columnIndex) =>
+            !tileAt(site, { x: columnIndex, y: rowIndex }),
+        ),
     )
   )
-    throw new Error(
-      "Use a rectangular terrain map containing only '.' and '#'.",
-    );
+    throw new Error("Use a rectangular terrain map with defined tile symbols.");
   for (const entity of entities) {
     const position = positionOf(site, entity.id);
     if (!position || !floorAt(site, position))

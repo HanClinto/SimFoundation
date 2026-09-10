@@ -10,6 +10,7 @@ export const ResearchDesk = {
     kind: "facility",
     carryable: true,
     blocksMovement: true,
+    blocksSight: false,
     materialId: Steel.id,
     amount: 1,
     activities: {

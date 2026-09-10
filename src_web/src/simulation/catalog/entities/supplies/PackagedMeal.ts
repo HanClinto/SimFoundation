@@ -10,6 +10,7 @@ export const PackagedMeal = {
     kind: "item",
     carryable: true,
     blocksMovement: false,
+    blocksSight: false,
     materialId: PlantFood.id,
     amount: 1,
   },

@@ -10,6 +10,7 @@ export const Bed = {
     kind: "facility",
     carryable: true,
     blocksMovement: true,
+    blocksSight: false,
     materialId: Wood.id,
     amount: 1,
     activities: {

@@ -19,6 +19,7 @@ export interface EntityBase {
   location: Location;
   carryable: boolean;
   blocksMovement: boolean;
+  blocksSight: boolean;
   materialId: string;
   amount: number;
 }

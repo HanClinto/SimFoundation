@@ -1,6 +1,7 @@
 import type { Position } from "../entity/Entity";
 import type { Door } from "../entity/Door";
 import type { Site } from "./Site";
+import { basicTiles, type Tile } from "./Tile";
 
 export const samePosition = (first: Position, second: Position): boolean =>
   first.x === second.x && first.y === second.y;
@@ -19,12 +20,18 @@ export function positionOf(site: Site, entityId: string): Position | null {
   return null;
 }
 
+export function tileAt(site: Site, position: Position): Tile | null {
+  if (!Number.isInteger(position.x) || !Number.isInteger(position.y))
+    return null;
+  const symbol = site.terrain[position.y]?.[position.x];
+  return symbol === undefined
+    ? null
+    : (site.tiles?.[symbol] ?? basicTiles[symbol] ?? null);
+}
+
 export function floorAt(site: Site, position: Position): boolean {
-  return (
-    Number.isInteger(position.x) &&
-    Number.isInteger(position.y) &&
-    site.terrain[position.y]?.[position.x] === "."
-  );
+  const tile = tileAt(site, position);
+  return tile !== null && !tile.blocksMovement;
 }
 
 export type Traversal =

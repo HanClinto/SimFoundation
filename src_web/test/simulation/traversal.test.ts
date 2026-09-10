@@ -47,6 +47,7 @@ function item(id: string, blocksMovement: boolean): Item {
     amount: 1,
     carryable: true,
     blocksMovement,
+    blocksSight: false,
     location: { kind: "ground", position: { x: 1, y: 1 } },
   };
 }

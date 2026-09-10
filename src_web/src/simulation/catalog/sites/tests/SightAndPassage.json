@@ -1,0 +1,34 @@
+{
+  "name": "Sight and passage trial",
+  "terrain": ["#######", "#..g..#", "#######", "#..m..#", "#######"],
+  "tiles": {
+    "g": { "blocksMovement": true, "blocksSight": false },
+    "m": { "blocksMovement": false, "blocksSight": true }
+  },
+  "entities": [
+    {
+      "id": "glass-observer",
+      "definitionId": "soldier",
+      "location": { "kind": "ground", "position": { "x": 1, "y": 1 } },
+      "overrides": { "autonomy": false }
+    },
+    {
+      "id": "glass-target",
+      "definitionId": "hostile-guard",
+      "location": { "kind": "ground", "position": { "x": 5, "y": 1 } },
+      "overrides": { "autonomy": false }
+    },
+    {
+      "id": "mist-observer",
+      "definitionId": "soldier",
+      "location": { "kind": "ground", "position": { "x": 1, "y": 3 } },
+      "overrides": { "autonomy": false }
+    },
+    {
+      "id": "mist-target",
+      "definitionId": "hostile-guard",
+      "location": { "kind": "ground", "position": { "x": 5, "y": 3 } },
+      "overrides": { "autonomy": false }
+    }
+  ]
+}

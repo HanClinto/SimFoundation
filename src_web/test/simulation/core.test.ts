@@ -47,6 +47,7 @@ function pawn(
     carryable: true,
     mobile: true,
     blocksMovement: true,
+    blocksSight: false,
     canAct: true,
     autonomy: true,
     playerControllable: true,
@@ -148,6 +149,7 @@ it("opens doors on one tick and moves on the next; unused automatic doors close 
     carryable: false,
     location: { kind: "ground", position: { x: 2, y: 1 } },
     blocksMovement: true,
+    blocksSight: true,
     open: false,
     policy: "automatic",
   };
@@ -177,6 +179,7 @@ it("has one winner when two pawns consume the same resource", () => {
       carryable: true,
       materialId: "plant-food",
       blocksMovement: false,
+      blocksSight: false,
       amount: 1,
       location: { kind: "ground", position: { x: 1, y: 1 } },
     },
@@ -273,6 +276,7 @@ it("restores exact queued state through plain JSON and rejects incompatible root
     '{"version":4}',
     '{"version":5}',
     '{"version":6}',
+    '{"version":7}',
     '{"version":999}',
   ])
     expect(deserialize(text)).toBeNull();
@@ -368,6 +372,7 @@ it("makes an earlier door opening visible to later movers immediately", () => {
         carryable: false,
         open: false,
         blocksMovement: true,
+        blocksSight: true,
         policy: "automatic",
         location: { kind: "ground", position: { x: 1, y: 1 } },
       },
@@ -407,6 +412,7 @@ it.each(["metal", "plastic"])(
         carryable: true,
         materialId: tag === "metal" ? "steel" : "plastic",
         blocksMovement: false,
+        blocksSight: false,
         amount: 1.5,
         location: { kind: "ground", position: { x: 1, y: 1 } },
       },
@@ -445,6 +451,7 @@ it("autonomy selects reachable acceptable material but an explicit eat order nev
     carryable: true,
     location: { kind: "ground", position: { x, y } },
     blocksMovement: false,
+    blocksSight: false,
   });
   let state = simulation(
     [

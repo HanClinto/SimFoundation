@@ -10,6 +10,7 @@ export const FieldAgent = {
     kind: "pawn",
     carryable: true,
     blocksMovement: true,
+    blocksSight: false,
     materialId: AnimalTissue.id,
     amount: 1,
     mobile: true,

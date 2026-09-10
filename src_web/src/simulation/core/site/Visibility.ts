@@ -1,16 +1,25 @@
 import PF from "pathfinding";
 import type { Site } from "./Site";
 import type { Pawn } from "../entity/pawn/Pawn";
-import { distance, floorAt, positionOf, samePosition } from "./TileMap";
+import { distance, tileAt, positionOf, samePosition } from "./TileMap";
 import type { Position } from "../entity/Entity";
 
-function transparent(site: Site, position: Position): boolean {
+function transparent(
+  site: Site,
+  position: Position,
+  observerId: string,
+  targetId: string,
+): boolean {
+  const tile = tileAt(site, position);
   return (
-    floorAt(site, position) &&
+    tile !== null &&
+    !tile.blocksSight &&
     !Object.values(site.entities).some(
       (entity) =>
-        entity.kind === "door" &&
-        !entity.open &&
+        entity.id !== observerId &&
+        entity.id !== targetId &&
+        entity.blocksSight &&
+        (entity.kind !== "door" || !entity.open) &&
         entity.location.kind === "ground" &&
         samePosition(entity.location.position, position),
     )
@@ -34,12 +43,22 @@ export function canSee(site: Site, observer: Pawn, targetId: string): boolean {
   let previous = origin;
   for (const [column, row] of line) {
     const point = { x: column!, y: row! };
-    if (!transparent(site, point)) return false;
+    if (!transparent(site, point, observer.id, targetId)) return false;
     if (
       previous.x !== point.x &&
       previous.y !== point.y &&
-      (!transparent(site, { x: previous.x, y: point.y }) ||
-        !transparent(site, { x: point.x, y: previous.y }))
+      (!transparent(
+        site,
+        { x: previous.x, y: point.y },
+        observer.id,
+        targetId,
+      ) ||
+        !transparent(
+          site,
+          { x: point.x, y: previous.y },
+          observer.id,
+          targetId,
+        ))
     )
       return false;
     previous = point;
