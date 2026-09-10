@@ -191,9 +191,7 @@ it("has one winner when two pawns consume the same resource", () => {
   expect(entities.food).toBeUndefined();
   expect((entities.a as Pawn).needs.hunger!.value).toBe(1);
   expect((entities.b as Pawn).needs.hunger!.value).toBe(11);
-  expect((entities.b as Pawn).queue[0]!.blockedReason).toContain(
-    "no longer present",
-  );
+  expect((entities.b as Pawn).queue).toEqual([]);
 });
 
 it("separates permission, autonomy, and debug policy without mutating previews", () => {
@@ -277,6 +275,7 @@ it("restores exact queued state through plain JSON and rejects incompatible root
     '{"version":5}',
     '{"version":6}',
     '{"version":7}',
+    '{"version":8}',
     '{"version":999}',
   ])
     expect(deserialize(text)).toBeNull();
@@ -480,14 +479,18 @@ it("autonomy selects reachable acceptable material but an explicit eat order nev
   ]);
   explicit = enqueue(explicit, "consumer", { kind: "eat", targetId: "chosen" });
   delete explicit.sites["site-a"]!.entities.chosen;
-  explicit = advanceSimulation(explicit).state;
+  const failed = advanceSimulation(explicit);
+  explicit = failed.state;
+  expect(failed.events).toContainEqual(
+    expect.objectContaining({
+      kind: "failed",
+      reason: "The target is no longer present.",
+    }),
+  );
   expect(explicit.sites["site-a"]!.entities.other).toBeDefined();
-  expect(
-    (explicit.sites["site-a"]!.entities.consumer as Pawn).queue[0],
-  ).toMatchObject({
-    action: { kind: "eat", targetId: "chosen" },
-    blockedReason: "The target is no longer present.",
-  });
+  expect((explicit.sites["site-a"]!.entities.consumer as Pawn).queue).toEqual(
+    [],
+  );
 });
 
 it("cancels an intention without dropping cargo or changing autonomous policy", () => {

@@ -2,6 +2,8 @@
 
 This is the replacement headless simulation. The previous engine remains in [../simulation_legacy](../simulation_legacy) for reference. Existing browser/application bindings still explicitly run that archive; this directory has no legacy imports or compatibility facade.
 
+The replacement is playable through the [command-line console](#command-line-console). Its quests and integration tests share the same scenario session and pass/fail evaluator.
+
 The organizing principle is **open the file for a thing to understand that thing**. Core defines reusable mechanics. Catalog defines named things in the game using those mechanics. Prefer a readable local implementation over distributed switches, inheritance ladders, or speculative frameworks.
 
 ## Core Versus Catalog
@@ -124,7 +126,16 @@ Each action class implements `canStart` and `tick`. [ActionQueue.ts](core/entity
 
 Action handlers are short-lived code objects, not saved class instances. Progress, source, target, and blocker are ordinary JSON queue data. Cancellation removes that intention only: it does not undo consumed material, earned research progress, need changes, drop a carried entity, teleport anything, or change autonomy. Facility occupancy is derived from the active action's work progress, so removing the queue entry releases it without a second reservation ledger or cancellation hook.
 
-[ControlPolicy.ts](core/ControlPolicy.ts) checks player/script/debug authority and edits queues. Immediate starts use the action's own checks. Appended intentions may depend on earlier actions (for example Take then Drop), so their physical eligibility is deferred until execution. A blocked action stays queued and retries against current state; it can be cancelled. Previews return eligibility without mutation or event publication. Debug authority bypasses player permission, not the executor's physical rules.
+[ControlPolicy.ts](core/ControlPolicy.ts) checks player/script/debug authority and edits queues. Immediate starts use the action's own checks. Appended intentions may depend on earlier actions (for example Take then Drop), so their physical eligibility is deferred until execution. Previews return eligibility without mutation or event publication. Debug authority bypasses player permission, not the executor's physical rules.
+
+### Action Outcomes
+
+- `completed`: the intention finishes and the next queued action may start next tick.
+- `blocked`: current conditions prevent progress. Explicit orders wait for correction or cancellation; self-chosen actions retry for at most eight consecutive blocked ticks.
+- `failed`: the target no longer exists. The queue removes this intention and emits an identified failure; it does not silently substitute another target. Later autonomous selection or pending orders can proceed next tick.
+- `interrupted`: incapacity, being carried, an urgent concern, or the autonomous blocked-tick limit ends a commitment. Past resource use and effects are retained. Facility use releases without dropping or teleporting anything.
+
+Player permission revocation pauses an explicit order rather than deleting it. Repeated autonomous blocking may still lead to rediscovery of the same option when it appears eligible; there is no general blacklist or traffic deadlock solver. Permanent missing targets are distinguished structurally, not by parsing error strings. Other action-specific invalid states currently remain blocked and use the retry policy. Explicit cancellation removes the named intention through the command result; it is not a simulated completion event.
 
 ## Sequential Ticks
 
@@ -196,9 +207,9 @@ Initial catalog tuning, per productive tick (negative reduces a deficit):
 
 These are prototype values, not a time or health model. Every pawn's normal need progression still runs once before action effects. Signed changes are clamped to 0..100 and apply only to needs that pawn has; sleeping does not manufacture stress, and researching does not manufacture curiosity. Staff templates have hunger, fatigue and stress. Curiosity is optional, used by a research-oriented pawn or test; staff without it can still be explicitly ordered to research for its output.
 
-Sessions last the configured number of actual work ticks even if a need reaches zero early. Travel, door opening, and blocked ticks earn no effects or progress. `workTicks` lives in queued action state, while `elapsed` includes the whole intention. New commands reset workTicks to zero; save restore preserves it. Autonomy off does not interrupt active sessions. Rising stress does not preempt research mid-session; it can change the next chosen action. Cancellation retains past benefits/costs/output and abandons the remaining session.
+Sessions have a configured maximum number of actual work ticks. Self-chosen restorative activities finish early when all their applicable benefits are satisfied; explicit sessions and productive Research retain their configured duration. Travel, door opening, and blocked ticks earn no effects or progress. `workTicks` lives in queued action state, while `elapsed` includes the whole intention. New commands reset workTicks to zero; save restore preserves it. Autonomy off does not itself interrupt active sessions. Rising stress does not preempt research mid-session; it can change the next chosen action. Cancellation retains past benefits/costs/output and abandons the remaining session.
 
-One facility serves one pawn at a time. Travel does not reserve it: first productive turn wins in stable actor order. Active use is derived from the current action with workTicks > 0. Occupied facilities are omitted from new autonomous searches, and already queued competitors wait/retry. Completion or cancellation releases use immediately. A paused/blocked active user retains the commitment until completion or cancellation; richer interruption policy is deferred. Occupied facilities cannot be picked up or dispatched in a transfer. Target removal or carrying prevents further work and exposes a blocker, not a substitute target.
+One facility serves one pawn at a time. Travel does not reserve it: first productive turn wins in stable actor order. Active use is derived from a capable ground pawn's current action with workTicks > 0. Occupied facilities are omitted from new autonomous searches, and already queued competitors wait/retry. Completion, failure, interruption or cancellation releases use. An incapacitated or carried pawn no longer reserves furniture indefinitely. Its physical body remains where it is and may still block that tile. Occupied facilities cannot be picked up or dispatched in a transfer.
 
 Facilities currently occupy one blocking tile; the pawn works at an adjacent reachable tile. Bed/chair names do not imply lying/sitting animation or occupying the furniture footprint. The browser still runs the archive, so these activities are headless only.
 
@@ -260,7 +271,7 @@ Crossing-only occupancy (`canTraverse` but not `canStop`) is deliberately deferr
 
 Examples: a metalivore accepts `metal`, a plastic consumer accepts `plastic`, and an ordinary plant-food diet accepts `edible-plant`. Wood is tagged `organic`, `plant`, and `wood`, not `edible-plant`. Classification does not imply digestibility. No special branch in Eat knows steel, plastic, meat, or meals.
 
-[Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous food selection considers acceptable, reachable items by distance then ID. Dynamic pawn obstruction can still make an action wait. Explicit orders keep their specified target and never silently substitute another. An eat action approaches, rechecks, consumes at most one unit, reduces hunger according to the diet, and removes an exhausted item. Fractional remainders are supported. Pawns with no hunger need do not search for or consume food.
+[Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous food selection considers acceptable, reachable items by distance then ID. Dynamic pawn obstruction can still make an action wait. Explicit orders keep their specified target and never silently substitute another. An eat action approaches, rechecks, and consumes the minimum of one unit, available stock, and the amount needed to satisfy current hunger. Fractional remainders stay in the same entity, including carried food. Exhausted items are removed (with a tiny floating-point tolerance). A fully satisfied pawn consumes nothing; pawns with no hunger need do not search for or consume food. This retains positive-urgency selection without wasting a whole meal on a tiny deficit.
 
 Facility activities now advertise signed need effects, while Eat derives its offer from the particular consumer's diet. A material becomes food relative to the consumer, not through a universal food advertisement. Shared target search checks physical reachability and action eligibility; execution always rechecks current state. Future social/comfort activities can extend this only when their real mechanics require it.
 
@@ -286,10 +297,65 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 8 adds independent sight obstruction and authored tile properties and discards earlier experimental shapes; there are no migrations or deep save validators.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 9 includes action lifecycle recovery and discards earlier experimental shapes; there are no migrations or deep save validators. CLI session saves also retain quest counters/status and the most recent 100 events, with a session root version and matching simulation version. These are trusted development saves, not a hardened external input format.
+
+## Command-Line Console
+
+From `src_web` with Node 22 selected:
+
+```sh
+npm run sim
+npm run sim -- --scenario daily
+npm run sim -- --scenario colony
+npm run sim -- --scenario response --batch --ticks 40
+npm run sim -- --scenario colony --batch --ticks 1100
+npm run benchmark:simulation -- 40
+```
+
+`response`, `daily`, and `colony` have quest conditions; `sight` is an inspection sandbox. The CLI adapter uses the same [ScenarioSession](../application/ScenarioSession.ts) as the tests, not the archived browser controller. Vite is only a local TypeScript module loader in middleware mode; no game HTTP server is started.
+
+Each map cell contains its terrain character followed by a two-character entity token. `++` means stacked ground occupants; the legend lists every entity with its ID and location, including carried entities. Tokens are current-view shortcuts and can change when entities disappear; full IDs or local authored IDs are preferable for scripts. Coordinates are zero-based. Sight and passage symbols retain their authored characters; `inspect` exposes actual properties. The display does not constrain scenario stacking.
+
+```text
+help
+map
+status
+step 10
+run 40
+inspect researcher
+events
+autonomy researcher off
+move researcher 6 4
+order researcher {"kind":"read","targetId":"shelf"}
+cancel researcher
+sites
+site site-1
+save /tmp/my-simulation.json
+restore /tmp/my-simulation.json
+load response
+quit
+```
+
+`inspect` returns authoritative entity data plus currently discoverable concerns and a need-action candidate without changing state. `step` advances exactly the requested ticks even after a quest ends. `run` stops at quest success/failure or its supplied limit. Commands use ordinary player permission and physical execution; there is no hidden force-complete command. JSON orders accept local target IDs/tokens and normalize new activity progress. Pending orders retain their usual deferred eligibility checks.
+
+Save requires a new filename and never overwrites an existing file. Restore replaces the session with its saved simulation and quest state. Batch mode accepts `--restore <path>` as an alternative starting session, and returns exit code 0 for success/sandbox, 1 for quest failure, 2 for an active quest whose requested tick limit expired. Input can also be piped to the ordinary console. This is a developer/playtest surface, not a shipped UI or network API.
+
+## Quests As Integration Tests
+
+[Quest.ts](core/quest/Quest.ts) observes state and events; it never orders actors, owns sites, or fabricates success. Catalog quests define named objectives, failure conditions and a deadline. The initial condition set covers matched events, need bounds, entity amount, aggregate material stock, ability to act, separation distance, and elapsed ticks. Entity references are local IDs in the attached site, resolved to its instantiated IDs. Multi-site references, branches, rewards and a scripting language are not implemented yet.
+
+[ResponseTrial.ts](catalog/quests/ResponseTrial.ts) succeeds when the soldier attacks, researcher withdraws and gains separation, and medic treats the casualty. It fails for soldier/civilian incapacitation or an incomplete deadline. [DailyLifeTrial.ts](catalog/quests/DailyLifeTrial.ts) requires sustained work/care and retained food. [ColonyTrial.ts](catalog/quests/ColonyTrial.ts) checks a 12-worker, 42x26 site with shared facilities, a medic, a bleeding worker and finite food for at least 1000 ticks. Its resource condition is total food, not even usage of individual piles.
+
+The evaluator runs after each simulation tick. Failure takes precedence over simultaneous success; success can occur on the deadline tick before timeout. Event counts persist; state conditions describe the current world. Re-evaluating the same tick is idempotent, and final success/failure is durable even if the world continues changing. The application passes only that tick's new events, not the recent-events inspection buffer. Saving and restoring preserves these counters and the final result.
+
+Tests run the same quests as the CLI and assert their results. The endurance test also removes an active research target and blocks one passage after startup, then checks care/recovery/replay without forcing a substitute action or route. Focused tests remain for inexpensive invariants and failure boundaries; not every local rule needs to be expressed as a quest.
+
+## Performance Checkpoint
+
+`npm run benchmark:simulation -- 40` measures the same populated colony after five warm-up ticks. In the initial local sample, average tick time fell from about 25.5 ms to 6.0 ms (p95 41.9 ms to 9.7 ms) by indexing ground occupants once per route query. The expanded medical scenario measured about 6.5 ms average and 9.5 ms p95. These are measurements on one machine, not CI performance guarantees. The index is transient and uses current state; no saved cache or invalidation framework was added. Whole-state boundary cloning and repeated route construction remain candidates for future measured work.
 
 ## Verification And Scope
 
 Run `npm run test:simulation` from the web project. Tests cover sequential contention and following, detached inputs, door behavior, material-driven eating and quantities, autonomous versus explicit targets, control/autonomy/cancellation, carried-pawn identity, authored instances, save replay, multi-site/transit ownership, and forbidden dependency directions.
 
-`npm run check` also validates the archived application's tests/build. That does not mean the replacement is connected to the browser. Not ported: full Site 828, SCP behaviors, quests, personnel dossiers, qualifications, jobs, construction, power, full clinical care or combat systems, richer transport, or UI binding. The response encounter above implements only its stated bounded physical behaviors. Selectively reuse useful legacy calculations; do not preserve old implementations merely to satisfy old tests.
+`npm run check` also validates the archived application's tests/build. That does not mean the replacement is connected to the browser. Not ported: full Site 828, SCP behaviors, story quests, personnel dossiers, qualifications, jobs, construction, power, full clinical care or combat systems, richer transport, or browser binding. The new CLI and observational quest harness are the playable replacement surface. Movement can still deadlock in tight traffic and local fleeing is not a complete escape planner; recovery limits are not a substitute for those future mechanics. Selectively reuse useful legacy calculations; do not preserve old implementations merely to satisfy old tests.

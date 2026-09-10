@@ -14,6 +14,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:simulation": "vitest run test/simulation/",
+    "sim": "node scripts/simulation-cli.mjs",
+    "benchmark:simulation": "node scripts/benchmark-simulation.mjs",
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

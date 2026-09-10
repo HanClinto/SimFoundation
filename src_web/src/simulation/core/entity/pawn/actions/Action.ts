@@ -33,6 +33,7 @@ export interface QueuedAction {
   action: ActionState;
   elapsed: number;
   blockedReason: string | null;
+  blockedTicks?: number;
 }
 
 export interface ActionContext {
@@ -46,6 +47,8 @@ export interface ActionContext {
 export type ActionResult =
   | { status: "completed" }
   | { status: "running" }
+  | { status: "failed"; reason: string }
+  | { status: "interrupted"; reason: string }
   | { status: "blocked"; reason: string };
 
 export interface Action {

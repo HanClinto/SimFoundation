@@ -66,8 +66,8 @@ it("instantiates a shared JSON site definition twice without sharing mutable rec
     result.state.sites[first.siteId]!.entities[`${first.siteId}:operator`],
   ).toMatchObject({ needs: { hunger: { value: 0 } } });
   expect(
-    result.state.sites[first.siteId]!.entities[`${first.siteId}:meal`],
-  ).toBeUndefined();
+    result.state.sites[first.siteId]!.entities[`${first.siteId}:meal`]!.amount,
+  ).toBeCloseTo(0.33);
   expect(
     second.state.sites[first.siteId]!.entities[`${first.siteId}:meal`],
   ).toBeDefined();
@@ -132,8 +132,8 @@ it("remaps queued targets and carried references without altering saved snapshot
   expect(
     advanceSimulation(created.state).state.sites[created.siteId]!.entities[
       `${created.siteId}:meal`
-    ],
-  ).toBeUndefined();
+    ]!.amount,
+  ).toBeCloseTo(0.33);
 });
 
 it("transfers one pawn and its carried pawn through a snapshot without double ticking or duplication", () => {

@@ -180,7 +180,8 @@ it("food discovery and consumption use interaction reachability, not target-tile
   ).state;
   for (let tick = 0; tick < 5; tick++)
     state = advanceSimulation(state, materials).state;
-  expect(state.sites.site!.entities.meal).toBeUndefined();
+  expect(state.sites.site!.entities.meal!.amount).toBeGreaterThan(0);
+  expect(state.sites.site!.entities.meal!.amount).toBeLessThan(1);
   expect(positionOf(state.sites.site!, "actor")).toEqual({ x: 3, y: 1 });
   site.entities.barrier = {
     ...item("barrier", true),

@@ -19,7 +19,13 @@ export function facilityInUse(
   exceptPawnId?: string,
 ): boolean {
   return Object.values(site.entities).some((entity) => {
-    if (entity.kind !== "pawn" || entity.id === exceptPawnId) return false;
+    if (
+      entity.kind !== "pawn" ||
+      entity.id === exceptPawnId ||
+      !entity.canAct ||
+      entity.location.kind !== "ground"
+    )
+      return false;
     const action = entity.queue[0]?.action;
     return (
       action &&

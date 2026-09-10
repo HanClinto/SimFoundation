@@ -1,7 +1,7 @@
 import PF from "pathfinding";
 import type { Position } from "../entity/Entity";
 import type { Site } from "./Site";
-import { floorAt, positionOf, traversalAt } from "./TileMap";
+import { floorAt, positionOf, traversalAt, groundOccupants } from "./TileMap";
 
 export function route(
   site: Site,
@@ -10,12 +10,14 @@ export function route(
   actorId: string,
 ): readonly Position[] | null {
   if (!floorAt(site, origin) || !floorAt(site, destination)) return null;
-  if (traversalAt(site, destination, actorId).kind === "blocked") return null;
+  const occupants = groundOccupants(site);
+  if (traversalAt(site, destination, actorId, occupants).kind === "blocked")
+    return null;
   const grid = new PF.Grid(
     site.terrain.map((row, rowIndex) =>
       [...row].map((_tile, columnIndex) =>
-        traversalAt(site, { x: columnIndex, y: rowIndex }, actorId).kind ===
-        "blocked"
+        traversalAt(site, { x: columnIndex, y: rowIndex }, actorId, occupants)
+          .kind === "blocked"
           ? 1
           : 0,
       ),

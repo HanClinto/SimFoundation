@@ -54,18 +54,45 @@ export function tickActionQueue(context: ActionContext): void {
       : current.source === "player" && !pawn.playerControllable
         ? "Player control is unavailable."
         : null;
-  const result = reason
-    ? { status: "blocked" as const, reason }
-    : actionHandler(current.action).tick(context, current.elapsed);
+  let result = reason
+    ? {
+        status:
+          !pawn.canAct || pawn.location.kind === "carried"
+            ? ("interrupted" as const)
+            : ("blocked" as const),
+        reason,
+      }
+    : "targetId" in current.action && !site.entities[current.action.targetId]
+      ? {
+          status: "failed" as const,
+          reason: "The target is no longer present.",
+        }
+      : actionHandler(current.action).tick(context, current.elapsed);
   current.elapsed++;
+  current.blockedTicks =
+    result.status === "blocked" ? (current.blockedTicks ?? 0) + 1 : 0;
+  if (current.source === "autonomy" && current.blockedTicks >= 8)
+    result = {
+      status: "interrupted",
+      reason: "Autonomous action abandoned after eight blocked ticks.",
+    };
   current.blockedReason = result.status === "blocked" ? result.reason : null;
-  if (result.status === "completed") {
+  if (
+    result.status === "completed" ||
+    result.status === "failed" ||
+    result.status === "interrupted"
+  ) {
     pawn.queue.shift();
     events.push({
       siteId: site.id,
       entityId: pawn.id,
-      kind: "completed",
+      kind: result.status,
       actionId: current.id,
+      actionKind: current.action.kind,
+      ...("targetId" in current.action
+        ? { targetId: current.action.targetId }
+        : {}),
+      ...(result.status === "completed" ? {} : { reason: result.reason }),
     });
   } else if (result.status === "blocked") {
     events.push({

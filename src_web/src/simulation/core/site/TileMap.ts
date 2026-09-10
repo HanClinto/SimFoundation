@@ -1,4 +1,4 @@
-import type { Position } from "../entity/Entity";
+import type { Entity, Position } from "../entity/Entity";
 import type { Door } from "../entity/Door";
 import type { Site } from "./Site";
 import { basicTiles, type Tile } from "./Tile";
@@ -39,15 +39,33 @@ export type Traversal =
   | { kind: "blocked"; reason: string }
   | { kind: "open-door"; door: Door };
 
+export function groundOccupants(
+  site: Site,
+): ReadonlyMap<string, readonly Entity[]> {
+  const occupants = new Map<string, Entity[]>();
+  for (const entity of Object.values(site.entities)) {
+    if (entity.location.kind !== "ground") continue;
+    const position = entity.location.position;
+    const key = `${position.x},${position.y}`;
+    const current = occupants.get(key);
+    if (current) current.push(entity);
+    else occupants.set(key, [entity]);
+  }
+  return occupants;
+}
+
 export function traversalAt(
   site: Site,
   position: Position,
   actorId?: string,
+  occupants?: ReadonlyMap<string, readonly Entity[]>,
 ): Traversal {
   if (!floorAt(site, position))
     return { kind: "blocked", reason: "The terrain is impassable." };
   let doorToOpen: Door | undefined;
-  for (const entity of Object.values(site.entities)) {
+  for (const entity of occupants
+    ? (occupants.get(`${position.x},${position.y}`) ?? [])
+    : Object.values(site.entities)) {
     if (
       entity.id === actorId ||
       entity.location.kind !== "ground" ||

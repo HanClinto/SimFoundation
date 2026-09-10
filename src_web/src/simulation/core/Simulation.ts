@@ -4,8 +4,9 @@ import type { Materials } from "./material/Material";
 import { tickPawn } from "./entity/pawn/Pawn";
 import { tickDoor } from "./entity/Door";
 import { advanceTransfers } from "./site/Transfer";
+import type { ActionState } from "./entity/pawn/actions/Action";
 
-export const SIMULATION_VERSION = 8;
+export const SIMULATION_VERSION = 9;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;
@@ -23,12 +24,15 @@ export interface TickEvent {
   kind:
     | "completed"
     | "blocked"
+    | "failed"
+    | "interrupted"
     | "opened"
     | "closed"
     | "attacked"
     | "treated"
     | "fled";
   targetId?: string;
+  actionKind?: ActionState["kind"];
   actionId?: string;
   reason?: string;
 }

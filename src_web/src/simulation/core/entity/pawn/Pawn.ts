@@ -31,8 +31,17 @@ export function tickPawn(context: ActionContext): void {
     current && pawn.autonomy && pawn.canAct && pawn.location.kind === "ground"
       ? chooseConcern(context)
       : null;
-  if (current && concern && shouldInterrupt(current, concern))
+  if (current && concern && shouldInterrupt(current, concern)) {
     pawn.queue.shift();
+    context.events.push({
+      siteId: context.site.id,
+      entityId: pawn.id,
+      actionId: current.id,
+      actionKind: current.action.kind,
+      kind: "interrupted",
+      reason: `Responding to ${concern.kind}: ${concern.causeId}`,
+    });
+  }
   if (
     !pawn.queue.length &&
     pawn.autonomy &&

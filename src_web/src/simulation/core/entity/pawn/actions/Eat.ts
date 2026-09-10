@@ -55,14 +55,21 @@ export class Eat implements Action {
     const target = site.entities[this.targetId]!;
     const approach = Move.approach(context, target);
     if (approach) return approach;
-    const amount = Math.min(1, target.amount);
+    const nourishment = nourishmentFor(
+      materials[target.materialId]!,
+      pawn.diet,
+    );
+    const amount = Math.min(
+      1,
+      target.amount,
+      pawn.needs.hunger!.value / nourishment,
+    );
     pawn.needs.hunger!.value = Math.max(
       0,
-      pawn.needs.hunger!.value -
-        amount * nourishmentFor(materials[target.materialId]!, pawn.diet),
+      pawn.needs.hunger!.value - amount * nourishment,
     );
     target.amount -= amount;
-    if (target.amount === 0) delete site.entities[target.id];
+    if (target.amount <= 1e-9) delete site.entities[target.id];
     return { status: "completed" };
   }
 

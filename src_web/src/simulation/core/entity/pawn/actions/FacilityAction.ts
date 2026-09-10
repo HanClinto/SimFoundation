@@ -34,9 +34,21 @@ export abstract class FacilityAction implements Action {
     const reason = this.canStart(context);
     if (reason) return { status: "blocked", reason };
     const target = context.site.entities[this.state.targetId] as Facility;
+    const activity = target.activities[this.state.kind]!;
+    const current = context.pawn.queue[0];
+    const benefits = Object.entries(activity.needChanges).filter(
+      ([, change]) => change < 0,
+    );
+    if (
+      current?.source === "autonomy" &&
+      current.action === this.state &&
+      this.state.kind !== "research" &&
+      benefits.length > 0 &&
+      benefits.every(([id]) => (context.pawn.needs[id]?.value ?? 0) <= 0)
+    )
+      return { status: "completed" };
     const approach = Move.approach(context, target);
     if (approach) return approach;
-    const activity = target.activities[this.state.kind]!;
     applyNeedChanges(context.pawn.needs, activity.needChanges);
     this.state.workTicks++;
     this.performWork(target);

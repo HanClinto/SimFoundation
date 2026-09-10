@@ -332,9 +332,7 @@ it("an unreachable or removed research target produces no work or action stress"
   ).toBe(0);
   delete state.sites[siteId]!.entities[deskId];
   state = advance(state);
-  expect(
-    (state.sites[siteId]!.entities[actorId] as Pawn).queue[0]!.blockedReason,
-  ).toContain("not available");
+  expect((state.sites[siteId]!.entities[actorId] as Pawn).queue).toEqual([]);
 });
 
 it("prevents transporting an active facility and preserves partial research on cancellation/reload", () => {
