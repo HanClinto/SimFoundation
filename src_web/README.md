@@ -11,6 +11,13 @@ assembly, reusable departure and blocked arrivals. The Blackwood recovery,
 home corroboration and Kestrel survey loop is playable through the GUI.
 Advanced operation controls continue under [#106](https://github.com/HanClinto/SimFoundation/issues/106).
 
+Contextual physical controls include supply portions, cargo handoffs, protective
+packing/unpacking, equipment fitting/repair/refill, cooperative escort,
+stabilization, blood/postoperative care, wound care and home admission. Select
+the worker and target first; **Choose floor destination** selects the floor
+beneath objects without issuing work. The inspection target stays distinct from
+that destination. Care consumes actual packs and keeps patient/treatment records.
+
 The previous browser lives in `src/adapters/browser_legacy`, with its application
 bindings in `src/application/legacy`; it is not bundled by the active entry.
 Historical prototype features below are not claims about the replacement UI.

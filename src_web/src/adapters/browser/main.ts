@@ -27,6 +27,7 @@ import {
 import { refreshForNewDeployment } from "../browser_shared/deployment-version";
 import type { Position } from "../../simulation/core/entity/Entity";
 import { createOperationsView } from "./views/operations";
+import { physicalOrders } from "./views/physical";
 import folderIcon from "../browser_shared/assets/folder.svg";
 import recordsIcon from "../browser_shared/assets/records.svg";
 import workerIcon from "../browser_shared/assets/site-worker.svg";
@@ -70,7 +71,6 @@ const queueDock = element("div", "queue-dock");
 const portraits = element("div", "portrait-strip");
 const map = createSiteMap(inspect, (position) => {
   tile = position;
-  targetId = null;
   render();
 });
 mapLayout.append(map.root, inspection);
@@ -332,7 +332,16 @@ function render(): void {
           : "Inspect a person or object on the map, or use the entity list.",
       ),
     );
+  if (target && tile)
+    content.push(
+      element(
+        "p",
+        "destination-notice",
+        `Floor destination: (${tile.x}, ${tile.y}). Inspected target remains ${target.name}.`,
+      ),
+    );
   content.push(basicOrders(context, target));
+  content.push(...physicalOrders(context, target));
   replaceContents(queueDock, ...(subject ? [queueView(context, subject)] : []));
   replaceContents(inspection, ...content);
   operationsView.render();

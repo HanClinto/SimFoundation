@@ -1,6 +1,7 @@
 import type { Entity, Position } from "../../../simulation/core/entity/Entity";
 import type { Site } from "../../../simulation/core/site/Site";
 import { tileAt } from "../../../simulation/core/site/TileMap";
+import { carriedCargo } from "../../../simulation/core/entity/Equipment";
 import { entityArt, entitySymbol } from "./art";
 import { button, element } from "../desktop/dom";
 
@@ -187,6 +188,20 @@ export function createSiteMap(
             height: "36",
           }),
         );
+      if (entity.kind === "pawn") {
+        const cargo = carriedCargo(site.entities, entity.id)[0];
+        const cargoArt = cargo ? entityArt(cargo) : null;
+        if (cargoArt)
+          group.append(
+            svg("image", {
+              href: cargoArt,
+              x: "6",
+              y: "-22",
+              width: "20",
+              height: "23",
+            }),
+          );
+      }
       const label = svg("text", {
         x: "0",
         y: "-43",

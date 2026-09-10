@@ -2,6 +2,8 @@ coverage/
 dist/
 node_modules/
 resources/
+test-results/
+playwright-report/
 docs/references/**/*.html
 docs/references/**/*.txt
 docs/references/**/assets/

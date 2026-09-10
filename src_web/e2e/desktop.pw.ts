@@ -24,6 +24,14 @@ test("real desktop selection, physical work, persistence and layout", async ({
   await expect(page.locator(".inspection-pane")).toContainText(
     "Carried / held by alex",
   );
+  await page.getByRole("button", { name: "Choose floor destination" }).click();
+  await page.locator('[data-tile="3,8"]').click();
+  await page.getByRole("button", { name: "Move here", exact: true }).click();
+  await page
+    .locator(".action-tray")
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
+  await expect(page.locator(".queue-dock")).toContainText("No queued work");
   await page.getByRole("button", { name: "SCP menu" }).click();
   await page.getByRole("button", { name: "Save", exact: true }).click();
   const saved = await page.evaluate(() =>
@@ -48,6 +56,16 @@ test("real desktop selection, physical work, persistence and layout", async ({
   await page.mouse.up();
   const after = await title.boundingBox();
   expect(after!.y).toBeGreaterThan(before!.y);
+  const root = page.locator('[aria-label="Operations & history"]');
+  const rect = await root.boundingBox();
+  await page.mouse.move(rect!.x + rect!.width - 3, rect!.y + rect!.height - 3);
+  await page.mouse.down();
+  await page.mouse.move(
+    rect!.x + rect!.width - 83,
+    rect!.y + rect!.height - 53,
+  );
+  await page.mouse.up();
+  expect((await root.boundingBox())!.width).toBeLessThan(rect!.width);
   await page
     .getByRole("button", { name: "Close Operations & history" })
     .click();

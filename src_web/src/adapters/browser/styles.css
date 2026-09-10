@@ -45,6 +45,7 @@ button,
 input,
 select {
   font-size: 12px;
+  font-family: Arial, sans-serif;
 }
 button {
   min-height: 25px;
@@ -102,6 +103,7 @@ select:focus-visible,
 }
 .window-body {
   font-size: 12px;
+  font-family: Arial, sans-serif;
   margin: 0;
   flex: 1;
   min-height: 0;
@@ -302,6 +304,7 @@ h4 {
 small {
   display: block;
   line-height: 1.35;
+  font-size: 11px;
 }
 .order-option {
   margin: 6px 0;
