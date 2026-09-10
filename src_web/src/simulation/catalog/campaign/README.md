@@ -272,7 +272,16 @@ it cannot be used to open Kestrel before home corroboration.
 
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/permanent-loss.txt
+npm run sim < src/simulation/catalog/campaign/tests/crew-loss-recovery.txt
 ```
+
+`crew-loss-recovery.txt` deliberately loses all three original staff through
+ordinary yard combat, without injected health changes. Devon then physically
+recovers Alex's original tool, spends one retained charge on the same hostile,
+and returns Casey's body. Alex/Ben's bodies and the worn vest remain at the yard
+for later recovery; the threat is only temporarily subdued, not magically
+contained. Riley and one regional dispatch remain, along with two home trips.
+This proves finite continuation after catastrophic loss, not unlimited rescue.
 
 ## Clinical Recovery After Evacuation
 

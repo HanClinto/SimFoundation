@@ -1,0 +1,44 @@
+# Deliberate catastrophic failure through ordinary commands, followed by finite response.
+load campaign
+order alex equip suppressor
+order alex equip vest
+finish alex
+prepare intervention alex ben
+finish alex ben
+send intervention alex ben
+step 8
+site intervention
+order alex move 5 3
+order ben move 5 4
+step 200
+inspect alex
+inspect ben
+# The last original responder is deliberately sent without intervention equipment.
+site home
+prepare intervention casey
+finish casey
+send intervention casey
+step 8
+site intervention
+order casey move 5 3
+step 200
+status
+# An existing regional responder must retrieve gear and handle the same threat.
+reserve intervention devon
+step 12
+order devon equip site-1:suppressor
+finish devon
+order devon subdue specimen
+finish devon
+order devon take casey
+finish devon
+prepare home devon
+finish devon
+send home devon
+step 8
+site home
+order devon deliver @held 1 1
+finish devon
+inspect casey
+inspect devon
+status
