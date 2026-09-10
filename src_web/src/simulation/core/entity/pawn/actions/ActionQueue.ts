@@ -30,9 +30,12 @@ import { OperateDoor } from "./OperateDoor";
 import { Give } from "./Give";
 import { Capture } from "./Capture";
 import { Craft } from "./Craft";
+import { Observe } from "./Observe";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "observe":
+      return new Observe(action);
     case "craft":
       return new Craft(action);
     case "capture":

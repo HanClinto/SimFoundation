@@ -1,0 +1,89 @@
+# A recorded observation survives its observer's actual death.
+load campaign
+order alex equip suppressor
+order alex equip vest
+order alex take kit
+finish alex
+prepare intervention alex
+finish alex
+send intervention alex
+finish alex
+site intervention
+order alex move 4 3
+finish alex
+order alex observe specimen @held
+finish alex
+inspect kit
+# Deliberately fail to withdraw. No injected injury or free casualty recovery.
+order alex wait 200
+step 200
+inspect alex
+site home
+prepare intervention casey
+finish casey
+send intervention casey
+finish casey
+site intervention
+order casey equip site-1:suppressor
+finish casey
+order casey subdue specimen
+finish casey
+order casey take site-1:kit
+finish casey
+prepare home casey
+finish casey
+send home casey
+finish casey
+site home
+order casey deliver @held 8 1
+finish casey
+order ben study workshop kinetic-impact
+finish ben
+order casey take parts 2
+finish casey
+order casey deliver @held 8 1
+finish casey
+order casey craft workshop impact-vest
+finish casey
+inspect crafted-1
+# Prepare real holding before a second, better protected intervention.
+order ben take parts 1
+finish ben
+order ben deliver @held 13 7
+finish ben
+order ben service holding
+finish ben
+assign ben holding
+order casey equip crafted-1
+order casey sleep clinic
+finish casey
+order casey take restraint
+finish casey
+prepare intervention casey
+finish casey
+send intervention casey
+finish casey
+site intervention
+# One real impact demonstrates the protection/wear tradeoff, then capture.
+order casey wait 6
+finish casey
+inspect casey
+order casey capture specimen @held 2 3
+finish casey
+send home casey
+finish casey
+site home
+order casey contain @held holding
+finish casey
+order casey unrestrain specimen
+finish casey
+# Casey cannot self-treat. Use a second existing clinician, not a free cure.
+order casey move 12 6
+finish casey
+reserve home devon
+finish devon
+order devon treat casey
+finish devon
+inspect specimen
+inspect crafted-1
+status

@@ -285,12 +285,21 @@ there is no infinite rescue, free replacement or resurrection.
 
 ## Study, Crafting, Service And Named Content
 
+[Observe](core/entity/pawn/actions/Observe.ts) operates an actual carried
+recorder from a visible vantage. [ImpactRecording](core/entity/ImpactRecording.ts)
+captures only a real impact seen by an active, capable operator; it does not
+mine global history or perform another pawn turn. Records remain with the
+device through withdrawal, incapacity, death and recovery. Bounded capacity
+retains earlier evidence; quiet watching or cancellation grants no knowledge.
+
 Study physically requires identified intact sources, productive work and a
 station. Findings retain actor, tick and actual source IDs. Repeated ordinary
 plans do not duplicate findings; per-actor rehearsal plans qualify each host
 separately. A contained-source plan requires actual ownership by effective
 holding throughout work, not a nearby carried subject. Dead bodies cannot
-satisfy a living-source study.
+satisfy a living-source study. Record-based plans instead require qualifying
+physical recordings and preserve their incident IDs in the finding. They can
+support useful engineering after a casualty without erasing that casualty.
 
 [Craft](core/entity/pawn/actions/Craft.ts) turns a recorded finding into an
 authored item through actual bench work and physical supplies. Its small

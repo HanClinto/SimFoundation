@@ -6,6 +6,7 @@ export interface StudyPlan {
   finding: string;
   perActor?: boolean;
   containedSources?: boolean;
+  recordedImpactsFrom?: string;
 }
 
 export interface Finding {
@@ -15,6 +16,7 @@ export interface Finding {
   actorId: string;
   tick: number;
   sourceIds: string[];
+  observationIds?: string[];
 }
 
 export function recordedFinding(

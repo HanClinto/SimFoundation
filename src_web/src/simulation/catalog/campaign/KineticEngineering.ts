@@ -1,6 +1,31 @@
 import type { StudyPlan } from "../../core/entity/Study";
 import type { CraftingRecipe } from "../../core/entity/Crafting";
 import { DampedTransportRestraint } from "./TransportRestraint";
+import { ImpactProtectiveVest } from "./ProtectiveVest";
+
+export const ImpactRecordingStudy: StudyPlan = {
+  id: "kinetic-impact",
+  title: "Kinetic impact recording analysis",
+  ticks: 12,
+  requires: ["survey-kit"],
+  recordedImpactsFrom: "kinetic-specimen",
+  finding:
+    "Physical analysis of a recovered instrument trace compares a witnessed kinetic impact with its resulting severity. It supports a short-burst protective design: greater immediate reduction but faster wear. The record can outlive its observer; this finding neither erases casualties nor awards knowledge for unrecorded damage.",
+};
+
+export const ImpactVestRecipe: CraftingRecipe = {
+  id: "impact-vest",
+  title: "Short-burst impact vest",
+  requiresFinding: ImpactRecordingStudy.id,
+  ticks: 16,
+  supplyDefinitionId: "maintenance-parts",
+  amount: 2,
+  output: {
+    ...ImpactProtectiveVest.defaults,
+    definitionId: ImpactProtectiveVest.id,
+    name: ImpactProtectiveVest.name,
+  },
+};
 
 export const KineticLoadingStudy: StudyPlan = {
   id: "kinetic-damping",

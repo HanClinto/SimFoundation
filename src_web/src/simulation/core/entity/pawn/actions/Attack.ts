@@ -5,6 +5,7 @@ import { incapacitated } from "../Health";
 import type { Pawn } from "../Pawn";
 import { wornEquipment } from "../../Equipment";
 import { applyNeedChanges } from "../Needs";
+import { recordWitnessedImpact } from "../../ImpactRecording";
 
 export interface AttackState {
   kind: "attack";
@@ -59,6 +60,7 @@ export class Attack implements Action {
       ),
     );
     if (damage <= 0) return { status: "completed" };
+    const severity = damage;
     const armor = wornEquipment(site, target.id, "armor");
     if (armor?.equipment?.armor && (armor.integrity ?? 100) > 0) {
       const before = armor.integrity ?? 100;
@@ -79,6 +81,8 @@ export class Attack implements Action {
               : `${target.name}'s worn protection is nearly exhausted (${armor.integrity} condition).`,
         });
     }
+    // An active recorder can preserve the impact that incapacitates its operator.
+    recordWitnessedImpact(context, target, severity, damage, armor?.id);
     if (damage <= 0) return { status: "running" };
     const fatalAfterTicks = pawn.response!.attack!.fatalAfterTicks;
     if (fatalAfterTicks !== undefined && !target.health!.mortality) {

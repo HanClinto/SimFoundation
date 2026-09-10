@@ -162,6 +162,35 @@ npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 
 ## Research And Engineering
 
+`brief observation` describes useful evidence after a costly incident. Carry
+the actual `kit`, take a visible vantage and `order alex observe specimen
+@held`. It watches from that position, activating on the worker's next normal
+turn; it does not approach the threat. Both attacker and victim must be visible
+at the moment of a real impact. Quiet waiting, merely carrying the kit and the
+global event log never create records. A cancelled, blocked, incapable or
+unauthorized watch does not record.
+
+Four records fit the device. `inspect kit` shows their observer/source/victim,
+dates and modeled incoming/applied damage. One Observe order captures one
+incident and completes, including when it fills the device. Fully absorbed
+actual impacts can be recorded; an already active observer can capture the hit
+that incapacitates them. Later death does not erase the device or its records.
+
+Recover that same kit, deliver it beside the workshop, then `order ben study
+workshop kinetic-impact`. The physical analysis names the qualifying record,
+not an omniscient disaster reward. It enables `order casey craft workshop
+impact-vest`: two actual maintenance packs and sixteen productive work ticks.
+The vest absorbs20 rather than10 modeled severity but wears by40 rather than20
+each hit. It sacrifices durability for greater immediate protection.
+
+The [incident research walkthrough](tests/incident-research.txt) deliberately
+loses Alex after a recorded impact. Casey recovers his actual tool and kit; Ben
+analyzes the record; Casey builds the new vest and recaptures the same subject.
+The original body/broken vest stay in the field, charges remain spent, and
+Casey's smaller wound still needs a second real clinician. Move out of the
+cramped holding approach before arranging treatment. This is a preserved-loss
+progression example, not an incentive to sacrifice people or a proof of fun.
+
 `brief engineering` describes a complete progression loop using the original
 kinetic resident. After actual capture/intake, `order alex study holding
 kinetic-damping` records a twelve-tick controlled observation of that same
@@ -567,6 +596,7 @@ resident care and group evacuation in the same saved campaign, without resets:
 npm run sim < src/simulation/catalog/campaign/tests/home-loop.txt
 npm run sim < src/simulation/catalog/campaign/tests/connected-management.txt
 npm run sim -- --strict < src/simulation/catalog/campaign/tests/reusable-travel.txt
+npm run sim -- --strict < src/simulation/catalog/campaign/tests/incident-research.txt
 ```
 
 ## Attribution And Limits

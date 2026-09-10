@@ -4,6 +4,7 @@ import { facilityInUse } from "../../Facility";
 import { positionOf, distance } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { secureContainment } from "../../Containment";
+import { recordedImpactFrom } from "../../ImpactRecording";
 
 export interface StudyState {
   kind: "study";
@@ -28,6 +29,8 @@ export class Study implements Action {
     );
     if (!plan || !Number.isSafeInteger(plan.ticks) || plan.ticks < 1)
       return "Unknown study plan.";
+    if (plan.recordedImpactsFrom && plan.requires.length === 0)
+      return "A recorded-impact study needs a physical recorder source.";
     if (facilityInUse(site, target.id, pawn.id))
       return "The study station is occupied.";
     if (plan.containedSources && !secureContainment(target, tick))
@@ -64,6 +67,7 @@ export class Study implements Action {
       first.id < second.id ? -1 : first.id > second.id ? 1 : 0,
     );
     const sourceIds: string[] = [];
+    const observationIds: string[] = [];
     for (const definitionId of plan.requires) {
       const source = sources.find(
         (entity) =>
@@ -72,6 +76,9 @@ export class Study implements Action {
           !sourceIds.includes(entity.id) &&
           entity.amount > 0 &&
           (entity.integrity ?? 100) > 0 &&
+          (!plan.recordedImpactsFrom ||
+            recordedImpactFrom(entity, plan.recordedImpactsFrom) !==
+              undefined) &&
           (plan.containedSources
             ? entity.location.kind === "carried" &&
               entity.location.carrierId === station.id
@@ -86,10 +93,16 @@ export class Study implements Action {
           status: "blocked",
           reason: plan.containedSources
             ? `Admit the actual living ${definitionId} into this secure cell before study.`
-            : `Bring ${definitionId} within one tile of the station.`,
+            : plan.recordedImpactsFrom
+              ? `Bring ${definitionId} with an actual recorded ${plan.recordedImpactsFrom} impact within one tile of the station.`
+              : `Bring ${definitionId} within one tile of the station.`,
         };
       }
       sourceIds.push(source.id);
+      if (plan.recordedImpactsFrom)
+        observationIds.push(
+          recordedImpactFrom(source, plan.recordedImpactsFrom)!.id,
+        );
     }
     if (++this.state.workTicks < plan.ticks) return { status: "running" };
     station.study!.findings.push({
@@ -99,6 +112,7 @@ export class Study implements Action {
       actorId: pawn.id,
       tick: context.tick,
       sourceIds,
+      ...(observationIds.length ? { observationIds } : {}),
     });
     return { status: "completed" };
   }

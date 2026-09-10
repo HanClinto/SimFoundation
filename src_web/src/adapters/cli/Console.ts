@@ -135,6 +135,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "observe")
+    return `observe ${action.targetId} with ${action.recorderId} | ${action.workTicks > 0 ? "watching for an actual impact" : "not yet watching"}`;
   if (action.kind === "craft")
     return `craft ${action.recipeId} at ${action.targetId} | work ${action.workTicks}${action.funding ? ` | spent ${action.funding.inputs.map((input) => `${input.amount} from ${input.sourceId}`).join(", ")}` : ""}`;
   if (action.kind === "capture")
@@ -261,6 +263,7 @@ order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> sub
 order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
 order <worker> craft <bench> <recipe> (recorded research and physical supplies)
+order <worker> observe <actor> <carried-recorder> (watch from current visible vantage)
 order <worker> door <door> <open|closed|automatic> (physical controls)
 order <worker> give <carried-object|@held> <teammate>
 order <worker> capture <subject> <restraint|@held> <x> <y> (local physical job)
@@ -737,6 +740,11 @@ export function executeLine(
             action = {
               ...action,
               recipientId: resolve(console, action.recipientId).id,
+            };
+          if (action.kind === "observe")
+            action = {
+              ...action,
+              recorderId: resolve(console, action.recorderId, actor.id).id,
             };
         }
         result = executeCommand(

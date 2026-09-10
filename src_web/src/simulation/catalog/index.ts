@@ -5,11 +5,14 @@ import { AccidentCasualty } from "./campaign/emergency";
 import { KineticHoldingCell, ContainmentCharge } from "./campaign/holding";
 import {
   InterventionTool,
-  ProtectiveVest,
   KineticSpecimen,
   SuppressionUnit,
   EquipmentBench,
 } from "./campaign/intervention";
+import {
+  ProtectiveVest,
+  ImpactProtectiveVest,
+} from "./campaign/ProtectiveVest";
 import {
   TransportRestraint,
   DampedTransportRestraint,
@@ -126,6 +129,7 @@ export const entities: EntityTemplates = Object.fromEntries(
     ContainmentCharge,
     InterventionTool,
     ProtectiveVest,
+    ImpactProtectiveVest,
     KineticSpecimen,
     TransportRestraint,
     DampedTransportRestraint,

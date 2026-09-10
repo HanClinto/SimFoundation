@@ -4,7 +4,7 @@ export const SurveyKit: EntityTemplate = {
   id: "survey-kit",
   name: "Field comparison kit",
   description:
-    "A portable set of measuring tools used by the Kestrel field study. Carry it to the field station and keep it nearby during work; it competes with recovered cargo for a carrier.",
+    "Portable measuring tools used by the Kestrel field study, with a manually operated impact recorder holding four records. Carry it and explicitly observe a visible actor to record a real witnessed impact; mere possession or global event history does not collect evidence. It competes with recovered cargo for a carrier.",
   defaults: {
     kind: "item",
     materialId: "steel",
@@ -13,6 +13,7 @@ export const SurveyKit: EntityTemplate = {
     blocksMovement: false,
     blocksSight: false,
     integrity: 100,
+    impactRecorder: { capacity: 4, records: [] },
   },
 };
 

@@ -1,7 +1,11 @@
 import type { EntityTemplate } from "../../core/entity/EntityTemplate";
 import type { SiteTemplate } from "../../core/site/Site";
 import { FieldAgent } from "../actors/staff/FieldAgent";
-import { DampedRestraintRecipe } from "./KineticEngineering";
+import {
+  DampedRestraintRecipe,
+  ImpactVestRecipe,
+  ImpactRecordingStudy,
+} from "./KineticEngineering";
 
 export const InterventionTool: EntityTemplate = {
   id: "intervention-tool",
@@ -29,27 +33,6 @@ export const InterventionTool: EntityTemplate = {
           ticks: 6,
         },
       },
-    },
-  },
-};
-
-export const ProtectiveVest: EntityTemplate = {
-  id: "protective-vest",
-  name: "Protective intervention vest",
-  description:
-    "Actual worn armor reduces each modeled impact by ten severity and loses twenty condition. At zero condition it offers no protection. It does not erase bleeding or make mortality impossible.",
-  defaults: {
-    kind: "item",
-    materialId: "plastic",
-    amount: 1,
-    integrity: 100,
-    carryable: true,
-    blocksMovement: false,
-    blocksSight: false,
-    equipment: {
-      slot: "armor",
-      worn: false,
-      armor: { reduction: 10, wear: 20 },
     },
   },
 };
@@ -139,7 +122,7 @@ export const EquipmentBench: EntityTemplate = {
   id: "equipment-bench",
   name: "Equipment maintenance bench",
   description:
-    "Ten productive work ticks and one physical maintenance pack restore up to forty condition on actual equipment. Gear must be beside the bench or worn/held by the worker; charges are not replenished. A recorded kinetic-damping study also unlocks the damped-restraint design: two maintenance packs, sixteen work ticks. Clear the crafted output before repeating. Cancelled funded work never refunds parts.",
+    "Ten productive work ticks and one physical maintenance pack restore up to forty condition on actual equipment; charges are not replenished. Physical research unlocks the listed designs: controlled loading study for a damped restraint, or recovered impact records for a short-burst vest. Each build costs two maintenance packs and sixteen work ticks. Keep inputs beside the bench or carried by the worker; clear the crafted output before repeating. Cancelled funded work never refunds parts.",
   defaults: {
     kind: "facility",
     materialId: "steel",
@@ -154,6 +137,10 @@ export const EquipmentBench: EntityTemplate = {
       ticks: 10,
       condition: 40,
     },
-    crafting: { recipes: [DampedRestraintRecipe], nextItemId: 1 },
+    study: { plans: [ImpactRecordingStudy], findings: [] },
+    crafting: {
+      recipes: [DampedRestraintRecipe, ImpactVestRecipe],
+      nextItemId: 1,
+    },
   },
 };

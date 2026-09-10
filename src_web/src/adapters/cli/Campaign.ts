@@ -134,11 +134,20 @@ export function campaignStatus(session: ScenarioSession): string {
         ", ",
       )}. reserve <home|route> <devon|riley>; physical arrival in 12 ticks.`,
     `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
-    `brief <${Object.keys(opportunities).join("|")}|scp294|clinic|engineering> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
+    `brief <${Object.keys(opportunities).join("|")}|scp294|clinic|engineering|observation> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
   ].join("\n");
 }
 
 export function campaignBrief(key?: string): string {
+  if (key === "observation")
+    return [
+      "Witnessed incident research: a real record can outlive its observer",
+      "Carry kit, choose a visible vantage, then order alex observe specimen @held. Observation stays where the worker stands; it does not walk into melee. It activates on the worker's ordinary turn.",
+      "The active operator must see both attacker and victim when a real impact occurs. Four records fit the kit. Mere possession, quiet watching, cancelled work and the global event history create no evidence.",
+      "Recover that same kit after withdrawal or casualty. Deliver it beside workshop, then order ben study workshop kinetic-impact. The dated finding names the physical kit and actual incident record, even if the original observer died.",
+      "order casey craft workshop impact-vest spends two maintenance packs and sixteen work ticks. The new vest reduces modeled impacts by20 but wears by40, versus the original10/20: better immediate protection, faster exhaustion.",
+      "Inspect kit for records and the crafted item for research/material provenance. No casualty is restored, no old gear repaired, and no suppression charge granted. Cancel a quiet watch rather than expecting evidence from waiting alone.",
+    ].join("\n");
   if (key === "engineering")
     return [
       "Research -> physical engineering -> longer awake custody",
@@ -184,6 +193,7 @@ export function campaignBrief(key?: string): string {
     "Use autonomy <staff> on for home routines; preparation disables it so staff wait at the loading area. Keep the arrival pad clear.",
     "SCP-294 is installed at home for a bounded experiment. brief scp294 explains finite paid requests and sample comparison.",
     "brief engineering explains how a controlled kinetic study unlocks a real, supply-backed restraint design.",
+    "brief observation explains physical incident records and learning after costly failure without erasing losses.",
     "SCP-1867 by Djoric and SCP-1370 by Sorts, SCP Wiki, CC BY-SA 3.0. Kestrel and this campaign are original adaptations; inspect evidence for source links.",
   ].join("\n");
 }

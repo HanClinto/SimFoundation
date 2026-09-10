@@ -91,6 +91,8 @@ export function instantiateSite(
           action = { ...action, benchId: reference(action.benchId) };
         if (action.kind === "give")
           action = { ...action, recipientId: reference(action.recipientId) };
+        if (action.kind === "observe")
+          action = { ...action, recorderId: reference(action.recorderId) };
         return {
           ...entry,
           id: `${reference(entity.id)}:initial-action-${index}`,
