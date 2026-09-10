@@ -8,6 +8,7 @@ import type { Response } from "./Response";
 import { chooseConcern, shouldInterrupt } from "./concerns/Concerns";
 import { tickActionQueue } from "./actions/ActionQueue";
 import { chooseAction } from "./Autonomy";
+import type { OrganMending } from "./actions/Mend";
 
 export interface Pawn extends EntityBase {
   kind: "pawn";
@@ -16,6 +17,9 @@ export interface Pawn extends EntityBase {
   autonomy: boolean;
   playerControllable: boolean;
   acceptsEscort?: boolean;
+  human?: boolean;
+  ageYears?: number;
+  organMending?: OrganMending;
   needs: Record<string, Need>;
   diet: readonly DietRule[];
   eatingRate: number;

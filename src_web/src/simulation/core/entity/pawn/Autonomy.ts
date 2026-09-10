@@ -3,11 +3,14 @@ import { needActions } from "./actions/NeedActions";
 import { chooseNeedAction } from "./Needs";
 import { positionOf, samePosition } from "../../site/TileMap";
 import { chooseConcern } from "./concerns/Concerns";
+import { Mend } from "./actions/Mend";
 
 export function chooseAction(context: ActionContext): ActionState | null {
   const { site, pawn } = context;
   const concern = chooseConcern(context);
   if (concern) return concern.action;
+  const mending = Mend.offer(context);
+  if (mending) return mending;
   const needed = chooseNeedAction(context, needActions);
   if (needed) return needed;
   const origin = positionOf(site, pawn.id);

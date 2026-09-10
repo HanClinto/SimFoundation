@@ -17,6 +17,8 @@ export const FieldAgent = {
     canAct: true,
     autonomy: true,
     playerControllable: true,
+    human: true,
+    ageYears: 32,
     health: { wounds: [], bloodLoss: 0 },
     response: {
       faction: "site",

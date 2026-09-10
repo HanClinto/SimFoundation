@@ -88,6 +88,10 @@ export function executeCommand(
     if ("workTicks" in intention) intention.workTicks = 0;
     if (intention.kind === "dispense") delete intention.paymentId;
     if (intention.kind === "nurse") delete intention.supplyId;
+    if (intention.kind === "mend") {
+      delete intention.material;
+      delete intention.organ;
+    }
     updated = {
       ...entity,
       queue: [

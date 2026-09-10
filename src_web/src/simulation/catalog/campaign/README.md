@@ -110,6 +110,12 @@ npm run sim < src/simulation/catalog/campaign/tests/carried-recovery.txt
 Core version 15 records incapacity cause and paid clinical work. Old development
 saves are discarded, not migrated.
 
+[SCP-2295 supported care](../quests/scp2295/README.md) extends this with specific
+lung replacement, finite textiles/self-fabric and paid postoperative nursing.
+`brief triage` explains the two-adult transfer. The bear acts on the youngest
+nearby major-organ patient; brain trauma is not repaired. Positioning and
+follow-up matter, and unrelated injuries are retained.
+
 ## SCP-507 Returnee
 
 The [SCP-507 returnee route](../quests/scp507/README.md) reuses cooperative

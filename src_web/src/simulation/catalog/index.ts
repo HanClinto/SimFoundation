@@ -24,6 +24,9 @@ import { HostileGuard } from "./actors/threats/HostileGuard";
 import { SCP1370 } from "./actors/anomalies/SCP1370";
 import { SCP294 } from "./actors/anomalies/SCP294";
 import { SCP507 } from "./actors/anomalies/SCP507";
+import { SCP2295 } from "./actors/anomalies/SCP2295";
+import { TextileBundle, OrganTraumaPatient } from "./quests/scp2295/setup";
+import { Fabric } from "./materials/Fabric";
 import {
   ReturneeFlashlight,
   ReturneeLog,
@@ -77,6 +80,9 @@ export const entities: EntityTemplates = Object.fromEntries(
     SCP1370,
     SCP294,
     SCP507,
+    SCP2295,
+    TextileBundle,
+    OrganTraumaPatient,
     ReturneeFlashlight,
     ReturneeLog,
     ReturneeReviewStation,
@@ -102,8 +108,7 @@ export const entities: EntityTemplates = Object.fromEntries(
 );
 
 export const materials: Materials = Object.fromEntries(
-  [Steel, Wood, Plastic, Stone, PlantFood, AnimalTissue, Water].map((entry) => [
-    entry.id,
-    entry,
-  ]),
+  [Steel, Wood, Plastic, Stone, PlantFood, AnimalTissue, Water, Fabric].map(
+    (entry) => [entry.id, entry],
+  ),
 );

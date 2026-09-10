@@ -5,6 +5,7 @@ import { scp1370Scenario } from "../quests/scp1370/setup";
 import { courierSite, courierInspection } from "./courier";
 import { CorroborationBench } from "../quests/scp1867/collection";
 import { returneeSite } from "../quests/scp507/setup";
+import { triageSite } from "../quests/scp2295/setup";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -22,6 +23,17 @@ export const home: SiteTemplate = {
   ],
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
+    {
+      id: "bear",
+      definitionId: "scp-2295",
+      location: { kind: "ground", position: { x: 6, y: 7 } },
+    },
+    {
+      id: "textiles",
+      definitionId: "textile-bundle",
+      location: { kind: "ground", position: { x: 7, y: 7 } },
+      overrides: { amount: 2 },
+    },
     {
       id: "clinic",
       definitionId: "clinical-bed",
@@ -317,5 +329,17 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
       { x: 2, y: 4 },
     ],
     duration: 9,
+  },
+  triage: {
+    name: "SCP-2295 supported adult transfer",
+    briefing:
+      "Iris (29) and Owen (54) have major lung trauma and need carrying. Send two actual staff; each can carry one person. The home bear automatically chooses the youngest major-organ patient within two tiles. Lay textiles nearby to spare its finite self-fabric; unsupported brain trauma is not repaired. Bring Iris to (6,6) before Owen to (5,7). After replacement they remain postoperative, with other injuries and lost blood unchanged. Carry each to (4,2) by clinic for one real nurse course, then ordinary rest admission. Prioritize positioning and supplies, not a generic heal order.",
+    site: triageSite,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 10,
   },
 };

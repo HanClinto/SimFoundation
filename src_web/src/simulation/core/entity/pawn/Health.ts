@@ -8,10 +8,30 @@ export interface Wound {
   treatedBy?: string;
 }
 
+export type OrganKind = "lung" | "brain";
+
+export interface OrganState {
+  trauma: number;
+  replacement?: {
+    actorId: string;
+    tick: number;
+    materialSourceId: string;
+    materialId: string;
+    amount: number;
+  };
+}
+
 export interface Health {
   wounds: Wound[];
   bloodLoss: number;
-  incapacity?: "blood-loss" | "wounds";
+  organs?: Partial<Record<OrganKind, OrganState>>;
+  incapacity?: "blood-loss" | "wounds" | "organ-trauma" | "postoperative";
+}
+
+export function majorOrganTrauma(health: Health): boolean {
+  return Object.values(health.organs ?? {}).some(
+    (organ) => organ.trauma >= 100,
+  );
 }
 
 export function advanceHealth(health: Health): void {
@@ -24,6 +44,7 @@ export function advanceHealth(health: Health): void {
 
 export function incapacitated(health: Health): boolean {
   return (
+    majorOrganTrauma(health) ||
     health.bloodLoss >= 100 ||
     health.wounds.reduce((total, wound) => total + wound.severity, 0) >= 100
   );
@@ -40,7 +61,9 @@ export function advancePhysiology(pawn: Pawn): void {
           0,
         ) >= 100
           ? "wounds"
-          : "blood-loss";
+          : majorOrganTrauma(pawn.health)
+            ? "organ-trauma"
+            : "blood-loss";
       pawn.canAct = false;
     }
   }

@@ -195,6 +195,8 @@ Optional [Response.ts](core/entity/pawn/Response.ts) data specifies faction, hos
 
 [Nurse.ts](core/entity/pawn/actions/Nurse.ts) adds a narrow clinical recovery course: a medically trained worker approaches an allied, stabilized patient physically positioned beside a clinical bed. A real pack is consumed when care starts; gradual blood recovery and spent supplies survive interruption. Bed and patient occupancy derive from active queues. A completed supported course can clear recorded blood-loss incapacity, not severe wounds or unrelated inability to act. The [carried-rescue walkthrough](catalog/campaign/tests/carried-recovery.txt) demonstrates delayed care without an admission cure. Core version 15 adds these fields and discards older snapshots.
 
+[SCP-2295](catalog/quests/scp2295/README.md) supplies a bounded organ-mending capability to ordinary autonomy. [Mend.ts](core/entity/pawn/actions/Mend.ts) selects the youngest nearby human with major organ trauma, spends real textile or finite self-material, and records the specific replacement. Brain trauma is unsupported. Replacements leave postoperative incapacity and other injuries; a paid Nurse course is still required. Core version 16 adds lung/brain facts and replacement provenance without a general anatomy model.
+
 ### Commitments And Interruption
 
 New concerns interrupt only self-chosen facility activities, movement or waiting. Abandoning such an intention preserves earned output and releases facility use through the existing queue-derived ownership. Pending explicit orders are retained. Player/script/debug orders are not automatically overridden; turning autonomy off suppresses new response selection, not health progression or already queued responses. There is no new draft/enlistment state.

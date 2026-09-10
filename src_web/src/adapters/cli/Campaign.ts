@@ -89,7 +89,7 @@ export function campaignBrief(key?: string): string {
       "Stabilize bleeding first. Deliver a carried patient to (4,2), beside clinic, then order casey nurse <patient> clinic.",
       "One of four clinical-packs funds up to 25 blood-loss recovery over 16 work ticks. Keep packs beside the bed or carried by the medic.",
       "Spent supplies and partial recovery remain after cancellation. Recorded blood-loss incapacity can clear on completion; wounds and arbitrary incapacity do not.",
-      "After recovery, escort the cooperative person to an ordinary bed and admit for rest. Severe wound care is not implemented by this course.",
+      "After recovery, escort the cooperative person to an ordinary bed and admit for rest. A full paid course is also required after organ replacement, even with zero blood loss. Severe wounds and brain trauma are not cured by this course.",
     ].join("\n");
   if (key === "scp294")
     return [

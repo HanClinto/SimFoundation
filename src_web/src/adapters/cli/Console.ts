@@ -99,6 +99,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "mend")
+    return `mend ${action.targetId}${action.organ ? ` ${action.organ}` : ""} | work ${action.workTicks}${action.material ? ` | fabric spent from ${action.material.sourceId}` : ""}`;
   if (action.kind === "nurse")
     return `nurse ${action.targetId} at ${action.bedId} | work ${action.workTicks}${action.supplyId ? " | clinical pack spent" : ""}`;
   if (action.kind === "pack")

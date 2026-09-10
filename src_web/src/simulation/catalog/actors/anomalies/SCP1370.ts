@@ -15,6 +15,7 @@ export const SCP1370 = {
   },
   defaults: {
     ...FieldAgent.defaults,
+    human: false,
     materialId: "steel",
     mobile: false,
     playerControllable: false,

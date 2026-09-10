@@ -1,0 +1,44 @@
+# Test-only original adult transfer. The bear acts automatically.
+load campaign
+brief triage
+prepare triage alex casey
+step 12
+send triage alex casey
+step 10
+site triage
+order alex take iris
+order casey take owen
+step 16
+prepare home alex casey
+step 20
+send home alex casey
+step 10
+site home
+# Position the younger patient before unloading the older one.
+order alex deliver iris 6 6
+step 10
+order casey deliver owen 5 7
+step 16
+inspect bear
+inspect iris
+inspect owen
+# Replacement is not the end of care.
+order alex deliver iris 4 2
+step 12
+order casey nurse iris clinic
+step 24
+order casey escort iris 6 2
+step 16
+admit iris bed
+step 12
+order alex deliver owen 4 2
+step 12
+order casey nurse owen clinic
+step 24
+order casey escort owen 10 3
+step 20
+admit owen guest-bed
+step 12
+inspect clinical-packs
+inspect textiles
+status

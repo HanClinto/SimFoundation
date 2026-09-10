@@ -18,9 +18,12 @@ import { Dispense } from "./Dispense";
 import { Escort, Follow } from "./Escort";
 import { Pack, Unpack } from "./Pack";
 import { Nurse } from "./Nurse";
+import { Mend } from "./Mend";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "mend":
+      return new Mend(action);
     case "nurse":
       return new Nurse(action);
     case "pack":

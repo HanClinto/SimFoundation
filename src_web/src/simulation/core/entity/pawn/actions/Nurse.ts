@@ -16,7 +16,8 @@ export interface NurseState {
 
 function finishRecovery(patient: Pawn): void {
   if (
-    patient.health?.incapacity === "blood-loss" &&
+    (patient.health?.incapacity === "blood-loss" ||
+      patient.health?.incapacity === "postoperative") &&
     !incapacitated(patient.health)
   ) {
     patient.canAct = true;
@@ -77,7 +78,10 @@ export class Nurse implements Action {
     const patient = site.entities[this.state.targetId] as Pawn;
     const bed = site.entities[this.state.bedId] as Facility;
     const care = bed.care!;
-    if (patient.health!.bloodLoss <= 0) {
+    if (
+      patient.health!.bloodLoss <= 0 &&
+      patient.health!.incapacity !== "postoperative"
+    ) {
       finishRecovery(patient);
       return { status: "completed" };
     }
