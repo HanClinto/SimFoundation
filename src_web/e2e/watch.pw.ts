@@ -63,42 +63,38 @@ test("three real staff maintain direct watch through guarded relief, study and s
     page.getByRole("button", { name: "Relieve selected worker", exact: true }),
   ).toBeDisabled();
   await watch(page, "casey", subject);
-  await page.getByRole("button", { name: "Operations", exact: true }).click();
+  await page.getByLabel("Site", { exact: true }).selectOption("site-1");
   await page
-    .getByRole("button", { name: "Response desk", exact: true })
-    .click();
+    .getByLabel("Worker", { exact: true })
+    .selectOption({ label: "ben" });
   await page
-    .getByRole("button", { name: "Dispatch riley to inspected site" })
+    .getByRole("button", { name: "Clear selected service assignment" })
     .click();
-  await page
-    .getByRole("button", { name: "Travel / preparation", exact: true })
-    .click();
-  await finish(page, "Wait for arrival");
-  await page
-    .getByRole("button", { name: "Site map & orders", exact: true })
-    .click();
+  if (
+    await page
+      .getByRole("button", { name: "Finish current commitments", exact: true })
+      .count()
+  )
+    await finish(page);
+  await order(page, "ben", "site-1:holding", "Repair / service");
+  await travel(page, "statue", ["ben"]);
   const gate = await inspectNamed(page, "Annex locked entry");
-  await order(page, "riley", gate, "Door: held-open");
-  await move(page, "riley", 3, 3);
+  await order(page, "ben", gate, "Door: held-open");
+  await move(page, "ben", 3, 3);
   await relieve(page, "alex", "casey");
   await move(page, "alex", 10, 3);
   await watch(page, "alex", subject);
   await relieve(page, "casey", "alex");
   await move(page, "casey", 9, 4);
   await watch(page, "casey", subject);
-  await move(page, "riley", 6, 3);
-  await order(page, "riley", gate, "Door: held-closed");
+  await move(page, "ben", 6, 3);
+  await order(page, "ben", gate, "Door: held-closed");
   const station = await inspectNamed(
     page,
     "Annex cleaning and protocol station",
   );
-  await order(page, "riley", station, "Repair / service");
-  await order(
-    page,
-    "riley",
-    station,
-    "Study Direct-watch maintenance protocol",
-  );
+  await order(page, "ben", station, "Repair / service");
+  await order(page, "ben", station, "Study Direct-watch maintenance protocol");
   await page
     .getByLabel("Worker", { exact: true })
     .selectOption({ label: "alex" });
@@ -123,31 +119,40 @@ test("three real staff maintain direct watch through guarded relief, study and s
     path: "test-results/direct-watch.png",
     fullPage: true,
   });
-  await order(page, "riley", gate, "Door: held-open");
-  await move(page, "riley", 7, 1);
-  await watch(page, "riley", subject);
-  await relieve(page, "alex", "riley");
-  await move(page, "alex", 4, 1);
+  await order(page, "ben", gate, "Door: held-open");
+  await watch(page, "ben", subject);
+  await relieve(page, "alex", "ben");
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption({ label: "alex" });
+  await floor(page, 4, 1);
+  await page.getByRole("button", { name: "Move here", exact: true }).click();
+  await relieve(page, "ben", "casey");
+  await move(page, "ben", 3, 3);
+  await travel(page, "home", ["ben"]);
+  await order(page, "ben", "site-1:holding", "Repair / service");
+  await page
+    .getByRole("button", {
+      name: "Assign selected worker to recurring service",
+    })
+    .click();
+  await page.getByLabel("Inspect", { exact: true }).selectOption("site-1:ben");
+  await expect(
+    page.getByRole("button", { name: "Autonomy: ON", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Site", { exact: true }).selectOption(statueSite);
   await watch(page, "alex", subject);
   await relieve(page, "casey", "alex");
   await move(page, "casey", 4, 5);
-  await watch(page, "casey", subject);
-  await relieve(page, "riley", "alex");
-  await move(page, "riley", 3, 3);
-  await order(page, "riley", gate, "Door: held-closed");
-  for (const worker of ["alex", "casey"]) {
-    await page
-      .getByLabel("Worker", { exact: true })
-      .selectOption({ label: worker });
-    await page
-      .locator(".action-tray")
-      .getByRole("button", { name: "Cancel", exact: true })
-      .click();
-  }
+  await order(page, "casey", gate, "Door: held-closed");
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption({ label: "alex" });
+  await page
+    .locator(".action-tray")
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
   await travel(page, "home", ["alex", "casey"]);
-  await move(page, "alex", 1, 7);
-  await page.getByLabel("Site", { exact: true }).selectOption(statueSite);
-  await travel(page, "home", ["riley"]);
   const session = await save(page);
   const annex = session.state.sites[statueSite]!;
   const apparatus = annex.entities[station];
@@ -160,21 +165,33 @@ test("three real staff maintain direct watch through guarded relief, study and s
     session.events.some(
       (event) =>
         event.kind === "died" &&
-        ["site-1:alex", "site-1:casey"].includes(event.entityId),
+        session.campaign!.staffIds.includes(event.entityId),
     ),
   ).toBe(false);
 
-  await move(page, "riley", 1, 8);
-  await order(page, "riley", "site-1:guest-bed", "sleep");
+  expect(session.campaign!.staffIds).toEqual([
+    "site-1:alex",
+    "site-1:ben",
+    "site-1:casey",
+  ]);
+  await move(page, "alex", 1, 8);
+  await page
+    .getByLabel("Inspect", { exact: true })
+    .selectOption("site-1:guest-bed");
+  await page.getByRole("button", { name: "sleep", exact: true }).click();
   await order(page, "casey", "site-1:clinic", "sleep");
-  await travel(page, "support", ["riley"]);
   await page
     .getByLabel("Worker", { exact: true })
-    .selectOption({ label: "riley" });
+    .selectOption({ label: "alex" });
+  await finish(page);
+  await travel(page, "support", ["alex"]);
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption({ label: "alex" });
   const power = await inspectNamed(page, "Sealed containment power units");
-  await order(page, "riley", power, "Take / recover");
-  await travel(page, "home", ["riley"]);
-  await deliver(page, "riley", 14, 8);
+  await order(page, "alex", power, "Take / recover");
+  await travel(page, "home", ["alex"]);
+  await deliver(page, "alex", 14, 8);
   await travel(page, "companions", ["casey"]);
   await page
     .getByLabel("Worker", { exact: true })
@@ -236,4 +253,16 @@ test("three real staff maintain direct watch through guarded relief, study and s
   const returned = await save(page);
   expect(returned.state.sites["site-1"]!.entities[podA]).toBeTruthy();
   expect(returned.state.sites["site-1"]!.entities[podB]).toBeTruthy();
+  expect(returned.campaign!.staffIds).toEqual(session.campaign!.staffIds);
+  for (const id of returned.campaign!.staffIds) {
+    const worker = returned.state.sites["site-1"]!.entities[id];
+    if (worker?.kind !== "pawn") throw new Error("Missing returned worker.");
+    expect(worker.health?.death).toBeUndefined();
+  }
+  expect(
+    returned.state.sites["site-1"]!.entities["site-13:specimen"],
+  ).toMatchObject({
+    location: { kind: "carried", carrierId: "site-1:holding" },
+  });
+  expect(returned.state.transfers).toEqual({});
 });

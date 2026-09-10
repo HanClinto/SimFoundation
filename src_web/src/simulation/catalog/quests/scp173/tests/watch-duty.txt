@@ -3,67 +3,70 @@
 assign-watch alex subject 10 3
 relieve alex casey
 step 1
-# Riley fetches the real spare guest bed; Ben keeps his occupied home bed.
-order riley door gate open
-finish riley
-order riley move 3 3
-finish riley
-order riley door gate closed
-finish riley
-prepare home riley
-finish riley
-send home riley
-finish riley
+# Ben fetches the real spare guest bed and refreshes home containment.
+order ben door gate open
+finish ben
+order ben move 3 3
+finish ben
+order ben door gate closed
+finish ben
+prepare home ben
+finish ben
+send home ben
+finish ben
 site home
-order riley take guest-bed
-finish riley
-prepare statue riley
-finish riley
-send statue riley
-finish riley
+order ben service holding
+finish ben
+order ben take guest-bed
+finish ben
+prepare statue ben
+finish ben
+send statue ben
+finish ben
 site statue
-order riley door gate open
-finish riley
-order riley deliver @held 7 1
-finish riley
-order riley move 6 1
-finish riley
+order ben door gate open
+finish ben
+order ben deliver @held 7 1
+finish ben
+order ben move 6 1
+finish ben
 # With actual rest now available, Alex leaves self-chosen watch, sleeps, returns.
 step 25
 status work
 inspect alex
 # End the assignment without erasing its current commitment; then safely withdraw.
 assign-watch alex none
-order riley watch subject 120
+autonomy alex off
+order ben watch subject 120
 step 1
-relieve alex riley
+relieve alex ben
 order alex move 4 1
+relieve ben casey
+order ben move 3 3
+finish ben
+prepare home ben
+finish ben
+send home ben
+finish ben
+site home
+# The original power stack is finite; the staged part buys real fallback time.
+order ben lockdown holding
+finish ben
+assign ben holding
+autonomy ben on
+site statue
 finish alex
 order alex watch subject 100
 step 1
 relieve casey alex
 order casey move 4 5
 finish casey
-order casey watch subject 100
-step 1
-relieve riley alex
-order riley move 3 3
-finish riley
-order riley door gate closed
-finish riley
+order casey door gate closed
+finish casey
 cancel alex
-cancel casey
 prepare home alex casey
 finish alex casey
 send home alex casey
 finish alex casey
-site home
-order alex move 1 7
-finish alex
-site statue
-prepare home riley
-finish riley
-send home riley
-finish riley
 site home
 status work

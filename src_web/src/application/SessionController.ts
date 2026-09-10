@@ -9,7 +9,6 @@ import {
   previewSessionCommand,
   travelSession,
   admitSession,
-  reserveSession,
 } from "./Commands";
 import type { Command } from "../simulation/core/ControlPolicy";
 import type { TickEvent } from "../simulation/core/Simulation";
@@ -98,9 +97,6 @@ export class SessionController {
 
   admit(personId: string, bedId: string): void {
     this.publish(admitSession(this.current, personId, bedId));
-  }
-  reserve(destination: string, responder: string): void {
-    this.publish(reserveSession(this.current, destination, responder));
   }
   fresh(): void {
     this.publish(loadScenario("campaign"));

@@ -77,7 +77,7 @@ it("recovers a dead observer's actual record, engineers better short-burst prote
   expect(home.entities["site-1:workshop:crafted-1"]).toMatchObject({
     definitionId: "impact-protective-vest",
     integrity: 60,
-    location: { kind: "carried", carrierId: "site-1:casey" },
+    location: { kind: "carried", carrierId: "site-1:ben" },
     equipment: { worn: true, armor: { reduction: 20, wear: 40 } },
     crafted: {
       recipeId: "impact-vest",
@@ -96,20 +96,21 @@ it("recovers a dead observer's actual record, engineers better short-burst prote
     location: { kind: "carried", carrierId: "site-1:holding" },
   });
   expect(yard.entities["site-13:specimen"]).toBeUndefined();
-  const reserveId = campaign!.siteIds.reserve!;
-  expect(home.entities["site-1:casey"]).toMatchObject({
+  expect(home.entities["site-1:ben"]).toMatchObject({
     health: {
       wounds: [
         {
           severity: 10,
           bleeding: 0,
-          stabilization: { actorId: `${reserveId}:devon` },
+          stabilization: { actorId: "site-1:casey" },
         },
       ],
     },
   });
-  expect(Object.keys(state.sites[reserveId]!.entities)).toEqual([
-    `${reserveId}:riley`,
+  expect(campaign!.staffIds).toEqual([
+    "site-1:alex",
+    "site-1:ben",
+    "site-1:casey",
   ]);
   const recorderOwner = state.sites[campaign!.siteIds.accident!]!;
   expect(recorderOwner.entities[`${recorderOwner.id}:recorder`]).toMatchObject({

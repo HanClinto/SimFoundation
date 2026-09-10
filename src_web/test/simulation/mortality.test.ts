@@ -10,6 +10,8 @@ import {
   stepSession,
 } from "../../src/application/ScenarioSession";
 import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
+import { deserialize } from "../../src/simulation/core/Snapshot";
+import { hasLivingStaff } from "../../src/simulation/catalog/campaign/Campaign";
 
 function play(console: ConsoleState, lines: readonly string[]) {
   for (const line of lines) {
@@ -55,17 +57,17 @@ it("late rescue recovers a permanent body and its existing recorder without resu
     console.session.state.sites["site-1"]!.entities["site-12:recorder"]!
       .location,
   ).toEqual({ kind: "carried", carrierId: victim.id });
-  expect(executeLine(console, "order devon treat rowan").output).toContain(
+  expect(executeLine(console, "order casey treat rowan").output).toContain(
     "dead",
   );
   expect(
-    executeLine(console, "order devon nurse rowan clinic").output,
+    executeLine(console, "order casey nurse rowan clinic").output,
   ).toContain("dead");
   const before = structuredClone(victim);
   console = play(console, ["step 50"]);
   expect(person(console, victim.id)).toEqual(before);
   expect(executeLine(console, "inspect rowan").output).toContain('"death"');
-  console = play(console, ["order devon deliver recorder 4 3", "finish devon"]);
+  console = play(console, ["order casey deliver recorder 4 3", "finish casey"]);
   expect(
     console.session.state.sites["site-1"]!.entities["site-12:recorder"]!
       .location,
@@ -74,11 +76,13 @@ it("late rescue recovers a permanent body and its existing recorder without resu
 
 it("prompt stabilization prevents death but retains injury and the original person", () => {
   const console = play(openConsole(), [
-    "reserve accident devon",
-    "step 12",
+    "prepare accident casey",
+    "finish casey",
+    "send accident casey",
+    "finish casey",
     "site accident",
-    "order devon treat rowan",
-    "finish devon",
+    "order casey treat rowan",
+    "finish casey",
     "step 150",
   ]);
   const victim = person(console, "site-12:rowan");
@@ -136,53 +140,109 @@ it("mortality advances once in blocked transit and current-version replay cannot
   expect(Object.keys(console.session.state.transfers)).toHaveLength(1);
 });
 
-it("two actual reserves can continue after original-crew loss, without infinite replacements or reset equipment", () => {
+it("all-three loss is terminal personnel loss with no hidden dispatch or respawn", () => {
   let console = openConsole();
+  const staffIds = [...console.session.campaign!.staffIds];
+  const entityIds = Object.values(console.session.state.sites)
+    .flatMap((site) => Object.keys(site.entities))
+    .sort();
   for (const id of console.session.campaign!.staffIds)
     person(console, id).health = {
       wounds: [{ id: "catastrophe", severity: 150, bleeding: 0 }],
       bloodLoss: 0,
       mortality: { criticalTicks: 0, fatalAfterTicks: 1 },
     };
-  console = play(console, [
-    "step",
-    "reserve home devon",
-    "step 12",
-    "order devon move 4 3",
-    "finish devon",
-    "reserve home riley",
-    "step 12",
-  ]);
+  console = play(console, ["step"]);
   for (const id of ["site-1:alex", "site-1:ben", "site-1:casey"])
     expect(person(console, id).health!.death).toBeDefined();
-  const reserveId = console.session.campaign!.siteIds.reserve!;
-  expect(person(console, `${reserveId}:devon`).canAct).toBe(true);
-  expect(person(console, `${reserveId}:riley`).canAct).toBe(true);
-  expect(console.session.campaign!.staffIds).toHaveLength(5);
+  const before = JSON.stringify(console);
   expect(() => executeLine(console, "reserve home devon")).toThrow(
-    "unused reserve",
+    "Unknown command: reserve",
   );
-  expect(console.session.state.sites[reserveId]!.entities).toEqual({});
-  console = play(console, [
-    "order riley move 5 3",
-    "finish riley",
-    "prepare gallery devon",
-    "finish devon",
-    "send gallery devon",
-    "step 6",
-  ]);
-  expect(person(console, `${reserveId}:devon`).location.kind).toBe("ground");
+  expect(JSON.stringify(console)).toBe(before);
+  console = {
+    ...console,
+    session: restoreSession(JSON.stringify(console.session))!,
+  };
+  console = play(console, ["step 1000"]);
+  expect(executeLine(console, "status").output).toContain(
+    "No surviving campaign staff. No replacement personnel are available",
+  );
+  expect(console.session.campaign!.staffIds).toEqual(staffIds);
+  for (const id of staffIds) {
+    expect(person(console, id).health!.death).toBeDefined();
+    expect(person(console, id).canAct).toBe(false);
+    expect(executeLine(console, `order ${id} wait 1`).output).toContain("dead");
+  }
+  expect(
+    Object.values(console.session.state.sites)
+      .flatMap((site) => Object.keys(site.entities))
+      .sort(),
+  ).toEqual(entityIds);
+  expect(console.session.state.transfers).toEqual({});
 });
 
-it("a pre-fatal alarm leaves enough actual time to dispatch and stabilize with the finite reserve", () => {
+it.each(["home", "field", "transit"] as const)(
+  "counts an incapacitated original survivor in %s, but never substitutes non-roster people after death",
+  (owner) => {
+    let c = openConsole();
+    if (owner !== "home")
+      c = play(c, [
+        "prepare gallery alex",
+        "finish alex",
+        "send gallery alex",
+        ...(owner === "field" ? ["finish alex", "site gallery"] : []),
+      ]);
+    for (const id of ["site-1:ben", "site-1:casey"])
+      person(c, id).health = {
+        wounds: [{ id: "fatal", severity: 150, bleeding: 0 }],
+        bloodLoss: 0,
+        mortality: { criticalTicks: 0, fatalAfterTicks: 1 },
+      };
+    const survivor = person(c, "site-1:alex");
+    survivor.health = {
+      wounds: [{ id: "incapacitating", severity: 100, bleeding: 0 }],
+      bloodLoss: 0,
+      mortality: { criticalTicks: 0, fatalAfterTicks: 1 },
+    };
+    c = play(c, ["step"]);
+    expect(person(c, survivor.id).canAct).toBe(false);
+    expect(person(c, survivor.id).health!.death).toBeUndefined();
+    const actualOwner =
+      owner === "transit"
+        ? Object.values(c.session.state.transfers)[0]
+        : c.session.state.sites[owner === "home" ? "site-1" : "site-3"];
+    expect(actualOwner!.entities[survivor.id]).toBeDefined();
+    const before = JSON.stringify(c);
+    expect(hasLivingStaff(c.session.state, c.session.campaign!)).toBe(true);
+    expect(executeLine(c, "status").output).not.toContain(
+      "No surviving campaign staff",
+    );
+    expect(JSON.stringify(c)).toBe(before);
+    person(c, survivor.id).health!.wounds[0]!.severity = 150;
+    c = play(c, ["step"]);
+    expect(person(c, survivor.id).health!.death).toBeDefined();
+    expect(person(c, "site-12:rowan").health!.death).toBeUndefined();
+    expect(hasLivingStaff(c.session.state, c.session.campaign!)).toBe(false);
+    expect(executeLine(c, "status").output).toContain(
+      "No surviving campaign staff. No replacement personnel are available",
+    );
+    const restored = restoreSession(JSON.stringify(c.session))!;
+    expect(hasLivingStaff(restored.state, restored.campaign!)).toBe(false);
+  },
+);
+
+it("a pre-fatal alarm leaves time for ordinary colleague preparation, travel and stabilization", () => {
   let c = executeLine(openConsole(), "run 400").console;
   expect(c.session.state.tick).toBe(60);
   c = play(c, [
-    "reserve accident devon",
-    "step 12",
+    "prepare accident casey",
+    "finish casey",
+    "send accident casey",
+    "finish casey",
     "site accident",
-    "order devon treat rowan",
-    "finish devon",
+    "order casey treat rowan",
+    "finish casey",
   ]);
   expect(person(c, "site-12:rowan").health!.death).toBeUndefined();
   expect(person(c, "site-12:rowan").health!.wounds[0]!.bleeding).toBe(0);
@@ -192,11 +252,40 @@ it("a pre-fatal alarm leaves enough actual time to dispatch and stabilize with t
   expect(person(c, "site-12:rowan").health!.death).toBeUndefined();
 });
 
-it("reserve dispatch cannot bypass an unmet research gate or mutate state on refusal", () => {
+it("a fresh campaign has exactly the three original staff, no reserve site or dispatch command", () => {
   const c = openConsole();
+  expect(c.session.version).toBe(7);
+  expect(c.session.state.version).toBe(49);
+  expect(
+    restoreSession(JSON.stringify({ ...c.session, version: 6 })),
+  ).toBeNull();
+  expect(
+    deserialize(
+      JSON.stringify({
+        ...c.session.state,
+        version: 48,
+      }),
+    ),
+  ).toBeNull();
+  expect(c.session.campaign!.staffIds).toEqual([
+    "site-1:alex",
+    "site-1:ben",
+    "site-1:casey",
+  ]);
+  expect(c.session.campaign!.siteIds).not.toHaveProperty("reserve");
+  const pawns = Object.values(c.session.state.sites)
+    .flatMap((site) => Object.values(site.entities))
+    .filter((entity) => entity.kind === "pawn");
+  expect(
+    pawns
+      .filter((pawn) => pawn.playerControllable)
+      .map((pawn) => pawn.id)
+      .sort(),
+  ).toEqual([...c.session.campaign!.staffIds].sort());
+  expect(pawns.some((pawn) => /devon|riley/i.test(pawn.name))).toBe(false);
+  expect(executeLine(c, "help").output).not.toMatch(/reserve|dispatch/i);
   const before = JSON.stringify(c);
-  expect(() => executeLine(c, "reserve kestrel devon")).toThrow(
-    "Home study required",
-  );
+  for (const line of ["reserve home devon", "dispatch home casey"])
+    expect(() => executeLine(c, line)).toThrow("Unknown command");
   expect(JSON.stringify(c)).toBe(before);
 });

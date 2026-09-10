@@ -11,7 +11,6 @@ import {
   commandSession,
   travelSession,
   admitSession,
-  reserveSession,
 } from "../../application/Commands";
 import { entities as catalog, materials } from "../../simulation/catalog";
 import type { Entity } from "../../simulation/core/entity/Entity";
@@ -203,7 +202,6 @@ medical [all] (read-only current care facts)
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 preview-send <route> <staff...> (actual checks and manifest, no departure)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
-reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
 order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
@@ -341,17 +339,6 @@ export function executeLine(
       next = { ...console, session };
       return finish(
         "Admitted to home care. Ordinary bed rest is queued; injury and blood loss are retained.",
-      );
-    }
-    case "reserve": {
-      if (!console.session.campaign || args.length !== 2)
-        throw new Error(
-          "Use reserve <home|route> <devon|riley> in a campaign.",
-        );
-      const session = reserveSession(console.session, args[0]!, args[1]!);
-      next = { ...console, session };
-      return finish(
-        "Existing reserve responder dispatched: arrival in 12 ticks. Emergency response can use a bounded alternate landing area; no replacement person was generated, and no bodies or equipment have been moved for you.",
       );
     }
     case "sites":
@@ -558,7 +545,6 @@ export function executeLine(
                     destinationId: owner.destinationId,
                     arrival: owner.arrival,
                     arrivalRadius: owner.arrivalRadius ?? 0,
-                    arrivalMode: owner.arrivalMode ?? "pad",
                     arrivesAt: owner.arrivesAt,
                     blockedReason: owner.blockedReason,
                     mapPosition: null,

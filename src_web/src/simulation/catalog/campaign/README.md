@@ -14,7 +14,7 @@ resource-sufficiency verdict.
 
 Authoring starts with [Home.ts](Home.ts) for the home layout and finite initial
 inventory, and [setup.ts](setup.ts) for route opportunities. Campaign rules,
-reserve dispatch, care admission and named apparatus stay in their own files;
+care admission and named apparatus stay in their own files;
 the setup does not execute test solutions.
 The existing armchair sits on the lower service lane rather than closing the
 guest-bed departure path beside the workshop. This is authored circulation,
@@ -24,6 +24,10 @@ The home begins with Alex, Ben and Casey, eight meals,
 a reusable field kit, a comparison bench, independent records,
 ordinary rest furniture and a glass display bay. No campaign command deploys
 new staff. Home routines can be enabled with `autonomy casey on`.
+These three are the entire starting roster: there is no special reserve site,
+dispatch command or replacement-personnel system. Recovery uses surviving
+colleagues. If all three die, the world remains inspectable but no new staff
+appear; start a new campaign to begin with another roster.
 
 `order alex take meals 3` physically collects three portions while leaving five
 at home. Only explicitly stackable ordinary supplies accept quantities; people,
@@ -47,7 +51,7 @@ respond before advancing again.
 
 Ordinary `finish alex` keeps its targeted stopping behavior, but now lists up to
 eight highest-severity critical events that occurred during the wait. For example,
-Riley's remote Watch fatigue or death is no longer hidden behind Alex's successful
+Casey's remote Watch fatigue or death is no longer hidden behind Alex's successful
 sleep completion. The summary uses complete current-tick event batches, not only
 the saved100-event history, and reports how many notices occurred.
 
@@ -424,8 +428,8 @@ wound-care packs, two maintenance packs and one donated bookshelf. Real carriers
 and travel time are still required; two carriers cannot bring every category
 in one trip. Deliver power
 beside holding or suppression stock beside the worker for existing service/
-rearming actions. The cache does not respawn and reserve dispatch cannot
-bypass the study gate. This makes physical research change later logistics
+rearming actions. The cache does not respawn and ordinary travel must respect
+the study gate. This makes physical research change later logistics
 without adding an unlimited shop or instant completion reward.
 
 Bringing the actual `library` home competes with those supplies for carrying
@@ -436,7 +440,7 @@ completed/cancelled, so it cannot simultaneously be carried away. This is
 usable transported furniture, not a passive research reward. Existing saved
 depot inventories are not silently expanded.
 
-## Permanent Casualties And Reserve Response
+## Permanent Casualties And Survivor Response
 
 `brief accident` introduces an original urgent casualty. This route explicitly
 opts Rowan into mortality: after blood loss reaches 100 with ongoing bleeding,
@@ -459,30 +463,20 @@ This replaces the old bare medic-name marker rather than duplicating it.
 
 Crossing blood loss80 while bleeding emits a pre-fatal warning for opted-in
 patients; entering the critical interval emits another identified warning.
-Automatic `run` stops on those notices. The original accident's first warning
-still leaves time to dispatch Devon, physically reach Rowan and stabilize him.
-Ignoring warnings does not pause the fatal clock, including during transit.
+Automatic `run` stops on those notices. Prepare a surviving medic and travel
+promptly; warnings do not guarantee enough time if that person is busy or far
+away. Ignoring warnings does not pause the fatal clock, including during transit.
 
 If rescue is late, the body and its carried recorder remain the original
 entities. Carry/deliver the body through ordinary transport; no treatment or
 anomalous mending resurrects it. Dead workers stop needs, autonomy and every
 queued commitment without refunds or deleting their equipment.
 
-`reserve accident devon` dispatches the existing reserve medic through twelve
-ticks of transit. `reserve home riley` requests the second existing responder.
-Two actual people are the entire reserve, not
-infinite replacements. These commands still work when the original crew is
-lost, but perform no automatic rescue or healing. Keep arrival pads clear,
-then use the responders to recover people/bodies and equipment physically.
-Reserve dispatch respects the same research prerequisite as ordinary travel;
-it cannot be used to open Kestrel before home corroboration.
-
-Emergency reserve response may land on free floor within three tiles of the
-primary pad when that pad is occupied. This prevents an incapacitated resident
-or a hostile occupying field extraction from blocking the only available response. The same
-finite responder and dispatch cost are used; they must then physically move
-and care for the obstruction. Invalid terrain and a closed doorway are not
-bypassed, and ordinary team returns still require their primary pad.
+Recovery uses the same `prepare`, `send`, movement, treatment and carrying
+commands as any other expedition. Keep arrival pads clear and retain someone
+who can help if a trip goes wrong. There is no privileged emergency landing
+that bypasses an occupied pad, no off-map rescue pair and no replacement spawn.
+If everyone is dead, status and the browser response desk say so explicitly.
 
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/blocked-home-recovery.txt
@@ -494,14 +488,11 @@ npm run sim < src/simulation/catalog/campaign/tests/permanent-loss.txt
 npm run sim < src/simulation/catalog/campaign/tests/crew-loss-recovery.txt
 ```
 
-`crew-loss-recovery.txt` deliberately loses all three original staff through
-ordinary yard combat, without injected health changes. Devon then physically
-recovers Alex's original tool, spends one retained charge on the same hostile,
-and returns Casey's body. Alex/Ben's bodies and the worn vest remain at the yard
-for later recovery; the threat is only temporarily subdued, not magically
-contained. Riley remains at the reserve; the surviving crew can reuse ordinary
-transport for further recovery. This proves finite personnel continuation after
-catastrophic loss, not unlimited replacement staff.
+`permanent-loss.txt` sends Casey through ordinary preparation and travel to
+recover Rowan's body and its recorder. `crew-loss-recovery.txt` loses Alex and
+Ben through actual combat while keeping Casey available. Casey then recovers
+Alex's body and original worn equipment. These use only the ordinary starting
+roster; losing all three cannot be repaired by an external staffing command.
 
 ## Clinical Recovery After Evacuation
 

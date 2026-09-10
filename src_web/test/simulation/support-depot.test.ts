@@ -43,7 +43,7 @@ it("a controlled physical finding opens finite real logistics, not an immediate 
   expect(() => executeLine(initial, "prepare support alex")).toThrow(
     "Home study required",
   );
-  expect(() => executeLine(initial, "reserve support devon")).toThrow(
+  expect(() => executeLine(initial, "send support alex")).toThrow(
     "Home study required",
   );
   expect(JSON.stringify(initial)).toBe(before);

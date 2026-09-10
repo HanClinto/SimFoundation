@@ -73,8 +73,10 @@ rather than hiding controls.
   observer. Research does not erase casualties, injuries or spent resources.
 - **Maintain coverage:** recurring service and direct-watch assignments use
   actual workers, supplies and rest. Guarded relief requires overlapping active
-  observation. Finite lockdown and the two pre-existing reserve responders are
-  fallback responses, not permanent safety or generated replacements.
+  observation. Finite lockdown buys time; surviving staff can respond and
+  recover colleagues using ordinary travel. The starting roster is Alex, Ben
+  and Casey, with no special reserves or replacement personnel. Losing all
+  three leaves the world inspectable but no staff to issue new work.
 
 ## Existing SCP adaptations
 

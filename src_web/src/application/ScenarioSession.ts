@@ -52,7 +52,7 @@ export const scenarios: Readonly<
 };
 
 export interface ScenarioSession {
-  version: 6;
+  version: 7;
   campaign: Campaign | null;
   phase: "setup" | "running";
   teamIds: string[];
@@ -71,7 +71,7 @@ export function loadScenario(name: string): ScenarioSession {
   if (name === "campaign") {
     const { state, campaign } = createCampaign(entities);
     return labelEntities({
-      version: 6,
+      version: 7,
       campaign,
       phase: "running",
       teamIds: [],
@@ -96,7 +96,7 @@ export function loadScenario(name: string): ScenarioSession {
     ]),
   );
   return labelEntities({
-    version: 6,
+    version: 7,
     campaign: null,
     phase: scenario.deployment ? "setup" : "running",
     teamIds: [],
@@ -253,7 +253,7 @@ export function restoreSession(text: string): ScenarioSession | null {
     return value &&
       typeof value === "object" &&
       !Array.isArray(value) &&
-      value.version === 6 &&
+      value.version === 7 &&
       value.simulationVersion === SIMULATION_VERSION
       ? (value as ScenarioSession)
       : null;

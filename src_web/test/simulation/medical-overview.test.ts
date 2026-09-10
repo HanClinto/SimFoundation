@@ -41,8 +41,9 @@ it("lists permanent bodies separately from currently treatable patients and incl
   expect(all).toContain("Rowan");
   expect(all).toContain("DEAD at tick 99");
   expect(all.indexOf("Rowan")).toBeGreaterThan(all.indexOf("RETAINED BODIES"));
-  expect(all).toContain(c.session.campaign!.siteIds.reserve!);
-  expect(all).toContain("not in deployed roster");
+  expect(all).toContain(c.session.campaign!.siteIds.accident!);
+  expect(all).not.toMatch(/devon|riley|reserve/i);
+  expect(all).toContain("casey [site-1:casey] at site-1");
 });
 it("reports travelling medical capability without permitting local work or inventing a diagnosis", () => {
   let c = openConsole();

@@ -136,7 +136,7 @@ it("armor mitigates actual impacts, wears out and does not reset injury or preve
   expect(actor(c).queue).toEqual([]);
 });
 
-it("an arriving reserve can recover worn equipment from a body and retain its depleted state", () => {
+it("a surviving colleague can recover worn equipment from a body and retain its depleted state", () => {
   let c = equipped();
   actor(c).health = {
     wounds: [{ id: "fatal", severity: 150, bleeding: 0 }],
@@ -144,17 +144,10 @@ it("an arriving reserve can recover worn equipment from a body and retain its de
     mortality: { criticalTicks: 0, fatalAfterTicks: 1 },
   };
   tool(c).equipment!.subdual!.charges = 1;
-  c = play(c, [
-    "step",
-    "reserve home devon",
-    "step 12",
-    "order devon equip suppressor",
-    "finish devon",
-  ]);
-  const reserveId = c.session.campaign!.siteIds.reserve!;
+  c = play(c, ["step", "order casey equip suppressor", "finish casey"]);
   expect(tool(c).location).toEqual({
     kind: "carried",
-    carrierId: `${reserveId}:devon`,
+    carrierId: "site-1:casey",
   });
   expect(tool(c).equipment!.subdual!.charges).toBe(1);
   expect(actor(c).health!.death).toBeDefined();

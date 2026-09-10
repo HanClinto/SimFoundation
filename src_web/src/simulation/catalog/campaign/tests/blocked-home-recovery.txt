@@ -1,4 +1,4 @@
-# A physically blocked home pad with every original worker away.
+# A physically blocked home pad; Ben stays home to clear the ordinary arrival.
 load campaign
 order casey take meals 1
 finish casey
@@ -45,23 +45,20 @@ order casey move 3 3
 finish casey
 site home
 order alex move 3 7
-order ben move 2 8
-finish alex ben
-send gallery alex ben
-finish alex ben
+finish alex
+send gallery alex
+finish alex
 site gallery
-send home alex ben
+send home alex
 send home casey
 step 8
 status
-# A finite actual reserve can land nearby; it does not teleport Mira off the pad.
-reserve home devon
-finish devon
+# The retained colleague must physically move Mira off the primary pad.
 site home
-order devon deliver mira 3 1
-finish devon
+order ben deliver mira 3 1
+finish ben
 order alex move 4 3
 finish alex
-order devon nurse mira clinic
-finish devon
+order casey nurse mira clinic
+finish casey
 status

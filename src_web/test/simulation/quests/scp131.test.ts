@@ -88,8 +88,12 @@ it("earns the visit through real annex research, transports the same pair, obser
     expect(campaign!.staffIds).not.toContain(id);
   }
   expect(state.sites[pairSite]!.entities).toEqual({});
-  const reserveId = campaign!.siteIds.reserve!;
-  expect(campaign!.staffIds).toEqual([...originalStaff, `${reserveId}:riley`]);
+  expect(campaign!.staffIds).toEqual(originalStaff);
+  for (const id of originalStaff) {
+    const worker = home.entities[id];
+    if (worker?.kind !== "pawn") throw new Error("Missing original worker.");
+    expect(worker.health!.death).toBeUndefined();
+  }
   expect(() => executeLine(c, "admit pod-a bed")).toThrow(
     "no ordinary rest need",
   );

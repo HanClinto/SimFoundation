@@ -45,22 +45,3 @@ export const accidentSite: SiteTemplate = {
     },
   ],
 };
-
-export const reserveSite: SiteTemplate = {
-  name: "Regional reserve: two finite responders",
-  terrain: ["########", "#......#", "#......#", "#......#", "########"],
-  entities: [
-    {
-      id: "devon",
-      definitionId: "medic",
-      location: { kind: "ground", position: { x: 2, y: 2 } },
-      overrides: { name: "devon", autonomy: false, playerControllable: false },
-    },
-    {
-      id: "riley",
-      definitionId: "field-agent",
-      location: { kind: "ground", position: { x: 3, y: 2 } },
-      overrides: { name: "riley", autonomy: false, playerControllable: false },
-    },
-  ],
-};

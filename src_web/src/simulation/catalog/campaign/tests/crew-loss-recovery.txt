@@ -1,4 +1,4 @@
-# Deliberate catastrophic failure through ordinary commands, followed by finite response.
+# Two original colleagues die in real combat; the medic recovers a body and worn gear.
 load campaign
 order alex equip suppressor
 order alex equip vest
@@ -8,37 +8,33 @@ finish alex ben
 send intervention alex ben
 step 8
 site intervention
-order alex move 5 3
-order ben move 4 4
+order alex move 4 3
+order ben move 3 3
 step 200
 inspect alex
 inspect ben
-# The last original responder is deliberately sent without intervention equipment.
+# Retain Casey until the casualties need recovery; no replacement staff exist.
 site home
 prepare intervention casey
 finish casey
 send intervention casey
 step 8
 site intervention
-order casey move 4 3
-step 200
-status
-# An existing regional responder must retrieve gear and handle the same threat.
-reserve intervention devon
-step 12
-order devon equip site-1:suppressor
-finish devon
-order devon subdue specimen
-finish devon
-order devon take casey
-finish devon
-prepare home devon
-finish devon
-send home devon
-step 8
+order casey equip site-1:suppressor
+finish casey
+order casey subdue specimen
+finish casey
+order casey take alex
+finish casey
+prepare home casey
+finish casey
+send home casey
+finish casey
 site home
-order devon deliver @held 1 1
-finish devon
+order casey deliver @held 1 1
+finish casey
+inspect alex
 inspect casey
-inspect devon
+inspect suppressor
+inspect vest
 status

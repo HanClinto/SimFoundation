@@ -1,5 +1,8 @@
 import type { ScenarioSession } from "../../application/ScenarioSession";
-import { opportunityBlocker } from "../../simulation/catalog/campaign/Campaign";
+import {
+  hasLivingStaff,
+  opportunityBlocker,
+} from "../../simulation/catalog/campaign/Campaign";
 import { opportunities } from "../../simulation/catalog/campaign/setup";
 import { homeLoading } from "../../simulation/catalog/campaign/Home";
 import { departureReadiness } from "../../simulation/catalog/campaign/Readiness";
@@ -27,6 +30,11 @@ export function campaignStatus(session: ScenarioSession): string {
   return [
     `Tick ${state.tick} | Provisional Site campaign | home ${campaign.homeId}`,
     "No mission reset or victory freeze: sites, staff, cargo and findings persist.",
+    ...(!hasLivingStaff(state, campaign)
+      ? [
+          "No surviving campaign staff. No replacement personnel are available; inspect the remaining world or start a new campaign.",
+        ]
+      : []),
     ...campaign.staffIds.map((id) => {
       const owner = owners.find((owner) => owner.entities[id]);
       const pawn = owner?.entities[id];
@@ -165,13 +173,7 @@ export function campaignStatus(session: ScenarioSession): string {
           )
         : [],
     ),
-    `Reserve at ${campaign.siteIds.reserve}: ${Object.values(
-      state.sites[campaign.siteIds.reserve!]!.entities,
-    )
-      .map((entity) => `${entity.name} (${entity.amount})`)
-      .join(
-        ", ",
-      )}. reserve <home|route> <devon|riley>; physical arrival in 12 ticks.`,
+    "Recovery uses surviving members of the starting roster. No replacement personnel are available.",
     `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
     `brief <${Object.keys(opportunities).join("|")}|scp294|clinic|engineering|observation> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
   ].join("\n");

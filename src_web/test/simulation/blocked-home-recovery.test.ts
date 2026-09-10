@@ -11,7 +11,7 @@ import { instantiateSite } from "../../src/simulation/core/site/Site";
 import { depart } from "../../src/simulation/core/site/Transfer";
 import { entities, materials } from "../../src/simulation/catalog";
 
-it("recovers a home-pad deadlock using a finite responder, actual landing space and physical casualty work", () => {
+it("recovers a home-pad deadlock with a retained colleague and physical casualty work", () => {
   const lines = fs
     .readFileSync(
       new URL(
@@ -24,11 +24,16 @@ it("recovers a home-pad deadlock using a finite responder, actual landing space 
   let c = openConsole();
   let confirmedBlocked = false;
   for (const line of lines) {
-    if (line === "reserve home devon") {
+    if (line === "order ben deliver mira 3 1") {
       const home = c.session.state.sites["site-1"]!;
       expect(
-        ["alex", "ben", "casey"].every((id) => !home.entities[`site-1:${id}`]),
+        ["alex", "casey"].every((id) => !home.entities[`site-1:${id}`]),
       ).toBe(true);
+      expect((home.entities["site-1:ben"] as Pawn).canAct).toBe(true);
+      expect(home.entities["site-5:mira"]!.location).toEqual({
+        kind: "ground",
+        position: { x: 2, y: 7 },
+      });
       expect(
         Object.values(c.session.state.transfers).filter(
           (transfer) => transfer.destinationId === "site-1",
@@ -46,7 +51,7 @@ it("recovers a home-pad deadlock using a finite responder, actual landing space 
       /^rejected|Advanced.*(?:Blocked|blocked|failed|1000-tick limit)/,
     );
     c = result.console;
-    if (line.startsWith("reserve ") || line.startsWith("send "))
+    if (line.startsWith("send "))
       c = { ...c, session: restoreSession(JSON.stringify(c.session))! };
     const ids = [
       ...Object.values(c.session.state.sites),
@@ -60,13 +65,14 @@ it("recovers a home-pad deadlock using a finite responder, actual landing space 
     expect(home.entities[`site-1:${name}`]).toBeDefined();
   expect((home.entities["site-5:mira"] as Pawn).canAct).toBe(true);
   expect(c.session.state.transfers).toEqual({});
-  const reserveId = c.session.campaign!.siteIds.reserve!;
-  expect(Object.keys(c.session.state.sites[reserveId]!.entities)).toEqual([
-    `${reserveId}:riley`,
+  expect(c.session.campaign!.staffIds).toEqual([
+    "site-1:alex",
+    "site-1:ben",
+    "site-1:casey",
   ]);
 });
 
-it("alternate floor admission does not bypass a sealed door or impassable primary terrain", () => {
+it("ordinary arrival preserves primary-door, terrain and whole-group landing rules", () => {
   const origin = instantiateSite(
     createSimulation(),
     {
@@ -77,6 +83,12 @@ it("alternate floor admission does not bypass a sealed door or impassable primar
           id: "actor",
           definitionId: "field-agent",
           location: { kind: "ground", position: { x: 1, y: 1 } },
+          overrides: { autonomy: false },
+        },
+        {
+          id: "colleague",
+          definitionId: "field-agent",
+          location: { kind: "ground", position: { x: 1, y: 2 } },
           overrides: { autonomy: false },
         },
       ],
@@ -102,10 +114,10 @@ it("alternate floor admission does not bypass a sealed door or impassable primar
   const request = {
     originId: "site-1",
     destinationId: "site-2",
-    entityIds: ["site-1:actor"],
+    entityIds: ["site-1:actor", "site-1:colleague"],
     loading: { x: 1, y: 1 },
+    loadingRadius: 1,
     arrival: { x: 2, y: 1 },
-    arrivalMode: "area" as const,
     arrivalRadius: 2,
     duration: 1,
   };
@@ -114,11 +126,33 @@ it("alternate floor admission does not bypass a sealed door or impassable primar
   const blocked = advanceSimulation(sent.state, materials).state;
   expect(Object.values(blocked.transfers)[0]!.blockedReason).toContain("door");
   expect(blocked.sites["site-2"]!.entities["site-1:actor"]).toBeUndefined();
+  expect(blocked.sites["site-2"]!.entities["site-1:colleague"]).toBeUndefined();
   expect(
-    depart(destination.state, { ...request, arrivalRadius: 0 }).reason,
-  ).toContain("positive bounded");
+    depart(destination.state, { ...request, arrivalRadius: -1 }).reason,
+  ).toContain("zero to three");
   destination.state.sites["site-2"]!.terrain = [".....", "..#..", "....."];
   expect(depart(destination.state, request).reason).toContain(
     "valid endpoints",
   );
+
+  const landingSite = blocked.sites["site-2"]!;
+  const door = landingSite.entities["site-2:door"]!;
+  if (door.kind !== "door") throw new Error("Expected an arrival door.");
+  door.open = true;
+  door.policy = "held-open";
+  Object.values(blocked.transfers)[0]!.arrivalRadius = 0;
+  const crowded = advanceSimulation(blocked, materials).state;
+  expect(Object.values(crowded.transfers)[0]!.blockedReason).toContain(
+    "complete travelling group",
+  );
+  expect(crowded.sites["site-2"]!.entities["site-1:actor"]).toBeUndefined();
+  expect(crowded.sites["site-2"]!.entities["site-1:colleague"]).toBeUndefined();
+  Object.values(crowded.transfers)[0]!.arrivalRadius = 1;
+  const admitted = advanceSimulation(crowded, materials).state;
+  expect(admitted.transfers).toEqual({});
+  const landed = request.entityIds.map(
+    (id) => admitted.sites["site-2"]!.entities[id]!.location,
+  );
+  expect(landed.every((location) => location.kind === "ground")).toBe(true);
+  expect(landed[0]).not.toEqual(landed[1]);
 });

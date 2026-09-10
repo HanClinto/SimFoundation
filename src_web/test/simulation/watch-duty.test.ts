@@ -10,6 +10,7 @@ import {
   stepSession,
 } from "../../src/application/ScenarioSession";
 import { directWatchers } from "../../src/simulation/core/entity/pawn/Attention";
+import { secureContainment } from "../../src/simulation/core/entity/Containment";
 
 const read = (file: string) =>
   fs
@@ -114,6 +115,23 @@ it("moves a real guest bed to the annex, rests an assigned observer and returns 
     open: false,
   });
   expect(home.entities["site-1:alex"]).not.toHaveProperty("watchDuty");
+  expect(campaign!.staffIds).toEqual([
+    "site-1:alex",
+    "site-1:ben",
+    "site-1:casey",
+  ]);
+  for (const id of campaign!.staffIds) {
+    const worker = home.entities[id];
+    if (worker?.kind !== "pawn") throw new Error("Missing returned worker.");
+    expect(worker.health!.death).toBeUndefined();
+  }
+  const holding = home.entities["site-1:holding"];
+  if (holding?.kind !== "facility") throw new Error("Missing home holding.");
+  expect(secureContainment(holding, state.tick)).toBe(true);
+  expect(holding.containment!.lockdown!.untilTick).toBeGreaterThan(state.tick);
+  expect(home.entities["site-13:specimen"]).toMatchObject({
+    location: { kind: "carried", carrierId: holding.id },
+  });
   expect(state.transfers).toEqual({});
 });
 
@@ -145,7 +163,7 @@ it("a genuine care interruption runs treatment rather than reselecting the same 
   ]);
   const site = c.session.state.sites[c.siteId]!;
   const medic = site.entities["site-1:casey"];
-  const patientId = `${c.session.campaign!.siteIds.reserve}:riley`;
+  const patientId = "site-1:ben";
   const patient = site.entities[patientId];
   if (medic?.kind !== "pawn" || patient?.kind !== "pawn")
     throw new Error("Expected actual staff.");

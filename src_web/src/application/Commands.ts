@@ -10,7 +10,6 @@ import {
   departTeam,
 } from "../simulation/catalog/campaign/Campaign";
 import { admitToCare } from "../simulation/catalog/campaign/Care";
-import { dispatchReserve } from "../simulation/catalog/campaign/Reserve";
 
 export function commandSession(session: ScenarioSession, command: Command) {
   if (session.phase !== "running")
@@ -67,18 +66,5 @@ export function admitSession(
   return {
     ...session,
     ...admitToCare(session.state, session.campaign, personId, bedId, materials),
-  };
-}
-
-export function reserveSession(
-  session: ScenarioSession,
-  destination: string,
-  responder: string,
-): ScenarioSession {
-  if (!session.campaign)
-    throw new Error("Reserve dispatch requires a home-site campaign.");
-  return {
-    ...session,
-    ...dispatchReserve(session.state, session.campaign, destination, responder),
   };
 }

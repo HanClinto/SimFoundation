@@ -9,7 +9,6 @@ import { opportunities } from "./setup";
 import { home, homeLoading, homePads } from "./Home";
 import { requireDepartureReadiness, authorizeRisk } from "./Readiness";
 import { operatingPhase } from "../../core/site/OperatingCycle";
-import { reserveSite } from "./emergency";
 import { restraintFor } from "../../core/entity/pawn/Custody";
 import { recordedFinding } from "../../core/entity/Study";
 
@@ -32,9 +31,6 @@ export function createCampaign(definitions: EntityTemplates): {
     state = field.state;
     siteIds[key] = field.siteId;
   }
-  const reserve = instantiateSite(state, reserveSite, definitions);
-  state = reserve.state;
-  siteIds.reserve = reserve.siteId;
   return {
     state,
     campaign: {
@@ -46,6 +42,18 @@ export function createCampaign(definitions: EntityTemplates): {
       admissions: {},
     },
   };
+}
+
+export function hasLivingStaff(state: Simulation, campaign: Campaign): boolean {
+  return [
+    ...Object.values(state.sites),
+    ...Object.values(state.transfers),
+  ].some((owner) =>
+    campaign.staffIds.some((id) => {
+      const person = owner.entities[id];
+      return person?.kind === "pawn" && !person.health?.death;
+    }),
+  );
 }
 
 export function opportunityBlocker(

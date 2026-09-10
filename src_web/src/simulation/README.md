@@ -152,9 +152,9 @@ nonempty sites or active transfer endpoints.
 Campaign rules add roster, route, readiness and passenger checks above generic
 transfer. Travel is reusable without a lifetime trip entitlement; actual time,
 loading capacity and finite supplies still matter. Outbound readiness requires
-hunger/fatigue below85; exhausted crews may still return. Reserve dispatch
-moves one of two pre-existing responders, not a new template or abstract ticket.
-It respects research gates and performs no automatic rescue.
+hunger/fatigue below85; exhausted crews may still return. The three ordinary
+starting staff are the campaign's entire roster. There is no special reserve
+site, dispatch command, recruitment or replacement-personnel mechanism.
 
 ## One Action Queue
 
@@ -288,11 +288,11 @@ Death, unresolved major organ trauma and arbitrary inability are not healed.
 
 Mortality is explicit opt-in health data. Pre-fatal and critical warnings leave
 a real intervention opportunity; ignoring them can cause permanent death.
-Bodies stop physiology/work and retain gear/cargo. The
-[catastrophic-loss transcript](catalog/campaign/tests/crew-loss-recovery.txt)
-loses the original crew through actual combat, then uses an existing reserve
-to recover original gear and one body. Other bodies remain for follow-up:
-there is no infinite rescue, free replacement or resurrection.
+Bodies stop physiology/work and retain gear/cargo. Surviving colleagues can
+recover people and equipment through ordinary actions and transport. Losing
+the entire starting roster leaves no hidden replacements; the remaining world
+can still be inspected, or the player can start a new campaign. No automatic
+rescue or resurrection occurs.
 
 ## Study, Crafting, Service And Named Content
 

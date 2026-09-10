@@ -53,37 +53,39 @@ order ben deliver @held 13 7
 finish ben
 order ben service holding
 finish ben
-assign ben holding
-order casey equip crafted-1
-order casey sleep clinic
+assign casey holding
+autonomy casey on
+order casey unequip suppressor
 finish casey
-order casey take restraint
-finish casey
-prepare intervention casey
-finish casey
-send intervention casey
-finish casey
+order ben equip suppressor
+order ben equip crafted-1
+order ben sleep guest-bed
+finish ben
+order ben take restraint
+finish ben
+prepare intervention ben
+finish ben
+send intervention ben
+finish ben
 site intervention
 # One real impact demonstrates the protection/wear tradeoff, then capture.
-order casey wait 6
-finish casey
-inspect casey
-order casey capture specimen @held 2 3
-finish casey
-send home casey
-finish casey
+order ben wait 6
+finish ben
+inspect ben
+order ben capture specimen @held 2 3
+finish ben
+send home ben
+finish ben
 site home
-order casey contain @held holding
+# Retain the only medic at home; Ben cannot treat himself.
+order ben contain @held holding
+finish ben
+order ben unrestrain specimen
+finish ben
+order ben move 12 6
+finish ben
+order casey treat ben
 finish casey
-order casey unrestrain specimen
-finish casey
-# Casey cannot self-treat. Use a second existing clinician, not a free cure.
-order casey move 12 6
-finish casey
-reserve home devon
-finish devon
-order devon treat casey
-finish devon
 inspect specimen
 inspect crafted-1
 status

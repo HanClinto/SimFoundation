@@ -75,7 +75,7 @@ it("bounds reported full-tick alarms without losing early high-severity events b
   });
 });
 
-it("surfaces the actually reproduced distant watch-loss casualty while a local worker sleeps", () => {
+it("surfaces the actual distant watch-loss casualty during local sleep and queued work", () => {
   const lines = fs
     .readFileSync(
       new URL(
@@ -87,10 +87,10 @@ it("surfaces the actually reproduced distant watch-loss casualty while a local w
     .split(/\r?\n/);
   let c = play(openConsole(), lines.slice(0, lines.indexOf("status") + 1));
   c = play(c, [
-    "order riley watch subject 300",
+    "order ben watch subject 300",
     "step 1",
     "step 130",
-    "relieve alex riley",
+    "relieve alex ben",
     "order alex door gate open",
     "finish alex",
     "prepare home alex",
@@ -101,26 +101,29 @@ it("surfaces the actually reproduced distant watch-loss casualty while a local w
     "order alex eat meals",
     "finish alex",
     "order alex sleep bed",
+    "order alex wait 300",
   ]);
-  const guarded = executeLine(c, "finish --alarms alex");
-  const reserveId = c.session.campaign!.siteIds.reserve!;
   const annexId = c.session.campaign!.siteIds.statue!;
+  const serviceAlarm = executeLine(c, "finish --alarms alex");
+  expect(serviceAlarm.alarm).toMatchObject({
+    kind: "warning",
+    entityId: `${annexId}:station`,
+  });
+  const guarded = executeLine(serviceAlarm.console, "finish --alarms alex");
   expect(guarded.alarm).toMatchObject({
     kind: "warning",
-    entityId: `${reserveId}:riley`,
+    entityId: "site-1:ben",
   });
-  const riley =
-    guarded.console.session.state.sites[annexId]!.entities[
-      `${reserveId}:riley`
-    ];
-  if (riley?.kind !== "pawn")
+  const watcher =
+    guarded.console.session.state.sites[annexId]!.entities["site-1:ben"];
+  if (watcher?.kind !== "pawn")
     throw new Error("Expected actual remote watcher.");
-  expect(riley.health!.death).toBeUndefined();
+  expect(watcher.health!.death).toBeUndefined();
   const ordinary = executeLine(c, "finish alex");
   expect(ordinary.output).toContain("Watched commitments finished.");
-  expect(ordinary.output).toContain(`${reserveId}:riley died`);
+  expect(ordinary.output).toContain("site-1:ben died");
   const lost =
-    ordinary.console.session.state.sites[annexId]!.entities[riley.id];
+    ordinary.console.session.state.sites[annexId]!.entities[watcher.id];
   expect(lost).toMatchObject({
     health: { death: { cause: "critical-trauma" } },
   });

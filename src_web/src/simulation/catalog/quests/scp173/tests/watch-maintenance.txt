@@ -1,6 +1,6 @@
 # Test-only: captured-source authorization and three real workers at a different source.
 load campaign
-order ben take parts 1
+order ben take parts 2
 finish ben
 order ben deliver @held 13 7
 finish ben
@@ -39,13 +39,21 @@ finish alex casey
 order alex watch subject 200
 order casey watch subject 200
 step 1
-reserve statue riley
-finish riley
-order riley door gate open
-finish riley
+site home
+assign ben none
+finish ben
+order ben service holding
+finish ben
+prepare statue ben
+finish ben
+send statue ben
+finish ben
+site statue
+order ben door gate open
+finish ben
 # Move the two observers into the work room one at a time under overlapping watch.
-order riley move 3 3
-finish riley
+order ben move 3 3
+finish ben
 relieve alex casey
 order alex move 10 3
 finish alex
@@ -56,50 +64,47 @@ order casey move 9 4
 finish casey
 order casey watch subject 200
 step 1
-order riley move 6 3
-finish riley
-order riley door gate closed
-finish riley
-order riley service station
-finish riley
-order riley study station direct-watch-protocol
-finish riley
+order ben move 6 3
+finish ben
+order ben door gate closed
+finish ben
+order ben service station
+finish ben
+order ben study station direct-watch-protocol
+finish ben
 status
 # Overlap a new active observer before releasing the earlier commitment.
-order riley door gate open
-finish riley
-order riley move 7 1
-finish riley
-order riley watch subject 120
+order ben door gate open
+finish ben
+order ben watch subject 120
 step 1
-relieve alex riley
+relieve alex ben
 order alex move 4 1
+relieve ben casey
+order ben move 3 3
+finish ben
+prepare home ben
+finish ben
+send home ben
+finish ben
+site home
+order ben service holding
+finish ben
+assign ben holding
+autonomy ben on
+site statue
 finish alex
 order alex watch subject 160
 step 1
 relieve casey alex
 order casey move 4 5
 finish casey
-order casey watch subject 160
-step 1
-relieve riley alex
-order riley move 3 3
-finish riley
-order riley door gate closed
-finish riley
+order casey door gate closed
+finish casey
 cancel alex
-cancel casey
 prepare home alex casey
 finish alex casey
 send home alex casey
 finish alex casey
-site home
-order alex move 1 7
-finish alex
-site statue
-prepare home riley
-finish riley
-send home riley
-finish riley
 site home
 status

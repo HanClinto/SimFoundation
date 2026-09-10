@@ -3,18 +3,20 @@ load campaign
 brief accident
 step 100
 status
-reserve accident devon
-step 12
+prepare accident casey
+finish casey
+send accident casey
+finish casey
 site accident
-order devon take rowan
-finish devon
-prepare home devon
-finish devon
-send home devon
+order casey take rowan
+finish casey
+prepare home casey
+finish casey
+send home casey
 step 8
 site home
-order devon deliver @held 1 1
-finish devon
+order casey deliver @held 1 1
+finish casey
 inspect rowan
-inspect devon
+inspect casey
 status

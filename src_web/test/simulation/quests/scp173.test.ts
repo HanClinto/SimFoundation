@@ -5,6 +5,7 @@ import {
   restoreSession,
   stepSession,
 } from "../../../src/application/ScenarioSession";
+import { secureContainment } from "../../../src/simulation/core/entity/Containment";
 
 const walkthrough = fs
   .readFileSync(
@@ -22,6 +23,7 @@ it("plays prior-research authorization, actual three-person coverage, maintenanc
     "Home study required",
   );
   let replayed = false;
+  let thirdTravelling = false;
   for (const line of walkthrough) {
     const result = executeLine(c, line);
     expect(result.rejected, line).not.toBe(true);
@@ -29,7 +31,27 @@ it("plays prior-research authorization, actual three-person coverage, maintenanc
       /Advanced.*(?:blocked|failed|interrupted|1000-tick limit)/i,
     );
     c = result.console;
-    if (line === "order riley study station direct-watch-protocol") {
+    expect(c.session.campaign!.staffIds).toEqual([
+      "site-1:alex",
+      "site-1:ben",
+      "site-1:casey",
+    ]);
+    if (line === "send statue ben") {
+      const { state, campaign } = c.session;
+      expect(
+        state.sites[campaign!.homeId]!.entities["site-1:ben"],
+      ).toBeUndefined();
+      const annex = state.sites[campaign!.siteIds.statue!]!;
+      expect(annex.entities["site-1:alex"]).toBeDefined();
+      expect(annex.entities["site-1:casey"]).toBeDefined();
+      expect(
+        Object.values(state.transfers).filter(
+          (transfer) => transfer.entities["site-1:ben"],
+        ),
+      ).toHaveLength(1);
+      thirdTravelling = true;
+    }
+    if (line === "order ben study station direct-watch-protocol") {
       const details = JSON.parse(executeLine(c, "inspect subject").output);
       expect(details.directWatchers).toHaveLength(2);
       expect(details).not.toHaveProperty("concern");
@@ -45,11 +67,10 @@ it("plays prior-research authorization, actual three-person coverage, maintenanc
     ].flatMap((owner) => Object.keys(owner.entities));
     expect(new Set(ids).size).toBe(ids.length);
   }
-  expect(replayed).toBe(true);
+  expect(replayed && thirdTravelling).toBe(true);
   const { state, campaign } = c.session;
   const annexId = campaign!.siteIds.statue!;
   const annex = state.sites[annexId]!;
-  const reserveId = campaign!.siteIds.reserve!;
   expect(annex.entities[`${annexId}:subject`]).toMatchObject({
     definitionId: "scp-173",
     location: { kind: "ground", position: { x: 8, y: 3 } },
@@ -64,31 +85,41 @@ it("plays prior-research authorization, actual three-person coverage, maintenanc
       findings: [
         {
           planId: "direct-watch-protocol",
-          actorId: `${reserveId}:riley`,
+          actorId: "site-1:ben",
           sourceIds: [`${annexId}:subject`],
         },
       ],
     },
     service: {
-      history: [{ kind: "service", amount: 1, actorId: `${reserveId}:riley` }],
+      history: [{ kind: "service", amount: 1, actorId: "site-1:ben" }],
     },
   });
-  for (const id of ["site-1:alex", "site-1:casey", `${reserveId}:riley`]) {
+  expect(campaign!.staffIds).toEqual([
+    "site-1:alex",
+    "site-1:ben",
+    "site-1:casey",
+  ]);
+  for (const id of campaign!.staffIds) {
     const actor = state.sites[campaign!.homeId]!.entities[id];
     if (actor?.kind !== "pawn") throw new Error("Missing returned worker.");
     expect(actor.health!.death).toBeUndefined();
   }
+  const holding = state.sites[campaign!.homeId]!.entities["site-1:holding"];
+  if (holding?.kind !== "facility") throw new Error("Missing home holding.");
+  expect(secureContainment(holding, state.tick)).toBe(true);
+  expect(
+    state.sites[campaign!.homeId]!.entities["site-13:specimen"],
+  ).toMatchObject({
+    location: { kind: "carried", carrierId: holding.id },
+  });
   expect(state.transfers).toEqual({});
-  expect(Object.keys(state.sites[reserveId]!.entities)).toEqual([
-    `${reserveId}:devon`,
-  ]);
 });
 
 it("loses actual workers when both direct observers abandon an open enclosure", () => {
   let c = openConsole();
   const prefix = walkthrough.slice(
     0,
-    walkthrough.indexOf("order riley watch subject 120"),
+    walkthrough.indexOf("order ben watch subject 120"),
   );
   for (const line of [...prefix, "cancel alex", "cancel casey", "step 80"]) {
     const result = executeLine(c, line);

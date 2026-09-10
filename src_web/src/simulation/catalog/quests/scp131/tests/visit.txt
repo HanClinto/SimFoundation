@@ -1,25 +1,25 @@
 # Continue after scp173/tests/watch-maintenance.txt; no scenario reset.
 brief companions
-order riley move 1 8
-finish riley
-order riley sleep bed
+order alex move 1 8
+finish alex
+order alex sleep guest-bed
 order casey sleep clinic
-finish riley casey
+finish alex casey
 # Continued home custody still consumes real power; bring the existing cache.
-prepare support riley
-finish riley
-send support riley
-finish riley
+prepare support alex
+finish alex
+send support alex
+finish alex
 site support
-order riley take power
-finish riley
-prepare home riley
-finish riley
-send home riley
-finish riley
+order alex take power
+finish alex
+prepare home alex
+finish alex
+send home alex
+finish alex
 site home
-order riley deliver @held 14 8
-finish riley
+order alex deliver @held 14 8
+finish alex
 prepare companions casey
 finish casey
 send companions casey

@@ -50,8 +50,9 @@ original [intervention and containment loop](../src/simulation/catalog/campaign/
 now adds actual worn tools/armor, finite subdual, physical restraints with
 struggle and band exchange, prepared holding with upkeep/warnings, finite
 emergency lockdown, breach/recontainment, and safe secured medical transfer.
-Opted-in mortality retains permanent bodies/cargo; two pre-existing reserve
-responders provide finite physical response rather than resurrection.
+Opted-in mortality retains permanent bodies/cargo. Recovery uses surviving
+members of the ordinary starting roster; the dedicated reserve pair and its
+dispatch mechanism have been removed. Total roster loss leaves no replacements.
 
 Surviving staff have separate supply-backed wound and blood courses. Actual
 equipment can be repaired at a bench and rearmed from finite supplies, retaining

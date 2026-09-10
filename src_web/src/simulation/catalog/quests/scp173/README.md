@@ -17,7 +17,8 @@ ambient360-degree visibility and the impact-recording Observe action do not.
 ## Player situation
 
 An actual home `kinetic-intake` finding unlocks the retained `statue` route.
-Bring three existing people through repeatable transport or the finite reserve.
+Bring the three original staff through two ordinary trips. There are no extra
+responders; plan home containment and supplies before sending everyone away.
 The viewing gallery lets two people establish watch before opening the inner
 door. `order alex watch subject 200` becomes active on Alex's normal turn, not
 at command acceptance. `status` and `inspect subject` show actual watchers.
@@ -53,11 +54,11 @@ blocker; assignment itself does not mean coverage is active or that a post is
 reachable/visible.
 
 The [individual-duty continuation](tests/watch-duty.txt) follows the first
-`status` in the maintenance walkthrough. Casey deliberately stays on watch while
-Riley retrieves the **actual spare guest bed** from home and installs it at the
-annex. Ben keeps his occupied home bed. Alex's assigned watch then yields to real
-sleep and resumes at his post; no fatigue reset or spare furniture is created.
-The guest bed remains in the field after withdrawal, a real loadout consequence.
+`status` in the maintenance walkthrough. Coverage uses the same three ordinary
+staff while an **actual spare guest bed** is supplied to the annex. Assigned
+watch yields to real sleep and resumes at the post; no fatigue reset, extra
+responder or spare furniture is created. The guest bed remains in the field
+after withdrawal, a real loadout consequence.
 
 ```sh
 { awk '1; $0 == "status" { exit }' src/simulation/catalog/quests/scp173/tests/watch-maintenance.txt
@@ -66,8 +67,8 @@ The guest bed remains in the field after withdrawal, a real loadout consequence.
 ```
 
 To relieve a watcher, activate the replacement **before** releasing the earlier
-commitment. `relieve alex riley` releases only Alex's current Watch after
-confirming Riley is already actively watching the same subject. Pending work,
+commitment. `relieve alex ben` releases only Alex's current Watch after
+confirming Ben is already actively watching the same subject. Pending work,
 wrong subjects, unavailable people and loss of required coverage for productive
 supervised work are refused without advancing time. Later queued work stays
 intact. This does not move or activate the replacement for you; ordinary
@@ -75,7 +76,7 @@ intact. This does not move or activate the replacement for you; ordinary
 
 During withdrawal, keep overlapping observers while people leave;
 physically close the door before the last watchers stop. Clear the narrow door
-approach so others can pass. Use `finish riley` for Riley's work, not
+approach so others can pass. Use `finish ben` for Ben's work, not
 `finish alex casey` while their active watches are the safety coverage.
 
 If a worker returns home to rest while others remain on watch, use
@@ -86,8 +87,9 @@ automatically supplies relief or rolls back the tick.
 
 The [normal-command walkthrough](tests/watch-maintenance.txt) captures/studies the
 kinetic source first, then plays three-person entry, locked work, overlapping
-relief, withdrawal and return. The first return team clears the home pad for
-the third person's actual transfer. The failure regression abandons both
+relief, withdrawal and return. Ben travels separately to join Alex and Casey,
+then returns early to restore home service and clear the pad before the final
+group arrives. The failure regression abandons both
 watchers with the door open and retains real worker deaths.
 
 ```sh

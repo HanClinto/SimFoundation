@@ -5,7 +5,7 @@ import { restoreSession } from "../../src/application/ScenarioSession";
 import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
 import type { Item } from "../../src/simulation/core/entity/Item";
 
-it("reaches a hostile-occupied extraction area with finite reserve landing and actual recovered equipment", () => {
+it("clears a hostile-occupied arrival with a colleague already in the field and recovered equipment", () => {
   const lines = fs
     .readFileSync(
       new URL(
@@ -17,16 +17,19 @@ it("reaches a hostile-occupied extraction area with finite reserve landing and a
     .split(/\r?\n/);
   let c = openConsole();
   let observedBlock = false;
+  let observedOrdinaryAdmission = false;
   for (const line of lines) {
-    if (line === "reserve intervention devon") {
-      const yard = c.session.state.sites["site-13"]!;
-      expect(yard.entities["site-13:specimen"]!.location).toEqual({
+    if (line === "order ben move 6 3") {
+      const yardId = c.session.campaign!.siteIds.intervention!;
+      const yard = c.session.state.sites[yardId]!;
+      expect(yard.entities[`${yardId}:specimen`]!.location).toEqual({
         kind: "ground",
         position: { x: 2, y: 3 },
       });
       expect(
         (yard.entities["site-1:alex"] as Pawn).health!.death,
       ).toBeDefined();
+      expect((yard.entities["site-1:ben"] as Pawn).canAct).toBe(true);
       expect(
         Object.values(c.session.state.transfers).some(
           (transfer) =>
@@ -35,12 +38,20 @@ it("reaches a hostile-occupied extraction area with finite reserve landing and a
       ).toBe(true);
       observedBlock = true;
     }
+    if (line === "order casey equip site-1:suppressor") {
+      const yard =
+        c.session.state.sites[c.session.campaign!.siteIds.intervention!]!;
+      expect(observedBlock).toBe(true);
+      expect((yard.entities["site-1:casey"] as Pawn).canAct).toBe(true);
+      expect(c.session.state.transfers).toEqual({});
+      observedOrdinaryAdmission = true;
+    }
     const result = executeLine(c, line);
     expect(result.output, line).not.toMatch(
       /^rejected|Advanced.*(?:blocked|Blocked|failed|1000-tick limit)/,
     );
     c = result.console;
-    if (line.startsWith("send ") || line.startsWith("reserve "))
+    if (line.startsWith("send "))
       c = { ...c, session: restoreSession(JSON.stringify(c.session))! };
     const ids = [
       ...Object.values(c.session.state.sites),
@@ -49,16 +60,22 @@ it("reaches a hostile-occupied extraction area with finite reserve landing and a
     expect(new Set(ids).size).toBe(ids.length);
   }
   expect(observedBlock).toBe(true);
+  expect(observedOrdinaryAdmission).toBe(true);
   const home = c.session.state.sites["site-1"]!;
-  const reserveId = c.session.campaign!.siteIds.reserve!;
   expect((home.entities["site-1:alex"] as Pawn).health!.death).toBeDefined();
-  expect((home.entities[`${reserveId}:devon`] as Pawn).canAct).toBe(true);
+  expect((home.entities["site-1:ben"] as Pawn).canAct).toBe(true);
   expect((home.entities["site-1:casey"] as Pawn).canAct).toBe(true);
   expect(
     (home.entities["site-1:suppressor"] as Item).equipment!.subdual!.charges,
-  ).toBe(1);
+  ).toBe(0);
+  expect(home.entities["site-1:suppressor"]!.location).toEqual({
+    kind: "carried",
+    carrierId: "site-1:casey",
+  });
   expect(c.session.state.transfers).toEqual({});
-  expect(Object.keys(c.session.state.sites[reserveId]!.entities)).toEqual([
-    `${reserveId}:riley`,
+  expect(c.session.campaign!.staffIds).toEqual([
+    "site-1:alex",
+    "site-1:ben",
+    "site-1:casey",
   ]);
 });

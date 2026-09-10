@@ -14,7 +14,6 @@ export interface Transfer {
   destinationId: string;
   arrival: Position;
   arrivalRadius?: number;
-  arrivalMode?: "pad" | "area";
   arrivesAt: number;
   blockedReason: string | null;
   entities: Record<string, Entity>;
@@ -28,7 +27,6 @@ export interface TransferRequest {
   readonly loadingRadius?: number;
   readonly arrival: Position;
   readonly arrivalRadius?: number;
-  readonly arrivalMode?: "pad" | "area";
   readonly duration: number;
 }
 
@@ -56,13 +54,6 @@ export function depart(
       request.arrivalRadius > 3)
   )
     return fail("Arrival radius must be an integer from zero to three.");
-  if (
-    request.arrivalMode === "area" &&
-    !(request.arrivalRadius && request.arrivalRadius > 0)
-  )
-    return fail(
-      "Area admission requires an explicit positive bounded arrival radius.",
-    );
   const loadingRadius = request.loadingRadius ?? 0;
   if (!Number.isSafeInteger(loadingRadius) || loadingRadius < 0)
     return fail("Loading radius must be a nonnegative integer.");
@@ -123,7 +114,6 @@ export function depart(
     ...(request.arrivalRadius !== undefined
       ? { arrivalRadius: request.arrivalRadius }
       : {}),
-    ...(request.arrivalMode ? { arrivalMode: request.arrivalMode } : {}),
     arrivesAt: state.tick + request.duration,
     blockedReason: null,
     entities: Object.fromEntries(
@@ -241,22 +231,10 @@ export function advanceTransfers(
     const traversal = destination
       ? traversalAt(destination, transfer.arrival)
       : null;
-    const alternateFloorPad =
-      destination &&
-      transfer.arrivalMode === "area" &&
-      floorAt(destination, transfer.arrival) &&
-      !Object.values(destination.entities).some(
-        (entity) =>
-          entity.kind === "door" &&
-          !entity.open &&
-          (entity.integrity ?? 100) > 0 &&
-          entity.location.kind === "ground" &&
-          samePosition(entity.location.position, transfer.arrival),
-      );
     let reason =
       !destination || !traversal || traversal.kind === "open-door"
         ? "Arrival tile is unavailable."
-        : traversal.kind === "blocked" && !alternateFloorPad
+        : traversal.kind === "blocked"
           ? traversal.reason
           : Object.keys(entities).some(
                 (entityId) => destination.entities[entityId],

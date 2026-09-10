@@ -1,5 +1,10 @@
 # Permanent Casualties And Finite Reserves
 
+The reserve-response portion is superseded by
+[decision043](043-ordinary-roster-without-special-reserves.md). The dedicated
+pair and dispatch mechanism were removed; permanent-casualty behavior remains.
+The rest of this record describes the historical decision.
+
 The continuation review makes death and subdued living recovery intended
 capabilities, not permanent exclusions implied by earlier peaceful checkpoints.
 This slice establishes irreversible loss and a finite response path first.

@@ -2,6 +2,7 @@ import type { OperationsContext } from "./travel";
 import { button, element, fieldset, table } from "../desktop/dom";
 import { healthStatus } from "../../../simulation/core/entity/pawn/Health";
 import { firstAlarm, alarmPriority } from "../../../application/Alarms";
+import { hasLivingStaff } from "../../../simulation/catalog/campaign/Campaign";
 
 export function attentionView(context: OperationsContext): HTMLElement {
   const session = context.controller.session;
@@ -56,37 +57,23 @@ export function attentionView(context: OperationsContext): HTMLElement {
         `Highest retained severity: ${latest.kind} at tick ${latest.tick}: ${latest.reason ?? latest.entityId}`,
       ),
     );
-  const reserves = fieldset("Finite reserve recovery");
-  reserves.append(
+  const recovery = fieldset("Personnel recovery");
+  recovery.append(
     element(
       "p",
       "",
-      "Devon and Riley already exist at the reserve station. Dispatch uses each actual person once; it never resurrects staff or recovers equipment for you.",
+      "Recovery uses surviving members of the starting roster and ordinary preparation, travel and physical work. There are no replacement personnel.",
     ),
   );
   const campaign = session.campaign;
-  if (campaign) {
-    const key = Object.keys(campaign.siteIds).find(
-      (key) => campaign.siteIds[key] === context.siteId,
+  if (campaign && !hasLivingStaff(session.state, campaign))
+    recovery.append(
+      element(
+        "strong",
+        "blocked-reason",
+        "No surviving campaign staff. You can inspect the remaining world or start a new campaign.",
+      ),
     );
-    for (const name of ["devon", "riley"]) {
-      const person =
-        session.state.sites[campaign.siteIds.reserve!]?.entities[
-          `${campaign.siteIds.reserve}:${name}`
-        ];
-      const dispatch = button(`Dispatch ${name} to inspected site`, () =>
-        context.act(
-          () => context.controller.reserve(key ?? "", name),
-          `Reserve ${name} dispatched; use Travel to inspect and wait for the actual transfer.`,
-        ),
-      );
-      dispatch.disabled = !person;
-      dispatch.title = person
-        ? `Destination: ${session.state.sites[context.siteId]?.name}. Arrival in 12 ticks; revalidated on dispatch.`
-        : "This existing reserve has already left the station.";
-      reserves.append(dispatch);
-    }
-  }
-  root.append(reserves);
+  root.append(recovery);
   return root;
 }
