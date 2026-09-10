@@ -1,7 +1,13 @@
 import PF from "pathfinding";
 import type { Position } from "../entity/Entity";
 import type { Site } from "./Site";
-import { floorAt, positionOf, traversalAt, groundOccupants } from "./TileMap";
+import {
+  floorAt,
+  positionOf,
+  traversalAt,
+  groundOccupants,
+  samePosition,
+} from "./TileMap";
 
 export function route(
   site: Site,
@@ -13,6 +19,7 @@ export function route(
   const occupants = groundOccupants(site);
   if (traversalAt(site, destination, actorId, occupants).kind === "blocked")
     return null;
+  if (samePosition(origin, destination)) return [];
   const grid = new PF.Grid(
     site.terrain.map((row, rowIndex) =>
       [...row].map((_tile, columnIndex) =>
@@ -54,6 +61,7 @@ export function interactionRoute(
   let best: readonly Position[] | null = null;
   for (const destination of candidates) {
     const path = route(site, origin, destination, actorId);
+    if (path?.length === 0) return path;
     if (path && (best === null || path.length < best.length)) best = path;
   }
   return best;
