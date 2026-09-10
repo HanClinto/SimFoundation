@@ -261,6 +261,14 @@ not close the entrance or erase patrons. Revisit preserves depletion and
 completed repair. `assign alex none` clears future duty without cancelling
 current paid work.
 
+Each started service now emits one due warning and one lapse warning at the
+receipt-derived transition ticks, even while the manager views another site.
+Automatic `run` stops for these notices; unstarted stations do not generate
+repeating alarms. When a tick contains both a routine warning and an actual
+death/breach/escape, the more severe incident is presented first and all events
+remain available for inspection. Cell primary warnings share this service
+mechanism rather than being duplicated in the subject's custody logic.
+
 The [SCP-2006 screening annex](../quests/scp2006/README.md) reuses this duty
 loop for the selected containment showcase. Each host physically rehearses;
 unused approved programmes and the actual audience are required. Prints are

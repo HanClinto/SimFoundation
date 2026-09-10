@@ -4,7 +4,6 @@ import type { Pawn } from "./Pawn";
 import type { TickEvent } from "../../Simulation";
 import { positionOf } from "../../site/TileMap";
 import { containmentFor, secureContainment } from "../Containment";
-import { serviceDeadline } from "../Service";
 
 export function restraintFor(
   entities: Record<string, Entity>,
@@ -30,11 +29,7 @@ export function tickCustody(
   const cell = containmentFor(entities, pawn.id);
   if (cell) {
     if (secureContainment(cell, tick)) {
-      const deadline = cell.service ? serviceDeadline(cell.service) : null;
-      if (
-        (deadline !== null && tick === deadline - cell.service!.leadTime) ||
-        tick === (cell.containment!.lockdown.untilTick ?? -100) - 10
-      )
+      if (tick === (cell.containment!.lockdown.untilTick ?? -100) - 10)
         events.push({
           siteId,
           entityId: cell.id,

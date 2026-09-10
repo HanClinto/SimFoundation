@@ -492,11 +492,12 @@ export function executeLine(
         const previous = session.events;
         session = stepSession(session, 1);
         if (command === "run" && session.campaign) {
-          alarm = session.events.find(
-            (event) =>
-              !previous.includes(event) &&
-              ["warning", "breached", "escaped", "died"].includes(event.kind),
+          const current = session.events.filter(
+            (event) => !previous.includes(event),
           );
+          alarm = ["died", "breached", "escaped", "warning"]
+            .map((kind) => current.find((event) => event.kind === kind))
+            .find((event) => event !== undefined);
           if (alarm) break;
         }
       }

@@ -6,6 +6,7 @@ import { tickDoor } from "./entity/Door";
 import { advanceTransfers } from "./site/Transfer";
 import type { ActionState } from "./entity/pawn/actions/Action";
 import { beginOperatingCycle } from "./site/OperatingCycle";
+import { publishServiceWarning } from "./entity/Service";
 
 export const SIMULATION_VERSION = 26;
 
@@ -76,6 +77,8 @@ export function advanceSimulation(
       if (entity?.kind === "pawn")
         tickPawn({ site, pawn: entity, tick: next.tick, materials, events });
       else if (entity?.kind === "door") tickDoor(site, entity, events);
+      else if (entity?.kind === "facility")
+        publishServiceWarning(site, entity, next.tick, events);
     }
   }
   return { state: advanceTransfers(next, events), events };

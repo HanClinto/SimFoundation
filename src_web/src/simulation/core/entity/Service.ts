@@ -1,4 +1,6 @@
 import type { Site } from "../site/Site";
+import type { Facility } from "./Facility";
+import type { TickEvent } from "../Simulation";
 
 export interface ServiceRecord {
   kind: "repair" | "service";
@@ -66,4 +68,33 @@ export function serviceStatus(
   if (deadline === null) return "unstarted";
   if (tick > deadline) return "overdue";
   return tick >= deadline - service.leadTime ? "due" : "covered";
+}
+
+export function publishServiceWarning(
+  site: Site,
+  facility: Facility,
+  tick: number,
+  events: TickEvent[],
+): void {
+  if (!facility.service || facility.location.kind !== "ground") return;
+  const deadline = serviceDeadline(facility.service);
+  if (deadline === null) return;
+  const due = tick === deadline - facility.service.leadTime;
+  const lapsed = tick === deadline + 1;
+  if (!due && !lapsed) return;
+  const subject = Object.values(site.entities).find(
+    (entity) =>
+      entity.kind === "pawn" &&
+      entity.location.kind === "carried" &&
+      entity.location.carrierId === facility.id,
+  );
+  events.push({
+    siteId: site.id,
+    entityId: facility.id,
+    kind: "warning",
+    ...(subject ? { targetId: subject.id } : {}),
+    reason: due
+      ? `${facility.name} service is due; coverage expires after tick ${deadline}.`
+      : `${facility.name} service coverage has lapsed; restore physical service.`,
+  });
 }
