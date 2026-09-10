@@ -19,3 +19,11 @@ instead require a genuinely single blocking root; radii are bounded to3.
 This is not a traffic planner or save migration. Core35 discards incompatible
 development transfers. Group, insufficient-space, default-contract and saved
 replay tests accompany complete peaceful/danger/care/evacuation walkthroughs.
+
+Follow-up: normal-command play can leave an incapable resident on the home
+primary pad while every controllable worker is away. Strict arrival for both
+ordinary teams and reserves would deadlock all response. The finite home reserve
+now requests bounded area admission within radius3; a closed entry door or
+impassable primary terrain still blocks it. This uses the existing landing
+calculation rather than a map-wide rescue spawn, and the responder must clear
+the pad physically. Other campaign travel retains strict pad admission.

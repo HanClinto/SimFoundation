@@ -1,0 +1,67 @@
+# A physically blocked home pad with every original worker away.
+load campaign
+order casey take meals 1
+finish casey
+prepare care casey
+finish casey
+send care casey
+finish casey
+site care
+step 1000
+order casey treat mira
+finish casey
+order casey sleep field-bed
+finish casey
+order casey eat @held
+finish casey
+order casey take mira
+finish casey
+prepare home casey
+finish casey
+send home casey
+finish casey
+site home
+order casey drop @held
+finish casey
+order casey move 1 7
+finish casey
+# Restore readiness physically; Mira still occupies the primary arrival pad.
+order alex sleep bed
+finish alex
+order alex take meals 1
+finish alex
+order alex eat @held
+finish alex
+order ben sleep guest-bed
+finish ben
+order ben take meals 1
+finish ben
+order ben eat @held
+finish ben
+send gallery casey
+finish casey
+site gallery
+order casey move 3 3
+finish casey
+site home
+order alex move 3 7
+order ben move 2 8
+finish alex ben
+send gallery alex ben
+finish alex ben
+site gallery
+send home alex ben
+send home casey
+step 8
+status
+# A finite actual reserve can land nearby; it does not teleport Mira off the pad.
+reserve home devon
+finish devon
+site home
+order devon deliver mira 3 1
+finish devon
+order alex move 4 3
+finish alex
+order devon nurse mira clinic
+finish devon
+status

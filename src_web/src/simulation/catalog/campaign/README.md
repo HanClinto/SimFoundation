@@ -332,6 +332,17 @@ then use the responders to recover people/bodies and equipment physically.
 Reserve dispatch respects the same research prerequisite as ordinary travel;
 it cannot be used to open Kestrel before home corroboration.
 
+Home emergency response may land on free floor within three tiles of the
+primary pad when that pad is occupied. This prevents an incapacitated resident
+from blocking every returning worker and the only available reserve. The same
+finite responder and dispatch cost are used; they must then physically move
+and care for the obstruction. Invalid terrain and a closed doorway are not
+bypassed, and ordinary team returns still require their primary pad.
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/blocked-home-recovery.txt
+```
+
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/permanent-loss.txt
 npm run sim < src/simulation/catalog/campaign/tests/crew-loss-recovery.txt

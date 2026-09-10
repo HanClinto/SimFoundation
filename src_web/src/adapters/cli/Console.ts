@@ -372,7 +372,7 @@ export function executeLine(
       );
       next = { ...console, session: { ...console.session, ...result } };
       return finish(
-        "Reserve responder dispatched: arrival in 12 ticks, one reserved allocation spent. Keep the destination pad clear; no bodies or equipment have been moved for you.",
+        "Reserve responder dispatched: arrival in 12 ticks, one reserved allocation spent. Home response can use a bounded alternate landing area; no bodies or equipment have been moved for you.",
       );
     }
     case "sites":
@@ -534,6 +534,7 @@ export function executeLine(
                     destinationId: owner.destinationId,
                     arrival: owner.arrival,
                     arrivalRadius: owner.arrivalRadius ?? 0,
+                    arrivalMode: owner.arrivalMode ?? "pad",
                     arrivesAt: owner.arrivesAt,
                     blockedReason: owner.blockedReason,
                     mapPosition: null,
