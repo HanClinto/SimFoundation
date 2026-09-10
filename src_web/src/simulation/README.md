@@ -142,6 +142,16 @@ Each action class implements `canStart` and `tick`. [ActionQueue.ts](core/entity
 
 [Pack.ts](core/entity/pawn/actions/Pack.ts) adds bounded protective handling for the [original courier](catalog/campaign/README.md#protective-courier-handling). A flagged fragile item cannot be picked up bare. A worker carries a compatible empty case, physically seals the specimen, and spends case condition only at closure. The specimen becomes carried by the case, not copied into container metadata. Existing transfer expands that ordinary ownership tree. Unpack exposes the same specimen for physical study and never refunds wear. Cases hold one nonliving item, not pawns or other cases. Core version 14 adds this plain item/action state; old development saves are discarded.
 
+[Equipment.ts](core/entity/Equipment.ts) derives actual worn tool/armor and loose
+cargo from entity ownership. Equip/Subdue/Rearm/RepairEquipment preserve those
+items and finite charges/condition through work, transport and death. Physical
+restraints remain distinct attached items and do not grant consent.
+[Custody.ts](core/entity/pawn/Custody.ts) handles conscious struggle, secure-cell
+ownership and release; ordinary Contain, Service and Lockdown provide prepared
+intake, upkeep and a bounded fallback. The [connected danger walkthrough](catalog/campaign/tests/connected-danger.txt)
+proves these mechanics with actual injury, medical recovery and maintained
+holding rather than another peaceful collection fixture.
+
 Action handlers are short-lived code objects, not saved class instances. Progress, source, target, and blocker are ordinary JSON queue data. Cancellation removes that intention only: it does not undo consumed material, earned research progress, need changes, drop a carried entity, teleport anything, or change autonomy. Facility occupancy is derived from the active action's work progress, so removing the queue entry releases it without a second reservation ledger or cancellation hook.
 
 [ControlPolicy.ts](core/ControlPolicy.ts) checks player/script/debug authority and edits queues. Immediate starts use the action's own checks. Appended intentions may depend on earlier actions (for example Take then Drop), so their physical eligibility is deferred until execution. Previews return eligibility without mutation or event publication. Debug authority bypasses player permission, not the executor's physical rules.
@@ -352,7 +362,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities within an explicit loading radius (zero by default), require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Core helpers are headless domain operations; campaign prepare/send adds actual roster, route, passenger, supply and readiness rules above them. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Current core version 20 includes physical work, care, service and operating-cycle state; earlier development shapes are discarded with no migrations or deep save validators. CLI session saves also retain campaign/admission facts, quest counters/status and the most recent 100 events, with session version 6 and a matching simulation version. These are trusted development saves, not a hardened external input format.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Current core version 27 includes physical work, mortality/care, gear, custody/containment, service and operating-cycle state; earlier development shapes are discarded with no migrations or deep save validators. CLI session saves also retain campaign/admission facts, quest counters/status and the most recent 100 events, with session version 6 and a matching simulation version. These are trusted development saves, not a hardened external input format.
 
 ## Command-Line Console
 

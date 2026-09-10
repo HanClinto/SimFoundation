@@ -81,7 +81,7 @@ export function campaignStatus(session: ScenarioSession): string {
       Object.values(owner.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.acceptsEscort
           ? [
-              `${session.labels[entity.id]} ${entity.name}: ${owner.id} | ${healthStatus(entity)} | blood loss ${entity.health?.bloodLoss.toFixed(1) ?? "-"}${campaign.admissions[entity.id] ? ` | admitted tick ${campaign.admissions[entity.id]!.tick}` : " | awaiting care"}`,
+              `${session.labels[entity.id]} ${entity.name}: ${owner.id} | ${healthStatus(entity)} | blood loss ${entity.health?.bloodLoss.toFixed(1) ?? "-"}${entity.health?.death ? " | body retained for recovery" : campaign.admissions[entity.id] ? ` | admitted tick ${campaign.admissions[entity.id]!.tick}` : " | awaiting care"}`,
             ]
           : [],
       ),

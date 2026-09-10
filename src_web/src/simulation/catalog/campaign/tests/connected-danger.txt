@@ -1,0 +1,71 @@
+# One connected intervention, injury, living recovery, upkeep and fallback session.
+load campaign
+order ben take parts 2
+finish ben
+order ben deliver @held 13 7
+finish ben
+order ben service holding
+finish ben
+assign ben holding
+order alex equip suppressor
+order alex equip vest
+order alex take restraint
+finish alex
+prepare intervention alex casey
+finish alex casey
+send intervention alex casey
+step 8
+site intervention
+# Deliberately allow an actual impact before intervention.
+order alex move 4 3
+finish alex
+step 12
+order alex subdue specimen
+finish alex
+order casey treat alex
+finish casey
+order casey treat alex
+finish casey
+order alex restrain specimen @held
+finish alex
+order alex take specimen
+finish alex
+prepare home alex casey
+finish alex casey
+send home alex casey
+step 8
+site home
+order alex contain @held holding
+finish alex
+order alex unrestrain specimen
+finish alex
+# Controlled research and staff medical work share the same ticking home.
+assign ben none
+autonomy ben off
+finish ben
+order ben study holding kinetic-intake
+finish ben
+# Buy fallback time before sending staff to recovery, then retain real upkeep.
+order ben lockdown holding
+finish ben
+assign ben holding
+order alex move 3 1
+finish alex
+order casey nurse alex clinic wounds
+finish casey
+order casey nurse alex clinic
+finish casey
+# Clear the compact bedside approach rather than teleporting a recovered worker.
+order casey move 5 3
+finish casey
+order alex take parts 1
+finish alex
+order alex repair-equipment vest workshop
+finish alex
+order alex deliver @held 6 1
+finish alex
+order alex move 1 3
+finish alex
+order alex rearm suppressor
+finish alex
+status

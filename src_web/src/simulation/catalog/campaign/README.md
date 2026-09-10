@@ -184,7 +184,14 @@ Status and events expose warning, breach, custody and fallback expiry.
 
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/containment-cycle.txt
+npm run sim < src/simulation/catalog/campaign/tests/connected-danger.txt
 ```
+
+`connected-danger.txt` is one uninterrupted injured capture, restraint/return,
+controlled study, staff wound/blood care, equipment repair/rearm and cell
+fallback session. It keeps a real worker assigned to upkeep while the others
+recover. Delaying fallback until after all medical/maintenance work is not
+equivalent: a lapsed cell can release its hostile while staff are occupied.
 
 Safe later transfer does not require a breach. Carry the original transport
 band back to the cell and apply it while effective containment holds the awake

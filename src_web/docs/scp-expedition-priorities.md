@@ -29,6 +29,24 @@ actor-scoped `@held` reduce guessed work ticks and generated-ID copying; they
 do not perform work for free. Automated completion does not establish
 subjective fun or full canonical containment behavior.
 
+### Approved Dangerous-Capability Continuation
+
+The peaceful/source-backed bounds above are not product exclusions. The
+original [intervention and containment loop](../src/simulation/catalog/campaign/README.md#equipment-backed-intervention)
+now adds actual worn tools/armor, finite subdual, physical restraints with
+struggle and band exchange, prepared holding with upkeep/warnings, finite
+emergency lockdown, breach/recontainment, and safe secured medical transfer.
+Opted-in mortality retains permanent bodies/cargo; two pre-existing reserve
+responders provide finite physical response rather than resurrection.
+
+Surviving staff have separate supply-backed wound and blood courses. Actual
+equipment can be repaired at a bench and rearmed from finite supplies, retaining
+item identity and spent-condition/charge consequences. The
+[connected danger walkthrough](../src/simulation/catalog/campaign/tests/connected-danger.txt)
+incurs actual injury, recovers the living hostile, cares for staff and maintains
+containment through a real assigned worker. Subjective feedback issue #40
+remains valuable but does not block these already approved capabilities.
+
 ## Recommendation
 
 Build a small set of complete expedition-to-facility stories before increasing the anomaly count. Start with **SCP-1867, SCP-1370 and a bounded SCP-294**. Follow with **SCP-507 and SCP-2295** once living recovery and medical intake are real, then use **SCP-1295** to bring facility-style work into the field. Reserve **SCP-173 and SCP-3008** as showcase milestones, not the next two enemy types.
