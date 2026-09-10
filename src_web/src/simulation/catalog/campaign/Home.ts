@@ -22,6 +22,17 @@ export const home: SiteTemplate = {
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
     {
+      id: "medical-kit",
+      definitionId: "field-medical-kit",
+      location: { kind: "ground", position: { x: 5, y: 2 } },
+    },
+    {
+      id: "field-medical-units",
+      definitionId: "field-medical-unit",
+      location: { kind: "ground", position: { x: 5, y: 1 } },
+      overrides: { amount: 3 },
+    },
+    {
       id: "workshop",
       definitionId: "equipment-bench",
       location: { kind: "ground", position: { x: 7, y: 1 } },

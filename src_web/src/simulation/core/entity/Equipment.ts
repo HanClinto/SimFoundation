@@ -1,6 +1,7 @@
 import type { Entity } from "./Entity";
 import type { Item } from "./Item";
 import type { Site } from "../site/Site";
+import type { Pawn } from "./pawn/Pawn";
 
 export interface Equipment {
   slot: "tool" | "armor";
@@ -12,6 +13,11 @@ export interface Equipment {
     rearm?: { supplyDefinitionId: string; capacity: number; ticks: number };
   };
   armor?: { reduction: number; wear: number };
+  medicine?: {
+    supplies: number;
+    ticks: number;
+    rearm?: { supplyDefinitionId: string; capacity: number; ticks: number };
+  };
 }
 
 export function wornEquipment(
@@ -75,4 +81,15 @@ export function equipmentUnderRepair(
       action.supplyId !== undefined
     );
   });
+}
+
+export function stabilizationCapability(
+  site: Site,
+  pawn: Pawn,
+): { supplies: number; ticks: number } | undefined {
+  if (!pawn.response?.medicine) return undefined;
+  const tool = wornEquipment(site, pawn.id, "tool");
+  if (tool?.equipment?.medicine)
+    return (tool.integrity ?? 100) > 0 ? tool.equipment.medicine : undefined;
+  return pawn.response.medicine;
 }

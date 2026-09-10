@@ -56,3 +56,49 @@ export const WoundCarePack: EntityTemplate = {
     blocksSight: false,
   },
 };
+
+export const FieldMedicalKit: EntityTemplate = {
+  id: "field-medical-kit",
+  name: "Field stabilization kit",
+  description:
+    "A real worn tool-slot kit for a trained medic. Three finite supplies, four work ticks per stabilized wound. Empty or broken worn kits do not silently spend the medic's separate initial charges. Rearm physically from finite field-medical units. Wearing it does not create medical training or compete with the loose cargo slot.",
+  defaults: {
+    kind: "item",
+    materialId: "plastic",
+    amount: 1,
+    integrity: 100,
+    carryable: true,
+    blocksMovement: false,
+    blocksSight: false,
+    equipment: {
+      slot: "tool",
+      worn: false,
+      medicine: {
+        supplies: 3,
+        ticks: 4,
+        rearm: {
+          supplyDefinitionId: "field-medical-unit",
+          capacity: 3,
+          ticks: 6,
+        },
+      },
+    },
+  },
+};
+
+export const FieldMedicalUnit: EntityTemplate = {
+  id: "field-medical-unit",
+  name: "Sealed field medical units",
+  description:
+    "Finite abstract restocking units for the actual stabilization kit. One spent unit and six work ticks restore one kit supply, not training, lost blood or wound severity. No real medical recipe or procedure is represented.",
+  defaults: {
+    kind: "item",
+    materialId: "plastic",
+    amount: 1,
+    integrity: 100,
+    stackable: true,
+    carryable: true,
+    blocksMovement: false,
+    blocksSight: false,
+  },
+};

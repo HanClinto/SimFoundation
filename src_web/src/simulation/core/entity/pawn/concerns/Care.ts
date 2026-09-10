@@ -4,11 +4,12 @@ import { canSee, visibleThreats } from "../../../site/Visibility";
 import { positionOf, distance } from "../../../site/TileMap";
 import { interactionRoute } from "../../../site/Pathfinding";
 import type { Pawn } from "../Pawn";
+import { stabilizationCapability } from "../../Equipment";
 
 export function careConcern(context: ActionContext): Concern | null {
   const { site, pawn } = context;
-  if (!pawn.response?.medicine || pawn.response.medicine.supplies < 1)
-    return null;
+  const medicine = stabilizationCapability(site, pawn);
+  if (!medicine || medicine.supplies < 1) return null;
   const threats = visibleThreats(site, pawn, context.tick);
   const patients = Object.values(site.entities)
     .filter(

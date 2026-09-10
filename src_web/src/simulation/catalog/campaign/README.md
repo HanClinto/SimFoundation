@@ -242,6 +242,14 @@ critical interval and death tick/cause. Prompt treatment can stop the bleeding;
 ordinary nursing can then address blood loss. Previously authored peaceful
 patients do not silently acquire this fatal clock.
 
+For additional field stabilization, a trained medic can wear `medical-kit`
+in the same tool slot used by the intervention instrument. Its three actual
+supplies are consumed before the medic's separate initial allowance; while an
+empty or broken kit is worn there is no silent fallback. The kit does not grant
+training to other staff. `rearm medical-kit` spends one real
+`field-medical-unit` and six work ticks per restored supply, up to three.
+Unequipping, transit and body recovery preserve the same kit and its balance.
+
 Crossing blood loss80 while bleeding emits a pre-fatal warning for opted-in
 patients; entering the critical interval emits another identified warning.
 Automatic `run` stops on those notices. The original accident's first warning

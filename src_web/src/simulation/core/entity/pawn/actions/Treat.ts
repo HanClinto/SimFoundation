@@ -4,6 +4,7 @@ import { canSee, visibleThreats } from "../../../site/Visibility";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { isCarePatient } from "../CareAccess";
+import { stabilizationCapability } from "../../Equipment";
 
 export interface TreatState {
   kind: "treat";
@@ -15,7 +16,8 @@ export class Treat implements Action {
   constructor(readonly state: TreatState) {}
 
   canStart({ site, pawn, tick }: ActionContext): string | null {
-    if (!pawn.response?.medicine || pawn.response.medicine.supplies < 1)
+    const medicine = stabilizationCapability(site, pawn);
+    if (!medicine || medicine.supplies < 1)
       return "Medical supplies or training are unavailable.";
     const patient = site.entities[this.state.targetId];
     if (patient?.kind === "pawn" && patient.health?.death)
@@ -65,8 +67,8 @@ export class Treat implements Action {
         reason: "The patient is not visible from the treatment position.",
       };
     }
-    if (++this.state.workTicks < pawn.response!.medicine!.ticks)
-      return { status: "running" };
+    const medicine = stabilizationCapability(site, pawn)!;
+    if (++this.state.workTicks < medicine.ticks) return { status: "running" };
     const wound = target
       .health!.wounds.filter((entry) => entry.bleeding > 0)
       .sort(
@@ -76,7 +78,7 @@ export class Treat implements Action {
     if (wound) {
       wound.bleeding = 0;
       wound.treatedBy = pawn.id;
-      pawn.response!.medicine!.supplies--;
+      medicine.supplies--;
       context.events.push({
         siteId: site.id,
         entityId: pawn.id,

@@ -14,27 +14,33 @@ export class Rearm implements Action {
   constructor(readonly state: RearmState) {}
   canStart({ site, pawn }: ActionContext): string | null {
     const target = site.entities[this.state.targetId];
+    const capability =
+      target?.kind === "item"
+        ? (target.equipment?.subdual ?? target.equipment?.medicine)
+        : undefined;
     if (
       target?.kind !== "item" ||
-      !target.equipment?.subdual?.rearm ||
+      !capability?.rearm ||
+      !target.equipment ||
       !target.equipment.worn ||
       target.location.kind !== "carried" ||
       target.location.carrierId !== pawn.id ||
       (target.integrity ?? 100) <= 0
     )
-      return "Wear a serviceable rearmable intervention tool.";
+      return "Wear a serviceable rearmable tool or medical kit.";
     if (
-      target.equipment.subdual.charges >=
-      target.equipment.subdual.rearm.capacity
+      ("charges" in capability ? capability.charges : capability.supplies) >=
+      capability.rearm.capacity
     )
-      return "The intervention tool is already at capacity.";
+      return "This equipment is already at capacity.";
     return null;
   }
   tick(context: ActionContext): ActionResult {
     const reason = this.canStart(context);
     if (reason) return { status: "blocked", reason };
     const target = context.site.entities[this.state.targetId] as Item;
-    const capability = target.equipment!.subdual!;
+    const capability = (target.equipment!.subdual ??
+      target.equipment!.medicine)!;
     const rearm = capability.rearm!;
     if (!this.state.supplyId) {
       const source = findSupply(
@@ -54,7 +60,8 @@ export class Rearm implements Action {
       this.state.supplyId = source.id;
     }
     if (++this.state.workTicks < rearm.ticks) return { status: "running" };
-    capability.charges++;
+    if ("charges" in capability) capability.charges++;
+    else capability.supplies++;
     return { status: "completed" };
   }
 }
