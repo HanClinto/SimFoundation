@@ -6,11 +6,11 @@ import {
   setCameraEnabled,
   cameraInstalled,
 } from "../src/simulation_legacy/observations";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 import type { SiteMap } from "../src/simulation_legacy/world";
-import { observedSnapshot } from "../src/adapters/browser/observed-view";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { observedSnapshot } from "../src/adapters/browser_legacy/observed-view";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 
 describe("facility observations", () => {
   it("accepts camera orders outside current coverage but checks the actual mounting site on arrival", () => {

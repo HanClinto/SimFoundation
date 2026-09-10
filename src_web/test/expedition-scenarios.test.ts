@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 import {
   expeditionAssembled,
@@ -9,7 +9,7 @@ import {
   expeditionScenario,
   expeditionRecoveryComplete,
 } from "../src/simulation_legacy/expedition-site";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { actionProgress } from "../src/simulation_legacy/action-progress";
 import { findRoute } from "../src/simulation_legacy/world";
 

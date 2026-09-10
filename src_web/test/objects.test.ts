@@ -13,12 +13,12 @@ import {
   orderObjectMove,
   cancelObjectMove,
 } from "../src/simulation_legacy/object-work";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { orderSurfaceWork } from "../src/simulation_legacy/environment";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { advanceRoutines } from "../src/simulation_legacy/routines";
 import { observeSite } from "../src/simulation_legacy/observations";
-import { observedSnapshot } from "../src/adapters/browser/observed-view";
+import { observedSnapshot } from "../src/adapters/browser_legacy/observed-view";
 
 const stock = (): ObjectStore => ({
   nextId: 1,

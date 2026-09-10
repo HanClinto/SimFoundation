@@ -15,8 +15,8 @@ import {
 } from "../src/simulation_legacy/materials";
 import { observeSite } from "../src/simulation_legacy/observations";
 import { setDoorPolicy } from "../src/simulation_legacy/world";
-import { createController } from "../src/application/controller";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { createController } from "../src/application/legacy/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 const policy = {

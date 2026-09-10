@@ -2,6 +2,13 @@
 
 This document records the intended presentation language for SCPSiteManager. It is a design compass, not a requirement to reproduce any historical product literally.
 
+**Replacement status (2026-09-10):** the fresh active wrapper keeps the desktop,
+site folders, modeless windows, icons with labels, and visible action queue.
+Detailed prototype mechanics below are historical references, not a port
+checklist. Research, evidence and physical crafting now exist in the replacement
+engine; old statements that research does not exist are superseded. Development
+inspection exposes current state; camera and clinical fog remain deferred.
+
 ## Core Metaphor
 
 **The simulation is the desktop.**

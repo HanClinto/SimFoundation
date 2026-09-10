@@ -1,9 +1,9 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createExposureWindow } from "../src/adapters/browser/exposure-view";
-import { createController } from "../src/application/controller";
+import { createExposureWindow } from "../src/adapters/browser_legacy/exposure-view";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import type { PlacementRequest } from "../src/adapters/browser/placement";
+import type { PlacementRequest } from "../src/adapters/browser_legacy/placement";
 
 afterEach(() => vi.unstubAllGlobals());
 it("binds to individual objects, locates their current position, and detaches in place", () => {

@@ -5,8 +5,8 @@ import {
   loadGameState,
   saveGameState,
   type StoragePort,
-} from "../src/adapters/browser/game-persistence";
-import { createController } from "../src/application/controller";
+} from "../src/adapters/browser_legacy/game-persistence";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState, GAME_STATE_VERSION } from "./fixtures/work-state";
 import { createScp999State } from "../src/simulation_legacy/scp-999";
 

@@ -6,8 +6,8 @@ import {
   setClinicalCarePolicy,
   ASSESSMENT_REQUIREMENTS,
 } from "../src/simulation_legacy/clinical";
-import { createController } from "../src/application/controller";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { createController } from "../src/application/legacy/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 
 describe("parallel clinical surveys", () => {
   it("lets untrained assigned staff perform mood screening but not psychiatric evaluation", () => {

@@ -1,10 +1,10 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createSiteMap } from "../src/adapters/browser/site-map-view";
-import { createController } from "../src/application/controller";
+import { createSiteMap } from "../src/adapters/browser_legacy/site-map-view";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { renderSite } from "../src/adapters/browser/renderer";
-vi.mock("../src/adapters/browser/renderer", async (original) => ({
+import { renderSite } from "../src/adapters/browser_legacy/renderer";
+vi.mock("../src/adapters/browser_legacy/renderer", async (original) => ({
   ...(await original<object>()),
   renderSite: vi.fn(),
 }));

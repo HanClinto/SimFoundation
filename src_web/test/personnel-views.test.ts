@@ -4,13 +4,13 @@ import { createInitialState } from "../src/simulation_legacy/state";
 import {
   createPersonnelInspectorWindows,
   updatePersonnelInspectors,
-} from "../src/adapters/browser/personnel-view";
+} from "../src/adapters/browser_legacy/personnel-view";
 import {
   createPersonnelMedicalWindows,
   updatePersonnelMedicalWindows,
-} from "../src/adapters/browser/medical-view";
-import { createClinicalCareView } from "../src/adapters/browser/clinical-care-view";
-import { createController } from "../src/application/controller";
+} from "../src/adapters/browser_legacy/medical-view";
+import { createClinicalCareView } from "../src/adapters/browser_legacy/clinical-care-view";
+import { createController } from "../src/application/legacy/controller";
 import { completeAssessment } from "../src/simulation_legacy/clinical";
 import {
   deriveMood,

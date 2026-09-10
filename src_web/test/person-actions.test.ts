@@ -8,7 +8,7 @@ import {
 } from "../src/simulation_legacy/person-actions";
 import { submitAction } from "../src/simulation_legacy/action-queue";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { editActionQueue } from "../src/simulation_legacy/action-queue";
 import { createTestJobs } from "./fixtures/work-state";
 import {
@@ -18,9 +18,9 @@ import {
 import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 import { requestAssessment } from "../src/simulation_legacy/clinical";
 import { draftResponder } from "../src/simulation_legacy/combat";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { fieldState } from "../src/simulation_legacy/expeditions";
-import { expeditionMapController } from "../src/adapters/browser/expedition-controller";
+import { expeditionMapController } from "../src/adapters/browser_legacy/expedition-controller";
 
 const loaded = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });

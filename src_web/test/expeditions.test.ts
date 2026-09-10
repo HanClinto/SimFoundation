@@ -13,8 +13,8 @@ import {
   storeFieldState,
 } from "../src/simulation_legacy/expeditions";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { createController } from "../src/application/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
+import { createController } from "../src/application/legacy/controller";
 import { advanceCombat, orderResponder } from "../src/simulation_legacy/combat";
 import { setSurface } from "../src/simulation_legacy/materials";
 

@@ -1,9 +1,9 @@
 import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { expect, it, vi } from "vitest";
-import { createPlacementSession } from "../src/adapters/browser/placement";
+import { createPlacementSession } from "../src/adapters/browser_legacy/placement";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createController } from "../src/application/controller";
-import { cameraPlacement } from "../src/adapters/browser/surveillance-view";
+import { createController } from "../src/application/legacy/controller";
+import { cameraPlacement } from "../src/adapters/browser_legacy/surveillance-view";
 
 it("pins any footprint and revalidates before committing without knowing the object type", () => {
   const snapshot = { game: createInitialState(), running: false };

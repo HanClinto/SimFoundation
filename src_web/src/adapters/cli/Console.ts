@@ -7,7 +7,12 @@ import {
   type ScenarioSession,
 } from "../../application/ScenarioSession";
 import { conditionMet } from "../../simulation/core/quest/Quest";
-import { executeCommand } from "../../simulation/core/ControlPolicy";
+import {
+  commandSession,
+  travelSession,
+  admitSession,
+  reserveSession,
+} from "../../application/Commands";
 import { entities as catalog, materials } from "../../simulation/catalog";
 import type { Entity } from "../../simulation/core/entity/Entity";
 import { chooseConcern } from "../../simulation/core/entity/pawn/concerns/Concerns";
@@ -16,21 +21,15 @@ import { needActions } from "../../simulation/core/entity/pawn/actions/NeedActio
 import type { ActionState } from "../../simulation/core/entity/pawn/actions/Action";
 import { parseOrder } from "./Order";
 import { campaignBrief, campaignStatus } from "./Campaign";
-import {
-  prepareTeam,
-  departTeam,
-} from "../../simulation/catalog/campaign/Campaign";
-import { admitToCare } from "../../simulation/catalog/campaign/Care";
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
-import { dispatchReserve } from "../../simulation/catalog/campaign/Reserve";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 import { carriedCargo } from "../../simulation/core/entity/Equipment";
 import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
 import { directWatchers } from "../../simulation/core/entity/pawn/Attention";
 import type { TickEvent } from "../../simulation/core/Simulation";
-import { finishCommitments } from "./Finish";
+import { finishCommitments } from "../../application/Finish";
 import { medicalOverview } from "./Medical";
-import { alarmPriority, firstAlarm } from "./Alarms";
+import { alarmPriority, firstAlarm } from "../../application/Alarms";
 import { describeAction, describeQueue } from "./Queue";
 import { workboard } from "./Workboard";
 
@@ -283,23 +282,13 @@ export function executeLine(
       if (!campaign)
         throw new Error("This order requires a home-site campaign.");
       const ids = args.slice(1).map((value) => resolve(console, value).id);
-      const state =
-        command === "prepare"
-          ? prepareTeam(
-              console.session.state,
-              campaign,
-              console.siteId,
-              args[0]!,
-              ids,
-              materials,
-            )
-          : departTeam(
-              console.session.state,
-              campaign,
-              console.siteId,
-              args[0]!,
-              ids,
-            );
+      const { state } = travelSession(
+        console.session,
+        console.siteId,
+        args[0]!,
+        ids,
+        command === "prepare" ? "prepare" : "depart",
+      );
       if (command === "preview-send") {
         const transfer = Object.values(state.transfers).find(
           (candidate) => !console.session.state.transfers[candidate.id],
@@ -344,14 +333,12 @@ export function executeLine(
       const campaign = console.session.campaign;
       if (!campaign || args.length !== 2)
         throw new Error("Use admit <person> <home-bed> in a campaign.");
-      const result = admitToCare(
-        console.session.state,
-        campaign,
+      const session = admitSession(
+        console.session,
         resolve(console, args[0]).id,
         resolve(console, args[1]).id,
-        materials,
       );
-      next = { ...console, session: { ...console.session, ...result } };
+      next = { ...console, session };
       return finish(
         "Admitted to home care. Ordinary bed rest is queued; injury and blood loss are retained.",
       );
@@ -361,13 +348,8 @@ export function executeLine(
         throw new Error(
           "Use reserve <home|route> <devon|riley> in a campaign.",
         );
-      const result = dispatchReserve(
-        console.session.state,
-        console.session.campaign,
-        args[0]!,
-        args[1]!,
-      );
-      next = { ...console, session: { ...console.session, ...result } };
+      const session = reserveSession(console.session, args[0]!, args[1]!);
+      next = { ...console, session };
       return finish(
         "Existing reserve responder dispatched: arrival in 12 ticks. Emergency response can use a bounded alternate landing area; no replacement person was generated, and no bodies or equipment have been moved for you.",
       );
@@ -631,62 +613,50 @@ export function executeLine(
           throw new Error(
             "Use assign-watch <worker> <subject> <x> <y>, or assign-watch <worker> none.",
           );
-        result = executeCommand(
-          console.session.state,
-          {
-            ...base,
-            kind: "watch-duty",
-            duty:
-              args[1] === "none"
-                ? null
-                : {
-                    targetId: resolve(console, args[1]).id,
-                    post: { x: Number(args[2]), y: Number(args[3]) },
-                  },
-          },
-          materials,
-        );
+        result = commandSession(console.session, {
+          ...base,
+          kind: "watch-duty",
+          duty:
+            args[1] === "none"
+              ? null
+              : {
+                  targetId: resolve(console, args[1]).id,
+                  post: { x: Number(args[2]), y: Number(args[3]) },
+                },
+        });
       } else if (command === "relieve") {
         if (args.length !== 2)
           throw new Error("Use relieve <outgoing> <replacement>.");
-        result = executeCommand(
-          console.session.state,
-          {
-            ...base,
-            kind: "relieve",
-            replacementId: resolve(console, args[1]).id,
-          },
-          materials,
-        );
+        result = commandSession(console.session, {
+          ...base,
+          kind: "relieve",
+          replacementId: resolve(console, args[1]).id,
+        });
       } else if (command === "assign") {
         if (args.length !== 2)
           throw new Error("Use assign <worker> <counter|none>.");
-        result = executeCommand(
-          console.session.state,
-          {
-            ...base,
-            kind: "duty",
-            targetId: args[1] === "none" ? null : resolve(console, args[1]).id,
-          },
-          materials,
-        );
+        result = commandSession(console.session, {
+          ...base,
+          kind: "duty",
+          targetId: args[1] === "none" ? null : resolve(console, args[1]).id,
+        });
       } else if (command === "autonomy") {
         if (args[1] !== "on" && args[1] !== "off")
           throw new Error("Use on or off.");
-        result = executeCommand(
-          console.session.state,
-          { ...base, kind: "autonomy", enabled: args[1] === "on" },
-          materials,
-        );
+        result = commandSession(console.session, {
+          ...base,
+          kind: "autonomy",
+          enabled: args[1] === "on",
+        });
       } else if (command === "cancel") {
         const actionId =
           args[1] ?? (actor.kind === "pawn" ? actor.queue[0]?.id : undefined);
         if (!actionId) throw new Error("No action to cancel.");
-        result = executeCommand(
-          console.session.state,
-          { ...base, kind: "cancel", actionId },
-          materials,
-        );
+        result = commandSession(console.session, {
+          ...base,
+          kind: "cancel",
+          actionId,
+        });
       } else {
         let action: ActionState =
           command === "move"
@@ -773,11 +743,11 @@ export function executeLine(
               inputId: resolve(console, action.inputId, actor.id).id,
             };
         }
-        result = executeCommand(
-          console.session.state,
-          { ...base, kind: "enqueue", action },
-          materials,
-        );
+        result = commandSession(console.session, {
+          ...base,
+          kind: "enqueue",
+          action,
+        });
       }
       next = {
         ...console,

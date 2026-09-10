@@ -1,12 +1,12 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createEncounterSandboxWindow } from "../src/adapters/browser/encounter-sandbox-view";
+import { createEncounterSandboxWindow } from "../src/adapters/browser_legacy/encounter-sandbox-view";
 import {
   createPlacementSession,
   type PlacementRequest,
-} from "../src/adapters/browser/placement";
+} from "../src/adapters/browser_legacy/placement";
 
 afterEach(() => vi.unstubAllGlobals());
 

@@ -12,7 +12,7 @@ import {
 } from "../src/simulation_legacy/vessel-work";
 import { orderObjectMove } from "../src/simulation_legacy/object-work";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { lightField } from "../src/simulation_legacy/lighting";
 import { setSurface } from "../src/simulation_legacy/materials";
 import {

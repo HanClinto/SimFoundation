@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 
 describe("clinical work", () => {
   it("releases both participants when medical duty is withdrawn and resumes without duplicate reports", () => {

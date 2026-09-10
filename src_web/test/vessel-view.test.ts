@@ -2,10 +2,10 @@ import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createController } from "../src/application/controller";
-import { createVesselWindow } from "../src/adapters/browser/vessel-view";
-import { createExposureWindow } from "../src/adapters/browser/exposure-view";
-import type { PlacementRequest } from "../src/adapters/browser/placement";
+import { createController } from "../src/application/legacy/controller";
+import { createVesselWindow } from "../src/adapters/browser_legacy/vessel-view";
+import { createExposureWindow } from "../src/adapters/browser_legacy/exposure-view";
+import type { PlacementRequest } from "../src/adapters/browser_legacy/placement";
 
 afterEach(() => vi.unstubAllGlobals());
 it("repairs an empty case through delivered supplies and reports why repair is unavailable", () => {

@@ -1,11 +1,11 @@
 import { availableMaterials } from "../src/simulation_legacy/material-stock";
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createEngineeringWindow } from "../src/adapters/browser/engineering-view";
-import { createController } from "../src/application/controller";
+import { createEngineeringWindow } from "../src/adapters/browser_legacy/engineering-view";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 import { surfaceAt } from "../src/simulation_legacy/materials";
-import type { PlacementRequest } from "../src/adapters/browser/placement";
+import type { PlacementRequest } from "../src/adapters/browser_legacy/placement";
 afterEach(() => vi.unstubAllGlobals());
 it("updates pending cancellation feedback after the carrier releases its delivery", () => {
   const window = new JSDOM("<!doctype html><body></body>").window;

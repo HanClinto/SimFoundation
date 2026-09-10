@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { pawnCues } from "../src/adapters/browser/pawn-cues";
+import { pawnCues } from "../src/adapters/browser_legacy/pawn-cues";
 import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 import {
   layoutPawnBubbles,
   bubbleAt,
   drawPawnBubbles,
-} from "../src/adapters/browser/pawn-bubbles";
+} from "../src/adapters/browser_legacy/pawn-bubbles";
 
 describe("pawn map cues", () => {
   it("lays out fixed-size readable bubbles without overlapping or leaving the viewport", () => {

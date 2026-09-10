@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createMapSelection } from "../src/adapters/browser/map-selection";
-import { createController } from "../src/application/controller";
+import { createMapSelection } from "../src/adapters/browser_legacy/map-selection";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 
 afterEach(() => vi.unstubAllGlobals());

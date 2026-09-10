@@ -1,10 +1,10 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createPawnControl } from "../src/adapters/browser/pawn-control";
+import { createPawnControl } from "../src/adapters/browser_legacy/pawn-control";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { fieldSnapshot } from "../src/adapters/browser/expedition-controller";
+import { fieldSnapshot } from "../src/adapters/browser_legacy/expedition-controller";
 import { submitAction } from "../src/simulation_legacy/action-queue";
 import { routineProgress } from "../src/simulation_legacy/routines";
 import { setSurface } from "../src/simulation_legacy/materials";

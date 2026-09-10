@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scheduleCoverage } from "../src/adapters/browser/schedule-coverage";
+import { scheduleCoverage } from "../src/adapters/browser_legacy/schedule-coverage";
 import { createInitialState } from "../src/simulation_legacy/state";
 import { setPersonnelSchedule } from "../src/simulation_legacy/routines";
 describe("skill coverage", () => {

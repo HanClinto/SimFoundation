@@ -4,7 +4,7 @@ import {
   pawnMapSprite,
   pawnPortrait,
   type PawnPose,
-} from "../src/adapters/browser/pawn-art";
+} from "../src/adapters/browser_legacy/pawn-art";
 import { createInitialState } from "../src/simulation_legacy/state";
 
 afterEach(() => vi.unstubAllGlobals());

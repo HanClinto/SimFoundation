@@ -10,11 +10,11 @@ import {
   observeCombat,
 } from "../src/simulation_legacy/combat";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { setSurface } from "../src/simulation_legacy/materials";
 import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 import { requestAssessment } from "../src/simulation_legacy/clinical";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { advanceCombat } from "../src/simulation_legacy/combat";
 import { fieldState } from "../src/simulation_legacy/expeditions";
 

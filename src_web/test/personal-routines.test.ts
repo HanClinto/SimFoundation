@@ -10,11 +10,11 @@ import {
   editActionQueue,
 } from "../src/simulation_legacy/action-queue";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { interactionOptions } from "../src/simulation_legacy/interactions";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { objectBlocks } from "../src/simulation_legacy/objects";
-import { pawnCues } from "../src/adapters/browser/pawn-cues";
+import { pawnCues } from "../src/adapters/browser_legacy/pawn-cues";
 
 const load = (state: ReturnType<typeof createInitialState>) =>
   loadGameState({ getItem: () => JSON.stringify(state), setItem: () => {} });

@@ -1,8 +1,10 @@
 # Replacement Simulation
 
 This is the headless replacement engine and its playable text campaign.
-The browser still runs [simulation_legacy](../simulation_legacy); implementing
-a replacement mechanic does not mean it has been ported to the browser.
+The active browser now wraps this session through shared application commands.
+The archived browser remains in `adapters/browser_legacy`; implementing a
+replacement mechanic does not mean every control has reached the new browser.
+Current GUI coverage is tracked in [#106](https://github.com/HanClinto/SimFoundation/issues/106).
 
 **Open the file for a thing to understand that thing.** Core owns generic
 mechanics. Catalog owns named definitions, physical setups, source attribution

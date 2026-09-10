@@ -1,9 +1,9 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createObjectsWindow } from "../src/adapters/browser/objects-view";
-import { createController } from "../src/application/controller";
+import { createObjectsWindow } from "../src/adapters/browser_legacy/objects-view";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import type { PlacementRequest } from "../src/adapters/browser/placement";
+import type { PlacementRequest } from "../src/adapters/browser_legacy/placement";
 afterEach(() => vi.unstubAllGlobals());
 it("uses shared placement for oriented furniture and counted supplies without instant relocation", () => {
   const window = new JSDOM("<!doctype html><body></body>").window;

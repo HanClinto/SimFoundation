@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { updateWorkOrders } from "../src/adapters/browser/work-orders-view";
+import { updateWorkOrders } from "../src/adapters/browser_legacy/work-orders-view";
 import {
   setWorkPriority,
   type WorkPriority,

@@ -3,7 +3,7 @@ import { createInitialState } from "../src/simulation_legacy/state";
 import {
   createPawnVisuals,
   physicalPawnPose,
-} from "../src/adapters/browser/pawn-visuals";
+} from "../src/adapters/browser_legacy/pawn-visuals";
 
 const initial = createInitialState();
 const id = initial.personnel[0]!.id;

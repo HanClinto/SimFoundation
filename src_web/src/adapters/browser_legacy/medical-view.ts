@@ -1,0 +1,543 @@
+import {
+  derivePhysicalHealth,
+  latestBiasAssessment,
+  latestPhysicalAssessment,
+  latestPsychologicalAssessment,
+  type BodyRegion,
+  type PersonnelRecord,
+} from "../../simulation_legacy/personnel";
+import anatomyUrl from "../browser_shared/assets/anatomy-figure.svg";
+import { recordAge } from "./personnel-records";
+import type { SiteJob } from "../../simulation_legacy/jobs";
+import { lastClinicalReview } from "../../simulation_legacy/clinical";
+
+const BODY_REGIONS: readonly [BodyRegion, string][] = [
+  ["head", "Head"],
+  ["torso", "Torso"],
+  ["leftArm", "Left arm"],
+  ["rightArm", "Right arm"],
+  ["leftHand", "Left hand"],
+  ["rightHand", "Right hand"],
+  ["leftLeg", "Left leg"],
+  ["rightLeg", "Right leg"],
+  ["leftFoot", "Left foot"],
+  ["rightFoot", "Right foot"],
+];
+
+export interface PersonnelMedicalWindows {
+  readonly medicalCharts: readonly HTMLElement[];
+  readonly assessmentRecords: readonly HTMLElement[];
+}
+
+function createWindow(
+  id: string,
+  person: PersonnelRecord,
+  kind: "medical" | "assessments",
+  body: string,
+): HTMLElement {
+  const windowElement = document.createElement("section");
+  windowElement.id = id;
+  windowElement.className = `window managed-window ${kind}-window`;
+  windowElement.dataset.personId = person.id;
+  windowElement.dataset.personnelWindowKind = kind;
+  windowElement.setAttribute(
+    "aria-label",
+    `${person.name} ${kind === "medical" ? "medical chart" : "assessment record"}`,
+  );
+  windowElement.hidden = true;
+  windowElement.innerHTML = `
+    <div class="title-bar">
+      <div class="title-bar-text">${person.name} - ${kind === "medical" ? "Medical Chart" : "Assessment Record"}</div>
+      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
+    </div>
+    <div class="window-body ${kind}-body">${body}</div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  `;
+  return windowElement;
+}
+
+function medicalChartMarkup(person: PersonnelRecord): string {
+  return `
+    <header class="medical-summary">
+      <div>
+        <strong data-medical-field="physical-summary"></strong>
+        <small data-medical-field="assessment-meta">Current simulation</small>
+      </div>
+      <button type="button" data-assess-person-id="${person.id}">Request Examination</button>
+    </header>
+    <p class="clinical-referral-status" data-clinical-status role="status">No pending referrals.</p>
+    <div class="medical-workspace">
+      <section class="body-chart-pane" aria-label="Current body effects">
+        <div class="body-map-toolbar">
+          <strong>Body map</strong>
+          <button type="button" class="body-filter selected" data-body-filter="all" aria-pressed="true">All</button>
+        </div>
+        <div class="body-map" data-medical-field="body-map">
+          <img class="anatomy-illustration" src="${anatomyUrl}" alt="Anterior anatomical reference. Patient right appears on the left." />
+          <div class="body-region-index">
+          ${BODY_REGIONS.map(
+            ([region, label]) =>
+              `<button type="button" class="body-region body-region-${region}" data-body-region="${region}" title="${label}: unassessed"><span>${label}</span></button>`,
+          ).join("")}
+          </div>
+        </div>
+        <div class="medical-legend" aria-label="Body map legend">
+          <span><i class="legend-clear"></i>No active effect</span>
+          <span><i class="legend-confirmed"></i>Active effect</span>
+        </div>
+      </section>
+      <section class="medical-findings-pane">
+        <h3>Current effects</h3>
+        <div class="medical-findings" data-medical-field="findings"></div>
+      </section>
+    </div>
+  `;
+}
+
+function assessmentRecordMarkup(person: PersonnelRecord): string {
+  return `
+    <header class="record-heading">
+      <div><strong>Assessment history</strong><span>Newest first</span></div>
+      <div class="record-actions">
+        <button type="button" data-screen-mood-person-id="${person.id}">Request Mood Screener</button>
+        <button type="button" data-assess-psychology-person-id="${person.id}">Request Psychiatric Evaluation</button>
+        <button type="button" data-assess-biases-person-id="${person.id}">Evaluate Work Preferences</button>
+      </div>
+    </header>
+    <div class="assessment-history" data-assessment-field="history"></div>
+  `;
+}
+
+export function createPersonnelMedicalWindows(
+  host: HTMLElement,
+  personnel: readonly PersonnelRecord[],
+): PersonnelMedicalWindows {
+  const medicalCharts: HTMLElement[] = [];
+  const assessmentRecords: HTMLElement[] = [];
+
+  for (const person of personnel) {
+    const medicalChart = createWindow(
+      `medical-chart-${person.id}`,
+      person,
+      "medical",
+      medicalChartMarkup(person),
+    );
+    const assessmentRecord = createWindow(
+      `assessment-record-${person.id}`,
+      person,
+      "assessments",
+      assessmentRecordMarkup(person),
+    );
+    host.append(medicalChart, assessmentRecord);
+    medicalCharts.push(medicalChart);
+    assessmentRecords.push(assessmentRecord);
+
+    medicalChart.addEventListener("click", (event) => {
+      const filter = (event.target as Element).closest<HTMLButtonElement>(
+        "[data-body-filter], [data-body-region]",
+      );
+      if (!filter) return;
+      const region = filter.dataset.bodyRegion ?? "all";
+      for (const button of medicalChart.querySelectorAll<HTMLButtonElement>(
+        "[data-body-filter], [data-body-region]",
+      )) {
+        const selected =
+          region === "all"
+            ? button.dataset.bodyFilter === "all"
+            : button.dataset.bodyRegion === region;
+        button.classList.toggle("selected", selected);
+        button.setAttribute("aria-pressed", String(selected));
+      }
+      for (const finding of medicalChart.querySelectorAll<HTMLElement>(
+        "[data-finding-regions]",
+      )) {
+        const regions = finding.dataset.findingRegions?.split(" ") ?? [];
+        finding.hidden = region !== "all" && !regions.includes(region);
+      }
+    });
+  }
+
+  const windows = { medicalCharts, assessmentRecords };
+  updatePersonnelMedicalWindows(windows, personnel, 0);
+  return windows;
+}
+
+function textElement<TagName extends keyof HTMLElementTagNameMap>(
+  tagName: TagName,
+  text: string,
+): HTMLElementTagNameMap[TagName] {
+  const element = document.createElement(tagName);
+  element.textContent = text;
+  return element;
+}
+
+function updateMedicalChart(
+  chart: HTMLElement,
+  person: PersonnelRecord,
+  currentTick: number,
+): void {
+  const summary = chart.querySelector<HTMLElement>(
+    '[data-medical-field="physical-summary"]',
+  );
+  const meta = chart.querySelector<HTMLElement>(
+    '[data-medical-field="assessment-meta"]',
+  );
+  const findings = chart.querySelector<HTMLElement>(
+    '[data-medical-field="findings"]',
+  );
+  if (!summary || !meta || !findings)
+    throw new Error("Medical chart incomplete");
+
+  summary.textContent = `Physical ${derivePhysicalHealth(person).toFixed(1)}`;
+  meta.textContent = `Current simulation / tick ${currentTick}`;
+  const effectItems = person.effects.map((effect) => {
+    const item = document.createElement("article");
+    item.className = "medical-finding finding-confirmed";
+    item.dataset.findingRegions = effect.bodyRegions.join(" ");
+    item.append(
+      textElement("strong", effect.name),
+      textElement(
+        "span",
+        `${effect.kind} / ${effect.severity} / physical penalty ${effect.physicalHealthPenalty} / stress recovery ${effect.stressRecoveryPerTick}`,
+      ),
+      textElement(
+        "small",
+        effect.bodyRegions
+          .map(
+            (region) =>
+              BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region,
+          )
+          .join(", "),
+      ),
+      ...(effect.causes ?? []).map((cause) =>
+        textElement(
+          "small",
+          `Inflicted by ${cause.sourceName} at ${cause.locationName} / tick ${cause.tick} / simulation minute ${cause.gameMinute}`,
+        ),
+      ),
+    );
+    return item;
+  });
+  findings.replaceChildren(
+    ...(effectItems.length > 0
+      ? effectItems
+      : [textElement("p", "No active effects")]),
+  );
+
+  for (const regionElement of chart.querySelectorAll<HTMLElement>(
+    "[data-body-region]",
+  )) {
+    const region = regionElement.dataset.bodyRegion as BodyRegion;
+    const state = person.effects.some((effect) =>
+      effect.bodyRegions.includes(region),
+    )
+      ? "confirmed"
+      : "clear";
+    const label = BODY_REGIONS.find(([id]) => id === region)?.[1] ?? region;
+    regionElement.dataset.assessmentState = state;
+    regionElement.title = `${label}: ${state === "confirmed" ? "active effect" : "no active effect"}`;
+    regionElement.setAttribute("aria-label", regionElement.title);
+  }
+  const selected = chart.querySelector<HTMLElement>(
+    '[data-body-region][aria-pressed="true"]',
+  )?.dataset.bodyRegion;
+  for (const finding of findings.querySelectorAll<HTMLElement>(
+    "[data-finding-regions]",
+  )) {
+    finding.hidden =
+      selected !== undefined &&
+      !finding.dataset.findingRegions?.split(" ").includes(selected);
+  }
+}
+
+function updateAssessmentRecord(
+  record: HTMLElement,
+  person: PersonnelRecord,
+  currentTick: number,
+): void {
+  const history = record.querySelector<HTMLElement>(
+    '[data-assessment-field="history"]',
+  );
+  if (!history) throw new Error("Assessment record incomplete");
+
+  const observationEntries = person.physicalObservations.map((observation) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry observation-entry";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", "Direct observation"),
+      textElement("time", recordAge(currentTick, observation.observedTick)),
+    );
+    const details = document.createElement("dl");
+    const source = document.createElement("div");
+    source.append(
+      textElement("dt", "Source"),
+      textElement("dd", observation.source),
+    );
+    details.append(source);
+    entry.append(header, details, textElement("p", observation.label));
+    return {
+      tick: observation.observedTick,
+      sequence: observation.recordedOrder,
+      entry,
+    };
+  });
+  const assessmentEntries = person.physicalAssessments.map((assessment) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry";
+    const findingText =
+      assessment.conclusions.length > 0
+        ? assessment.conclusions
+            .map((conclusion) => `${conclusion.label} (${conclusion.status})`)
+            .join("; ")
+        : "No physical findings reported";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", assessment.method),
+      textElement("time", recordAge(currentTick, assessment.assessedTick)),
+    );
+    const details = document.createElement("dl");
+    for (const [term, value] of [
+      ["Assessor", assessment.assessor],
+      ["Confidence", `${Math.round(assessment.confidence * 100)}%`],
+      [
+        "Estimate",
+        `Physical ${assessment.estimate.minimum}-${assessment.estimate.maximum}`,
+      ],
+    ] as const) {
+      const row = document.createElement("div");
+      row.append(textElement("dt", term), textElement("dd", value));
+      details.append(row);
+    }
+    entry.append(header, details, textElement("p", findingText));
+    return {
+      tick: assessment.assessedTick,
+      sequence: assessment.recordedOrder,
+      entry,
+    };
+  });
+  const biasAssessmentEntries = person.biasAssessments.map((assessment) => {
+    const entry = document.createElement("article");
+    entry.className = "assessment-entry bias-assessment-entry";
+    const header = document.createElement("header");
+    header.append(
+      textElement("strong", assessment.method),
+      textElement("time", recordAge(currentTick, assessment.assessedTick)),
+    );
+    const details = document.createElement("dl");
+    for (const [term, estimate] of [
+      ["Mind / Might", assessment.estimates.mindMight],
+      ["Receptive / Resolute", assessment.estimates.receptiveResolute],
+    ] as const) {
+      const row = document.createElement("div");
+      row.append(
+        textElement("dt", term),
+        textElement("dd", `${estimate.minimum} to ${estimate.maximum}`),
+      );
+      details.append(row);
+    }
+    entry.append(
+      header,
+      details,
+      textElement(
+        "p",
+        `${Math.round(assessment.confidence * 100)}% confidence`,
+      ),
+    );
+    return {
+      tick: assessment.assessedTick,
+      sequence: assessment.recordedOrder,
+      entry,
+    };
+  });
+  const psychologicalAssessmentEntries = person.psychologicalAssessments.map(
+    (assessment) => {
+      const entry = document.createElement("article");
+      entry.className = "assessment-entry psychological-assessment-entry";
+      const header = document.createElement("header");
+      header.append(
+        textElement("strong", assessment.method),
+        textElement("time", recordAge(currentTick, assessment.assessedTick)),
+      );
+      const details = document.createElement("dl");
+      for (const [term, estimate] of [
+        ["Mood", assessment.moodEstimate],
+        ["Sanity", assessment.sanityEstimate],
+      ] as const) {
+        const row = document.createElement("div");
+        row.append(
+          textElement("dt", term),
+          textElement("dd", `${estimate.minimum}-${estimate.maximum}`),
+        );
+        details.append(row);
+      }
+      entry.append(
+        header,
+        details,
+        textElement(
+          "p",
+          `${Math.round(assessment.confidence * 100)}% confidence / ${assessment.assessor}`,
+        ),
+      );
+      return {
+        tick: assessment.assessedTick,
+        sequence: assessment.recordedOrder,
+        entry,
+      };
+    },
+  );
+  const recordEntries = [
+    ...person.clinicalSurveys.map((survey) => {
+      const entry = document.createElement("article");
+      entry.className = "assessment-entry";
+      const header = document.createElement("header");
+      header.append(
+        textElement(
+          "strong",
+          survey.kind === "mood"
+            ? "Rapid mood screener"
+            : "Extended anomalous behavior survey",
+        ),
+        textElement("time", recordAge(currentTick, survey.assessedTick)),
+      );
+      entry.append(
+        header,
+        textElement(
+          "p",
+          `${survey.assessor} / ${Math.round(survey.confidence * 100)}% confidence`,
+        ),
+      );
+      if (survey.moodEstimate)
+        entry.append(
+          textElement(
+            "p",
+            `Mood estimate ${survey.moodEstimate.minimum}-${survey.moodEstimate.maximum}`,
+          ),
+        );
+      entry.append(textElement("p", survey.summary));
+      return {
+        tick: survey.assessedTick,
+        sequence: survey.recordedOrder,
+        entry,
+      };
+    }),
+    ...assessmentEntries,
+    ...observationEntries,
+    ...biasAssessmentEntries,
+    ...psychologicalAssessmentEntries,
+  ]
+    .sort(
+      (first, second) =>
+        second.tick - first.tick || second.sequence - first.sequence,
+    )
+    .map(({ entry }) => entry);
+  history.replaceChildren(
+    ...(recordEntries.length > 0
+      ? recordEntries
+      : [
+          Object.assign(document.createElement("p"), {
+            className: "empty-record",
+            textContent:
+              "No physical observations or assessments are on record.",
+          }),
+        ]),
+  );
+}
+
+export function updatePersonnelMedicalWindows(
+  windows: PersonnelMedicalWindows,
+  personnel: readonly PersonnelRecord[],
+  currentTick: number,
+  jobs: readonly SiteJob[] = [],
+): void {
+  for (const person of personnel) {
+    const chart = windows.medicalCharts.find(
+      ({ dataset }) => dataset.personId === person.id,
+    );
+    const record = windows.assessmentRecords.find(
+      ({ dataset }) => dataset.personId === person.id,
+    );
+    if (!chart || !record)
+      throw new Error(`Medical windows missing: ${person.id}`);
+    updateMedicalChart(chart, person, currentTick);
+    updateAssessmentRecord(record, person, currentTick);
+    const biasAssessmentButton = record.querySelector<HTMLButtonElement>(
+      "[data-assess-biases-person-id]",
+    );
+    if (biasAssessmentButton) {
+      const latestAssessment = latestBiasAssessment(person);
+      const assessmentCurrent =
+        latestAssessment !== null &&
+        currentTick - latestAssessment.assessedTick < 30;
+      biasAssessmentButton.disabled = assessmentCurrent;
+      biasAssessmentButton.textContent = assessmentCurrent
+        ? "Evaluation Current"
+        : "Evaluate Work Preferences";
+      biasAssessmentButton.title = assessmentCurrent
+        ? "Work-preference evaluation is current"
+        : "Run a structured work-preference evaluation";
+    }
+    const psychologicalAssessmentButton =
+      record.querySelector<HTMLButtonElement>(
+        "[data-assess-psychology-person-id]",
+      );
+    if (psychologicalAssessmentButton) {
+      const latestAssessment = latestPsychologicalAssessment(person);
+      const assessmentCurrent =
+        latestAssessment !== null &&
+        currentTick - latestAssessment.assessedTick < 30;
+      psychologicalAssessmentButton.disabled = assessmentCurrent;
+      psychologicalAssessmentButton.textContent = assessmentCurrent
+        ? "Psychological Evaluation Current"
+        : "Request Psychiatric Evaluation";
+    }
+    const moodButton = record.querySelector<HTMLButtonElement>(
+      "[data-screen-mood-person-id]",
+    )!;
+    const lastMood = lastClinicalReview(person, "mood");
+    moodButton.disabled = lastMood !== undefined && currentTick - lastMood < 30;
+    moodButton.textContent = moodButton.disabled
+      ? "Mood Screener Current"
+      : "Request Mood Screener";
+    const pending = jobs.filter(
+      (job) =>
+        job.assessment?.patientId === person.id && job.status !== "completed",
+    );
+    const status = chart.querySelector<HTMLElement>("[data-clinical-status]")!;
+    status.textContent =
+      pending.length === 0
+        ? "No pending referrals."
+        : pending
+            .map((job) => {
+              const clinician = personnel.find(
+                ({ id }) => id === job.assignedPersonId,
+              );
+              return clinician
+                ? `${job.title} / ${clinician.name} / ${job.progress > 0 ? "In consultation" : "Awaiting attendance"}`
+                : `${job.title} / ${job.assignmentReason ?? "Awaiting a clinician"}`;
+            })
+            .join("; ");
+    const physicalButton = chart.querySelector<HTMLButtonElement>(
+      "[data-assess-person-id]",
+    )!;
+    const latestPhysical = latestPhysicalAssessment(person);
+    physicalButton.disabled =
+      latestPhysical !== null && currentTick - latestPhysical.assessedTick < 30;
+    physicalButton.textContent = physicalButton.disabled
+      ? "Examination Current"
+      : "Request Examination";
+    for (const [kind, button] of [
+      ["physical", physicalButton],
+      ["mood", moodButton],
+      ["psychological", psychologicalAssessmentButton],
+      ["preferences", biasAssessmentButton],
+    ] as const) {
+      if (button && pending.some((job) => job.assessment?.kind === kind)) {
+        button.disabled = true;
+        button.textContent = "Referral Queued";
+        button.title =
+          "Findings will be available after a clinician completes the appointment.";
+      }
+    }
+  }
+}

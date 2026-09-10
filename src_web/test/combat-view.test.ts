@@ -1,8 +1,8 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createCombatWindow } from "../src/adapters/browser/combat-view";
+import { createCombatWindow } from "../src/adapters/browser_legacy/combat-view";
 
 afterEach(() => vi.unstubAllGlobals());
 it("explains blocked duty changes and rechecks stale enabled controls", () => {

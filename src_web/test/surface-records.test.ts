@@ -3,7 +3,7 @@ import { createInitialState } from "../src/simulation_legacy/state";
 import {
   engineeringRecord,
   mapObjects,
-} from "../src/adapters/browser/map-objects";
+} from "../src/adapters/browser_legacy/map-objects";
 import { damageSurface } from "../src/simulation_legacy/materials";
 
 describe("map inspection", () => {

@@ -8,7 +8,7 @@ import {
   emissionMotes,
   drawEmissionEffects,
   MAX_EMISSION_MOTES,
-} from "../src/adapters/browser/emission-effects";
+} from "../src/adapters/browser_legacy/emission-effects";
 import type { PhysicalObject } from "../src/simulation_legacy/objects";
 
 const source = {

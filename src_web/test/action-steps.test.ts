@@ -5,8 +5,8 @@ import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { setSurface } from "../src/simulation_legacy/materials";
 import { currentActionIdentity } from "../src/simulation_legacy/action-progress";
 import { actionExecutionStep } from "../src/simulation_legacy/action-steps";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { createController } from "../src/application/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
+import { createController } from "../src/application/legacy/controller";
 import { createTestJobs } from "./fixtures/work-state";
 
 it("records actual door opening under the movement parent without injecting another intention", () => {

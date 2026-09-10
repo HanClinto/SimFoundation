@@ -12,3 +12,5 @@ src_web/resources/
 node_modules/
 dist/
 coverage/
+src_web/test-results/
+src_web/playwright-report/

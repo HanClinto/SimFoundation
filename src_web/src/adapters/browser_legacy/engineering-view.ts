@@ -1,0 +1,355 @@
+import type {
+  ControllerSnapshot,
+  GameController,
+} from "../../application/legacy/controller";
+import {
+  MATERIALS,
+  type MaterialId,
+  type SurfaceLayer,
+} from "../../simulation_legacy/materials";
+import { sameTile } from "../../simulation_legacy/world";
+import type { DoorPolicy, TilePosition } from "../../simulation_legacy/world";
+import { engineeringRecord } from "./map-objects";
+import { availableMaterials } from "../../simulation_legacy/material-stock";
+import type { MapPerspective } from "./map-settings";
+import type { PlacementRequest } from "./placement";
+import { isActiveSurfaceOrder } from "../../simulation_legacy/environment";
+import type {
+  SurfaceOperation,
+  SurfaceOrderCode,
+} from "../../simulation_legacy/environment";
+
+const surfaceMessages: Record<SurfaceOrderCode, string> = {
+  accepted: "Surface work ordered.",
+  "unknown-surface": "No installed layer to remove or replace.",
+  busy: "Surface work is already pending at this tile.",
+  "insufficient-materials": "Insufficient available physical materials.",
+  unreachable: "No reachable work face.",
+  "invalid-material": "Unknown material.",
+  "invalid-position": "Choose a valid map tile and matching layer.",
+  occupied:
+    "Clear people, objects, storage, and pending construction from the tile.",
+  unsupported:
+    "Structures require intact flooring; remove structures before removing their floor.",
+};
+
+export function createEngineeringWindow(
+  host: HTMLElement,
+  controller: GameController,
+  begin?: (request: PlacementRequest) => void,
+) {
+  const element = document.createElement("section");
+  element.id = "engineering-window";
+  element.className = "window managed-window";
+  element.hidden = true;
+  element.setAttribute("aria-label", "Site 828 engineering inspector");
+  element.innerHTML =
+    '<div class="title-bar"><div class="title-bar-text">Engineering - Tile Record</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body construction-body"><h2>Tile Record</h2><dl class="trial-readings" data-tile-record></dl></div><div class="resize-grip" aria-hidden="true"></div>';
+  host.append(element);
+  const controls = document.createElement("div");
+  controls.className = "surface-controls";
+  controls.innerHTML = `<fieldset><legend>Surface work</legend><div class="field-row"><label for="surface-layer">Layer</label><select id="surface-layer"><option value="structure">Structure</option><option value="floor">Floor</option></select><label for="surface-material">Material</label><select id="surface-material">${Object.entries(
+    MATERIALS,
+  )
+    .map(
+      ([id, material]) =>
+        `<option value="${id}">${material.name} (${material.cost})</option>`,
+    )
+    .join(
+      "",
+    )}</select></div><div class="dossier-actions"><button type="button" data-replace-surface>Order replacement</button><button type="button" data-operate-door hidden>Open door</button></div><p data-surface-stock></p><p role="status" data-surface-feedback></p></fieldset><fieldset><legend>Facility maintenance</legend><div class="field-row"><input type="checkbox" id="automatic-surface-repairs"/><label for="automatic-surface-repairs">Replace observed barriers at 55% or below</label></div></fieldset>`;
+  element.querySelector("[data-tile-record]")!.after(controls);
+  const layerSelect =
+    element.querySelector<HTMLSelectElement>("#surface-layer")!;
+  const materialSelect =
+    element.querySelector<HTMLSelectElement>("#surface-material")!;
+  const replace = element.querySelector<HTMLButtonElement>(
+    "[data-replace-surface]",
+  )!;
+  const cancel = document.createElement("button");
+  cancel.type = "button";
+  cancel.dataset.cancelSurface = "";
+  cancel.textContent = "Cancel surface work";
+  replace.after(cancel);
+  const doorButton = element.querySelector<HTMLButtonElement>(
+    "[data-operate-door]",
+  )!;
+  const doorControls = document.createElement("div");
+  doorControls.innerHTML =
+    '<div class="field-row"><label for="door-policy">Door policy</label><select id="door-policy"><option value="automatic">Automatic</option><option value="held-open">Held open</option><option value="held-closed">Held closed</option></select></div>';
+  doorButton.parentElement!.after(doorControls);
+  const doorPolicy = doorControls.querySelector<HTMLSelectElement>("select")!;
+  const automatic = element.querySelector<HTMLInputElement>(
+    "#automatic-surface-repairs",
+  )!;
+  const feedback = element.querySelector<HTMLElement>(
+    "[data-surface-feedback]",
+  )!;
+  const availability = document.createElement("p");
+  availability.dataset.surfaceAvailability = "";
+  availability.setAttribute("role", "status");
+  availability.id = "surface-availability";
+  replace.setAttribute("aria-describedby", availability.id);
+  replace.parentElement!.after(availability);
+  const chooseTile = document.createElement("button");
+  chooseTile.type = "button";
+  chooseTile.textContent = "Choose tile";
+  chooseTile.dataset.openRelatedWindow = "camera-window";
+  availability.after(chooseTile);
+  let position: TilePosition | null = null;
+  let perspective: MapPerspective = "recorded";
+  let current = controller.getSnapshot();
+  let cancellationId: string | null = null;
+  cancel.addEventListener("click", () => {
+    const pending = current.game.environment.orders.find(
+      (order) =>
+        position &&
+        sameTile(position, order.position) &&
+        order.layer === layerSelect.value &&
+        isActiveSurfaceOrder(order),
+    );
+    if (!pending) return;
+    cancellationId = pending.id;
+    const snapshot = controller.cancelSurfaceWork(pending.id);
+    render(snapshot);
+    const result = snapshot.game.environment.orders.find(
+      (order) => order.id === pending.id,
+    )!;
+    feedback.textContent =
+      result.phase === "cancelled"
+        ? "Work cancelled. Unused supplies remain available on the ground."
+        : result.cancelRequested
+          ? "Cancellation requested. The carrier will finish delivery and release the supplies; no fitting will occur."
+          : "Cancellation could not be applied.";
+  });
+  const building = document.createElement("fieldset");
+  building.innerHTML =
+    '<legend>Build and remove</legend><div class="field-row"><label for="surface-operation">Operation</label><select id="surface-operation"><option value="floor">Build floor</option><option value="wall">Build wall</option><option value="door">Build door</option><option value="remove-floor">Remove floor</option><option value="remove-structure">Remove structure</option></select></div><button type="button" data-place-surface>Choose work tile</button>';
+  controls.prepend(building);
+  const place = building.querySelector<HTMLButtonElement>(
+    "[data-place-surface]",
+  )!;
+  place.disabled = !begin;
+  place.addEventListener("click", () => {
+    if (!begin) return;
+    const choice = building.querySelector<HTMLSelectElement>("select")!;
+    const operation: SurfaceOperation = choice.value.startsWith("remove-")
+      ? "remove"
+      : (choice.value as SurfaceOperation);
+    const layer: SurfaceLayer =
+      choice.value === "floor" || choice.value === "remove-floor"
+        ? "floor"
+        : "structure";
+    const material = materialSelect.value as MaterialId;
+    begin({
+      label: `${choice.selectedOptions[0]!.textContent} / ${operation === "remove" ? "no salvage" : `${MATERIALS[material].name} / ${MATERIALS[material].cost} materials`}`,
+      origin: position ?? { x: 63, y: 79 },
+      footprint: (origin) => [{ position: origin }],
+      validate: (origin) => {
+        const issue = controller.previewSurfaceWork(
+          origin,
+          layer,
+          material,
+          operation,
+        );
+        return issue ? surfaceMessages[issue] : null;
+      },
+      confirm: (origin) => {
+        const result = controller.orderSurfaceWork(
+          origin,
+          layer,
+          material,
+          operation,
+        );
+        if (result.code === "accepted") position = origin;
+        layerSelect.value = layer;
+        render(result.snapshot);
+        feedback.textContent = surfaceMessages[result.code];
+        return {
+          accepted: result.code === "accepted",
+          message: surfaceMessages[result.code],
+          snapshot: result.snapshot,
+        };
+      },
+    });
+  });
+  doorPolicy.addEventListener("change", () => {
+    if (!position) return;
+    const requested = doorPolicy.value as DoorPolicy;
+    const next = controller.setDoorPolicy(position, requested);
+    render(next);
+    feedback.textContent =
+      next.game.world.map.doorPolicies?.[
+        position.y * next.game.world.map.width + position.x
+      ] === requested
+        ? "Door policy saved."
+        : "Door policy could not be applied; clear the doorway of people and objects.";
+  });
+  layerSelect.addEventListener("change", () => render(current));
+  materialSelect.addEventListener("change", () => render(current));
+  automatic.addEventListener("change", () =>
+    render(controller.setAutomaticRepairs(automatic.checked)),
+  );
+  replace.addEventListener("click", () => {
+    if (!position) return;
+    const result = controller.orderSurfaceWork(
+      position,
+      layerSelect.value as SurfaceLayer,
+      materialSelect.value as MaterialId,
+    );
+    const messages = {
+      accepted: "Collection and delivery ordered.",
+      "unknown-surface": "No installed surface on record.",
+      busy: "A replacement is already pending.",
+      "insufficient-materials": "Insufficient materials in the store.",
+      unreachable: "No reachable work face.",
+      "invalid-material": "Unknown material.",
+      "invalid-position": "Choose a valid map tile and matching layer.",
+      occupied:
+        "Clear people, objects, storage, and pending construction from the tile.",
+      unsupported:
+        "Structures require intact flooring; remove structures before removing their floor.",
+    };
+    feedback.textContent = messages[result.code];
+    render(result.snapshot);
+  });
+  doorButton.addEventListener("click", () => {
+    if (!position) return;
+    const index = position.y * current.game.world.map.width + position.x;
+    const open =
+      current.game.world.map.surfaces[index]?.structure?.kind === "closed-door";
+    const next = controller.setDoorOpen(position, open);
+    render(next);
+    feedback.textContent =
+      next.game.world.map.surfaces[index]?.structure?.kind ===
+      (open ? "door" : "closed-door")
+        ? `Door control set to ${open ? "open" : "closed"}.`
+        : "Door command could not be applied.";
+  });
+  function render(snapshot: ControllerSnapshot) {
+    current = snapshot;
+    if (
+      cancellationId &&
+      snapshot.game.environment.orders.some(
+        (order) => order.id === cancellationId && order.phase === "cancelled",
+      )
+    ) {
+      feedback.textContent =
+        "Work cancelled. Unused supplies remain available on the ground.";
+      cancellationId = null;
+    }
+    automatic.checked = snapshot.game.environment.automaticRepairs;
+    element.querySelector("[data-surface-stock]")!.textContent =
+      `${availableMaterials(snapshot.game.objects)} material units available on the ground`;
+    const layer = layerSelect.value as SurfaceLayer;
+    const surfaces =
+      perspective === "world"
+        ? snapshot.game.world.map.surfaces
+        : snapshot.game.observations.knownSurfaces;
+    const cell = position
+      ? surfaces[position.y * snapshot.game.world.map.width + position.x]
+      : undefined;
+    const surface = cell?.[layer];
+    const pending = snapshot.game.environment.orders.find(
+      (order) =>
+        position &&
+        sameTile(order.position, position) &&
+        order.layer === layer &&
+        isActiveSurfaceOrder(order),
+    );
+    const cost = MATERIALS[materialSelect.value as MaterialId].cost;
+    cancel.disabled = !pending || !!pending.cancelRequested;
+    cancel.textContent = pending?.cancelRequested
+      ? "Cancellation pending"
+      : pending?.phase === "delivering"
+        ? "Cancel after delivery"
+        : "Cancel surface work";
+    cancel.title = !pending
+      ? "No active surface work on the selected layer."
+      : pending.cancelRequested
+        ? "Supplies remain reserved until the carrier finishes delivery. Restore access if the route is blocked."
+        : pending.phase === "delivering"
+          ? "Finish physical delivery, release the supplies there, and skip fitting."
+          : "Release unused supplies where they are and stop this work.";
+    const reason = !position
+      ? "No tile selected."
+      : !surface
+        ? `No ${layer} ${perspective === "recorded" ? "on record" : "installed"} at this tile.`
+        : pending
+          ? `Replacement already queued: ${pending.phase}.`
+          : availableMaterials(snapshot.game.objects) < cost
+            ? `Replacement requires ${cost} material units; ${availableMaterials(snapshot.game.objects)} available.`
+            : "";
+    replace.disabled = reason !== "";
+    replace.title = reason || "Queue material delivery and installation";
+    availability.textContent = reason;
+    availability.hidden = reason === "";
+    chooseTile.hidden = position !== null;
+    doorButton.hidden =
+      layer !== "structure" ||
+      !surface ||
+      !["door", "closed-door"].includes(surface.kind);
+    doorButton.disabled = !surface || surface.integrity === 0;
+    doorControls.hidden = doorButton.hidden;
+    doorPolicy.disabled = doorButton.disabled;
+    const doorSetting = position
+      ? snapshot.game.world.map.surfaces[
+          position.y * snapshot.game.world.map.width + position.x
+        ]?.structure?.kind
+      : null;
+    doorButton.textContent =
+      doorSetting === "closed-door" ? "Open door" : "Close door";
+    doorPolicy.value = position
+      ? (snapshot.game.world.map.doorPolicies?.[
+          position.y * snapshot.game.world.map.width + position.x
+        ] ?? (doorSetting === "closed-door" ? "held-closed" : "held-open"))
+      : "automatic";
+    if (!position) {
+      element.querySelector("[data-tile-record]")!.replaceChildren();
+      return;
+    }
+    element.querySelector("[data-tile-record]")!.replaceChildren(
+      ...engineeringRecord(snapshot.game, position, layer, perspective).map(
+        ([label, value]) => {
+          const row = document.createElement("div");
+          const term = document.createElement("dt");
+          const description = document.createElement("dd");
+          term.textContent = label;
+          description.textContent = value;
+          row.append(term, description);
+          return row;
+        },
+      ),
+    );
+  }
+  render(current);
+  return {
+    element,
+    render,
+    select: (
+      next: TilePosition,
+      snapshot: ControllerSnapshot,
+      layer?: SurfaceLayer,
+      nextPerspective: MapPerspective = "recorded",
+    ) => {
+      position = next;
+      perspective = nextPerspective;
+      const surfaces =
+        perspective === "world"
+          ? snapshot.game.world.map.surfaces
+          : snapshot.game.observations.knownSurfaces;
+      layerSelect.value =
+        layer ??
+        (surfaces[next.y * snapshot.game.world.map.width + next.x]?.structure
+          ? "structure"
+          : "floor");
+      const surface =
+        surfaces[next.y * snapshot.game.world.map.width + next.x]?.[
+          layerSelect.value as SurfaceLayer
+        ];
+      if (surface) materialSelect.value = surface.material;
+      feedback.textContent = "";
+      render(snapshot);
+    },
+  };
+}

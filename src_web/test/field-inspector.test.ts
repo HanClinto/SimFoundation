@@ -1,12 +1,12 @@
 import { expect, it, vi, afterEach } from "vitest";
 import { JSDOM } from "jsdom";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 import {
   createFieldInspector,
   fieldInspectionTarget,
   fieldRecord,
-} from "../src/adapters/browser/field-inspector";
+} from "../src/adapters/browser_legacy/field-inspector";
 
 afterEach(() => vi.unstubAllGlobals());
 function arrival() {

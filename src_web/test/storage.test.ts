@@ -19,7 +19,7 @@ import {
   reserveSupply,
   type ObjectStore,
 } from "../src/simulation_legacy/objects";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 
 describe("designated storage", () => {
   it("relocates a pantry designation, stocks it through workers, and diners collect at its new location", () => {

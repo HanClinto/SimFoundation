@@ -9,7 +9,7 @@ import {
 import { setExposureSource } from "../src/simulation_legacy/environment";
 import { orderObjectMove } from "../src/simulation_legacy/object-work";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { reservedObject } from "../src/simulation_legacy/objects";
 
 function verifySave(state: ReturnType<typeof createInitialState>) {

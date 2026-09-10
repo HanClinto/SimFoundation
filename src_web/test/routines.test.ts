@@ -5,8 +5,8 @@ import {
   setPersonnelSchedule,
 } from "../src/simulation_legacy/routines";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { createController } from "../src/application/controller";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { createController } from "../src/application/legacy/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { consumeSupply } from "../src/simulation_legacy/objects";
 
 describe("needs-driven routines", () => {

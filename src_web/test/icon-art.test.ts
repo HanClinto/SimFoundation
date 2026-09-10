@@ -19,7 +19,10 @@ describe("desktop icon art contract", () => {
       "medical",
     ]) {
       const source = readFileSync(
-        new URL(`../src/adapters/browser/assets/${name}.svg`, import.meta.url),
+        new URL(
+          `../src/adapters/browser_shared/assets/${name}.svg`,
+          import.meta.url,
+        ),
         "utf8",
       );
       const document = new JSDOM(source, { contentType: "image/svg+xml" })

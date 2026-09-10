@@ -1,0 +1,1417 @@
+import "98.css";
+import "./98-extensions.css";
+import "./styles.css";
+
+import {
+  createController,
+  type ControllerSnapshot,
+} from "../../application/legacy/controller";
+import { createInitialState } from "../../simulation_legacy/state";
+import alarmIconUrl from "../browser_shared/assets/alarm.svg";
+import cameraIconUrl from "../browser_shared/assets/camera.svg";
+import controlIconUrl from "../browser_shared/assets/control.svg";
+import debugIconUrl from "../browser_shared/assets/debug.svg";
+import facilityIconUrl from "../browser_shared/assets/facility.svg";
+import folderIconUrl from "../browser_shared/assets/folder.svg";
+import medicalIconUrl from "../browser_shared/assets/medical.svg";
+import personnelIconUrl from "../browser_shared/assets/personnel.svg";
+import recordsIconUrl from "../browser_shared/assets/records.svg";
+import scpEmblemUrl from "../browser_shared/assets/scp-emblem.svg";
+import workOrdersIconUrl from "../browser_shared/assets/work-orders.svg";
+import {
+  createPersonnelMedicalWindows,
+  updatePersonnelMedicalWindows,
+} from "./medical-view";
+import { loadGameState, saveGameState } from "./game-persistence";
+import {
+  createPersonnelInspectorWindows,
+  updatePersonnelInspectors,
+  updatePersonnelRoster,
+} from "./personnel-view";
+import { refreshForNewDeployment } from "../browser_shared/deployment-version";
+import { createSiteMap } from "./site-map-view";
+import { cameraPlacement } from "./surveillance-view";
+import "./personnel-reference.css";
+import { createClinicalCareView } from "./clinical-care-view";
+import { createDayPlanner } from "./day-planner-view";
+import { observedSnapshot } from "./observed-view";
+import { createSurveillanceView } from "./surveillance-view";
+import { MATERIALS } from "../../simulation_legacy/materials";
+import { createEngineeringWindow } from "./engineering-view";
+import { createObjectsWindow } from "./objects-view";
+import { createPowerWindow } from "./power-view";
+import { createCombatWindow } from "./combat-view";
+import { createExpeditionsWindow } from "./expeditions-view";
+import { createFieldInspector, fieldInspectionTarget } from "./field-inspector";
+import {
+  expeditionMapController,
+  fieldSnapshot,
+} from "./expedition-controller";
+import { isElectrical } from "../../simulation_legacy/power";
+import { createStorageWindow } from "./storage-view";
+import { createExposureWindow } from "./exposure-view";
+import { createVesselWindow } from "./vessel-view";
+import scp999IconUrl from "../browser_shared/assets/site-999.svg";
+import { incidentResponse } from "./incident-response";
+import { createVesselAlerts } from "./vessel-alert-view";
+import { createBrowserRuntime, type SimulationSpeed } from "./runtime";
+import { bindWindowShortcuts, createWindowManager } from "./window-manager";
+import { updateWorkOrders } from "./work-orders-view";
+
+void refreshForNewDeployment();
+
+const app = document.querySelector<HTMLElement>("#app");
+if (!app) throw new Error("Application root was not found");
+const initialGameLoad = loadGameState(localStorage);
+
+app.innerHTML = `
+  <div class="desktop-icons" aria-label="Site Manager desktop">
+    <button class="desktop-icon" type="button" data-open-window="facility-window">
+      <img class="desktop-icon-asset" src="${facilityIconUrl}" alt="" />
+      <span>Site 828</span>
+    </button>
+    <button class="desktop-icon" type="button" data-open-window="control-window">
+      <img class="desktop-icon-asset" data-window-icon src="${controlIconUrl}" alt="" />
+      <span>Simulation Control</span>
+    </button>
+    <button class="desktop-icon" type="button" data-open-window="debug-window">
+      <img class="desktop-icon-asset" data-window-icon src="${debugIconUrl}" alt="" />
+      <span>System Monitor</span>
+    </button>
+  </div>
+
+  <section id="facility-window" class="window managed-window site-window" aria-label="Site 828 facility inspector">
+    <div class="title-bar">
+      <div class="title-bar-text">Site 828 - Facility Inspector</div>
+      <div class="title-bar-controls">
+        <button aria-label="Minimize" disabled></button>
+        <button aria-label="Maximize" disabled></button>
+        <button type="button" aria-label="Close" data-window-close></button>
+      </div>
+    </div>
+    <nav class="menu-bar" aria-label="Facility menu">
+      <button type="button"><u>F</u>ile</button>
+      <button type="button"><u>S</u>ite</button>
+      <button type="button"><u>V</u>iew</button>
+      <button type="button"><u>R</u>eports</button>
+      <button type="button"><u>H</u>elp</button>
+    </nav>
+    <div class="window-body">
+      <div class="address-bar">
+        <label for="facility-address">Address</label>
+        <input id="facility-address" value="C:\\FOUNDATION\\SITES\\SITE828" readonly />
+      </div>
+      <div class="folder-workspace">
+        <div class="subsystem-grid" aria-label="Site 828 subsystems">
+          <button class="subsystem-icon" type="button" data-open-window="camera-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" />
+            <span>Camera Feed</span>
+          </button>
+          <button class="subsystem-icon" type="button" data-open-window="personnel-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${personnelIconUrl}" alt="" />
+            <span>Personnel Roster</span>
+          </button>
+          <button class="subsystem-icon" type="button" data-open-window="alarm-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${alarmIconUrl}" alt="" />
+            <span>Alarm Manager</span>
+          </button>
+          <button class="subsystem-icon" type="button" data-open-window="work-orders-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" />
+            <span>Work Orders</span>
+          </button>
+          <button class="subsystem-icon" type="button" data-open-window="anomaly-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${recordsIconUrl}" alt="" />
+            <span>SCP-999</span>
+          </button>
+          <button class="subsystem-icon" type="button" data-open-window="clinical-care-window">
+            <img class="subsystem-icon-asset" data-window-icon src="${medicalIconUrl}" alt="" />
+            <span>Occupational Health</span>
+          </button>
+          <button class="subsystem-icon" type="button" data-open-window="day-planner-window"><img class="subsystem-icon-asset" data-window-icon src="${controlIconUrl}" alt="" /><span>Day Planner</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="surveillance-window"><img class="subsystem-icon-asset" data-window-icon src="${cameraIconUrl}" alt="" /><span>Surveillance</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="engineering-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Engineering</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="objects-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Objects and Supplies</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="storage-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Storage and Hauling</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="exposure-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Exposure Sources</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="vessel-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Vessels and Transport</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="power-window"><img class="subsystem-icon-asset" data-window-icon src="${workOrdersIconUrl}" alt="" /><span>Power and Lighting</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="combat-window"><img class="subsystem-icon-asset" data-window-icon src="${personnelIconUrl}" alt="" /><span>Tactical Response</span></button>
+          <button class="subsystem-icon" type="button" data-open-window="expeditions-window"><img class="subsystem-icon-asset" data-window-icon src="${folderIconUrl}" alt="" /><span>Expeditions</span></button>
+        </div>
+        <aside class="folder-details" aria-label="Facility summary">
+          <h2 id="site-name">Site 828</h2>
+          <p>Provisional anomalous research and containment facility.</p>
+          <dl class="status-list">
+            <div><dt>Local time</dt><dd id="game-time">08:00</dd></div>
+            <div><dt>Personnel</dt><dd id="personnel-count">6 assigned</dd></div>
+            <div><dt>Residents</dt><dd>1 assigned</dd></div>
+            <div><dt>Systems</dt><dd><span data-system-count></span> available</dd></div>
+          </dl>
+        </aside>
+      </div>
+      <div class="status-bar">
+        <p class="status-bar-field"><span data-system-count></span> systems</p>
+        <p class="status-bar-field">Site systems online</p>
+      </div>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="camera-window" class="window managed-window camera-window" aria-label="Site 828 camera feed">
+    <div class="title-bar">
+      <div class="title-bar-text">Site 828 - Camera Feed / Sector B1</div>
+      <div class="title-bar-controls">
+        <button aria-label="Minimize" disabled></button>
+        <button aria-label="Maximize" disabled></button>
+        <button type="button" aria-label="Close" data-window-close></button>
+      </div>
+    </div>
+    <div class="camera-toolbar" role="toolbar" aria-label="Camera controls">
+      <button type="button" data-camera-action="out" title="Zoom out" aria-label="Zoom out">&minus;</button>
+      <output data-camera-zoom aria-label="Map zoom">70%</output>
+      <button type="button" data-camera-action="in" title="Zoom in" aria-label="Zoom in">+</button>
+      <button type="button" data-camera-action="home" title="Center on Site 828" aria-label="Center on Site 828">&#8962;</button>
+      <select data-camera-entity aria-label="Focus personnel"></select>
+      <div class="field-row"><input id="map-follow" type="checkbox" data-camera-follow disabled/><label for="map-follow">Follow</label></div>
+      <button type="button" data-camera-action="inspect" disabled>Open Record</button>
+      <details class="map-layers"><summary>Layers</summary><div class="map-layer-panel">
+        <fieldset><legend>Perspective</legend><div class="field-row"><input id="map-world" type="radio" name="map-perspective" data-map-perspective="world" checked/><label for="map-world">World</label><input id="map-recorded" type="radio" name="map-perspective" data-map-perspective="recorded"/><label for="map-recorded">Recorded</label></div></fieldset>
+        <fieldset><legend>Base map</legend><div class="field-row"><input id="map-site" type="radio" name="map-base" data-map-base="site" checked/><label for="map-site">Site</label><input id="map-materials" type="radio" name="map-base" data-map-base="materials"/><label for="map-materials">Materials</label></div></fieldset>
+        <fieldset><legend>Surface</legend><div class="field-row"><input id="map-structures" type="radio" name="map-layer" data-map-layer="structure" checked/><label for="map-structures">Structures</label><input id="map-floors" type="radio" name="map-layer" data-map-layer="floor"/><label for="map-floors">Floors</label></div></fieldset>
+        <fieldset><legend>Overlays</legend>${["condition", "rooms", "objects", "activity", "coverage", "projects", "storage", "spaces", "exposure", "effects", "lighting", "power", "tactical"].map((overlay) => `<div class="field-row"><input id="map-overlay-${overlay}" type="checkbox" data-map-overlay="${overlay}" ${["rooms", "objects", "activity", "projects", "effects", "lighting", "tactical"].includes(overlay) ? "checked" : ""}/><label for="map-overlay-${overlay}">${overlay[0]!.toUpperCase() + overlay.slice(1)}</label></div>`).join("")}</fieldset>
+      </div></details>
+    </div>
+    <div class="window-body camera-body">
+      <div class="surface-legend" data-material-legend hidden>${Object.values(
+        MATERIALS,
+      )
+        .map(
+          (material) =>
+            `<span><i style="background:${material.color}"></i>${material.name}</span>`,
+        )
+        .join("")}</div>
+      <div class="surface-legend" data-condition-legend hidden><span><i style="background:#8fcab6"></i>Serviceable</span><span><i style="background:#eac65f"></i>55% or below</span><span><i style="background:#d46056"></i>Failed</span></div>
+      <div class="viewport-shell">
+        <canvas id="site-canvas" width="960" height="540" tabindex="0" aria-label="Isometric view of Site 828"></canvas>
+      </div>
+      <div data-map-selection></div>
+      <div class="map-placement-bar" data-placement-bar hidden><strong data-placement-label></strong><button type="button" data-camera-action="confirm">Confirm</button><button type="button" data-camera-action="cancel">Cancel</button><span data-placement-feedback role="status"></span></div>
+      <div class="status-bar">
+        <p class="status-bar-field" data-camera-perspective-label>SIMULATION</p>
+        <p class="status-bar-field" id="camera-game-time">08:00</p>
+        <p class="status-bar-field camera-selection" data-camera-status>Site 828 / Live surveillance</p>
+      </div>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="control-window" class="window managed-window control-window" aria-label="Simulation control">
+    <div class="title-bar">
+      <div class="title-bar-text">Simulation Control</div>
+      <div class="title-bar-controls">
+        <button id="control-expand" type="button" aria-label="Maximize" title="Switch to standard view" data-control-view="standard"></button>
+        <button type="button" aria-label="Close" data-window-close></button>
+      </div>
+    </div>
+    <nav class="menu-bar compact-menu-bar" role="menubar" aria-label="Simulation control menu">
+      <div class="menu-bar-item"><button type="button" role="menuitem"><u>F</u>ile</button></div>
+      <div class="menu-bar-item">
+        <button id="control-view-menu-button" type="button" role="menuitem" aria-haspopup="menu" aria-expanded="false" aria-controls="control-view-menu"><u>V</u>iew</button>
+        <ul id="control-view-menu" class="menu control-view-menu" role="menu">
+          <li role="none"><button class="view-choice" type="button" role="menuitemradio" aria-checked="true" data-control-view="standard"><span class="menu-check" aria-hidden="true"></span>Standard</button></li>
+          <li role="none"><button class="view-choice" type="button" role="menuitemradio" aria-checked="false" data-control-view="minimal"><span class="menu-check" aria-hidden="true"></span>Minimal</button></li>
+        </ul>
+      </div>
+      <div class="menu-bar-item"><button type="button" role="menuitem"><u>H</u>elp</button></div>
+    </nav>
+    <div class="window-body control-body">
+      <div class="clock-display">
+        <span id="control-game-time">08:00</span>
+        <small id="runtime-status">RUNNING / 1x</small>
+      </div>
+      <div class="transport-controls" role="toolbar" aria-label="Simulation controls">
+        <button type="button" id="pause-button" class="media-button" aria-label="Pause simulation" aria-pressed="false"><span aria-hidden="true">Ⅱ</span></button>
+        <button type="button" class="media-button" data-speed="1" aria-label="Run simulation at normal speed" aria-pressed="true"><span aria-hidden="true">▶</span></button>
+        <button type="button" class="media-button" data-speed="2" aria-label="Run simulation at double speed" aria-pressed="false"><span aria-hidden="true">▶▶</span></button>
+        <button type="button" class="media-button" data-speed="4" aria-label="Run simulation at quadruple speed" aria-pressed="false"><span aria-hidden="true">▶▶▶</span></button>
+      </div>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="alarm-window" class="window managed-window alarm-window" aria-label="Site 828 alarm manager" hidden>
+    <div class="title-bar">
+      <div class="title-bar-text">Site 828 - Alarm Manager</div>
+      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
+    </div>
+    <div class="window-body alarm-body">
+      <div id="incident-badge" class="incident-badge incident-green">
+        <span class="incident-light" aria-hidden="true"></span>
+        <span><strong id="incident-level">GREEN / NORMAL</strong><small id="incident-summary">Routine operations</small></span>
+      </div>
+      <button type="button" data-open-related-window="work-orders-window">Open Response Work Orders</button>
+      <fieldset><legend>Recorded vessel condition</legend><div id="vessel-alerts"></div></fieldset>
+      <fieldset>
+        <legend>Automatic response profile</legend>
+        <label><input type="checkbox" checked disabled /> Yellow events reduce speed to 1x</label>
+        <label><input type="checkbox" checked disabled /> Orange events pause simulation</label>
+        <label><input type="checkbox" checked disabled /> Red events pause simulation</label>
+      </fieldset>
+      <ol class="response-key" aria-label="Incident response levels">
+        <li><span class="key-light green"></span>Green - routine</li>
+        <li><span class="key-light yellow"></span>Yellow - attention</li>
+        <li><span class="key-light orange"></span>Orange - threat</li>
+        <li><span class="key-light red"></span>Red - emergency</li>
+      </ol>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="personnel-window" class="window managed-window personnel-window" aria-label="Site 828 personnel roster" hidden>
+    <div class="title-bar">
+      <div class="title-bar-text">Site 828 - Personnel Roster</div>
+      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
+    </div>
+    <div class="window-body">
+      <table class="data-table">
+        <thead><tr><th>Name</th><th>Assignment</th><th>Current activity</th><th>Mood</th><th>Sanity</th></tr></thead>
+        <tbody id="personnel-rows"></tbody>
+      </table>
+      <p class="preview-note">Double-click a person to open an independent inspector.</p>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="work-orders-window" class="window managed-window work-orders-window" aria-label="Site 828 work orders" hidden>
+    <div class="title-bar">
+      <div class="title-bar-text">Site 828 - Work Orders</div>
+      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
+    </div>
+    <div class="window-body work-orders-body">
+      <header class="work-orders-heading">
+        <strong>Authorized facility work</strong>
+        <span>Assignment is automatic after authorization.</span>
+      </header>
+      <div id="work-orders-list" class="work-orders-list"></div>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="clinical-care-window" class="window managed-window" aria-label="Site 828 occupational health" hidden>
+    <div class="title-bar"><div class="title-bar-text">Site 828 - Occupational Health</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div>
+    <div class="window-body clinical-care-body" id="clinical-care-body"></div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="day-planner-window" class="window managed-window" aria-label="Site 828 day planner" hidden><div class="title-bar"><div class="title-bar-text">Site 828 - Day Planner</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body day-planner-body" id="day-planner-body"></div><div class="resize-grip" aria-hidden="true"></div></section>
+  <section id="surveillance-window" class="window managed-window" aria-label="Site 828 surveillance" hidden><div class="title-bar"><div class="title-bar-text">Site 828 - Surveillance</div><div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div></div><div class="window-body day-planner-body" id="surveillance-body"></div><div class="resize-grip" aria-hidden="true"></div></section>
+
+  <section id="anomaly-window" class="window managed-window anomaly-window" aria-label="SCP-999 resident record" hidden>
+    <div class="title-bar">
+      <div class="title-bar-text">SCP-999 - Resident Record</div>
+      <div class="title-bar-controls"><button type="button" aria-label="Close" data-window-close></button></div>
+    </div>
+    <div class="window-body alarm-body">
+      <div class="anomaly-identities"><span class="object-identity"><img src="${scp999IconUrl}" alt=""/><span>SCP-999</span></span></div>
+      <fieldset>
+        <legend>SCP-999 resident protocol</legend>
+        <dl class="status-list">
+          <div><dt>Designation</dt><dd>SCP-999</dd></div>
+          <div><dt>Protocol state</dt><dd id="scp-999-status">ROAMING</dd></div>
+          <div><dt>Current contact</dt><dd id="scp-999-target">None</dd></div>
+          <div><dt>Next review</dt><dd id="scp-999-timing">Available</dd></div>
+        </dl>
+      </fieldset>
+      <fieldset>
+        <legend>Last recorded interaction</legend>
+        <p id="scp-999-last-interaction">No interaction recorded.</p>
+      </fieldset>
+      <p class="system-note">Local social contact observed. SCP-999 greets nearby personnel and shows particular interest in observable distress. Sleeping and eating personnel are left undisturbed.</p>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <section id="debug-window" class="window managed-window debug-window" aria-label="System monitor" hidden>
+    <div class="title-bar">
+      <div class="title-bar-text">System Monitor</div>
+      <div class="title-bar-controls">
+        <button type="button" aria-label="Close" data-window-close></button>
+      </div>
+    </div>
+    <div class="window-body">
+      <fieldset>
+        <legend>Simulation internals</legend>
+        <dl class="status-list debug-values">
+          <div><dt>State version</dt><dd id="state-version">1</dd></div>
+          <div><dt>Seed</dt><dd id="simulation-seed">9620</dd></div>
+          <div><dt>Simulation tick</dt><dd id="tick-count">0</dd></div>
+        </dl>
+      </fieldset>
+      <p>Developer diagnostics are isolated here and are not part of the Site Director's operational view.</p>
+    </div>
+    <div class="resize-grip" aria-hidden="true"></div>
+  </section>
+
+  <div class="start-menu" id="start-menu" hidden>
+    <div class="start-menu-rail">FOUNDATION</div>
+    <div class="start-menu-items">
+      <details class="start-submenu">
+        <summary><img class="menu-item-icon" src="${folderIconUrl}" alt="" /><span><strong>Facilities</strong><small>Manage Foundation sites</small></span></summary>
+        <div class="start-submenu-panel">
+          <button type="button" data-open-window="facility-window"><img class="menu-item-icon" src="${facilityIconUrl}" alt="" /><span><strong>Site 828</strong><small>Jarbridge, Nevada</small></span></button>
+        </div>
+      </details>
+      <hr />
+      <button id="save-site" type="button"><strong>Save Site</strong><small id="save-site-status">Preparing local record</small></button>
+      <button id="load-site" type="button"><strong>Load Site</strong><small>Restore the latest local record</small></button>
+      <button type="button" disabled><strong>Settings</strong><small>Desktop and simulation options</small></button>
+    </div>
+  </div>
+
+  <footer id="taskbar" class="taskbar" aria-label="Simulation desktop taskbar">
+    <button type="button" id="scp-menu-button" class="scp-menu-button" aria-expanded="false"><img class="scp-mark" src="${scpEmblemUrl}" alt="" /><strong>SCP</strong></button>
+    <div class="taskbar-divider" aria-hidden="true"></div>
+    <div id="taskbar-window-list" class="taskbar-window-list" aria-label="Open windows"></div>
+    <button type="button" id="taskbar-clock" class="taskbar-clock" data-open-window="control-window" aria-label="Open Simulation Control">
+      <span id="taskbar-status">▶</span><time id="taskbar-game-time">08:00</time>
+    </button>
+  </footer>
+`;
+
+function requireElement<ElementType extends Element>(
+  selector: string,
+): ElementType {
+  const element = document.querySelector<ElementType>(selector);
+  if (!element) throw new Error(`Required element not found: ${selector}`);
+  return element;
+}
+
+for (const count of app.querySelectorAll("[data-system-count]"))
+  count.textContent = String(
+    app.querySelectorAll("#facility-window .subsystem-icon").length,
+  );
+
+const canvas = requireElement<HTMLCanvasElement>("#site-canvas");
+const pauseButton = requireElement<HTMLButtonElement>("#pause-button");
+const tickCount = requireElement<HTMLElement>("#tick-count");
+const gameTime = requireElement<HTMLElement>("#game-time");
+const cameraGameTime = requireElement<HTMLElement>("#camera-game-time");
+const controlGameTime = requireElement<HTMLElement>("#control-game-time");
+const taskbarGameTime = requireElement<HTMLElement>("#taskbar-game-time");
+const taskbarStatus = requireElement<HTMLElement>("#taskbar-status");
+const siteName = requireElement<HTMLElement>("#site-name");
+const incidentBadge = requireElement<HTMLElement>("#incident-badge");
+const incidentLevel = requireElement<HTMLElement>("#incident-level");
+const incidentSummary = requireElement<HTMLElement>("#incident-summary");
+const runtimeStatus = requireElement<HTMLElement>("#runtime-status");
+const controlWindow = requireElement<HTMLElement>("#control-window");
+const controlViewMenu = requireElement<HTMLElement>("#control-view-menu");
+const controlViewMenuButton = requireElement<HTMLButtonElement>(
+  "#control-view-menu-button",
+);
+const taskbar = requireElement<HTMLElement>("#taskbar");
+const taskbarWindowList = requireElement<HTMLElement>("#taskbar-window-list");
+const startMenu = requireElement<HTMLElement>("#start-menu");
+const scpMenuButton = requireElement<HTMLButtonElement>("#scp-menu-button");
+const saveSiteButton = requireElement<HTMLButtonElement>("#save-site");
+const loadSiteButton = requireElement<HTMLButtonElement>("#load-site");
+const saveSiteStatus = requireElement<HTMLElement>("#save-site-status");
+const stateVersion = requireElement<HTMLElement>("#state-version");
+const simulationSeed = requireElement<HTMLElement>("#simulation-seed");
+const personnelRows = requireElement<HTMLElement>("#personnel-rows");
+const personnelCount = requireElement<HTMLElement>("#personnel-count");
+const workOrdersList = requireElement<HTMLElement>("#work-orders-list");
+const scp999Status = requireElement<HTMLElement>("#scp-999-status");
+const scp999Target = requireElement<HTMLElement>("#scp-999-target");
+const scp999Timing = requireElement<HTMLElement>("#scp-999-timing");
+const scp999LastInteraction = requireElement<HTMLElement>(
+  "#scp-999-last-interaction",
+);
+const speedButtons = Array.from(
+  document.querySelectorAll<HTMLButtonElement>("[data-speed]"),
+);
+
+const controller = createController(
+  initialGameLoad.state ?? createInitialState(),
+);
+let autosaveEnabled =
+  initialGameLoad.status === "loaded" || initialGameLoad.status === "empty";
+
+function updatePersistenceControls(message: string): void {
+  saveSiteStatus.textContent = message;
+  loadSiteButton.disabled = loadGameState(localStorage).status !== "loaded";
+}
+
+if (initialGameLoad.status === "loaded") {
+  updatePersistenceControls("Local site restored; autosave active");
+} else if (initialGameLoad.status !== "unavailable") {
+  autosaveEnabled = saveGameState(localStorage, controller.getSnapshot().game);
+  updatePersistenceControls(
+    autosaveEnabled
+      ? initialGameLoad.status === "empty"
+        ? "Autosave active"
+        : "Stored site discarded; fresh site started with autosave"
+      : "Browser storage unavailable",
+  );
+} else {
+  updatePersistenceControls("Browser storage unavailable");
+}
+const runtime = createBrowserRuntime(controller, (time) => {
+  siteCamera.animate(time);
+  if (!fieldWindow.hidden) fieldCamera.animate(time);
+});
+const personnelInspectors = createPersonnelInspectorWindows(
+  app,
+  controller.getSnapshot().game.personnel,
+);
+const personnelMedicalWindows = createPersonnelMedicalWindows(
+  app,
+  controller.getSnapshot().game.personnel,
+);
+const windowManager = createWindowManager(app);
+let previousIncidentLevel:
+  | ControllerSnapshot["game"]["incident"]["level"]
+  | null = null;
+
+windowManager.register(requireElement<HTMLElement>("#facility-window"), {
+  id: "facility-window",
+  title: "Site 828",
+  iconUrl: facilityIconUrl,
+  defaultRect: { left: 112, top: 28, width: 590, height: 410 },
+  defaultOpen: true,
+  minimumWidth: 120,
+  minimumHeight: 32,
+});
+windowManager.register(requireElement<HTMLElement>("#camera-window"), {
+  id: "camera-window",
+  title: "Camera Feed",
+  iconUrl: cameraIconUrl,
+  defaultRect: { left: 484, top: 92, width: 760, height: 540 },
+  defaultOpen: true,
+  minimumWidth: 120,
+  minimumHeight: 32,
+});
+windowManager.register(requireElement<HTMLElement>("#control-window"), {
+  id: "control-window",
+  title: "Simulation Control",
+  iconUrl: controlIconUrl,
+  defaultRect: { left: 22, top: 612, width: 330, height: 142 },
+  defaultOpen: true,
+  minimumWidth: 120,
+  minimumHeight: 32,
+});
+windowManager.register(requireElement<HTMLElement>("#alarm-window"), {
+  id: "alarm-window",
+  title: "Alarm Manager",
+  iconUrl: alarmIconUrl,
+  defaultRect: { left: 770, top: 202, width: 390, height: 440 },
+  defaultOpen: false,
+  minimumWidth: 120,
+  minimumHeight: 32,
+});
+windowManager.register(requireElement<HTMLElement>("#personnel-window"), {
+  id: "personnel-window",
+  title: "Personnel Roster",
+  iconUrl: personnelIconUrl,
+  defaultRect: { left: 218, top: 164, width: 500, height: 330 },
+  defaultOpen: false,
+  minimumWidth: 120,
+  minimumHeight: 32,
+});
+windowManager.register(requireElement<HTMLElement>("#clinical-care-window"), {
+  id: "clinical-care-window",
+  title: "Occupational Health",
+  iconUrl: medicalIconUrl,
+  defaultRect: { left: 280, top: 110, width: 660, height: 490 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
+windowManager.register(requireElement<HTMLElement>("#day-planner-window"), {
+  id: "day-planner-window",
+  title: "Day Planner",
+  iconUrl: controlIconUrl,
+  defaultRect: { left: 220, top: 90, width: 740, height: 620 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
+windowManager.register(requireElement<HTMLElement>("#surveillance-window"), {
+  id: "surveillance-window",
+  title: "Surveillance",
+  iconUrl: cameraIconUrl,
+  defaultRect: { left: 350, top: 150, width: 590, height: 380 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
+windowManager.register(requireElement<HTMLElement>("#work-orders-window"), {
+  id: "work-orders-window",
+  title: "Work Orders",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 390, top: 140, width: 470, height: 390 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
+windowManager.register(requireElement<HTMLElement>("#anomaly-window"), {
+  id: "anomaly-window",
+  title: "SCP-999",
+  iconUrl: recordsIconUrl,
+  defaultRect: { left: 736, top: 76, width: 440, height: 520 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 220,
+});
+windowManager.register(requireElement<HTMLElement>("#debug-window"), {
+  id: "debug-window",
+  title: "System Monitor",
+  iconUrl: debugIconUrl,
+  defaultRect: { left: 840, top: 420, width: 320, height: 230 },
+  defaultOpen: false,
+  minimumWidth: 120,
+  minimumHeight: 32,
+});
+personnelInspectors.forEach((inspector, index) => {
+  windowManager.register(inspector, {
+    id: inspector.id,
+    title:
+      inspector.querySelector<HTMLElement>(".title-bar-text")?.textContent ??
+      "Personnel Dossier",
+    iconUrl: personnelIconUrl,
+    defaultRect: {
+      left: 150 + index * 34,
+      top: 90 + index * 28,
+      width: 440,
+      height: 590,
+    },
+    defaultOpen: false,
+    minimumWidth: 120,
+    minimumHeight: 32,
+  });
+});
+personnelMedicalWindows.medicalCharts.forEach((chart, index) => {
+  const personName =
+    chart.querySelector<HTMLElement>(".title-bar-text")?.textContent ??
+    "Medical Chart";
+  windowManager.register(chart, {
+    id: chart.id,
+    title: personName,
+    iconUrl: medicalIconUrl,
+    defaultRect: {
+      left: 190 + index * 28,
+      top: 72 + index * 24,
+      width: 610,
+      height: 500,
+    },
+    defaultOpen: false,
+    minimumWidth: 360,
+    minimumHeight: 260,
+  });
+});
+personnelMedicalWindows.assessmentRecords.forEach((record, index) => {
+  const personName =
+    record.querySelector<HTMLElement>(".title-bar-text")?.textContent ??
+    "Assessment Record";
+  windowManager.register(record, {
+    id: record.id,
+    title: personName,
+    iconUrl: recordsIconUrl,
+    defaultRect: {
+      left: 310 + index * 24,
+      top: 118 + index * 20,
+      width: 500,
+      height: 390,
+    },
+    defaultOpen: false,
+    minimumWidth: 300,
+    minimumHeight: 220,
+  });
+});
+
+function openPersonnelInspector(personId: string): void {
+  windowManager.open(`personnel-inspector-${personId}`);
+}
+
+let inspectedResidentId = "SCP-999";
+const siteCamera = createSiteMap(
+  canvas,
+  requireElement<HTMLElement>("#camera-window"),
+  controller,
+  (id, perspective) => {
+    if (id === "SCP-049-2" || id.startsWith("tactical:")) {
+      combatView.select(id.slice(9), controller.getSnapshot(), perspective);
+      windowManager.open("combat-window");
+      return;
+    }
+    if (id.startsWith("storage:")) {
+      storageView.select(id.slice(8), controller.getSnapshot());
+      windowManager.open("storage-window");
+      return;
+    }
+    if (
+      controller.getSnapshot().game.entities.some((entity) => entity.id === id)
+    ) {
+      inspectedResidentId = id;
+      windowManager.open("anomaly-window");
+    } else if (id.startsWith("object:")) {
+      const equipment = controller
+        .getSnapshot()
+        .game.objects.items.find((item) => item.id === id.slice(7));
+      if (equipment && isElectrical(equipment)) {
+        powerView.select(equipment.id, controller.getSnapshot(), perspective);
+        windowManager.open("power-window");
+        return;
+      }
+      if (
+        controller
+          .getSnapshot()
+          .game.objects.items.some(
+            (item) => item.id === id.slice(7) && item.kind === "vessel",
+          )
+      ) {
+        vesselView.select(id.slice(7), controller.getSnapshot());
+        windowManager.open("vessel-window");
+        return;
+      }
+      objectsView.select(id.slice(7), controller.getSnapshot(), perspective);
+      windowManager.open("objects-window");
+    } else if (id.startsWith("camera-")) {
+      windowManager.open("surveillance-window");
+      surveillanceView.selectCamera(id);
+    } else if (id.startsWith("tile:")) {
+      const [coordinates, layer] = id.slice(5).split(":");
+      const [x, y] = coordinates!.split(",").map(Number);
+      engineeringView.select(
+        { x: x!, y: y! },
+        controller.getSnapshot(),
+        layer === "floor" ? "floor" : "structure",
+        perspective,
+      );
+      windowManager.open("engineering-window");
+    } else {
+      const source = controller
+        .getSnapshot()
+        .game.environment.sources.find((source) => source.id === id);
+      if (source) {
+        exposureView.select(source.id, controller.getSnapshot());
+        windowManager.open("exposure-window");
+      } else openPersonnelInspector(id);
+    }
+  },
+  (id, snapshot) => objectsView.move(id, snapshot),
+);
+const clinicalCareView = createClinicalCareView(
+  requireElement<HTMLElement>("#clinical-care-body"),
+  controller,
+);
+const engineeringView = createEngineeringWindow(app, controller, (request) => {
+  windowManager.open("camera-window");
+  siteCamera.beginPlacement(request);
+});
+const vesselAlerts = createVesselAlerts(
+  requireElement<HTMLElement>("#vessel-alerts"),
+  (id) => {
+    vesselView.select(id, controller.getSnapshot());
+    windowManager.open("vessel-window");
+  },
+);
+const exposureView = createExposureWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  (id) => {
+    objectsView.select(id, controller.getSnapshot(), "world");
+    windowManager.open("objects-window");
+  },
+);
+const vesselView = createVesselWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  (id) => {
+    objectsView.select(id, controller.getSnapshot(), "world");
+    windowManager.open("objects-window");
+  },
+);
+windowManager.register(vesselView.element, {
+  id: "vessel-window",
+  title: "Vessels and Transport",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 210, top: 60, width: 560, height: 680 },
+  defaultOpen: false,
+  minimumWidth: 340,
+  minimumHeight: 300,
+});
+windowManager.register(exposureView.element, {
+  id: "exposure-window",
+  title: "Exposure Sources",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 250, top: 100, width: 490, height: 520 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 280,
+});
+const storageView = createStorageWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+);
+windowManager.register(storageView.element, {
+  id: "storage-window",
+  title: "Storage and Hauling",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 260, top: 100, width: 540, height: 610 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 280,
+});
+const objectsView = createObjectsWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+);
+windowManager.register(objectsView.element, {
+  id: "objects-window",
+  title: "Objects and Supplies",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 280, top: 120, width: 530, height: 550 },
+  defaultOpen: false,
+  minimumWidth: 320,
+  minimumHeight: 260,
+});
+const powerView = createPowerWindow(
+  app,
+  controller,
+  (request) => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(request);
+  },
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  (id, snapshot) => objectsView.move(id, snapshot),
+);
+windowManager.register(powerView.element, {
+  id: "power-window",
+  title: "Power and Lighting",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 230, top: 60, width: 550, height: 640 },
+  defaultOpen: false,
+  minimumWidth: 340,
+  minimumHeight: 300,
+});
+const combatView = createCombatWindow(
+  app,
+  controller,
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  (id) => {
+    windowManager.open("camera-window");
+    return siteCamera.controlPerson(id);
+  },
+);
+windowManager.register(combatView.element, {
+  id: "combat-window",
+  title: "Tactical Response",
+  iconUrl: personnelIconUrl,
+  defaultRect: { left: 180, top: 35, width: 620, height: 700 },
+  defaultOpen: false,
+  minimumWidth: 350,
+  minimumHeight: 300,
+});
+const fieldWindow = requireElement<HTMLElement>("#camera-window").cloneNode(
+  true,
+) as HTMLElement;
+fieldWindow.id = "expedition-map-window";
+fieldWindow.hidden = true;
+fieldWindow.setAttribute("aria-label", "Expedition field map");
+for (const node of fieldWindow.querySelectorAll<HTMLElement>("[id]"))
+  node.id = `field-${node.id}`;
+for (const label of fieldWindow.querySelectorAll<HTMLLabelElement>(
+  "label[for]",
+))
+  label.htmlFor = `field-${label.htmlFor}`;
+for (const input of fieldWindow.querySelectorAll<HTMLInputElement>(
+  "input[name]",
+))
+  input.name = `field-${input.name}`;
+fieldWindow.querySelector(".title-bar-text")!.textContent =
+  "Expedition Field Map";
+fieldWindow
+  .querySelector("canvas")!
+  .setAttribute("aria-label", "Isometric expedition field map");
+fieldWindow
+  .querySelector('[data-camera-action="home"]')!
+  .setAttribute("aria-label", "Center on expedition site");
+fieldWindow
+  .querySelector('[data-camera-action="home"]')!
+  .setAttribute("title", "Center on expedition site");
+fieldWindow.querySelector("[data-map-selection]")!.replaceChildren();
+fieldWindow.querySelector(".pawn-control-strip")?.remove();
+fieldWindow.querySelector(".pawn-action-queue")?.remove();
+const clonedSelectionArea = fieldWindow.querySelector(".pawn-selection-area");
+if (clonedSelectionArea) {
+  clonedSelectionArea.before(
+    fieldWindow.querySelector("[data-map-selection]")!,
+  );
+  clonedSelectionArea.remove();
+}
+fieldWindow.querySelector(".pawn-order-settings")?.remove();
+fieldWindow.querySelector(".pawn-context-menu")?.remove();
+fieldWindow.querySelector('[role="tooltip"]')?.remove();
+app.append(fieldWindow);
+windowManager.register(fieldWindow, {
+  id: "expedition-map-window",
+  title: "Expedition Map",
+  iconUrl: cameraIconUrl,
+  defaultRect: { left: 380, top: 40, width: 830, height: 670 },
+  defaultOpen: false,
+  minimumWidth: 350,
+  minimumHeight: 300,
+});
+const fieldController = expeditionMapController(controller);
+const fieldCamera = createSiteMap(
+  fieldWindow.querySelector<HTMLCanvasElement>("canvas")!,
+  fieldWindow,
+  fieldController,
+  (id, perspective) => {
+    const target = fieldInspectionTarget(id);
+    if (target.kind === "orders") {
+      expeditionsView.select(target.id);
+      windowManager.open("expeditions-window");
+    } else if (target.kind === "personnel") openPersonnelInspector(target.id);
+    else {
+      fieldInspector.select(target.id, controller.getSnapshot(), perspective);
+      windowManager.open("field-inspector-window");
+    }
+  },
+);
+const fieldInspector = createFieldInspector(app, (position) => {
+  windowManager.open("expedition-map-window");
+  fieldCamera.focus(position);
+});
+windowManager.register(fieldInspector.element, {
+  id: "field-inspector-window",
+  title: "Field Record",
+  iconUrl: recordsIconUrl,
+  defaultRect: { left: 210, top: 90, width: 450, height: 510 },
+  defaultOpen: false,
+  minimumWidth: 300,
+  minimumHeight: 240,
+});
+const showField = () => {
+  const snapshot = fieldSnapshot(controller.getSnapshot());
+  if (
+    !snapshot ||
+    !["field", "regrouping"].includes(
+      controller.getSnapshot().game.expeditions.active?.phase ?? "",
+    )
+  )
+    return;
+  fieldCamera.render(snapshot);
+  fieldWindow.querySelector(".title-bar-text")!.textContent =
+    `Expedition - ${snapshot.game.siteName}`;
+  windowManager.open("expedition-map-window");
+};
+const expeditionsView = createExpeditionsWindow(
+  app,
+  controller,
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  showField,
+  (expeditionId, personId) => {
+    const active = controller.getSnapshot().game.expeditions.active;
+    if (active?.id !== expeditionId || active.phase !== "field")
+      return "This expedition is no longer available for field control.";
+    showField();
+    return fieldCamera.controlPerson(personId);
+  },
+  (position) => fieldCamera.focus(position),
+);
+windowManager.register(expeditionsView.element, {
+  id: "expeditions-window",
+  title: "Expeditions",
+  iconUrl: folderIconUrl,
+  defaultRect: { left: 80, top: 30, width: 640, height: 710 },
+  defaultOpen: false,
+  minimumWidth: 380,
+  minimumHeight: 320,
+});
+windowManager.register(engineeringView.element, {
+  id: "engineering-window",
+  title: "Engineering",
+  iconUrl: workOrdersIconUrl,
+  defaultRect: { left: 330, top: 160, width: 470, height: 420 },
+  defaultOpen: false,
+  minimumWidth: 300,
+  minimumHeight: 220,
+});
+const dayPlanner = createDayPlanner(
+  requireElement<HTMLElement>("#day-planner-body"),
+  controller,
+);
+const surveillanceView = createSurveillanceView(
+  requireElement<HTMLElement>("#surveillance-body"),
+  controller,
+  (position) => {
+    windowManager.open("camera-window");
+    siteCamera.focus(position);
+  },
+  () => {
+    windowManager.open("camera-window");
+    siteCamera.beginPlacement(cameraPlacement(controller));
+  },
+);
+
+personnelRows.addEventListener("dblclick", (event) => {
+  const row = (event.target as Element).closest<HTMLElement>(
+    "[data-person-id]",
+  );
+  if (row?.dataset.personId) openPersonnelInspector(row.dataset.personId);
+});
+personnelRows.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const row = (event.target as Element).closest<HTMLElement>(
+    "[data-person-id]",
+  );
+  if (!row?.dataset.personId) return;
+  event.preventDefault();
+  openPersonnelInspector(row.dataset.personId);
+});
+
+bindWindowShortcuts(
+  document.querySelectorAll<HTMLButtonElement>(
+    ".desktop-icon[data-open-window], .subsystem-icon[data-open-window]",
+  ),
+  (windowId) => windowManager.open(windowId),
+);
+
+for (const directLauncher of document.querySelectorAll<HTMLButtonElement>(
+  ".start-menu [data-open-window]",
+)) {
+  directLauncher.addEventListener("click", () => {
+    const windowId = directLauncher.dataset.openWindow;
+    if (windowId) windowManager.open(windowId);
+    startMenu.hidden = true;
+    scpMenuButton.setAttribute("aria-expanded", "false");
+  });
+}
+
+taskbar.addEventListener("click", (event) => {
+  const launcher = (event.target as Element).closest<HTMLButtonElement>(
+    "[data-open-window]",
+  );
+  const windowId = launcher?.dataset.openWindow;
+  if (windowId) windowManager.open(windowId);
+});
+
+app.addEventListener("click", (event) => {
+  const relatedWindowButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-open-related-window]");
+  const relatedWindowId = relatedWindowButton?.dataset.openRelatedWindow;
+  if (relatedWindowId) windowManager.open(relatedWindowId);
+
+  const assessmentButton = (event.target as Element).closest<HTMLButtonElement>(
+    "[data-assess-person-id]",
+  );
+  const personId = assessmentButton?.dataset.assessPersonId;
+  if (personId) controller.orderPhysicalAssessment(personId);
+
+  const biasAssessmentButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-assess-biases-person-id]");
+  const biasPersonId = biasAssessmentButton?.dataset.assessBiasesPersonId;
+  if (biasPersonId) controller.orderWorkPreferenceAssessment(biasPersonId);
+
+  const psychologyAssessmentButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-assess-psychology-person-id]");
+  const psychologyPersonId =
+    psychologyAssessmentButton?.dataset.assessPsychologyPersonId;
+  if (psychologyPersonId) {
+    controller.orderPsychologicalAssessment(psychologyPersonId);
+  }
+  const moodPersonId = (event.target as Element).closest<HTMLElement>(
+    "[data-screen-mood-person-id]",
+  )?.dataset.screenMoodPersonId;
+  if (moodPersonId) controller.orderMoodScreening(moodPersonId);
+
+  const authorizeJobButton = (
+    event.target as Element
+  ).closest<HTMLButtonElement>("[data-authorize-job]");
+  const jobId = authorizeJobButton?.dataset.authorizeJob;
+  if (jobId) controller.authorizeJob(jobId);
+  const locateJobId = (event.target as Element).closest<HTMLElement>(
+    "[data-locate-job]",
+  )?.dataset.locateJob;
+  const locatedJob = controller
+    .getSnapshot()
+    .game.jobs.find(({ id }) => id === locateJobId);
+  if (locatedJob) {
+    windowManager.open("camera-window");
+    siteCamera.focus(locatedJob.workSite);
+  }
+});
+
+windowManager.subscribe((windows) => {
+  taskbarWindowList.replaceChildren(
+    ...windows
+      .filter((windowState) => windowState.open)
+      .map((windowState) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "task-button";
+        button.dataset.openWindow = windowState.id;
+        button.setAttribute("aria-pressed", String(windowState.active));
+        button.setAttribute("aria-label", `Focus ${windowState.title}`);
+
+        const icon = document.createElement("img");
+        icon.src = windowState.iconUrl;
+        icon.alt = "";
+
+        const label = document.createElement("span");
+        label.textContent = windowState.title;
+        button.append(icon, label);
+        return button;
+      }),
+  );
+});
+
+scpMenuButton.addEventListener("click", () => {
+  startMenu.hidden = !startMenu.hidden;
+  scpMenuButton.setAttribute("aria-expanded", String(!startMenu.hidden));
+});
+
+saveSiteButton.addEventListener("click", () => {
+  autosaveEnabled = saveGameState(localStorage, controller.getSnapshot().game);
+  updatePersistenceControls(
+    autosaveEnabled ? "Saved; autosave active" : "Save failed",
+  );
+  startMenu.hidden = true;
+  scpMenuButton.setAttribute("aria-expanded", "false");
+});
+
+loadSiteButton.addEventListener("click", () => {
+  const saved = loadGameState(localStorage);
+  if (saved.status === "loaded") {
+    controller.replaceState(saved.state);
+    autosaveEnabled = true;
+    updatePersistenceControls("Local site restored; autosave active");
+  } else {
+    updatePersistenceControls("No compatible local site available");
+  }
+  startMenu.hidden = true;
+  scpMenuButton.setAttribute("aria-expanded", "false");
+});
+
+document.addEventListener("pointerdown", (event) => {
+  const target = event.target as Element;
+  if (!startMenu.hidden && !target.closest("#start-menu, #scp-menu-button")) {
+    startMenu.hidden = true;
+    scpMenuButton.setAttribute("aria-expanded", "false");
+  }
+  if (!target.closest("#control-view-menu, #control-view-menu-button")) {
+    controlViewMenuButton.setAttribute("aria-expanded", "false");
+  }
+});
+
+const CONTROL_VIEW_KEY = "scp-site-manager.control-view.v1";
+
+function setControlViewMenuOpen(open: boolean): void {
+  controlViewMenuButton.setAttribute("aria-expanded", String(open));
+}
+
+controlViewMenuButton.addEventListener("click", () => {
+  setControlViewMenuOpen(
+    controlViewMenuButton.getAttribute("aria-expanded") !== "true",
+  );
+});
+
+controlViewMenuButton.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    setControlViewMenuOpen(false);
+    return;
+  }
+  if (event.key !== "ArrowDown") return;
+  event.preventDefault();
+  setControlViewMenuOpen(true);
+  controlViewMenu.querySelector<HTMLButtonElement>("button")?.focus();
+});
+
+controlViewMenu.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape") return;
+  setControlViewMenuOpen(false);
+  controlViewMenuButton.focus();
+});
+
+function setControlView(view: "standard" | "minimal"): void {
+  controlWindow.classList.toggle("minimal", view === "minimal");
+  for (const choice of document.querySelectorAll<HTMLButtonElement>(
+    ".view-choice",
+  )) {
+    const selected = choice.dataset.controlView === view;
+    choice.setAttribute("aria-checked", String(selected));
+    choice.classList.toggle("selected", selected);
+  }
+  if (view === "minimal") {
+    controlWindow.style.width = "150px";
+    controlWindow.style.height = "64px";
+  } else {
+    controlWindow.style.width = "304px";
+    controlWindow.style.height = "130px";
+  }
+  localStorage.setItem(CONTROL_VIEW_KEY, view);
+}
+
+for (const viewButton of document.querySelectorAll<HTMLButtonElement>(
+  "[data-control-view]",
+)) {
+  viewButton.addEventListener("click", () => {
+    const view = viewButton.dataset.controlView;
+    if (view === "standard" || view === "minimal") setControlView(view);
+    setControlViewMenuOpen(false);
+  });
+}
+
+setControlView(
+  localStorage.getItem(CONTROL_VIEW_KEY) === "minimal" ? "minimal" : "standard",
+);
+
+function formatGameTime(totalMinutes: number): string {
+  const minutesPerDay = 24 * 60;
+  const normalizedMinutes = totalMinutes % minutesPerDay;
+  const hours = Math.floor(normalizedMinutes / 60);
+  const minutes = normalizedMinutes % 60;
+  return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
+}
+
+function setSimulationSpeed(speed: SimulationSpeed): void {
+  runtime.setSpeed(speed);
+  for (const button of speedButtons) {
+    button.setAttribute(
+      "aria-pressed",
+      String(Number(button.dataset.speed) === speed),
+    );
+  }
+}
+
+function render(snapshot: ControllerSnapshot): void {
+  fieldInspector.render(snapshot);
+  expeditionsView.render(snapshot);
+  const field = fieldSnapshot(snapshot);
+  if (field)
+    fieldWindow.querySelector(".title-bar-text")!.textContent =
+      `Expedition - ${field.game.siteName}`;
+  const fieldTime =
+    fieldWindow.querySelector(".camera-selection")?.previousElementSibling;
+  if (fieldTime)
+    fieldTime.textContent = formatGameTime(snapshot.game.gameMinute);
+  if (
+    field &&
+    ["field", "regrouping"].includes(
+      snapshot.game.expeditions.active?.phase ?? "",
+    )
+  )
+    fieldCamera.render(field);
+  else if (!fieldWindow.hidden) windowManager.close("expedition-map-window");
+  combatView.render(snapshot);
+  powerView.render(snapshot);
+  surveillanceView.render(snapshot);
+  storageView.render(snapshot);
+  exposureView.render(snapshot);
+  vesselView.render(snapshot);
+  objectsView.render(snapshot);
+  siteCamera.render(snapshot);
+  engineeringView.render(snapshot);
+  const personnel = snapshot.game.personnel;
+  snapshot = observedSnapshot(snapshot);
+  dayPlanner.render(snapshot);
+  clinicalCareView.render(snapshot);
+  updatePersonnelRoster(personnelRows, personnel);
+  updatePersonnelInspectors(personnelInspectors, personnel, snapshot.game.tick);
+  updatePersonnelMedicalWindows(
+    personnelMedicalWindows,
+    personnel,
+    snapshot.game.tick,
+    snapshot.game.jobs,
+  );
+  updateWorkOrders(
+    workOrdersList,
+    snapshot.game.jobs,
+    snapshot.game.personnel,
+    snapshot.game.world,
+    (id, priority) => controller.setWorkPriority(id, priority),
+  );
+  const resident = snapshot.game.entities.find(
+    (entity) => entity.id === inspectedResidentId,
+  );
+  const scp999TargetPerson = snapshot.game.personnel.find(
+    ({ id }) => id === resident?.targetPersonId,
+  );
+  const scp999LastPerson = snapshot.game.personnel.find(
+    ({ id }) => id === resident?.lastInteraction?.personId,
+  );
+  const scp999Labels = {
+    wandering: "ROAMING",
+    approaching: "APPROACHING PERSONNEL",
+    comforting: "CONTACT IN PROGRESS",
+    resting: "RECOVERY PERIOD",
+  } as const;
+  scp999Status.textContent = resident
+    ? scp999Labels[resident.status]
+    : "NO RECORDED INSTANCE";
+  scp999Target.textContent = scp999TargetPerson?.name ?? "None";
+  const scp999Minutes =
+    resident?.status === "comforting"
+      ? Math.max(
+          0,
+          (resident.interactionEndsAtTick ?? snapshot.game.tick) -
+            snapshot.game.tick,
+        )
+      : Math.max(
+          0,
+          (resident?.nextAvailableTick ?? snapshot.game.tick) -
+            snapshot.game.tick,
+        );
+  scp999Timing.textContent =
+    resident?.status === "comforting"
+      ? `${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"} remaining`
+      : resident?.status === "resting"
+        ? `Available in ${scp999Minutes} ${scp999Minutes === 1 ? "minute" : "minutes"}`
+        : resident?.status === "approaching"
+          ? "Contact pending arrival"
+          : resident
+            ? "Available"
+            : "Unavailable";
+  scp999LastInteraction.textContent = resident?.lastInteraction
+    ? `${scp999LastPerson?.name ?? "Unknown personnel"} / recorded ${formatGameTime(snapshot.game.gameMinute - snapshot.game.tick + resident.lastInteraction.completedTick)}`
+    : "No interaction recorded.";
+  if (
+    resident &&
+    !snapshot.game.observations.visibleEntityIds.includes(resident.id)
+  ) {
+    const lastObserved =
+      snapshot.game.observations.entityStates[resident.id]?.observedTick;
+    scp999Status.textContent =
+      lastObserved === undefined
+        ? "NO RECORDED OBSERVATION"
+        : `LAST OBSERVED: ${scp999Labels[resident.status]}`;
+    scp999Timing.textContent =
+      lastObserved === undefined
+        ? "Current state unknown"
+        : `${snapshot.game.tick - lastObserved} minutes since observation; current state unknown`;
+  }
+  personnelCount.textContent = `${snapshot.game.personnel.length} assigned`;
+  siteName.textContent = snapshot.game.siteName;
+  tickCount.textContent = snapshot.game.tick.toLocaleString();
+  gameTime.textContent = formatGameTime(snapshot.game.gameMinute);
+  cameraGameTime.textContent = formatGameTime(snapshot.game.gameMinute);
+  controlGameTime.textContent = formatGameTime(snapshot.game.gameMinute);
+  taskbarGameTime.textContent = formatGameTime(snapshot.game.gameMinute);
+  stateVersion.textContent = snapshot.game.version.toString();
+  simulationSeed.textContent = snapshot.game.seed.toString();
+  incidentSummary.textContent = snapshot.game.incident.summary;
+  vesselAlerts.render(snapshot.game);
+  incidentBadge.className = `incident-badge incident-${snapshot.game.incident.level}`;
+  const incidentLabels = {
+    green: "GREEN / NORMAL",
+    yellow: "YELLOW / ATTENTION",
+    orange: "ORANGE / THREAT",
+    red: "RED / EMERGENCY",
+  } as const;
+  incidentLevel.textContent = incidentLabels[snapshot.game.incident.level];
+  pauseButton.setAttribute("aria-pressed", String(!snapshot.running));
+  pauseButton.setAttribute(
+    "aria-label",
+    snapshot.running ? "Pause simulation" : "Resume simulation",
+  );
+  runtimeStatus.textContent = snapshot.running
+    ? `RUNNING / ${runtime.getSpeed()}x`
+    : "PAUSED";
+  const speedGlyphs: Record<SimulationSpeed, string> = {
+    1: "▶",
+    2: "▶▶",
+    4: "▶▶▶",
+  };
+  taskbarStatus.textContent = snapshot.running
+    ? speedGlyphs[runtime.getSpeed()]
+    : "Ⅱ";
+  requireElement<HTMLButtonElement>("#taskbar-clock").setAttribute(
+    "aria-label",
+    snapshot.running
+      ? `Simulation running at ${runtime.getSpeed()}x; open Simulation Control`
+      : "Simulation paused; open Simulation Control",
+  );
+}
+
+pauseButton.addEventListener("click", () => {
+  const { running } = controller.getSnapshot();
+  controller.setRunning(!running);
+});
+
+for (const speedButton of speedButtons) {
+  speedButton.addEventListener("click", () => {
+    const speed = Number(speedButton.dataset.speed) as SimulationSpeed;
+    if (speed === runtime.getSpeed()) {
+      controller.setRunning(!controller.getSnapshot().running);
+    }
+    setSimulationSpeed(speed);
+    render(controller.getSnapshot());
+  });
+}
+
+function presentSnapshot(snapshot: ControllerSnapshot): void {
+  const response = incidentResponse(
+    previousIncidentLevel,
+    snapshot.game.incident.level,
+  );
+  previousIncidentLevel = snapshot.game.incident.level;
+  if (response !== "none") windowManager.open("alarm-window");
+  if (response === "slow") setSimulationSpeed(1);
+  if (response === "pause" && snapshot.running) {
+    controller.setRunning(false);
+    return;
+  }
+  render(snapshot);
+  if (!autosaveEnabled) return;
+  autosaveEnabled = saveGameState(localStorage, snapshot.game);
+  if (!autosaveEnabled) updatePersistenceControls("Autosave unavailable");
+}
+controller.subscribe(presentSnapshot);
+presentSnapshot(controller.getSnapshot());
+runtime.start();

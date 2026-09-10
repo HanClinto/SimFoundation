@@ -1,84 +1,67 @@
-import type { GameController } from "../../application/controller";
+import type { SessionController } from "../../application/SessionController";
+import { firstAlarm } from "../../application/Alarms";
 
-export type SimulationSpeed = 1 | 2 | 4;
-
-export interface BrowserRuntime {
-  getSpeed(): SimulationSpeed;
-  setSpeed(speed: SimulationSpeed): void;
-  start(): void;
-  stop(): void;
-}
-
-const BASE_TICK_DURATION_MS = 500;
-const MAX_FRAME_DELTA_MS = 1_000;
-
-export function createBrowserRuntime(
-  controller: GameController,
-  onFrame?: (visualTimeMs: number) => void,
-): BrowserRuntime {
-  let speed: SimulationSpeed = 1;
-  let animationFrame: number | null = null;
-  let previousTime: number | null = null;
-  let accumulatedTime = 0;
-  let visualTime = 0;
-  let running = controller.getSnapshot().running;
-  let unsubscribe: (() => void) | null = null;
-
-  function frame(currentTime: number): void {
-    if (previousTime !== null) {
-      const frameDelta = Math.min(
-        currentTime - previousTime,
-        MAX_FRAME_DELTA_MS,
+export function createRuntime(
+  controller: SessionController,
+  report: (message: string) => void,
+  changed: () => void,
+) {
+  let running = false;
+  let speed = 1;
+  let last = performance.now();
+  let elapsed = 0;
+  controller.subscribe((_session, events) => {
+    const alarm = firstAlarm(events);
+    if (alarm) {
+      running = false;
+      elapsed = 0;
+      report(
+        `ALARM - ${alarm.kind}: ${alarm.reason ?? alarm.entityId}. Paused after the complete tick.`,
       );
-      if (running) visualTime += frameDelta * speed;
-      accumulatedTime = running ? accumulatedTime + frameDelta * speed : 0;
-      const ticksDue = Math.floor(accumulatedTime / BASE_TICK_DURATION_MS);
-      const initialSpeed = speed;
-      for (let tick = 0; tick < ticksDue; tick += 1) {
-        if (!running) {
-          accumulatedTime = 0;
-          break;
-        }
-        controller.advance();
-        accumulatedTime -= BASE_TICK_DURATION_MS;
-        if (!running || speed !== initialSpeed) {
-          accumulatedTime = 0;
-          break;
-        }
-      }
+      changed();
     }
-
-    previousTime = currentTime;
-    onFrame?.(visualTime);
-    animationFrame = requestAnimationFrame(frame);
-  }
-
+  });
+  const timer = window.setInterval(() => {
+    const now = performance.now();
+    const delta = now - last;
+    last = now;
+    if (!running) {
+      elapsed = 0;
+      return;
+    }
+    elapsed += Math.min(delta, 500) * speed;
+    try {
+      while (running && elapsed >= 250) {
+        elapsed -= 250;
+        controller.step();
+      }
+    } catch (error) {
+      running = false;
+      elapsed = 0;
+      report(`Simulation stopped: ${String(error)}`);
+      changed();
+    }
+  }, 50);
   return {
-    getSpeed() {
+    get running() {
+      return running;
+    },
+    get speed() {
       return speed;
     },
-
-    setSpeed(nextSpeed) {
-      speed = nextSpeed;
+    setRunning(value: boolean) {
+      running = value;
+      elapsed = 0;
+      last = performance.now();
+      changed();
     },
-
-    start() {
-      if (animationFrame !== null) return;
-      running = controller.getSnapshot().running;
-      unsubscribe = controller.subscribe((snapshot) => {
-        running = snapshot.running;
-      });
-      animationFrame = requestAnimationFrame(frame);
+    setSpeed(value: number) {
+      speed = value;
+      elapsed = 0;
+      changed();
     },
-
-    stop() {
-      if (animationFrame === null) return;
-      cancelAnimationFrame(animationFrame);
-      animationFrame = null;
-      previousTime = null;
-      accumulatedTime = 0;
-      unsubscribe?.();
-      unsubscribe = null;
+    dispose() {
+      clearInterval(timer);
     },
   };
 }

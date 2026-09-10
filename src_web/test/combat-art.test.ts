@@ -5,9 +5,9 @@ import {
   startEncounter,
   observeCombat,
 } from "../src/simulation_legacy/combat";
-import { tacticalRange } from "../src/adapters/browser/combat-art";
-import { observedSnapshot } from "../src/adapters/browser/observed-view";
-import { mapObjects } from "../src/adapters/browser/map-objects";
+import { tacticalRange } from "../src/adapters/browser_legacy/combat-art";
+import { observedSnapshot } from "../src/adapters/browser_legacy/observed-view";
+import { mapObjects } from "../src/adapters/browser_legacy/map-objects";
 import { setSurface } from "../src/simulation_legacy/materials";
 
 it("limits response range to drafted staff and distinguishes visible from obstructed tiles", () => {

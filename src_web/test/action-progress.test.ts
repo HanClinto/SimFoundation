@@ -7,9 +7,9 @@ import {
 import { submitAction } from "../src/simulation_legacy/action-queue";
 import { findRoute } from "../src/simulation_legacy/world";
 import { setSurface } from "../src/simulation_legacy/materials";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { fieldState } from "../src/simulation_legacy/expeditions";
 import { setDoorPolicy } from "../src/simulation_legacy/world";
 

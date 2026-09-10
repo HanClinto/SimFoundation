@@ -6,7 +6,7 @@ import {
 import { createInitialState } from "../src/simulation_legacy/state";
 import type { PhysicalObject } from "../src/simulation_legacy/objects";
 import { vesselTransitForecast } from "../src/simulation_legacy/vessels";
-import { incidentResponse } from "../src/adapters/browser/incident-response";
+import { incidentResponse } from "../src/adapters/browser_legacy/incident-response";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 function fixture(condition: number) {

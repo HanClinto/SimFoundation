@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import {
   advanceJobs,
   authorizeJob,

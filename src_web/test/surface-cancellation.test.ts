@@ -8,7 +8,7 @@ import {
 import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { surfaceAt } from "../src/simulation_legacy/materials";
 import { reservedObject } from "../src/simulation_legacy/objects";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { cameraPlacementIssue } from "../src/simulation_legacy/observations";
 import { setDoorPolicy } from "../src/simulation_legacy/world";
 

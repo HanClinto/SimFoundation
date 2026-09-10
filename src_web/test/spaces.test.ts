@@ -6,9 +6,9 @@ import {
   advanceExposure,
   exposureTiles,
 } from "../src/simulation_legacy/environment";
-import { engineeringRecord } from "../src/adapters/browser/map-objects";
+import { engineeringRecord } from "../src/adapters/browser_legacy/map-objects";
 import { surfacesForTile } from "../src/simulation_legacy/materials";
-import { spaceProjection } from "../src/adapters/browser/space-projection";
+import { spaceProjection } from "../src/adapters/browser_legacy/space-projection";
 
 it("reuses immutable render topology without caching across dimensions or changed tiles", () => {
   const tiles = enclosure();

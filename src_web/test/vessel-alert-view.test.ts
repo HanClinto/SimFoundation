@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createVesselAlerts } from "../src/adapters/browser/vessel-alert-view";
+import { createVesselAlerts } from "../src/adapters/browser_legacy/vessel-alert-view";
 import type { PhysicalObject } from "../src/simulation_legacy/objects";
 
 afterEach(() => vi.unstubAllGlobals());

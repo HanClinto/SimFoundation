@@ -11,7 +11,7 @@ import {
 } from "../src/simulation_legacy/materials";
 import { createInitialState } from "../src/simulation_legacy/state";
 import { observeSite } from "../src/simulation_legacy/observations";
-import { observedSnapshot } from "../src/adapters/browser/observed-view";
+import { observedSnapshot } from "../src/adapters/browser_legacy/observed-view";
 
 describe("map materials", () => {
   it("does not expose unseen material damage through browser projections", () => {

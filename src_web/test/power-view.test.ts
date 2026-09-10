@@ -1,10 +1,10 @@
 import { JSDOM } from "jsdom";
 import { afterEach, expect, it, vi } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createPowerWindow } from "../src/adapters/browser/power-view";
+import { createPowerWindow } from "../src/adapters/browser_legacy/power-view";
 import { powerNetwork } from "../src/simulation_legacy/power";
-import type { PlacementRequest } from "../src/adapters/browser/placement";
+import type { PlacementRequest } from "../src/adapters/browser_legacy/placement";
 
 afterEach(() => vi.unstubAllGlobals());
 it("exposes real switching and finite installation through the shared placement request", () => {

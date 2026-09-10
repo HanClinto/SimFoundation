@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 
 describe("game controller", () => {

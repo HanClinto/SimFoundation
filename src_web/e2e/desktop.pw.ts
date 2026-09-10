@@ -1,0 +1,56 @@
+import { expect, test } from "@playwright/test";
+
+test("real desktop selection, physical work, persistence and layout", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("./");
+  await expect(
+    page.getByText("New campaign paused.", { exact: false }),
+  ).toBeVisible();
+  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
+  await page.getByLabel("Inspect", { exact: true }).selectOption("site-1:kit");
+  await expect(
+    page.getByText("Command recipient: alex", { exact: false }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Take / recover", exact: true })
+    .click();
+  await expect(page.locator(".action-tray")).toContainText("take");
+  await page
+    .getByRole("button", { name: "Finish current commitments", exact: true })
+    .click();
+  await expect(page.locator(".inspection-pane")).toContainText(
+    "Carried / held by alex",
+  );
+  await page.getByRole("button", { name: "SCP menu" }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  const saved = await page.evaluate(() =>
+    localStorage.getItem("simfoundation.web.session.v1"),
+  );
+  expect(saved).toBeTruthy();
+  const session = JSON.parse(saved!);
+  expect(session.state.sites["site-1"].entities["site-1:kit"].location).toEqual(
+    { kind: "carried", carrierId: "site-1:alex" },
+  );
+  await page.reload();
+  await expect(page.getByRole("status")).toContainText("Browser save restored");
+  await page.getByRole("button", { name: "Operations", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Current commitments" }),
+  ).toBeVisible();
+  const title = page.locator('[aria-label="Operations & history"] .title-bar');
+  const before = await title.boundingBox();
+  await title.hover();
+  await page.mouse.down();
+  await page.mouse.move(before!.x + 150, before!.y + 100);
+  await page.mouse.up();
+  const after = await title.boundingBox();
+  expect(after!.y).toBeGreaterThan(before!.y);
+  await page
+    .getByRole("button", { name: "Close Operations & history" })
+    .click();
+  await page.screenshot({ path: "test-results/desktop.png", fullPage: true });
+  expect(errors).toEqual([]);
+});

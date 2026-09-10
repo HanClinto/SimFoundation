@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { versionedPageUrl } from "../src/adapters/browser/deployment-version";
+import { versionedPageUrl } from "../src/adapters/browser_shared/deployment-version";
 
 describe("deployment version navigation", () => {
   it("adds a build version without removing existing query parameters or hashes", () => {

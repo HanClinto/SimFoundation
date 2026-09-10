@@ -5,7 +5,7 @@ import {
   cancelSurfaceWork,
 } from "../src/simulation_legacy/environment";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import {
   reservedObject,
   reserveSupply,

@@ -1,7 +1,7 @@
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createDayPlanner } from "../src/adapters/browser/day-planner-view";
-import { createController } from "../src/application/controller";
+import { createDayPlanner } from "../src/adapters/browser_legacy/day-planner-view";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 
 afterEach(() => vi.unstubAllGlobals());

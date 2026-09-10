@@ -13,7 +13,7 @@ import {
   type MaterialId,
 } from "../src/simulation_legacy/materials";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 
 describe("physical site map", () => {
   it("demonstrates all four materials on real room floors and walls without altering topology", () => {

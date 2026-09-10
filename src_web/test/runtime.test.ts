@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
-import { createBrowserRuntime } from "../src/adapters/browser/runtime";
-import { incidentResponse } from "../src/adapters/browser/incident-response";
+import { createBrowserRuntime } from "../src/adapters/browser_legacy/runtime";
+import { incidentResponse } from "../src/adapters/browser_legacy/incident-response";
 
 afterEach(() => vi.unstubAllGlobals());
 describe("incident-aware browser timing", () => {

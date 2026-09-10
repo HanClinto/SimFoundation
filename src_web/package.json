@@ -13,6 +13,7 @@
     "build": "tsc --noEmit && vite build && node scripts/verify-deployment-build.mjs",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:browser": "playwright test",
     "test:simulation": "vitest run test/simulation/",
     "sim": "node scripts/simulation-cli.mjs",
     "benchmark:simulation": "node scripts/benchmark-simulation.mjs",
@@ -26,6 +27,7 @@
     "pathfinding": "^0.4.18"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/jsdom": "^30.0.0",
     "@types/node": "^22.20.1",
     "@types/pathfinding": "^0.1.0",

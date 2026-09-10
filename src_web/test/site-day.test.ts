@@ -5,7 +5,7 @@ import { authorizeSiteWork } from "../src/simulation_legacy/material-stock";
 import { setClinicalCarePolicy } from "../src/simulation_legacy/clinical";
 import { installCamera } from "../src/simulation_legacy/observations";
 import { orderSurfaceWork } from "../src/simulation_legacy/environment";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 
 describe("integrated site operations", () => {
   it("operates a full day with care, surface work, routines and containment while retaining valid saves", () => {

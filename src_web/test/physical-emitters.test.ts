@@ -12,9 +12,9 @@ import {
 } from "../src/simulation_legacy/object-work";
 import { surfaceAt } from "../src/simulation_legacy/materials";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { exposureMapPosition } from "../src/adapters/browser/map-objects";
-import { pawnCues } from "../src/adapters/browser/pawn-cues";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
+import { exposureMapPosition } from "../src/adapters/browser_legacy/map-objects";
+import { pawnCues } from "../src/adapters/browser_legacy/pawn-cues";
 
 const policy = {
   name: "Emitting object",

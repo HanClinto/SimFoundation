@@ -22,7 +22,7 @@ import {
   orderVesselAction,
 } from "../src/simulation_legacy/vessel-work";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { storageAccepts } from "../src/simulation_legacy/storage";
 
 function verifySave(state: ReturnType<typeof createInitialState>) {

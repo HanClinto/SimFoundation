@@ -11,13 +11,13 @@ import {
   advanceCombat,
 } from "../src/simulation_legacy/combat";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { createController } from "../src/application/controller";
-import { expeditionMapController } from "../src/adapters/browser/expedition-controller";
+import { createController } from "../src/application/legacy/controller";
+import { expeditionMapController } from "../src/adapters/browser_legacy/expedition-controller";
 import {
   fieldState,
   storeFieldState,
 } from "../src/simulation_legacy/expeditions";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { requestAssessment } from "../src/simulation_legacy/clinical";
 
 it("cancels manual travel without teleporting or resetting action recovery", () => {

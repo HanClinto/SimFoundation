@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createSimulationController } from "../src/application/simulation-controller";
+import { createSimulationController } from "../src/application/legacy/simulation-controller";
 import {
   createSimulation,
   createSite,

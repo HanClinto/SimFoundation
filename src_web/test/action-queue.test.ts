@@ -5,14 +5,14 @@ import {
   editActionQueue,
 } from "../src/simulation_legacy/action-queue";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { setSurface } from "../src/simulation_legacy/materials";
 import {
   fieldState,
   storeFieldState,
 } from "../src/simulation_legacy/expeditions";
-import { expeditionMapController } from "../src/adapters/browser/expedition-controller";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { expeditionMapController } from "../src/adapters/browser_legacy/expedition-controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { draftResponder } from "../src/simulation_legacy/combat";
 
 const load = (state: ReturnType<typeof createInitialState>) =>

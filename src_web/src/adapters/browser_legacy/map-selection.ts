@@ -1,0 +1,225 @@
+import type {
+  ControllerSnapshot,
+  GameController,
+} from "../../application/legacy/controller";
+import { MATERIALS } from "../../simulation_legacy/materials";
+import { OBJECT_DEFINITIONS } from "../../simulation_legacy/objects";
+import type { DoorPolicy, TilePosition } from "../../simulation_legacy/world";
+import { pawnCues } from "./pawn-cues";
+import { observedSnapshot } from "./observed-view";
+import { mapObjects } from "./map-objects";
+import type { MapPerspective } from "./map-settings";
+import { pawnPortrait } from "./pawn-art";
+import residentUrl from "../browser_shared/assets/site-999.svg";
+import { isElectrical, powerNetwork } from "../../simulation_legacy/power";
+import { adversaryBehavior } from "../../simulation_legacy/combat";
+
+export function createMapSelection(
+  host: HTMLElement,
+  controller: GameController,
+  inspect: (id: string, perspective: MapPerspective) => void,
+  move?: (id: string, snapshot: ControllerSnapshot) => void,
+  control?: (id: string) => void,
+) {
+  const element = document.createElement("section");
+  element.className = "map-selection-panel";
+  element.setAttribute("aria-label", "Map selection");
+  element.innerHTML =
+    '<img data-selection-portrait alt="" hidden/><div class="map-selection-detail"><button type="button" class="selection-inspect-link" data-selection-name>No selection</button><p data-selection-state></p><div class="map-selection-needs" data-selection-needs hidden><label>Rest <meter data-selection-rest min="0" max="100" low="30" high="70" optimum="100"></meter></label><label>Satiety <meter data-selection-satiety min="0" max="100" low="40" high="70" optimum="100"></meter></label></div></div><div class="map-selection-actions"><button type="button" data-selection-move>Move</button><label data-selection-door hidden>Door <select aria-label="Selected door policy"><option value="automatic">Automatic</option><option value="held-open">Held open</option><option value="held-closed">Held closed</option></select></label></div><p role="status" data-selection-feedback></p>';
+  host.append(element);
+  const portrait = element.querySelector<HTMLImageElement>(
+    "[data-selection-portrait]",
+  )!;
+  const name = element.querySelector<HTMLElement>("[data-selection-name]")!;
+  const stateText = element.querySelector<HTMLElement>(
+    "[data-selection-state]",
+  )!;
+  const inspectButton = element.querySelector<HTMLButtonElement>(
+    "[data-selection-name]",
+  )!;
+  const moveButton = element.querySelector<HTMLButtonElement>(
+    "[data-selection-move]",
+  )!;
+  const doorLabel = element.querySelector<HTMLElement>(
+    "[data-selection-door]",
+  )!;
+  const door = doorLabel.querySelector<HTMLSelectElement>("select")!;
+  const needs = element.querySelector<HTMLElement>("[data-selection-needs]")!;
+  const feedback = element.querySelector<HTMLElement>(
+    "[data-selection-feedback]",
+  )!;
+  const ordersButton = document.createElement("button");
+  ordersButton.type = "button";
+  ordersButton.textContent = "Response";
+  ordersButton.title = "Open response operations for this person";
+  ordersButton.hidden = true;
+  element.querySelector(".map-selection-actions")!.append(ordersButton);
+  const controlButton = document.createElement("button");
+  controlButton.type = "button";
+  controlButton.textContent = "Control";
+  controlButton.dataset.selectionControl = "";
+  controlButton.hidden = true;
+  element.querySelector(".map-selection-actions")!.prepend(controlButton);
+  controlButton.addEventListener("click", () => {
+    if (selected && !controlButton.disabled) control?.(selected);
+  });
+  ordersButton.addEventListener("click", () => {
+    if (selected) inspect(`tactical:${selected}`, perspective);
+  });
+  let current = controller.getSnapshot();
+  let selected: string | null = null;
+  let perspective: MapPerspective = "world";
+  let activePersonId: string | null = null;
+  let doorPosition: TilePosition | null = null;
+  inspectButton.addEventListener("click", () => {
+    if (selected) inspect(selected, perspective);
+  });
+  moveButton.addEventListener("click", () => {
+    if (
+      selected?.startsWith("object:") &&
+      perspective === "world" &&
+      !moveButton.disabled
+    )
+      move?.(selected.slice(7), current);
+  });
+  door.addEventListener("change", () => {
+    if (!doorPosition || perspective !== "world") return;
+    const requested = door.value as DoorPolicy;
+    const result = controller.setDoorPolicy(doorPosition, requested);
+    render(result, selected, perspective, activePersonId);
+    feedback.textContent =
+      result.game.world.map.doorPolicies?.[
+        doorPosition.y * result.game.world.map.width + doorPosition.x
+      ] === requested
+        ? "Door policy updated."
+        : "Doorway blocked; policy unchanged.";
+  });
+  function render(
+    snapshot: ControllerSnapshot,
+    id: string | null,
+    view: MapPerspective,
+    actorId: string | null = null,
+  ) {
+    if (selected !== id || perspective !== view) feedback.textContent = "";
+    current = snapshot;
+    selected = id;
+    perspective = view;
+    activePersonId = actorId;
+    element.dataset.activeTarget = String(!!id && id === actorId);
+    element.dataset.hasTarget = String(!!id);
+    element.setAttribute(
+      "aria-label",
+      id === actorId && id ? "Active person details" : "Interaction target",
+    );
+    const state =
+      view === "recorded" ? observedSnapshot(snapshot).game : snapshot.game;
+    const entry = mapObjects(state, view).find((item) => item.id === id);
+    const person = state.personnel.find((person) => person.id === id);
+    controlButton.hidden = !control || !person || !entry || id === actorId;
+    controlButton.disabled = !snapshot.game.world.positions[id ?? ""];
+    controlButton.title = person
+      ? `Control ${person.name}`
+      : "Control selected person";
+    ordersButton.hidden = !person || !entry;
+    const object = id?.startsWith("object:")
+      ? state.objects.items.find((item) => item.id === id.slice(7))
+      : undefined;
+    const source = state.environment.sources.find((source) => source.id === id);
+    const resident = state.entities.find((entity) => entity.id === id);
+    portrait.hidden = !(person && entry) && !resident;
+    if (!portrait.hidden) {
+      const portraitUrl = resident ? residentUrl : pawnPortrait(person!.id);
+      if (portrait.src !== portraitUrl) portrait.src = portraitUrl;
+    }
+    name.textContent =
+      entry?.name ??
+      (id?.startsWith("tile:")
+        ? `Tile ${id.slice(5).split(":")[0]!.replace(",", ", ")}`
+        : "No selection");
+    if (actorId && id && id !== actorId)
+      name.textContent = `Target: ${name.textContent}`;
+    stateText.textContent =
+      person && entry
+        ? pawnCues(state, person.id, view)
+            .map((cue) => cue.label)
+            .join(" / ") || person.activity
+        : object
+          ? `${object.location.kind === "carried" ? "Being carried" : object.installed ? "Installed" : "Packed"} / ${object.condition.toFixed(0)}% condition${object.reservedBy ? " / Reserved for work" : ""}${isElectrical(object) && view === "world" ? ` / ${powerNetwork(state).readings[object.id]?.status ?? "disconnected"}` : ""}`
+          : resident
+            ? resident.status
+            : source
+              ? `${source.kind} source / ${source.enabled === false ? "disabled" : "enabled"}`
+              : "";
+    if (id === "SCP-049-2" && entry)
+      stateText.textContent = `${adversaryBehavior(state.combat)}${view === "recorded" ? " / Last observed" : snapshot.running ? "" : " / Paused"}`;
+    needs.hidden = !person || !entry || view !== "world";
+    if (person && !needs.hidden)
+      for (const key of ["rest", "satiety"] as const) {
+        const meter = needs.querySelector<HTMLMeterElement>(
+          `[data-selection-${key}]`,
+        )!;
+        meter.value = person.needs[key];
+        meter.title = `${Math.round(person.needs[key])} / 100`;
+        meter.setAttribute(
+          "aria-label",
+          `${key === "rest" ? "Rest" : "Satiety"}: ${Math.round(person.needs[key])} of 100`,
+        );
+      }
+    doorPosition = null;
+    if (id?.startsWith("tile:")) {
+      const [coordinates, layer] = id.slice(5).split(":");
+      const [column, row] = coordinates!.split(",").map(Number);
+      const position = { x: column!, y: row! };
+      const cell =
+        state.world.map.surfaces[
+          position.y * state.world.map.width + position.x
+        ];
+      const surface = cell?.[layer === "floor" ? "floor" : "structure"];
+      stateText.textContent = surface
+        ? `${MATERIALS[surface.material].name} ${surface.kind} / ${surface.integrity.toFixed(0)}% integrity`
+        : view === "recorded" &&
+            state.observations.knownTiles[
+              position.y * state.world.map.width + position.x
+            ] == null
+          ? "Not observed"
+          : layer === "floor"
+            ? "Unfinished ground"
+            : "No structure";
+      if (surface && ["door", "closed-door"].includes(surface.kind)) {
+        doorPosition = position;
+        door.value =
+          snapshot.game.world.map.doorPolicies?.[
+            position.y * state.world.map.width + position.x
+          ] ?? (surface.kind === "door" ? "held-open" : "held-closed");
+        door.disabled = view !== "world" || surface.integrity <= 0;
+      }
+    }
+    doorLabel.hidden = !doorPosition;
+    moveButton.hidden = !object;
+    moveButton.textContent =
+      object && OBJECT_DEFINITIONS[object.kind].stackable
+        ? "Move stack"
+        : "Move";
+    moveButton.disabled =
+      !move ||
+      !object ||
+      view !== "world" ||
+      object.location.kind !== "ground" ||
+      !!object.reservedBy;
+    moveButton.title =
+      view !== "world"
+        ? "Switch to World view to move an object."
+        : object?.reservedBy
+          ? "Object reserved for active work."
+          : object?.location.kind !== "ground"
+            ? "Object must be on the ground."
+            : "Choose a destination; workers perform the move.";
+    inspectButton.disabled = !id || (!entry && !id.startsWith("tile:"));
+    inspectButton.title = inspectButton.disabled
+      ? "No inspection target"
+      : `Inspect ${name.textContent?.replace(/^Target: /, "")}`;
+    element.dataset.perspective = view;
+  }
+  render(current, null, "world");
+  return { element, render };
+}

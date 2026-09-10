@@ -12,8 +12,8 @@ import {
 } from "../src/simulation_legacy/environment";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { observeSite } from "../src/simulation_legacy/observations";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { createController } from "../src/application/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
+import { createController } from "../src/application/legacy/controller";
 
 describe("general surface work", () => {
   it("returns delivery assignment to the scheduler instead of stealing a busy carrier", () => {

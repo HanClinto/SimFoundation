@@ -3,7 +3,7 @@ import { createInitialState } from "../src/simulation_legacy/state";
 import {
   sceneOrder,
   foregroundWallOpacity,
-} from "../src/adapters/browser/scene-order";
+} from "../src/adapters/browser_legacy/scene-order";
 
 it("keeps same-depth pawns above ground objects regardless of which is selected", () => {
   const initial = createInitialState();

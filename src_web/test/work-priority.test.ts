@@ -7,8 +7,8 @@ import {
 } from "../src/simulation_legacy/jobs";
 import { createInitialState, createTestJobs } from "./fixtures/work-state";
 import { createInitialState as createSite } from "../src/simulation_legacy/state";
-import { createController } from "../src/application/controller";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { createController } from "../src/application/legacy/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
 
 function fixture() {

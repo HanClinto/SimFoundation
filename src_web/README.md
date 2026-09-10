@@ -2,11 +2,22 @@
 
 SCPSiteManager is a cozy-ish, idle-ish facility management simulator about growing a small provisional SCP Foundation site into a capable research and containment complex. Satisfying routines and increasingly elaborate automation are punctuated by short periods of cascading panic.
 
-The current build prioritizes a broad, inspectable simulation foundation: materials, physical work, movement, needs, schedules, records, and maintenance. The default site starts without staged research objectives or automatic exposure scenarios. World perspective exposes physical simulation state; Recorded perspective preserves the sensor-limited view. Campaign investigations, including the previously proposed SCP-9620 storyline, are deferred design ideas rather than active gameplay.
+The active browser is a fresh 98.css wrapper over the deterministic replacement
+campaign, shared with the CLI. Start paused, choose a worker, inspect a target,
+and issue physical queued work. Site folders, a spatial map, visible action
+tiles, operations/history, playback and separate session/layout storage are
+available. Connected campaign travel and advanced operation controls are being
+added in [#106](https://github.com/HanClinto/SimFoundation/issues/106).
+
+The previous browser lives in `src/adapters/browser_legacy`, with its application
+bindings in `src/application/legacy`; it is not bundled by the active entry.
+Historical prototype features below are not claims about the replacement UI.
+See the [replacement engine guide](src/simulation/README.md) and
+[campaign guide](src/simulation/catalog/campaign/README.md) for current rules.
 
 The first release is a browser game. Its simulation must remain deterministic, serializable, and independent of any browser or presentation technology so that other frontends and related SCP games can reuse appropriate parts later.
 
-## Run the Current Shell
+## Run the Browser
 
 The initial executable shell requires Node 22 or newer.
 
@@ -19,7 +30,13 @@ npm run dev
 
 Run the complete local validation pipeline with `npm run check`. This formats-checks, type-checks, tests, and creates the production build. GitHub Actions deploys successful builds from `main` to [hanclinto.github.io/SimFoundation](https://hanclinto.github.io/SimFoundation/).
 
-### Current Physical-Site Checkpoint
+`npm run test:browser` exercises the real interface in an installed Google Chrome
+using Playwright. Set `WEB_BASE_URL` to exercise a published build instead of
+starting Vite. Browser saves use `simfoundation.web.session.v1`; desktop geometry
+uses `simfoundation.web.desktop.v1`. Neither reads legacy saves. Save is explicit;
+Export/Import share the CLI's current-version session JSON.
+
+## Archived Prototype Notes (not the active replacement browser)
 
 Portrait shortcuts, selected-target details and the queue now share one selection-and-orders area. Clicking a head selects and highlights that pawn as the command recipient. Clicking another target keeps that actor; another pawn offers explicit Control. Self-selection avoids repeating the portrait/name/activity, and other selections are labelled Target. Camera Follow remains independently pinned.
 

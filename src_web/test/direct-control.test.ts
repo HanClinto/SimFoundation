@@ -3,8 +3,8 @@ import { createInitialState } from "../src/simulation_legacy/state";
 import { goHere } from "../src/simulation_legacy/direct-control";
 import { advanceSimulation } from "../src/simulation_legacy/tick";
 import { draftResponder } from "../src/simulation_legacy/combat";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
-import { createController } from "../src/application/controller";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
+import { createController } from "../src/application/legacy/controller";
 import { requestAssessment } from "../src/simulation_legacy/clinical";
 import { orderSurfaceWork } from "../src/simulation_legacy/environment";
 

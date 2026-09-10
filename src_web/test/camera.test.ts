@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   projectPosition,
   unprojectPosition,
-} from "../src/adapters/browser/renderer";
+} from "../src/adapters/browser_legacy/renderer";
 
 describe("isometric camera", () => {
   it("round-trips tile coordinates across zoom and viewport sizes", () => {

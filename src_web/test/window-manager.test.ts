@@ -4,7 +4,7 @@ import { JSDOM } from "jsdom";
 import {
   bindWindowShortcuts,
   synchronizeLauncherIcons,
-} from "../src/adapters/browser/window-manager";
+} from "../src/adapters/browser_legacy/window-manager";
 
 it("opens subsystem buttons on click and desktop shortcuts on double-click or keyboard activation", () => {
   const window = new JSDOM(

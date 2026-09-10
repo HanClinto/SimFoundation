@@ -3,7 +3,7 @@ import { createInitialState } from "../src/simulation_legacy/state";
 import {
   drawObjectGlyph,
   vesselAppearance,
-} from "../src/adapters/browser/object-art";
+} from "../src/adapters/browser_legacy/object-art";
 import type { PhysicalObject } from "../src/simulation_legacy/objects";
 
 const vessel: PhysicalObject = {

@@ -1,15 +1,15 @@
 import { afterEach, expect, it, vi } from "vitest";
-import { renderSite } from "../src/adapters/browser/renderer";
+import { renderSite } from "../src/adapters/browser_legacy/renderer";
 import {
   MATERIAL_ART,
   visibleSurface,
-} from "../src/adapters/browser/material-art";
+} from "../src/adapters/browser_legacy/material-art";
 import { createInitialState } from "../src/simulation_legacy/state";
 import {
   replaceSurface,
   type MaterialId,
 } from "../src/simulation_legacy/materials";
-import { DEFAULT_MAP_OVERLAYS } from "../src/adapters/browser/map-settings";
+import { DEFAULT_MAP_OVERLAYS } from "../src/adapters/browser_legacy/map-settings";
 
 afterEach(() => vi.unstubAllGlobals());
 

@@ -1,6 +1,6 @@
 import { JSDOM } from "jsdom";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAssignmentView } from "../src/adapters/browser/assignment-view";
+import { createAssignmentView } from "../src/adapters/browser_legacy/assignment-view";
 import { createInitialState } from "./fixtures/work-state";
 
 afterEach(() => vi.unstubAllGlobals());

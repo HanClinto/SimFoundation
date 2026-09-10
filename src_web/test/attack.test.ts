@@ -1,12 +1,12 @@
 import { expect, it } from "vitest";
-import { createController } from "../src/application/controller";
+import { createController } from "../src/application/legacy/controller";
 import { createInitialState } from "../src/simulation_legacy/state";
 import {
   fieldState,
   storeFieldState,
 } from "../src/simulation_legacy/expeditions";
 import { advanceCombat, orderResponder } from "../src/simulation_legacy/combat";
-import { loadGameState } from "../src/adapters/browser/game-persistence";
+import { loadGameState } from "../src/adapters/browser_legacy/game-persistence";
 import {
   performInteraction,
   interactionOptions,

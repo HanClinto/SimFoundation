@@ -6,7 +6,7 @@ import {
 import {
   recordedInfluences,
   recordAge,
-} from "../src/adapters/browser/personnel-records";
+} from "../src/adapters/browser_legacy/personnel-records";
 
 describe("personnel record presentation", () => {
   it("never discloses authoritative injuries through the findings list", () => {
