@@ -120,7 +120,7 @@ it("starts the operating clock only after physical responder entry and never res
   expect(executeLine(console, "status").output).toContain("Cycle at site-11:");
 });
 
-it("refuses night departure without spending or losing people, then reopens the prepaid return", () => {
+it("refuses night departure without losing people, then reopens the return route", () => {
   let console = visit();
   const night = store(console).cycle!.startedTick! + 120;
   console = play(console, [`step ${night - console.session.state.tick}`]);

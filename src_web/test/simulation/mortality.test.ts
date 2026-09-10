@@ -162,10 +162,7 @@ it("two actual reserves can continue after original-crew loss, without infinite 
   expect(() => executeLine(console, "reserve home devon")).toThrow(
     "unused reserve",
   );
-  expect(
-    console.session.state.sites[reserveId]!.entities[`${reserveId}:dispatches`]!
-      .amount,
-  ).toBe(0);
+  expect(console.session.state.sites[reserveId]!.entities).toEqual({});
   console = play(console, [
     "order riley move 5 3",
     "finish riley",
@@ -195,7 +192,7 @@ it("a pre-fatal alarm leaves enough actual time to dispatch and stabilize with t
   expect(person(c, "site-12:rowan").health!.death).toBeUndefined();
 });
 
-it("reserve dispatch cannot bypass an unmet research gate or spend an allocation on refusal", () => {
+it("reserve dispatch cannot bypass an unmet research gate or mutate state on refusal", () => {
   const c = openConsole();
   const before = JSON.stringify(c);
   expect(() => executeLine(c, "reserve kestrel devon")).toThrow(

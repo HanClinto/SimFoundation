@@ -197,7 +197,7 @@ it("refuses nonconsenting people and explains a blocked route until it is cleare
   expect(person(console).queue).toHaveLength(0);
 });
 
-it("incapacitated passengers use physical carry and retain their own injury through prepaid return", () => {
+it("incapacitated passengers use physical carry and retain their own injury through return travel", () => {
   let console = visit();
   person(console).canAct = false;
   const order = executeLine(console, "order casey escort mira 2 3");

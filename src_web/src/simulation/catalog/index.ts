@@ -86,11 +86,7 @@ import {
   CorroborationBench,
 } from "./quests/scp1867/collection";
 import { ExhibitObservationStation } from "./quests/scp1370/display";
-import {
-  TransportDocket,
-  SurveyKit,
-  KestrelStation,
-} from "./campaign/supplies";
+import { SurveyKit, KestrelStation } from "./campaign/supplies";
 
 export const entities: EntityTemplates = Object.fromEntries(
   [
@@ -159,7 +155,6 @@ export const entities: EntityTemplates = Object.fromEntries(
     UnverifiedDevice,
     CorroborationBench,
     ExhibitObservationStation,
-    TransportDocket,
     SurveyKit,
     KestrelStation,
   ].map((entry) => [entry.id, entry]),

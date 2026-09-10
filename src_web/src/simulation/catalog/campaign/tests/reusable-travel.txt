@@ -1,0 +1,71 @@
+# Eight actual round trips with the same worker, gear and loose cargo.
+# No tickets, supply refills, need resets or additional responders.
+load campaign
+order alex equip vest
+order alex take kit
+finish alex
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+prepare gallery alex
+finish alex
+send gallery alex
+finish @1
+site gallery
+send home alex
+finish @1
+site home
+status

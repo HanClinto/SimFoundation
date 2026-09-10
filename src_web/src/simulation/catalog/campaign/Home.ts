@@ -228,12 +228,6 @@ export const home: SiteTemplate = {
       overrides: { amount: 8 },
     },
     {
-      id: "transport",
-      definitionId: "transport-docket",
-      location: { kind: "ground", position: { x: 1, y: 7 } },
-      overrides: { amount: 4 },
-    },
-    {
       id: "kit",
       definitionId: "survey-kit",
       location: { kind: "ground", position: { x: 5, y: 7 } },

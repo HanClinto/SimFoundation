@@ -52,9 +52,9 @@ within two tiles of (2,4), with completed queues. A carried person is already
 included through their actual carrier; do not select them again as a passenger.
 
 `send home alex casey nora eli` succeeds by day. At night it refuses without
-spending another docket, changing ownership or erasing queued work, and reports
+changing ownership or erasing queued work, and reports
 the exact next opening tick. Move to the loading area and wait for reopening.
-Return remains prepaid and is not blocked by hunger/fatigue readiness.
+Return uses reusable transport and is not blocked by hunger/fatigue readiness.
 
 At home, escort the people to bed positions and admit them normally. Carried
 Eli needs real clinical recovery first. Staff, survivors, injuries and supplies

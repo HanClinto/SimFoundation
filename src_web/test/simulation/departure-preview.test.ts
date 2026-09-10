@@ -49,12 +49,7 @@ it("previews the exact prepared equipment/cargo departure without cost, risk mut
   expect(
     Object.keys(sent.session.state.transfers["transfer-1"]!.entities).sort(),
   ).toEqual(data.manifest.map((entity: { id: string }) => entity.id).sort());
-  expect(
-    c.session.state.sites["site-1"]!.entities["site-1:transport"]!.amount,
-  ).toBe(4);
-  expect(
-    sent.session.state.sites["site-1"]!.entities["site-1:transport"]!.amount,
-  ).toBe(3);
+  expect(JSON.stringify(c)).toBe(before);
 });
 it("uses the same preparation and research blockers instead of a success-shaped manifest", () => {
   let c: ConsoleState = openConsole();

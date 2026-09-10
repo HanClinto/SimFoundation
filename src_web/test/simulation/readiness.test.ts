@@ -43,7 +43,7 @@ it("requires real rest for an exhausted outbound crew and preserves the original
   expect(Object.keys(console.session.state.transfers)).toHaveLength(1);
 });
 
-it("rechecks readiness at send but never blocks an exhausted prepaid return", () => {
+it("rechecks readiness at send but never blocks an exhausted return", () => {
   let console = play(openConsole(), [
     "prepare gallery alex",
     "step 12",
@@ -59,10 +59,9 @@ it("rechecks readiness at send but never blocks an exhausted prepaid return", ()
   expect(() => executeLine(console, "send gallery alex")).toThrow("not ready");
   expect(console.session.state.transfers).toEqual({});
   console = play(openConsole(), ["prepare gallery alex", "step 400"]);
+  const before = JSON.stringify(console);
   expect(() => executeLine(console, "send gallery alex")).toThrow("not ready");
-  expect(
-    console.session.state.sites["site-1"]!.entities["site-1:transport"]!.amount,
-  ).toBe(4);
+  expect(JSON.stringify(console)).toBe(before);
 });
 
 it("ordinary home autonomy restores readiness using finite food and a bed across reload", () => {

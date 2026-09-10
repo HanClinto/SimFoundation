@@ -61,10 +61,9 @@ it("recovers a home-pad deadlock using a finite responder, actual landing space 
   expect((home.entities["site-5:mira"] as Pawn).canAct).toBe(true);
   expect(c.session.state.transfers).toEqual({});
   const reserveId = c.session.campaign!.siteIds.reserve!;
-  expect(
-    c.session.state.sites[reserveId]!.entities[`${reserveId}:dispatches`]!
-      .amount,
-  ).toBe(1);
+  expect(Object.keys(c.session.state.sites[reserveId]!.entities)).toEqual([
+    `${reserveId}:riley`,
+  ]);
 });
 
 it("alternate floor admission does not bypass a sealed door or impassable primary terrain", () => {

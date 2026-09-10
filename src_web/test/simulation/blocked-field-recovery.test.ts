@@ -58,8 +58,7 @@ it("reaches a hostile-occupied extraction area with finite reserve landing and a
     (home.entities["site-1:suppressor"] as Item).equipment!.subdual!.charges,
   ).toBe(1);
   expect(c.session.state.transfers).toEqual({});
-  expect(
-    c.session.state.sites[reserveId]!.entities[`${reserveId}:dispatches`]!
-      .amount,
-  ).toBe(1);
+  expect(Object.keys(c.session.state.sites[reserveId]!.entities)).toEqual([
+    `${reserveId}:riley`,
+  ]);
 });

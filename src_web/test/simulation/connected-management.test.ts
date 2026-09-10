@@ -53,8 +53,7 @@ it("manages care, evidence, resupply and group evacuation in one saved ongoing c
     "site-11:nora",
     "site-5:mira",
   ]);
-  expect(state.sites["site-1"]!.entities["site-1:transport"]!.amount).toBe(0);
-  expect(state.sites["site-1"]!.entities["site-4:dockets"]!.amount).toBe(3);
+  expect(state.sites["site-1"]!.entities["site-4:spares"]!.amount).toBe(3);
   expect(state.sites["site-1"]!.entities["site-1:clinical-packs"]!.amount).toBe(
     3,
   );

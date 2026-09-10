@@ -3,7 +3,6 @@ import type { Simulation } from "../../core/Simulation";
 import { createSimulation } from "../../core/Simulation";
 import { instantiateSite } from "../../core/site/Site";
 import { depart } from "../../core/site/Transfer";
-import { distance } from "../../core/site/TileMap";
 import { executeCommand } from "../../core/ControlPolicy";
 import type { Materials } from "../../core/material/Material";
 import { opportunities } from "./setup";
@@ -67,19 +66,6 @@ export function opportunityBlocker(
   )
     return `Home study required: ${opportunity.requiresFinding}.`;
   return null;
-}
-
-export function readyDocket(state: Simulation, campaign: Campaign) {
-  return Object.values(state.sites[campaign.homeId]!.entities)
-    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-    .find(
-      (entity) =>
-        entity.definitionId === "transport-docket" &&
-        entity.amount >= 1 &&
-        (entity.integrity ?? 100) > 0 &&
-        entity.location.kind === "ground" &&
-        distance(entity.location.position, homeLoading) <= 1,
-    );
 }
 
 function route(campaign: Campaign, originId: string, destination: string) {
@@ -216,15 +202,10 @@ export function departTeam(
     const cycle = operatingPhase(state.sites[originId]!.cycle, state.tick);
     if (cycle.phase === "night")
       throw new Error(
-        `The night exit window is closed; it reopens at tick ${cycle.changesAt}. Return remains prepaid.`,
+        `The night exit window is closed; it reopens at tick ${cycle.changesAt}.`,
       );
   }
 
-  const docket = trip.outbound ? readyDocket(state, campaign) : null;
-  if (trip.outbound && !docket)
-    throw new Error(
-      "Outbound travel needs one intact transport docket on the ground beside home pad (2,7). Return travel is already funded.",
-    );
   const result = depart(state, {
     originId,
     destinationId: trip.destinationId,
@@ -241,19 +222,5 @@ export function departTeam(
     result.transferId!,
     trip.outbound ? opportunities[trip.key]!.fatalAfterTicks : undefined,
   );
-  if (!docket) return result.state;
-  const origin = result.state.sites[originId]!;
-  return {
-    ...result.state,
-    sites: {
-      ...result.state.sites,
-      [originId]: {
-        ...origin,
-        entities: {
-          ...origin.entities,
-          [docket.id]: { ...docket, amount: docket.amount - 1 },
-        },
-      },
-    },
-  };
+  return result.state;
 }

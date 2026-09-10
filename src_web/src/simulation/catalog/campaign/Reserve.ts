@@ -30,9 +30,6 @@ export function dispatchReserve(
     const reason = opportunityBlocker(state, campaign, destination);
     if (reason) throw new Error(reason);
   }
-  const docket = reserve.entities[`${reserve.id}:dispatches`]!;
-  if (docket.amount < 1)
-    throw new Error("The finite emergency dispatch allocations are exhausted.");
   const sent = depart(state, {
     originId: reserve.id,
     destinationId,
@@ -46,7 +43,6 @@ export function dispatchReserve(
   });
   if (sent.reason) throw new Error(sent.reason);
   const result = structuredClone(sent.state);
-  result.sites[reserve.id]!.entities[docket.id]!.amount--;
   const incoming = result.transfers[sent.transferId!]!.entities[responder.id];
   if (incoming?.kind !== "pawn")
     throw new Error("Reserve departure lost its responder.");

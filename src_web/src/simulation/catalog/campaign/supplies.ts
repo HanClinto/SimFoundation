@@ -1,23 +1,5 @@
 import type { EntityTemplate } from "../../core/entity/EntityTemplate";
 
-export const TransportDocket: EntityTemplate = {
-  id: "transport-docket",
-  name: "Round-trip transport dockets",
-  description:
-    "Finite contracted transport allocations. One docket funds an outbound group and its return; it is spent only after physical departure is accepted. Keep loose dockets beside the home loading pad (2,7).",
-  defaults: {
-    kind: "item",
-    stackable: true,
-    materialId: "wood",
-    amount: 1,
-    carryable: true,
-    blocksMovement: false,
-    blocksSight: false,
-    integrity: 100,
-    nutrition: 0,
-  },
-};
-
 export const SurveyKit: EntityTemplate = {
   id: "survey-kit",
   name: "Field comparison kit",

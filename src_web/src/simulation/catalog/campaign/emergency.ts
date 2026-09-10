@@ -62,11 +62,5 @@ export const reserveSite: SiteTemplate = {
       location: { kind: "ground", position: { x: 3, y: 2 } },
       overrides: { name: "riley", autonomy: false, playerControllable: false },
     },
-    {
-      id: "dispatches",
-      definitionId: "transport-docket",
-      location: { kind: "ground", position: { x: 1, y: 2 } },
-      overrides: { name: "Reserved emergency dispatch allocations", amount: 2 },
-    },
   ],
 };

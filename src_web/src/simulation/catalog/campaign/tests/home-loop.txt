@@ -29,7 +29,7 @@ send kestrel alex ben
 step 10
 site kestrel
 order alex study station depot-survey
-order ben take dockets
+order ben take spares
 step 30
 # Leave the reusable kit at the depot to free a carrier for finite meals.
 order alex drop kit
@@ -41,7 +41,7 @@ step 20
 send home alex ben
 step 10
 site home
-order ben deliver dockets 1 7
+order ben deliver spares 8 1
 order alex deliver rations 5 6
 step 12
 status

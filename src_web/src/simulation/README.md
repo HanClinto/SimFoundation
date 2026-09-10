@@ -138,10 +138,11 @@ restraint requirements are rechecked. Blocked admission retains the transfer,
 reason and payload while physiology/custody continue. Site disposal rejects
 nonempty sites or active transfer endpoints.
 
-Campaign rules add roster, route, readiness, passenger and physical-docket
-checks above generic transfer. Outbound readiness requires hunger/fatigue below
-85; exhausted return remains prepaid. Reserve dispatch moves one of two
-pre-existing responders using finite reserved allocations, not a new template.
+Campaign rules add roster, route, readiness and passenger checks above generic
+transfer. Travel is reusable without a lifetime trip entitlement; actual time,
+loading capacity and finite supplies still matter. Outbound readiness requires
+hunger/fatigue below85; exhausted crews may still return. Reserve dispatch
+moves one of two pre-existing responders, not a new template or abstract ticket.
 It respects research gates and performs no automatic rescue.
 
 ## One Action Queue

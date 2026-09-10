@@ -44,9 +44,7 @@ it("loses the original crew through real combat and continues with an existing r
   expect(
     c.session.state.sites[reserveId]!.entities[`${reserveId}:riley`],
   ).toBeDefined();
-  expect(
-    c.session.state.sites[reserveId]!.entities[`${reserveId}:dispatches`]!
-      .amount,
-  ).toBe(1);
-  expect(home.entities["site-1:transport"]!.amount).toBe(2);
+  expect(Object.keys(c.session.state.sites[reserveId]!.entities)).toEqual([
+    `${reserveId}:riley`,
+  ]);
 });

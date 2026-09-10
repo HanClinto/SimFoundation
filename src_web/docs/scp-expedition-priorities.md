@@ -2,6 +2,15 @@
 
 Draft for review, 2026-09-09. Companion to the [59-work proposal catalog](scp-expedition-proposals.md), which contains the source links, individual missions, scores, caveats and additional candidates. This is a recommended content portfolio and dependency order, not an approved implementation schedule.
 
+**Player direction, 2026-09-10 (#40):** prioritize a grounded
+observation/research -> discovery -> physical engineering -> useful equipment
+or procedure -> new field/containment decision loop. Research progression and
+bounded crafting are desired, not rejected by earlier portfolio limits.
+Transport is now reusable without lifetime tickets; finite supplies and actual
+travel remain. Choose additional sources for this gameplay payoff, not merely
+more maintenance chores or another collectible name. Inventory redesign and
+fog-of-war remain deferred.
+
 ## Replacement Checkpoint: 2026-09-10
 
 The [persistent text campaign](../src/simulation/catalog/campaign/README.md)
@@ -24,7 +33,7 @@ below retain their historical baseline; they are not current absence claims.
 The [connected management walkthrough](../src/simulation/catalog/campaign/tests/connected-management.txt)
 plays care, Blackwood/Kestrel resupply and group evacuation without a scenario
 reset. It retains three admitted residents, physical findings and remaining
-trip allocations, with current-version reload during the loop. `finish` and
+physical supply stocks, with current-version reload during the loop. `finish` and
 actor-scoped `@held` reduce guessed work ticks and generated-ID copying; they
 do not perform work for free. Automated completion does not establish
 subjective fun or full canonical containment behavior.
@@ -177,11 +186,11 @@ regression scenarios for ownership, wear and interrupted work.
 Additional-source review on 2026-09-10 considered the following, without adding
 new runtime content:
 
-| Candidate                                       | Source and credit                                | Why defer after this checkpoint                                                                                                                                                                                                                                                                                                                                               |
-| ----------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [SCP-348](https://scp-wiki.wikidot.com/scp-348) | Zyn, CC BY-SA 3.0; archived revision 35 reviewed | Its minor-ailment comfort and personal-message emphasis is not a universal cure. The current adult trauma/resource loop needs player feedback before adding a different care/relationship model or a new food source.                                                                                                                                                         |
-| [SCP-500](https://scp-wiki.wikidot.com/scp-500) | snorlison, CC BY-SA 3.0; live source reviewed    | Finite disease treatment could support allocation, but current major conditions are trauma and blood loss. Do not invent a blanket wound/organ cure from a disease-treatment premise merely to reuse the clinical action. A defined disease slice must earn its own scope first.                                                                                              |
-| [SCP-914](https://scp-wiki.wikidot.com/scp-914) | Dr Gears, CC BY-SA 3.0; live source reviewed     | Controlled nonliving transformation is a plausible future use of physical input/output ownership. It would also alter the deliberately finite parts/textile/clinical economy. Balance existing allocation, paid experimentation and recurring service before adding a conversion table; archive the selected revision and review every authored output before implementation. |
+| Candidate                                       | Source and credit                                        | Why defer after this checkpoint                                                                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [SCP-348](https://scp-wiki.wikidot.com/scp-348) | Zyn, CC BY-SA 3.0; archived revision 35 reviewed         | Its minor-ailment comfort and personal-message emphasis is not a universal cure. The current adult trauma/resource loop needs player feedback before adding a different care/relationship model or a new food source.                                                                                                                                                   |
+| [SCP-500](https://scp-wiki.wikidot.com/scp-500) | snorlison, CC BY-SA 3.0; live source reviewed            | Finite disease treatment could support allocation, but current major conditions are trauma and blood loss. Do not invent a blanket wound/organ cure from a disease-treatment premise merely to reuse the clinical action. A defined disease slice must earn its own scope first.                                                                                        |
+| [SCP-914](https://scp-wiki.wikidot.com/scp-914) | Dr Gears, CC BY-SA 3.0; revision53 archived as text only | Controlled nonliving transformation could support physical input/output ownership and a meaningful engineering choice. No runtime adaptation yet: an autonomous, irreversible process must earn its complexity through the requested progression loop, not duplicate equipment repair. Review every authored output; no biological, weapon or medical trial is implied. |
 
 No images from these sources were added. SCP-914's separate photograph license
 is not assumed to follow its article credit. No dangerous transformation,

@@ -1,8 +1,5 @@
 import type { ScenarioSession } from "../../application/ScenarioSession";
-import {
-  opportunityBlocker,
-  readyDocket,
-} from "../../simulation/catalog/campaign/Campaign";
+import { opportunityBlocker } from "../../simulation/catalog/campaign/Campaign";
 import { opportunities } from "../../simulation/catalog/campaign/setup";
 import { homeLoading } from "../../simulation/catalog/campaign/Home";
 import { departureReadiness } from "../../simulation/catalog/campaign/Readiness";
@@ -90,7 +87,6 @@ export function campaignStatus(session: ScenarioSession): string {
       .filter((entity) =>
         [
           "packaged-meal",
-          "transport-docket",
           "coin-allocation",
           "clinical-pack",
           "wound-care-pack",
@@ -102,7 +98,7 @@ export function campaignStatus(session: ScenarioSession): string {
       .join("; ")}`,
     ...Object.entries(opportunities).map(([key, opportunity]) => {
       const reason = opportunityBlocker(state, campaign, key);
-      return `${key} (${campaign.siteIds[key]}): ${reason ? `LOCKED: ${reason}` : readyDocket(state, campaign) ? "AVAILABLE" : "BLOCKED: no transport docket ready at home pad"} | ${opportunity.duration} travel ticks | 1 outbound docket/group; return prepaid${opportunity.fatalAfterTicks ? ` | LETHAL RISK: ${opportunity.fatalAfterTicks} critical ticks; equip before departure` : ""}`;
+      return `${key} (${campaign.siteIds[key]}): ${reason ? `LOCKED: ${reason}` : "AVAILABLE"} | ${opportunity.duration} travel ticks | reusable transport${opportunity.fatalAfterTicks ? ` | LETHAL RISK: ${opportunity.fatalAfterTicks} critical ticks; equip before departure` : ""}`;
     }),
     ...Object.values(state.transfers).map(
       (transfer) =>
@@ -171,11 +167,11 @@ export function campaignBrief(key?: string): string {
     ].join("\n");
   }
   return [
-    "Manage a finite home site. Recover evidence, study it physically, and spend transport allocations deliberately.",
+    "Manage a retained home site with finite staff and supplies. Recover evidence, study it physically, and prepare for each expedition.",
     "Start with brief blackwood. Prepare actual staff; take supplies before assembling. One carrier holds one object.",
     "Example: prepare blackwood alex ben; step 10; send blackwood alex ben; step 8; site blackwood.",
     "At home, deliver journal to (3,3) and specimen to (3,5), then order ben study bench marsh-lead.",
-    "Partial withdrawal is allowed. Return transport is prepaid, retained sites do not restock, and no command creates replacement staff.",
+    "Travel is reusable without a lifetime trip limit. Partial withdrawal is allowed; retained sites do not restock, and no command creates replacement staff. Time, preparation and physical carrying capacity still matter.",
     "Use autonomy <staff> on for home routines; preparation disables it so staff wait at the loading area. Keep the arrival pad clear.",
     "SCP-294 is installed at home for a bounded experiment. brief scp294 explains finite paid requests and sample comparison.",
     "SCP-1867 by Djoric and SCP-1370 by Sorts, SCP Wiki, CC BY-SA 3.0. Kestrel and this campaign are original adaptations; inspect evidence for source links.",

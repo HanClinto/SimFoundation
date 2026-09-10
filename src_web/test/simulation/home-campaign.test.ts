@@ -76,9 +76,11 @@ it("runs the ordinary CLI recovery, home study, unlocked equipment study and fin
   expect(opportunityBlocker(state, campaign!, "kestrel")).toBeNull();
   expect(state.sites["site-2"]!.entities["site-2:journal"]).toBeUndefined();
   expect(state.sites["site-2"]!.entities["site-2:specimen"]).toBeUndefined();
-  expect(home.entities["site-4:dockets"]!.amount).toBe(3);
+  expect(home.entities["site-4:spares"]!).toMatchObject({
+    definitionId: "maintenance-parts",
+    amount: 3,
+  });
   expect(home.entities["site-4:rations"]!.amount).toBe(8);
-  expect(home.entities["site-1:transport"]!.amount).toBe(2);
   expect(state.sites["site-4"]!.entities["site-1:kit"]).toBeDefined();
   expect(state.sites["site-4"]!.entities["site-4:station"]).toMatchObject({
     study: {
@@ -150,33 +152,13 @@ it("partial return and a revisit preserve injury, remaining evidence and current
   ).toBeDefined();
 });
 
-it("spends no docket on failed departure and allows a prepaid return after outbound stock depletion", () => {
-  let console = openConsole();
-  const stock = () =>
-    console.session.state.sites["site-1"]!.entities["site-1:transport"]!;
+it("reusable travel still refuses unprepared departure without mutating state", () => {
+  const console = openConsole();
+  const before = JSON.stringify(console);
   expect(() => executeLine(console, "send blackwood alex")).toThrow(
     "loading area",
   );
-  expect(stock().amount).toBe(4);
-  stock().amount = 1;
-  console = play(console, [
-    "prepare blackwood alex",
-    "step 12",
-    "send blackwood alex",
-    "step 8",
-    "site blackwood",
-    "send home alex",
-    "step 8",
-    "site home",
-  ]);
-  expect(stock().amount).toBe(0);
-  expect(executeLine(console, "status").output).toContain(
-    "BLOCKED: no transport docket ready at home pad",
-  );
-  expect(() => executeLine(console, "send blackwood alex")).toThrow(
-    "needs one intact transport docket",
-  );
-  expect(staff(console, "site-1", "alex")).toBeDefined();
+  expect(JSON.stringify(console)).toBe(before);
 });
 
 it("rejects earlier session versions rather than migrating campaign state", () => {

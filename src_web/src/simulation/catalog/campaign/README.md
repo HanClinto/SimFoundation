@@ -13,8 +13,8 @@ The existing armchair sits on the lower service lane rather than closing the
 guest-bed departure path beside the workshop. This is authored circulation,
 not permission for workers to pass through one another.
 
-The home begins with Alex, Ben and Casey, eight meals, four round-trip transport
-allocations, a reusable field kit, a comparison bench, independent records,
+The home begins with Alex, Ben and Casey, eight meals,
+a reusable field kit, a comparison bench, independent records,
 ordinary rest furniture and a glass display bay. No campaign command deploys
 new staff. Home routines can be enabled with `autonomy casey on`.
 
@@ -76,8 +76,10 @@ site blackwood
 Preparation is ordinary walking, not instant departure. Queued work must finish
 or be cancelled first; `queue alex` explains blockers. Staff take their carried
 objects with them. Each carrier can hold one object, so kit/supplies compete
-with evidence. One ground docket beside home pad (2,7) is spent only on an
-accepted outbound departure. Return trips are prepaid even if dockets run out.
+with evidence. Transport is reusable without a lifetime trip ceiling. There is
+no fare/fuel/fleet economy yet; actual travel time, physical manifests, route
+gates, readiness and blocked arrivals still apply. Repeated journeys do not
+restock sites or repair/heal travellers.
 
 After assembly, `preview-send intervention alex` runs the same actual departure
 checks and shows the proposed physical manifest, including nested cargo,
@@ -120,7 +122,8 @@ opens the Kestrel depot; merely collecting every map marker does not.
 
 For the depot survey, carry `kit` to Kestrel and `order alex study station
 depot-survey`. Leaving the reusable kit there frees a return carrier for meals.
-Recovered `dockets` must be delivered beside the home pad to fund future trips.
+Recovered `spares` are three actual maintenance packs, useful for workshop
+repairs or holding fallback rather than tickets for future trips.
 All removed supplies remain removed on revisit.
 
 The gallery route recovers SCP-1370 without combat. Deliver `exhibit` to home
@@ -316,8 +319,9 @@ This bounded subject does not bash doors; opening the gate restores the risk.
 
 The actual `kinetic-intake` finding unlocks `support`, a retained regional
 cache. Fresh campaigns include three power units, two suppression units, two
-wound-care packs, two maintenance packs and one donated bookshelf. An outbound allocation and real carriers are still
-required; two carriers cannot bring every category in one trip. Deliver power
+wound-care packs, two maintenance packs and one donated bookshelf. Real carriers
+and travel time are still required; two carriers cannot bring every category
+in one trip. Deliver power
 beside holding or suppression stock beside the worker for existing service/
 rearming actions. The cache does not respawn and reserve dispatch cannot
 bypass the study gate. This makes physical research change later logistics
@@ -365,7 +369,7 @@ queued commitment without refunds or deleting their equipment.
 
 `reserve accident devon` dispatches the existing reserve medic through twelve
 ticks of transit. `reserve home riley` requests the second existing responder.
-Two reserved allocations and two actual people are the entire reserve, not
+Two actual people are the entire reserve, not
 infinite replacements. These commands still work when the original crew is
 lost, but perform no automatic rescue or healing. Keep arrival pads clear,
 then use the responders to recover people/bodies and equipment physically.
@@ -394,8 +398,9 @@ ordinary yard combat, without injected health changes. Devon then physically
 recovers Alex's original tool, spends one retained charge on the same hostile,
 and returns Casey's body. Alex/Ben's bodies and the worn vest remain at the yard
 for later recovery; the threat is only temporarily subdued, not magically
-contained. Riley and one regional dispatch remain, along with two home trips.
-This proves finite continuation after catastrophic loss, not unlimited rescue.
+contained. Riley remains at the reserve; the surviving crew can reuse ordinary
+transport for further recovery. This proves finite personnel continuation after
+catastrophic loss, not unlimited replacement staff.
 
 ## Clinical Recovery After Evacuation
 
@@ -530,6 +535,7 @@ resident care and group evacuation in the same saved campaign, without resets:
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/home-loop.txt
 npm run sim < src/simulation/catalog/campaign/tests/connected-management.txt
+npm run sim -- --strict < src/simulation/catalog/campaign/tests/reusable-travel.txt
 ```
 
 ## Attribution And Limits
@@ -545,9 +551,10 @@ The home also hosts a [bounded SCP-294 experiment](../quests/scp294/README.md),
 with finite paid requests and source-conserving samples. Use `brief scp294`.
 
 Peaceful routes retain their authored nonfatal behavior; explicit mortality
-now exists for opted-in health and the accident scenario. Hostile capture,
-vehicle simulation and automatic resupply are not yet implemented. Incapacitated staff can be carried by available responders
-through existing physical rules. Treatment stabilizes bleeding; finite bedside
-care can improve blood loss, but neither is a universal wound cure. The bounded
-store has capped night impacts, not source-level lethal combat. Running out of every transport allocation prevents additional
-departures, not prepaid return or continued home management.
+now exists for opted-in health and the accident scenario. Equipment-backed
+hostile capture and restrained recovery are implemented; vehicle simulation
+and automatic resupply are not. Incapacitated staff can be carried by available
+responders. Stabilization and distinct paid blood/wound/postoperative courses
+preserve their specific limits rather than universally curing a patient. The bounded
+store has capped night impacts, not source-level lethal combat. Reusable
+transport does not replenish finite food, ammunition, medicine or personnel.

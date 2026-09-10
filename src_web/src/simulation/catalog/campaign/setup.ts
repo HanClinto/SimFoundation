@@ -66,7 +66,7 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
   kestrel: {
     name: "Kestrel Marsh depot",
     briefing:
-      "Blackwood's corroborated finding authorizes this visit. Bring the field comparison kit for study station depot-survey. Recover finite meals or transport dockets from the cache; each carrier can hold only one object. The return is already funded. Returned dockets must be delivered beside home pad (2,7) before they fund later departures.",
+      "Blackwood's corroborated finding authorizes this visit. Bring the field comparison kit for study station depot-survey. Recover finite meals or maintenance packs (spares) from the cache; each carrier can hold only one object. Travel is reusable, but supplies never restock. Return spares beside a workshop or holding facility for real repairs and fallback.",
     requiresFinding: "marsh-lead",
     site: {
       name: "Kestrel Marsh depot",
@@ -92,8 +92,8 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
           overrides: { amount: 8 },
         },
         {
-          id: "dockets",
-          definitionId: "transport-docket",
+          id: "spares",
+          definitionId: "maintenance-parts",
           location: { kind: "ground", position: { x: 9, y: 5 } },
           overrides: { amount: 3 },
         },
@@ -219,7 +219,7 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
   accident: {
     name: "Outpost accident and body recovery",
     briefing:
-      "Rowan has uncontrolled bleeding: at blood loss100, twenty consecutive critical ticks cause permanent death. Send Casey promptly to treat, or dispatch the finite reserve medic Devon. Existing blood loss and wounds remain. If rescue is late, carry the actual body and its recorder home; no treatment resurrects it. The reserve command dispatches an existing responder via twelve ticks of transit, spending one of two reserved allocations; it is not a free replacement or automatic rescue.",
+      "Rowan has uncontrolled bleeding: at blood loss100, twenty consecutive critical ticks cause permanent death. Send Casey promptly to treat, or dispatch the finite reserve medic Devon. Existing blood loss and wounds remain. If rescue is late, carry the actual body and its recorder home; no treatment resurrects it. The reserve command dispatches one of two existing responders via twelve ticks of transit; it is not a replacement spawn or automatic rescue.",
     site: accidentSite,
     loading: { x: 2, y: 3 },
     pads: [
@@ -244,7 +244,7 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
   support: {
     name: "Verified containment support allocation",
     briefing:
-      "The actual controlled-intake finding authorizes a finite regional cache, not automatic free procurement. Spend one outbound allocation and choose physical power, suppression, wound-care, maintenance stock or the single donated library. Two carriers cannot take every category in one trip. Power funds holding service; suppression units fund rearm; placing the actual library at home enables ordinary shared reading. Removed supplies/furniture never respawn; no completion reward generates staff or equipment.",
+      "The actual controlled-intake finding authorizes a finite regional cache, not automatic free procurement. Choose physical power, suppression, wound-care, maintenance stock or the single donated library. Two carriers cannot take every category in one trip. Travel is reusable but takes real time while all sites continue. Power funds holding service; suppression units fund rearm; placing the actual library at home enables ordinary shared reading. Removed supplies/furniture never respawn; no completion reward generates staff or equipment.",
     requiresFinding: "kinetic-intake",
     site: supportDepot,
     loading: { x: 2, y: 3 },
