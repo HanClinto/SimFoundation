@@ -17,6 +17,7 @@ npm run sim
 npm run sim < src/simulation/catalog/campaign/tests/connected-management.txt
 npm run sim < src/simulation/catalog/campaign/tests/connected-danger.txt
 npm run sim < src/simulation/catalog/campaign/tests/crew-loss-recovery.txt
+npm run sim -- --strict < src/simulation/catalog/campaign/tests/connected-danger.txt
 ```
 
 Start with `brief`, `status`, `map` and `help`. The
@@ -26,6 +27,11 @@ test-only normal commands, never imported or executed by gameplay.
 The CLI and benchmark use Vite only as a local module loader, with HMR and
 WebSocket listeners disabled; they do not compete with the browser dev server
 for a hot-reload port.
+For automation, `--strict` stops on an invalid or rejected input command and
+returns exit1 with line context. It uses the same parser and does not roll back
+earlier work. Default interactive/piped behavior still permits correcting an
+error; strict command validity is not a claim that a quest or risky operation
+succeeded.
 
 | Command                              | Meaning                                                                                                           |
 | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |

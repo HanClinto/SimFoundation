@@ -16,6 +16,7 @@ try {
     "/src/application/ScenarioSession.ts",
   );
   const args = process.argv.slice(2);
+  const strict = args.includes("--strict");
   const option = (name, fallback) => {
     const index = args.indexOf(name);
     return index < 0 ? fallback : args[index + 1];
@@ -64,7 +65,9 @@ try {
       input.setPrompt("sim> ");
       input.prompt();
     }
+    let lineNumber = 0;
     for await (const line of input) {
+      lineNumber++;
       try {
         const [command] = line.trim().split(/\s+/);
         if (command === "save" || command === "restore") {
@@ -92,13 +95,27 @@ try {
           const result = executeLine(consoleState, line);
           consoleState = result.console;
           console.log(result.output);
+          if (strict && result.rejected) {
+            console.error(
+              `Strict input stopped at line ${lineNumber}: ${line.trim()}`,
+            );
+            process.exitCode = 1;
+            input.close();
+            break;
+          }
           if (result.quit) {
             input.close();
             break;
           }
         }
       } catch (error) {
-        console.error(error instanceof Error ? error.message : String(error));
+        const message = error instanceof Error ? error.message : String(error);
+        console.error(strict ? `Line ${lineNumber}: ${message}` : message);
+        if (strict) {
+          process.exitCode = 1;
+          input.close();
+          break;
+        }
       }
       if (terminal) input.prompt();
     }

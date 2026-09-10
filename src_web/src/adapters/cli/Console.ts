@@ -284,6 +284,7 @@ export function executeLine(
   output: string;
   quit?: boolean;
   alarm?: TickEvent;
+  rejected?: boolean;
 } {
   const [command, ...args] = line.trim().split(/\s+/);
   let next = console;
@@ -741,9 +742,12 @@ export function executeLine(
           );
         }
       }
-      return finish(
-        `${result.code}${result.reason ? `: ${result.reason}` : ""}${result.actionId ? ` (${result.actionId})` : ""}`,
-      );
+      return {
+        ...finish(
+          `${result.code}${result.reason ? `: ${result.reason}` : ""}${result.actionId ? ` (${result.actionId})` : ""}`,
+        ),
+        ...(result.code === "rejected" ? { rejected: true } : {}),
+      };
     }
     default:
       throw new Error(`Unknown command: ${command}. Type help.`);
