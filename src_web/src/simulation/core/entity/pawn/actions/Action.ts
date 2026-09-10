@@ -10,6 +10,7 @@ import type { DeliverState } from "./Deliver";
 import type { DispenseState } from "./Dispense";
 import type { EscortState, FollowState } from "./Escort";
 import type { PackState, UnpackState } from "./Pack";
+import type { NurseState } from "./Nurse";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -20,6 +21,7 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | NurseState
   | PackState
   | UnpackState
   | EscortState

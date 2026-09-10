@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { createScanner, SyntaxKind } from "typescript/unstable/ast";
 import { expect, it } from "vitest";
 import {
   instantiateSite as instantiate,
@@ -36,6 +37,57 @@ const template: SiteTemplate = JSON.parse(
     "utf8",
   ),
 );
+
+function browserIdentifiers(source: string): string[] {
+  const found: string[] = [];
+  const scanner = createScanner(true, undefined, source);
+  const forbidden = new Set([
+    "document",
+    "window",
+    "localStorage",
+    "requestAnimationFrame",
+  ]);
+  const templates: number[] = [];
+  let braces = 0;
+  for (
+    let token = scanner.scan();
+    token !== SyntaxKind.EndOfFile;
+    token = scanner.scan()
+  ) {
+    if (token === SyntaxKind.TemplateHead) templates.push(braces);
+    else if (token === SyntaxKind.OpenBraceToken) braces++;
+    else if (token === SyntaxKind.CloseBraceToken) {
+      if (templates.at(-1) === braces) {
+        token = scanner.reScanTemplateToken(false);
+        if (token === SyntaxKind.TemplateTail) templates.pop();
+      } else braces--;
+    }
+    if (
+      token === SyntaxKind.Identifier &&
+      forbidden.has(scanner.getTokenValue())
+    )
+      found.push(scanner.getTokenValue());
+  }
+  return found;
+}
+
+it("checks browser identifiers rather than words in authored prose or comments", () => {
+  expect(
+    browserIdentifiers(
+      'const briefing = "No dangerous contact window is modeled."; // document the adaptation',
+    ),
+  ).toEqual([]);
+  expect(
+    browserIdentifiers(
+      "window.location; document.body; localStorage.clear(); requestAnimationFrame(tick);",
+    ),
+  ).toEqual(["window", "document", "localStorage", "requestAnimationFrame"]);
+  expect(
+    browserIdentifiers(
+      "const message = `${value} window`; const result = `${window.location}`;",
+    ),
+  ).toEqual(["window"]);
+});
 
 it("instantiates a shared JSON site definition twice without sharing mutable records or identities", () => {
   const first = instantiateSite(createSimulation(), template);
@@ -263,9 +315,7 @@ it("keeps the replacement independent from legacy, application and browser code"
         expect(source).not.toMatch(
           /from\s+["'][^"']*(simulation_legacy|adapters|application)/,
         );
-        expect(source).not.toMatch(
-          /\b(document|window|localStorage|requestAnimationFrame)\b/,
-        );
+        expect(browserIdentifiers(source), url.pathname).toEqual([]);
         if (url.pathname.includes("/core/")) {
           expect(source).not.toMatch(
             /(?:from\s*|import\s*\(|require\s*\()\s*["'][^"']*catalog/,

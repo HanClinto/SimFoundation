@@ -15,6 +15,11 @@ export interface Facility extends EntityBase {
   research?: { progress: number };
   study?: { plans: readonly StudyPlan[]; findings: Finding[] };
   dispenser?: Dispenser;
+  care?: {
+    supplyDefinitionId: string;
+    ticks: number;
+    bloodRecovery: number;
+  };
 }
 
 export function facilityInUse(
@@ -35,7 +40,8 @@ export function facilityInUse(
       action &&
       "workTicks" in action &&
       action.workTicks > 0 &&
-      action.targetId === targetId
+      (action.targetId === targetId ||
+        ("bedId" in action && action.bedId === targetId))
     );
   });
 }

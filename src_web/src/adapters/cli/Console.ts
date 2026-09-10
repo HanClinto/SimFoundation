@@ -99,6 +99,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "nurse")
+    return `nurse ${action.targetId} at ${action.bedId} | work ${action.workTicks}${action.supplyId ? " | clinical pack spent" : ""}`;
   if (action.kind === "pack")
     return `pack ${action.targetId} in ${action.caseId} | work ${action.workTicks}`;
   if (action.kind === "unpack")
@@ -192,6 +194,7 @@ order <name|@N> deliver <target> <x> <y> (collect, carry and drop)
 order <name|@N> dispense <machine> <request> [source]
 order <name|@N> escort <person> <x> <y> (cooperative walking)
 order <name|@N> pack <specimen> <case> | order <name|@N> unpack <case>
+order <name|@N> nurse <patient> <clinical-bed>
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -416,33 +419,6 @@ export function executeLine(
                   workTicks: 0,
                 }
               : parseOrder(args.slice(1));
-        const kinds = [
-          "pack",
-          "unpack",
-          "escort",
-          "dispense",
-          "deliver",
-          "move",
-          "take",
-          "drop",
-          "eat",
-          "wait",
-          "sleep",
-          "relax",
-          "research",
-          "read",
-          "exercise",
-          "attack",
-          "treat",
-          "flee",
-          "study",
-        ];
-        if (
-          !action ||
-          typeof action !== "object" ||
-          !kinds.includes(action.kind)
-        )
-          throw new Error("Unknown action kind.");
         if (
           action.kind === "move" ||
           action.kind === "deliver" ||
@@ -474,19 +450,8 @@ export function executeLine(
             };
           if (action.kind === "pack")
             action = { ...action, caseId: resolve(console, action.caseId).id };
-          if (
-            [
-              "sleep",
-              "relax",
-              "research",
-              "read",
-              "exercise",
-              "attack",
-              "treat",
-              "study",
-            ].includes(action.kind)
-          )
-            action = { ...action, workTicks: 0 } as ActionState;
+          if (action.kind === "nurse")
+            action = { ...action, bedId: resolve(console, action.bedId).id };
         }
         result = executeCommand(
           console.session.state,

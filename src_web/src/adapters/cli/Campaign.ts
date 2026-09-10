@@ -36,9 +36,12 @@ export function campaignStatus(session: ScenarioSession): string {
     ),
     `Home stocks: ${Object.values(home.entities)
       .filter((entity) =>
-        ["packaged-meal", "transport-docket", "coin-allocation"].includes(
-          entity.definitionId,
-        ),
+        [
+          "packaged-meal",
+          "transport-docket",
+          "coin-allocation",
+          "clinical-pack",
+        ].includes(entity.definitionId),
       )
       .map(
         (entity) => `${entity.name} ${entity.amount.toFixed(1)} [${entity.id}]`,
@@ -75,11 +78,19 @@ export function campaignStatus(session: ScenarioSession): string {
         : [],
     ),
     `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
-    `brief <${Object.keys(opportunities).join("|")}|scp294> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
+    `brief <${Object.keys(opportunities).join("|")}|scp294|clinic> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
   ].join("\n");
 }
 
 export function campaignBrief(key?: string): string {
+  if (key === "clinic")
+    return [
+      "Clinical recovery: real bedside work, not an admission cure",
+      "Stabilize bleeding first. Deliver a carried patient to (4,2), beside clinic, then order casey nurse <patient> clinic.",
+      "One of four clinical-packs funds up to 25 blood-loss recovery over 16 work ticks. Keep packs beside the bed or carried by the medic.",
+      "Spent supplies and partial recovery remain after cancellation. Recorded blood-loss incapacity can clear on completion; wounds and arbitrary incapacity do not.",
+      "After recovery, escort the cooperative person to an ordinary bed and admit for rest. Severe wound care is not implemented by this course.",
+    ].join("\n");
   if (key === "scp294")
     return [
       "SCP-294: bounded home experiment",

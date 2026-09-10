@@ -1,0 +1,29 @@
+# Deliberate late response: no fixture mutation, no free recovery.
+load campaign
+prepare care casey
+step 12
+send care casey
+step 8
+site care
+# Mira's known bleeding reaches incapacity while the responder waits.
+step 1000
+order casey treat mira
+step 16
+order casey take mira
+step 4
+prepare home casey
+step 20
+send home casey
+step 8
+site home
+order casey deliver mira 4 2
+step 16
+order casey nurse mira clinic
+step 24
+inspect mira
+inspect clinical-packs
+order casey escort mira 6 2
+step 16
+admit mira bed
+step 12
+status

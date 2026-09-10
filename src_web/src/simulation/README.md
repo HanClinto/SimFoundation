@@ -169,7 +169,7 @@ This boundary copy is for caller isolation, not simultaneous simulation: actions
 
 Opening a closed automatic door spends the opener's turn without movement. A later entity sees that door as open immediately. Door closure checks current nearby ground occupants when the door gets its own turn. There is no special end-of-tick door resolver.
 
-Pawn physiology advances once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs and bleeding once outside sites, and arrivals receive no extra local turn. Optional health conditions are separate from needs. Incapacitating wound severity or blood loss disables `canAct`; death and recovery are not implemented.
+Pawn physiology advances once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs and bleeding once outside sites, and arrivals receive no extra local turn. Optional health conditions are separate from needs. Incapacitating wound severity or blood loss disables `canAct` and records the cause. Supply-backed clinical care can clear supported blood-loss incapacity without erasing wounds; death is not implemented.
 
 Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) asks for a response to an observed concern first, then a needs-based action, then a configured patrol destination. It names no individual need or named actor and never performs a separate version of an action.
 
@@ -192,6 +192,8 @@ Optional [Response.ts](core/entity/pawn/Response.ts) data specifies faction, hos
 - **Treat:** approach a visible allied patient, work four consecutive adjacent ticks, then spend one medical charge to stop the most actively bleeding wound. Moving, blocked approach or nearby danger resets treatment progress. Treatment changes bleeding and records the medic ID, but preserves wound severity and accumulated blood loss. Another medic completing first cannot cause duplicate spending on that wound. A medic can finish further wounds in later actions while supplies remain.
 
 [Health.ts](core/entity/pawn/Health.ts) holds wounds (ID, severity, bleeding rate, optional treating actor) and accumulated blood loss. Bleeding advances regardless of autonomy, queue or transit ownership. A total wound severity or blood loss of 100 incapacitates immediately; stabilization does not automatically restore the ability to act. Values are prototype units, not clinical physiology. Wounds are not a generic low-health bar to fill, and injury is not copied into a synthetic treatment need. No self-treatment, long-term healing or medical appointment system is included.
+
+[Nurse.ts](core/entity/pawn/actions/Nurse.ts) adds a narrow clinical recovery course: a medically trained worker approaches an allied, stabilized patient physically positioned beside a clinical bed. A real pack is consumed when care starts; gradual blood recovery and spent supplies survive interruption. Bed and patient occupancy derive from active queues. A completed supported course can clear recorded blood-loss incapacity, not severe wounds or unrelated inability to act. The [carried-rescue walkthrough](catalog/campaign/tests/carried-recovery.txt) demonstrates delayed care without an admission cure. Core version 15 adds these fields and discards older snapshots.
 
 ### Commitments And Interruption
 

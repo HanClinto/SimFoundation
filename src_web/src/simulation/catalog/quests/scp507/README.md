@@ -62,5 +62,5 @@ The [complete command walkthrough](tests/return-and-review.txt) is test-only:
 npm run sim < src/simulation/catalog/quests/scp507/tests/return-and-review.txt
 ```
 
-Session version 6 discards older campaign saves, whose site catalog and case
-protocol lack this opportunity. Core mechanics remain at version 14.
+This opportunity was introduced with session version 6, discarding older
+campaign saves whose site catalog and case protocol lacked it.

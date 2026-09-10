@@ -73,7 +73,8 @@ not a cloned staff recruit.
 Cancel the leader's escort to release following on the next tick. The person
 stays where she is. If she becomes incapable, stabilize and carry her through
 ordinary `take` and staff preparation instead; do not list a carried passenger
-again in `send`. Incapacitated bed care is not yet implemented. A partial
+again in `send`. Supply-backed clinical care can address blood-loss incapacity
+after evacuation; severe wounds need other treatment. A partial
 withdrawal leaves the same patient at the same persistent site, with no reset.
 
 The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
@@ -81,6 +82,33 @@ The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 ```
+
+## Clinical Recovery After Evacuation
+
+Stabilization stops bleeding; it does not restore lost blood. A late Mira rescue
+can still carry her home without a free cure. Deliver her to (4,2), beside the
+home `clinic`, and `order casey nurse mira clinic`. A medically trained worker
+must physically reach the patient, who must be grounded beside the clinical
+bed with no active bleeding.
+
+One of four physical `clinical-packs` is spent at the start of a course. Sixteen
+productive ticks restore up to 25 blood-loss points. Cancellation keeps the
+spent pack and earned partial benefit. An empty supply stack, occupied bed or
+patient elsewhere produces a visible blocker. After a completed supported
+course, health-caused blood-loss incapacity can clear; wounds remain, severe
+wound incapacity does not clear, and arbitrary `canAct = false` is not healed.
+
+Then escort/admit the recovered person for ordinary rest. This is an abstract
+game care model, not a medical procedure or drug recipe. The
+[late-rescue walkthrough](tests/carried-recovery.txt) deliberately waits until
+Mira cannot walk and completes the entire rescue through normal commands:
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/carried-recovery.txt
+```
+
+Core version 15 records incapacity cause and paid clinical work. Old development
+saves are discarded, not migrated.
 
 ## SCP-507 Returnee
 
@@ -111,8 +139,8 @@ vial and its actual case. A sealed specimen is not available for study.
 
 No case repair, automatic replacement, chemical hazard or protective damage
 multiplier is modeled. The useful decision is preparation and scarce carrying
-capacity, not a hidden breakage roll. Current core version 14 discards older
-development saves. The [courier walkthrough](tests/courier.txt) is copyable:
+capacity, not a hidden breakage roll. Case state was introduced in core version
+14 without save migrations. The [courier walkthrough](tests/courier.txt) is copyable:
 
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/courier.txt
@@ -144,7 +172,7 @@ with finite paid requests and source-conserving samples. Use `brief scp294`.
 
 This slice has no death, hostile capture, vehicle simulation or automatic
 resupply. Incapacitated staff can be carried by available responders
-through existing physical rules, but treatment currently stabilizes bleeding
-only; it is not a full recovery model. There is no authored combat in these
+through existing physical rules. Treatment stabilizes bleeding; finite bedside
+care can improve blood loss, but neither is a universal wound cure. There is no authored combat in these
 campaign routes. Running out of every transport allocation prevents additional
 departures, not prepaid return or continued home management.

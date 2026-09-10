@@ -23,6 +23,17 @@ export const home: SiteTemplate = {
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
     {
+      id: "clinic",
+      definitionId: "clinical-bed",
+      location: { kind: "ground", position: { x: 4, y: 1 } },
+    },
+    {
+      id: "clinical-packs",
+      definitionId: "clinical-pack",
+      location: { kind: "ground", position: { x: 5, y: 1 } },
+      overrides: { amount: 4 },
+    },
+    {
       id: "guest-bed",
       definitionId: "bed",
       location: { kind: "ground", position: { x: 10, y: 2 } },

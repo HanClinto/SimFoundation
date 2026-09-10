@@ -11,6 +11,7 @@ export interface Wound {
 export interface Health {
   wounds: Wound[];
   bloodLoss: number;
+  incapacity?: "blood-loss" | "wounds";
 }
 
 export function advanceHealth(health: Health): void {
@@ -32,6 +33,15 @@ export function advancePhysiology(pawn: Pawn): void {
   pawn.needs = advanceNeeds(pawn.needs);
   if (pawn.health) {
     advanceHealth(pawn.health);
-    if (incapacitated(pawn.health)) pawn.canAct = false;
+    if (incapacitated(pawn.health)) {
+      pawn.health.incapacity =
+        pawn.health.wounds.reduce(
+          (total, wound) => total + wound.severity,
+          0,
+        ) >= 100
+          ? "wounds"
+          : "blood-loss";
+      pawn.canAct = false;
+    }
   }
 }
