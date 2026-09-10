@@ -86,6 +86,22 @@ export function apparatusView(
         targetId: target.id,
       }),
     );
+    if (service.reusableInput)
+      status.append(
+        element(
+          "p",
+          "",
+          `The service input remains physical after use${service.distinctInput ? "; each distinct programme is new only once" : ""}.`,
+        ),
+      );
+    if (service.trainingPlanId)
+      status.append(
+        element(
+          "p",
+          "",
+          "The responsible worker must earn the station's personal training finding.",
+        ),
+      );
     if (target.containment) {
       status.append(
         element(
@@ -142,11 +158,22 @@ export function apparatusView(
       ),
     );
     for (const request of target.dispenser.requests) {
+      const source = request.sourceDefinitionId
+        ? entityChoice(
+            context,
+            `Source for ${request.title}`,
+            Object.values(context.site.entities).filter(
+              (entity) => entity.definitionId === request.sourceDefinitionId,
+            ),
+          )
+        : null;
+      if (source) machine.append(source.node);
       machine.append(
         orderButton(context, `Dispense ${request.title}`, {
           kind: "dispense",
           targetId: target.id,
           requestId: request.id,
+          ...(source ? { sourceId: source.id } : {}),
           workTicks: 0,
         }),
       );
@@ -172,7 +199,7 @@ export function apparatusView(
         element(
           "p",
           "",
-          `Intake (${ports.intake.x},${ports.intake.y}); operator (${ports.operator.x},${ports.operator.y}); output (${ports.output.x},${ports.output.y}). Place the unequipped input on intake.`,
+          `Intake (${ports.intake.x},${ports.intake.y}); operator (${ports.operator.x},${ports.operator.y}); output (${ports.output.x},${ports.output.y}). Process delivers the unequipped input and winds the machine; keep these ports clear.`,
         ),
       );
     const current = target.processor.current;

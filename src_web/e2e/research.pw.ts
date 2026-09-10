@@ -6,47 +6,14 @@ import {
   inspectNamed,
   order,
   save,
-  travel,
+  containedSpecimen,
 } from "./play";
 
 test("live containment research crafts a real restraint used for awake care and recontainment", async ({
   page,
 }) => {
   await page.goto("./");
-  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:ben");
-  await page
-    .getByLabel("Inspect", { exact: true })
-    .selectOption("site-1:parts");
-  await page.getByRole("button", { name: "Collect selected portion" }).click();
-  await finish(page);
-  await deliver(page, "ben", 13, 7);
-  await order(page, "ben", "site-1:holding", "Repair / service");
-  await page
-    .getByRole("button", {
-      name: "Assign selected worker to recurring service",
-    })
-    .click();
-  await order(page, "alex", "site-1:suppressor", "Fit equipment");
-  await order(page, "alex", "site-1:vest", "Fit equipment");
-  await order(page, "alex", "site-1:restraint", "Take / recover");
-  await travel(page, "intervention", ["alex"]);
-  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
-  const specimen = await inspectNamed(page, "Kinetic specimen");
-  await floor(page, 2, 3);
-  await page
-    .getByLabel("Restraint", { exact: true })
-    .selectOption("site-1:restraint");
-  await page
-    .getByRole("button", { name: "Capture to floor destination" })
-    .click();
-  await finish(page);
-  await travel(page, "home", ["alex"]);
-  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
-  await page.getByLabel("Inspect", { exact: true }).selectOption(specimen);
-  await page.getByRole("button", { name: "Intake into holding" }).click();
-  await finish(page);
-  await page.getByRole("button", { name: "Remove restraint" }).click();
-  await finish(page);
+  const specimen = await containedSpecimen(page);
   await page
     .getByLabel("Inspect", { exact: true })
     .selectOption("site-1:holding");

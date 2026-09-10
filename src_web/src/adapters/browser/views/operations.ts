@@ -85,7 +85,12 @@ export function createOperationsView(
             site.name,
             entity.queue[0]?.action.kind ??
               (entity.health?.death ? "DEAD" : "Idle"),
-            entity.queue[0]?.blockedReason ?? "",
+            entity.queue[0]?.blockedReason ??
+              (entity.watchDuty
+                ? `Assigned watch: ${site.entities[entity.watchDuty.targetId]?.name ?? entity.watchDuty.targetId}`
+                : entity.serviceDuty
+                  ? `Service duty: ${site.entities[entity.serviceDuty]?.name ?? entity.serviceDuty}`
+                  : ""),
           ]);
         if (
           entity.kind === "facility" &&
@@ -102,12 +107,27 @@ export function createOperationsView(
             serviceStatus(entity.service, session.state.tick),
             `Due ${serviceDeadline(entity.service)}`,
           ]);
+        if (entity.kind === "facility" && entity.processor?.current)
+          rows.push([
+            button(
+              entity.name,
+              () => current.locate(site.id, entity.id),
+              `process:${entity.id}`,
+            ),
+            site.name,
+            `Processing ${entity.processor.current.recipeId}`,
+            entity.processor.current.blockedReason ??
+              `Output due tick ${entity.processor.current.completesAt}; operator is free`,
+          ]);
       }
     }
     replaceContents(
       content,
       element("h3", "", "Current commitments"),
-      table(["Person / apparatus", "Site", "Work / coverage", "Blocker"], rows),
+      table(
+        ["Person / apparatus", "Site", "Work / coverage", "Details / blocker"],
+        rows,
+      ),
     );
   }
   return {

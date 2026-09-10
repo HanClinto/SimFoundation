@@ -194,6 +194,14 @@ export function entityFacts(context: ViewContext, entity: Entity): HTMLElement {
     result.append(
       element("p", "", `Integrity: ${entity.integrity.toFixed(1)}`),
     );
+  if (entity.kind === "door")
+    result.append(
+      element(
+        "p",
+        "",
+        `Door: ${entity.open ? "OPEN" : "CLOSED"} | ${entity.policy}. Automatic doors remain open while ground occupants are nearby.`,
+      ),
+    );
   if (entity.kind === "pawn") {
     result.append(element("p", "", healthStatus(entity)));
     result.append(

@@ -32,6 +32,16 @@ patients/bodies and the two finite reserve responders. Use Travel to inspect
 their real incoming manifest. Subdual, restraints, intake, lockdown, recurring
 service, direct watch and guarded relief all use normal shared commands.
 
+The same physical inspector covers the eleven existing SCP adaptations, rather
+than eleven separate applications. Browser scenarios exercise Blackwood evidence,
+SCP-1370 display recovery, SCP-507's protected log and admission, SCP-2295's
+independent organ work and postoperative care, SCP-3008 group evacuation,
+SCP-294 source-backed samples, SCP-914's independent machine cycle, SCP-1295
+remote supply/service, SCP-2006 personally trained hosts/programmes, and
+SCP-173 watch/relief with supervised SCP-131 visits. Apparatus requests use
+explicit physical source/input selectors. Their bounded adaptation limits
+remain visible in each entity's Source and adaptation record.
+
 The previous browser lives in `src/adapters/browser_legacy`, with its application
 bindings in `src/application/legacy`; it is not bundled by the active entry.
 Historical prototype features below are not claims about the replacement UI.

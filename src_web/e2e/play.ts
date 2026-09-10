@@ -14,6 +14,17 @@ export async function finish(page: Page, label = "Finish current commitments") {
       });
       continue; // Explicitly resume after seeing the global alarm.
     }
+    if (
+      attempt > 0 &&
+      status.includes("No queued, travelling or processing commitments")
+    )
+      return;
+    if (
+      label === "Finish selected preparation" &&
+      attempt < 2 &&
+      status.includes("blocked: The destination is occupied")
+    )
+      continue;
     expect(status).toContain("Watched commitments finished");
     return;
   }
@@ -101,4 +112,100 @@ export async function save(page: Page): Promise<ScenarioSession> {
   return page.evaluate(() =>
     JSON.parse(localStorage.getItem("simfoundation.web.session.v1")!),
   );
+}
+
+export async function move(page: Page, worker: string, x: number, y: number) {
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption({ label: worker });
+  await floor(page, x, y);
+  await page.getByRole("button", { name: "Move here", exact: true }).click();
+  await finish(page);
+}
+
+export async function containedSpecimen(page: Page): Promise<string> {
+  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:ben");
+  await page
+    .getByLabel("Inspect", { exact: true })
+    .selectOption("site-1:parts");
+  await page.getByRole("button", { name: "Collect selected portion" }).click();
+  await finish(page);
+  await deliver(page, "ben", 13, 7);
+  await order(page, "ben", "site-1:holding", "Repair / service");
+  await page
+    .getByRole("button", {
+      name: "Assign selected worker to recurring service",
+    })
+    .click();
+  await order(page, "alex", "site-1:suppressor", "Fit equipment");
+  await order(page, "alex", "site-1:vest", "Fit equipment");
+  await order(page, "alex", "site-1:restraint", "Take / recover");
+  await travel(page, "intervention", ["alex"]);
+  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
+  const specimen = await inspectNamed(page, "Kinetic specimen");
+  await floor(page, 2, 3);
+  await page
+    .getByLabel("Restraint", { exact: true })
+    .selectOption("site-1:restraint");
+  await page
+    .getByRole("button", { name: "Capture to floor destination" })
+    .click();
+  await finish(page);
+  await travel(page, "home", ["alex"]);
+  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
+  await page.getByLabel("Inspect", { exact: true }).selectOption(specimen);
+  await page.getByRole("button", { name: "Intake into holding" }).click();
+  await finish(page);
+  await page.getByRole("button", { name: "Remove restraint" }).click();
+  await finish(page);
+  return specimen;
+}
+
+export async function escort(
+  page: Page,
+  worker: string,
+  target: string,
+  x: number,
+  y: number,
+) {
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption({ label: worker });
+  await page.getByLabel("Inspect", { exact: true }).selectOption(target);
+  await floor(page, x, y);
+  await page
+    .getByRole("button", { name: "Escort to floor destination", exact: true })
+    .click();
+  await finish(page);
+}
+
+export async function deliverObject(
+  page: Page,
+  worker: string,
+  target: string,
+  x: number,
+  y: number,
+) {
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption({ label: worker });
+  await page.getByLabel("Inspect", { exact: true }).selectOption(target);
+  await floor(page, x, y);
+  await page
+    .getByRole("button", {
+      name: "Deliver target to floor destination",
+      exact: true,
+    })
+    .click();
+  await finish(page);
+}
+
+export async function admit(page: Page, bedId: string) {
+  await page
+    .getByLabel("Home admission bed", { exact: true })
+    .selectOption(bedId);
+  await page
+    .getByRole("button", { name: "Admit to home care", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("admitted");
 }

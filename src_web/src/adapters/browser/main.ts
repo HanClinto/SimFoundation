@@ -32,6 +32,7 @@ import { responseOrders } from "./views/response";
 import { apparatusView } from "./views/apparatus";
 import { firstAlarm } from "../../application/Alarms";
 import type { TickEvent } from "../../simulation/core/Simulation";
+import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 import folderIcon from "../browser_shared/assets/folder.svg";
 import recordsIcon from "../browser_shared/assets/records.svg";
 import workerIcon from "../browser_shared/assets/site-worker.svg";
@@ -297,6 +298,16 @@ function render(): void {
       (id) => inspect(id),
     ),
   );
+  if (site.cycle) {
+    const phase = operatingPhase(site.cycle, session.state.tick);
+    siteToolbar.append(
+      element(
+        "strong",
+        "site-cycle",
+        `Site cycle: ${phase.phase.toUpperCase()}${phase.changesAt === null ? "" : `; changes at tick ${phase.changesAt}`}`,
+      ),
+    );
+  }
   map.render(site, subjectId, targetId, tile);
   replaceContents(
     portraits,
@@ -377,7 +388,7 @@ controller.subscribe((_session, events) => {
           mapWindow.open();
         }
       }),
-      button("Response desk", () => {
+      button("Open response desk", () => {
         operationsView.showResponse();
         operations.open();
       }),
