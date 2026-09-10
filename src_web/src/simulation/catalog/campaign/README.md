@@ -101,6 +101,31 @@ The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
 npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 ```
 
+## Permanent Casualties And Reserve Response
+
+`brief accident` introduces an original urgent casualty. This route explicitly
+opts Rowan into mortality: after blood loss reaches 100 with ongoing bleeding,
+20 consecutive critical ticks cause permanent death. Status reports the
+critical interval and death tick/cause. Prompt treatment can stop the bleeding;
+ordinary nursing can then address blood loss. Previously authored peaceful
+patients do not silently acquire this fatal clock.
+
+If rescue is late, the body and its carried recorder remain the original
+entities. Carry/deliver the body through ordinary transport; no treatment or
+anomalous mending resurrects it. Dead workers stop needs, autonomy and every
+queued commitment without refunds or deleting their equipment.
+
+`reserve accident devon` dispatches the existing reserve medic through twelve
+ticks of transit. `reserve home riley` requests the second existing responder.
+Two reserved allocations and two actual people are the entire reserve, not
+infinite replacements. These commands still work when the original crew is
+lost, but perform no automatic rescue or healing. Keep arrival pads clear,
+then use the responders to recover people/bodies and equipment physically.
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/permanent-loss.txt
+```
+
 ## Clinical Recovery After Evacuation
 
 Stabilization stops bleeding; it does not restore lost blood. A late Mira rescue
@@ -221,8 +246,9 @@ are included.
 The home also hosts a [bounded SCP-294 experiment](../quests/scp294/README.md),
 with finite paid requests and source-conserving samples. Use `brief scp294`.
 
-This slice has no death, hostile capture, vehicle simulation or automatic
-resupply. Incapacitated staff can be carried by available responders
+Peaceful routes retain their authored nonfatal behavior; explicit mortality
+now exists for opted-in health and the accident scenario. Hostile capture,
+vehicle simulation and automatic resupply are not yet implemented. Incapacitated staff can be carried by available responders
 through existing physical rules. Treatment stabilizes bleeding; finite bedside
 care can improve blood loss, but neither is a universal wound cure. The bounded
 store has capped night impacts, not source-level lethal combat. Running out of every transport allocation prevents additional

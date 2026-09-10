@@ -16,6 +16,7 @@ export function careConcern(context: ActionContext): Concern | null {
         entity.kind === "pawn" &&
         entity.id !== pawn.id &&
         entity.response?.faction === pawn.response?.faction &&
+        !entity.health?.death &&
         !!entity.health?.wounds.some((wound) => wound.bleeding > 0) &&
         canSee(site, pawn, entity.id) &&
         !threats.some(

@@ -17,6 +17,8 @@ export class Treat implements Action {
     if (!pawn.response?.medicine || pawn.response.medicine.supplies < 1)
       return "Medical supplies or training are unavailable.";
     const patient = site.entities[this.state.targetId];
+    if (patient?.kind === "pawn" && patient.health?.death)
+      return "The patient is dead; treatment cannot restore life.";
     if (
       patient?.kind !== "pawn" ||
       !patient.health ||
@@ -33,6 +35,7 @@ export class Treat implements Action {
     if (
       patient?.kind === "pawn" &&
       patient.health &&
+      !patient.health.death &&
       !patient.health.wounds.some((wound) => wound.bleeding > 0)
     )
       return { status: "completed" };

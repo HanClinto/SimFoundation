@@ -9,6 +9,7 @@ import type { Materials } from "../../core/material/Material";
 import { home, homeLoading, homePads, opportunities } from "./setup";
 import { requireDepartureReadiness } from "./Readiness";
 import { operatingPhase } from "../../core/site/OperatingCycle";
+import { reserveSite } from "./emergency";
 
 export interface Campaign {
   homeId: string;
@@ -29,6 +30,9 @@ export function createCampaign(definitions: EntityTemplates): {
     state = field.state;
     siteIds[key] = field.siteId;
   }
+  const reserve = instantiateSite(state, reserveSite, definitions);
+  state = reserve.state;
+  siteIds.reserve = reserve.siteId;
   return {
     state,
     campaign: {

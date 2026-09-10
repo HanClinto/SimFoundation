@@ -9,6 +9,7 @@ import { triageSite } from "../quests/scp2295/setup";
 import { dinerSite } from "../quests/scp1295/setup";
 import { screeningSite } from "../quests/scp2006/setup";
 import { storeSite } from "../quests/scp3008/setup";
+import { accidentSite } from "./emergency";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -392,5 +393,17 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
     maximumPassengers: 2,
     loadingRadius: 2,
     daytimeReturn: true,
+  },
+  accident: {
+    name: "Outpost accident and body recovery",
+    briefing:
+      "Rowan has uncontrolled bleeding: at blood loss100, twenty consecutive critical ticks cause permanent death. Send Casey promptly to treat, or dispatch the finite reserve medic Devon. Existing blood loss and wounds remain. If rescue is late, carry the actual body and its recorder home; no treatment resurrects it. The reserve command dispatches an existing responder via twelve ticks of transit, spending one of two reserved allocations; it is not a free replacement or automatic rescue.",
+    site: accidentSite,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 8,
   },
 };

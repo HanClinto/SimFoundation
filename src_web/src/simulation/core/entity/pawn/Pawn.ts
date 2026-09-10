@@ -32,7 +32,27 @@ export interface Pawn extends EntityBase {
 
 export function tickPawn(context: ActionContext): void {
   const { pawn } = context;
-  advancePhysiology(pawn);
+  const died = advancePhysiology(pawn, context.tick);
+  if (pawn.health?.death) {
+    if (died)
+      context.events.push({
+        siteId: context.site.id,
+        entityId: pawn.id,
+        kind: "died",
+        reason: pawn.health.death.cause,
+      });
+    for (const entry of pawn.queue)
+      context.events.push({
+        siteId: context.site.id,
+        entityId: pawn.id,
+        actionId: entry.id,
+        actionKind: entry.action.kind,
+        kind: "interrupted",
+        reason: "The worker died.",
+      });
+    pawn.queue = [];
+    return;
+  }
   const current = pawn.queue[0];
   const concern =
     current && pawn.autonomy && pawn.canAct && pawn.location.kind === "ground"

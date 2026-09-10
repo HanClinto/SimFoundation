@@ -13,6 +13,7 @@ import {
   serviceStatus,
 } from "../../simulation/core/entity/Service";
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
+import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 
 export function campaignStatus(session: ScenarioSession): string {
   const { campaign, state } = session;
@@ -28,7 +29,7 @@ export function campaignStatus(session: ScenarioSession): string {
     ...campaign.staffIds.map((id) => {
       const owner = owners.find((owner) => owner.entities[id]);
       const pawn = owner?.entities[id];
-      return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${pawn.canAct ? "active" : "incapacitated"} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"} | autonomy ${pawn.autonomy ? "on" : "off"} | ${pawn.queue[0]?.action.kind ?? "idle"}${pawn.queue[0]?.blockedReason ? ` BLOCKED: ${pawn.queue[0].blockedReason}` : ""}${departureReadiness(pawn) ? `\n  ${departureReadiness(pawn)}` : ""}` : ""}`;
+      return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${healthStatus(pawn)} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"} | autonomy ${pawn.autonomy ? "on" : "off"} | ${pawn.queue[0]?.action.kind ?? "idle"}${pawn.queue[0]?.blockedReason ? ` BLOCKED: ${pawn.queue[0].blockedReason}` : ""}${!pawn.health?.death && departureReadiness(pawn) ? `\n  ${departureReadiness(pawn)}` : ""}` : ""}`;
     }),
     ...owners.flatMap((owner) =>
       Object.values(owner.entities).flatMap((entity) =>
@@ -59,7 +60,7 @@ export function campaignStatus(session: ScenarioSession): string {
       Object.values(owner.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.acceptsEscort
           ? [
-              `${session.labels[entity.id]} ${entity.name}: ${owner.id} | ${entity.canAct ? "cooperative" : "incapacitated: needs carrying"} | blood loss ${entity.health?.bloodLoss.toFixed(1) ?? "-"}${campaign.admissions[entity.id] ? ` | admitted tick ${campaign.admissions[entity.id]!.tick}` : " | awaiting care"}`,
+              `${session.labels[entity.id]} ${entity.name}: ${owner.id} | ${healthStatus(entity)} | blood loss ${entity.health?.bloodLoss.toFixed(1) ?? "-"}${campaign.admissions[entity.id] ? ` | admitted tick ${campaign.admissions[entity.id]!.tick}` : " | awaiting care"}`,
             ]
           : [],
       ),
@@ -107,6 +108,13 @@ export function campaignStatus(session: ScenarioSession): string {
           )
         : [],
     ),
+    `Reserve at ${campaign.siteIds.reserve}: ${Object.values(
+      state.sites[campaign.siteIds.reserve!]!.entities,
+    )
+      .map((entity) => `${entity.name} (${entity.amount})`)
+      .join(
+        ", ",
+      )}. reserve <home|route> <devon|riley>; physical arrival in 12 ticks.`,
     `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
     `brief <${Object.keys(opportunities).join("|")}|scp294|clinic> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
   ].join("\n");

@@ -36,6 +36,7 @@ export class Mend implements Action {
           entity.human === true &&
           entity.ageYears !== undefined &&
           entity.health !== undefined &&
+          !entity.health.death &&
           majorOrganTrauma(entity.health) &&
           entity.location.kind === "ground" &&
           distance(entity.location.position, origin) <= ability.range,

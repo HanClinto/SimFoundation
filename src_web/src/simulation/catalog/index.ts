@@ -1,6 +1,7 @@
 import type { EntityTemplates } from "../core/entity/EntityTemplate";
 import type { Materials } from "../core/material/Material";
 import { FieldAgent } from "./actors/staff/FieldAgent";
+import { AccidentCasualty } from "./campaign/emergency";
 import { AutomaticSteelDoor } from "./entities/doors/AutomaticSteelDoor";
 import { PackagedMeal } from "./entities/supplies/PackagedMeal";
 import { Steel } from "./materials/Steel";
@@ -103,6 +104,7 @@ export const entities: EntityTemplates = Object.fromEntries(
     StoreEmployee,
     StoreSurvivor,
     StoreShelter,
+    AccidentCasualty,
     ActingGuide,
     RehearsalDesk,
     ApprovedProgramme,

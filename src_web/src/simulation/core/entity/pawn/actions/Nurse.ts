@@ -34,6 +34,8 @@ export class Nurse implements Action {
     if (!pawn.response?.medicine)
       return "A medically trained worker is required.";
     const patient = site.entities[this.state.targetId];
+    if (patient?.kind === "pawn" && patient.health?.death)
+      return "The patient is dead; clinical recovery cannot restore life.";
     if (
       patient?.kind !== "pawn" ||
       !patient.health ||

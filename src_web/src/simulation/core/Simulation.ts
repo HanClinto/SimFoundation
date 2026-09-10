@@ -7,7 +7,7 @@ import { advanceTransfers } from "./site/Transfer";
 import type { ActionState } from "./entity/pawn/actions/Action";
 import { beginOperatingCycle } from "./site/OperatingCycle";
 
-export const SIMULATION_VERSION = 20;
+export const SIMULATION_VERSION = 21;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;
@@ -23,6 +23,7 @@ export interface TickEvent {
   siteId: string;
   entityId: string;
   kind:
+    | "died"
     | "completed"
     | "blocked"
     | "failed"
@@ -74,5 +75,5 @@ export function advanceSimulation(
       else if (entity?.kind === "door") tickDoor(site, entity, events);
     }
   }
-  return { state: advanceTransfers(next), events };
+  return { state: advanceTransfers(next, events), events };
 }

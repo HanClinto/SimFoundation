@@ -57,6 +57,10 @@ export function executeCommand(
   const entity = site?.entities[command.entityId];
   if (!site || !entity || entity.kind !== "pawn")
     return fail("Choose a pawn at an existing site.");
+  if (entity.health?.death)
+    return fail(
+      "This person is dead; only physical body recovery is available.",
+    );
   if (context.source === "debug" && !context.debugEnabled)
     return fail("Debug control is disabled.");
   if (context.source === "player" && !entity.playerControllable)

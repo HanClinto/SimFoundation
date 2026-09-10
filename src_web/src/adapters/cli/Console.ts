@@ -22,6 +22,8 @@ import {
 } from "../../simulation/catalog/campaign/Campaign";
 import { admitToCare } from "../../simulation/catalog/campaign/Care";
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
+import { dispatchReserve } from "../../simulation/catalog/campaign/Reserve";
+import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -205,7 +207,7 @@ export function renderMap(console: ConsoleState): string {
           ? `${entity.location.position.x},${entity.location.position.y}`
           : `carried by ${entity.location.carrierId}`;
       const current = entity.kind === "pawn" ? entity.queue[0] : null;
-      return `${token(console, entity)} ${entity.name} [${entity.id}] @ ${location}${entity.kind === "pawn" ? ` | ${entity.canAct ? "active" : "incapable"} | ${current ? `${current.id}: ${describeAction(current.action)}` : "idle"}${current?.blockedReason ? ` | blocked: ${current.blockedReason}` : ""}${entity.queue.length > 1 ? ` | ${entity.queue.length - 1} pending` : ""}` : ""}`;
+      return `${token(console, entity)} ${entity.name} [${entity.id}] @ ${location}${entity.kind === "pawn" ? ` | ${healthStatus(entity)} | ${current ? `${current.id}: ${describeAction(current.action)}` : "idle"}${current?.blockedReason ? ` | blocked: ${current.blockedReason}` : ""}${entity.queue.length > 1 ? ` | ${entity.queue.length - 1} pending` : ""}` : ""}`;
     }),
   ].join("\n");
 }
@@ -213,6 +215,7 @@ export function renderMap(console: ConsoleState): string {
 export const help = `map | brief | status | events | sites | site <id>
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
+reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 deploy <staff-type> <name> | start
 step [ticks] | run [maximum ticks] | finish <worker...> (up to 1000 ticks, stops on blockers)
 load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
@@ -307,6 +310,22 @@ export function executeLine(
       next = { ...console, session: { ...console.session, ...result } };
       return finish(
         "Admitted to home care. Ordinary bed rest is queued; injury and blood loss are retained.",
+      );
+    }
+    case "reserve": {
+      if (!console.session.campaign || args.length !== 2)
+        throw new Error(
+          "Use reserve <home|route> <devon|riley> in a campaign.",
+        );
+      const result = dispatchReserve(
+        console.session.state,
+        console.session.campaign,
+        args[0]!,
+        args[1]!,
+      );
+      next = { ...console, session: { ...console.session, ...result } };
+      return finish(
+        "Reserve responder dispatched: arrival in 12 ticks, one reserved allocation spent. Keep the destination pad clear; no bodies or equipment have been moved for you.",
       );
     }
     case "sites":

@@ -26,12 +26,21 @@ export interface Health {
   bloodLoss: number;
   organs?: Partial<Record<OrganKind, OrganState>>;
   incapacity?: "blood-loss" | "wounds" | "organ-trauma" | "postoperative";
+  mortality?: { criticalTicks: number; fatalAfterTicks: number };
+  death?: { tick: number; cause: "untreated-blood-loss" | "critical-trauma" };
 }
 
 export function majorOrganTrauma(health: Health): boolean {
   return Object.values(health.organs ?? {}).some(
     (organ) => organ.trauma >= 100,
   );
+}
+
+export function healthStatus(pawn: Pawn): string {
+  if (pawn.health?.death)
+    return `DEAD at tick ${pawn.health.death.tick}: ${pawn.health.death.cause}`;
+  const mortality = pawn.health?.mortality;
+  return `${pawn.canAct ? "active" : "incapacitated"}${mortality && mortality.criticalTicks > 0 ? ` | CRITICAL ${mortality.criticalTicks}/${mortality.fatalAfterTicks} ticks` : ""}`;
 }
 
 export function advanceHealth(health: Health): void {
@@ -50,7 +59,8 @@ export function incapacitated(health: Health): boolean {
   );
 }
 
-export function advancePhysiology(pawn: Pawn): void {
+export function advancePhysiology(pawn: Pawn, tick: number): boolean {
+  if (pawn.health?.death) return false;
   pawn.needs = advanceNeeds(pawn.needs);
   if (pawn.health) {
     advanceHealth(pawn.health);
@@ -66,5 +76,28 @@ export function advancePhysiology(pawn: Pawn): void {
             : "blood-loss";
       pawn.canAct = false;
     }
+    const mortality = pawn.health.mortality;
+    if (mortality) {
+      const bleeding = pawn.health.wounds.some((wound) => wound.bleeding > 0);
+      const cause =
+        pawn.health.bloodLoss >= 100 && bleeding
+          ? "untreated-blood-loss"
+          : pawn.health.wounds.reduce(
+                (sum, wound) => sum + wound.severity,
+                0,
+              ) >= 150 || (pawn.health.organs?.brain?.trauma ?? 0) >= 100
+            ? "critical-trauma"
+            : null;
+      mortality.criticalTicks = cause ? mortality.criticalTicks + 1 : 0;
+      if (cause && mortality.criticalTicks >= mortality.fatalAfterTicks) {
+        pawn.health.death = { tick, cause };
+        pawn.canAct = false;
+        pawn.autonomy = false;
+        pawn.blocksMovement = false;
+        delete pawn.serviceDuty;
+        return true;
+      }
+    }
   }
+  return false;
 }
