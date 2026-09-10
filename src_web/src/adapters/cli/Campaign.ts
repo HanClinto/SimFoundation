@@ -70,6 +70,19 @@ export function campaignStatus(session: ScenarioSession): string {
     ),
     ...Object.values(state.sites).flatMap((site) =>
       Object.values(site.entities).flatMap((entity) =>
+        entity.kind === "facility" && entity.processor
+          ? [
+              `Processing ${entity.name} at ${site.id}: ${
+                entity.processor.current
+                  ? `${entity.processor.current.recipeId} | input ${entity.processor.current.inputId} | operator ${entity.processor.current.actorId} | output due ${entity.processor.current.completesAt}${entity.processor.current.blockedReason ? ` | BLOCKED: ${entity.processor.current.blockedReason}` : ""}`
+                  : "idle; approved recipes available"
+              }`,
+            ]
+          : [],
+      ),
+    ),
+    ...Object.values(state.sites).flatMap((site) =>
+      Object.values(site.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.stillWhenWatched
           ? [
               `Direct watch ${entity.name} at ${site.id}: ${

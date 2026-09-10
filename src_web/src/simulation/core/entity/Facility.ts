@@ -6,6 +6,7 @@ import type { Dispenser } from "./Dispenser";
 import type { ServiceProfile } from "./Service";
 import type { Containment } from "./Containment";
 import type { Crafting } from "./Crafting";
+import type { Processor } from "./Processor";
 
 export interface Activity {
   duration: number;
@@ -26,6 +27,7 @@ export interface Facility extends EntityBase {
     condition: number;
   };
   crafting?: Crafting;
+  processor?: Processor;
   supervision?: {
     targetDefinitionId: string;
     range: number;
@@ -48,6 +50,8 @@ export function facilityInUse(
   targetId: string,
   exceptPawnId?: string,
 ): boolean {
+  const target = site.entities[targetId];
+  if (target?.kind === "facility" && target.processor?.current) return true;
   return Object.values(site.entities).some((entity) => {
     if (entity.kind !== "pawn" || entity.id === exceptPawnId) return false;
     const action = entity.queue[0]?.action;

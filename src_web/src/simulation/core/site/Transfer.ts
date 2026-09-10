@@ -94,6 +94,10 @@ export function depart(
   }
   for (const id of selected) {
     const entity = origin.entities[id]!;
+    if (entity.kind === "facility" && entity.processor?.current)
+      return fail(
+        "An active processing apparatus must finish before transfer.",
+      );
     if (equipmentUnderRepair(origin, id))
       return fail("Finish or cancel funded equipment repair before transfer.");
     if (

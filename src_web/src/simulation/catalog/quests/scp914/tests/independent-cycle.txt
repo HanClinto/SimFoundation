@@ -1,0 +1,97 @@
+# Record an impact, withdraw alive, and use a device-owned cycle during real care.
+load campaign
+order alex equip suppressor
+order alex equip vest
+order alex take kit
+finish alex
+prepare intervention alex
+finish alex
+send intervention alex
+finish alex
+site intervention
+order alex move 4 3
+finish alex
+order alex observe specimen @held
+finish alex
+order alex subdue specimen
+finish alex
+prepare home alex
+finish alex
+send home alex
+finish alex
+site home
+order casey treat alex
+finish casey
+order alex deliver @held 8 1
+finish alex
+order ben study workshop kinetic-impact
+finish ben
+order alex unequip vest
+order alex take vest
+finish alex
+prepare clockwork alex
+finish alex
+send clockwork alex
+finish alex
+site clockwork
+order alex process machine very-fine @held
+finish alex
+inspect machine
+# The input belongs to the machine now; the operator can actually leave.
+prepare home alex
+finish alex
+send home alex
+finish alex
+site home
+order alex move 4 2
+finish alex
+order casey nurse alex clinic wounds
+finish casey
+order casey nurse alex clinic
+finish casey
+order alex sleep bed
+finish alex
+prepare clockwork alex
+finish alex
+send clockwork alex
+finish alex
+site clockwork
+status
+order alex take output
+finish alex
+inspect output
+prepare home alex
+finish alex
+send home alex
+finish alex
+site home
+order alex equip @held
+finish alex
+# A short field exposure spends the shell's protection, not the old vest.
+order alex take restraint
+finish alex
+prepare intervention alex
+finish alex
+send intervention alex
+finish alex
+site intervention
+order alex wait 7
+finish alex
+inspect alex
+order alex capture specimen @held 2 3
+finish alex
+send home alex
+finish alex
+site home
+order ben take parts 1
+finish ben
+order ben deliver @held 13 7
+finish ben
+order ben service holding
+finish ben
+order alex contain @held holding
+finish alex
+order alex unrestrain specimen
+finish alex
+inspect output
+status

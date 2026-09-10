@@ -2,6 +2,7 @@ import type { EntityTemplates } from "../core/entity/EntityTemplate";
 import type { Materials } from "../core/material/Material";
 import { FieldAgent } from "./actors/staff/FieldAgent";
 import { EyePod } from "./quests/scp131/setup";
+import { SCP914, LatticeShell } from "./quests/scp914/setup";
 import { SCP173, SCP173Maintenance, CleaningPack } from "./quests/scp173/setup";
 import { AccidentCasualty } from "./campaign/emergency";
 import { KineticHoldingCell, ContainmentCharge } from "./campaign/holding";
@@ -64,11 +65,8 @@ import {
 } from "./quests/scp2006/setup";
 import { TextileBundle, OrganTraumaPatient } from "./quests/scp2295/setup";
 import { Fabric } from "./materials/Fabric";
-import {
-  DinerRegular,
-  MaintenanceParts,
-  DinerCounter,
-} from "./quests/scp1295/setup";
+import { DinerRegular, DinerCounter } from "./quests/scp1295/setup";
+import { MaintenanceParts } from "./entities/supplies/MaintenanceParts";
 import {
   ReturneeFlashlight,
   ReturneeLog,
@@ -130,6 +128,8 @@ export const entities: EntityTemplates = Object.fromEntries(
     KineticHoldingCell,
     SCP173,
     EyePod,
+    SCP914,
+    LatticeShell,
     SCP173Maintenance,
     CleaningPack,
     ContainmentCharge,

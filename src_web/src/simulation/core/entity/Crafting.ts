@@ -1,4 +1,4 @@
-import type { Item } from "./Item";
+import type { ItemBlueprint } from "./Item";
 import type { Finding } from "./Study";
 
 export interface CraftingRecipe {
@@ -8,7 +8,7 @@ export interface CraftingRecipe {
   ticks: number;
   supplyDefinitionId: string;
   amount: number;
-  output: Omit<Item, "id" | "location" | "crafted">;
+  output: ItemBlueprint;
 }
 
 export interface Crafting {

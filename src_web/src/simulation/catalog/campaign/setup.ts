@@ -13,6 +13,7 @@ import { interventionSite } from "./intervention";
 import { supportDepot } from "./SupportDepot";
 import { scp173Site } from "../quests/scp173/setup";
 import { eyePodSite } from "../quests/scp131/setup";
+import { clockworkSite } from "../quests/scp914/setup";
 
 export interface Opportunity {
   name: string;
@@ -286,5 +287,18 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
     ],
     duration: 8,
     maximumPassengers: 2,
+  },
+  clockwork: {
+    name: "SCP-914 approved nonliving processing",
+    briefing:
+      "Actual kinetic-impact research authorizes this original bounded trial. Bring one real protective vest, including broken recovered gear, and unequip it before processing. order alex process machine coarse vest returns two maintenance packs; order alex process machine very-fine vest produces one thirty-reduction/hundred-wear shell. The goal handles delivery to intake (4,3), panel (5,3) and two winding ticks. Then the MACHINE owns sixty processing ticks while the operator is free to leave; finish alex only finishes activation, not the cycle. Inspect machine/status for due time; clear output (8,3) and retrieve the actual result. Input is irreversibly consumed on successful output, not cloned or healed. No output qualifies as another input. Only these authored nonliving trials are implemented; no arbitrary, biological, weapon or medical requests or images.",
+    requiresFinding: "kinetic-impact",
+    site: clockworkSite,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 8,
   },
 };

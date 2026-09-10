@@ -7,8 +7,9 @@ import { advanceTransfers } from "./site/Transfer";
 import type { ActionState } from "./entity/pawn/actions/Action";
 import { beginOperatingCycle } from "./site/OperatingCycle";
 import { publishServiceWarning } from "./entity/Service";
+import { advanceProcessor } from "./entity/Processor";
 
-export const SIMULATION_VERSION = 46;
+export const SIMULATION_VERSION = 47;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;
@@ -25,6 +26,7 @@ export interface TickEvent {
   siteId: string;
   entityId: string;
   kind:
+    | "processed"
     | "watching"
     | "recorded"
     | "died"
@@ -80,8 +82,10 @@ export function advanceSimulation(
       if (entity?.kind === "pawn")
         tickPawn({ site, pawn: entity, tick: next.tick, materials, events });
       else if (entity?.kind === "door") tickDoor(site, entity, events);
-      else if (entity?.kind === "facility")
+      else if (entity?.kind === "facility") {
         publishServiceWarning(site, entity, next.tick, events);
+        advanceProcessor(site, entity, next.tick, events);
+      }
     }
   }
   const stateWithArrivals = advanceTransfers(next, events);

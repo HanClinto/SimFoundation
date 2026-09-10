@@ -24,6 +24,7 @@ import type { CaptureState } from "./Capture";
 import type { CraftState } from "./Craft";
 import type { ObserveState } from "./Observe";
 import type { WatchState } from "./Watch";
+import type { ProcessState } from "./Process";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -34,6 +35,7 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | ProcessState
   | WatchState
   | ObserveState
   | CraftState

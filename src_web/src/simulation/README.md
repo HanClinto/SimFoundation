@@ -332,6 +332,14 @@ The [kinetic engineering loop](catalog/campaign/KineticEngineering.ts) produces
 a slower-wearing restraint after controlled study of the actual resident.
 `brief engineering` explains the player situation.
 
+[Process](core/entity/pawn/actions/Process.ts) loads and activates an actual
+[Processor](core/entity/Processor.ts), then finishes its pawn commitment.
+The machine owns its input and timer independently in ordinary facility turns.
+Output is atomic, source-identified and physical; blocked release neither
+duplicates output nor prematurely consumes the input. The
+[SCP-914 trial](catalog/quests/scp914/README.md) exercises this during an injured
+operator's home care, with two bounded nonliving choices and no conversion loop.
+
 Service physically repairs/provisions a station using exact finite inputs.
 Coverage derives from dated receipts; due/lapse warnings have no extra timer.
 Reusable programmes retain their identity and are claimed during presentation;
@@ -348,6 +356,8 @@ does not cancel current funded work.
 | [SCP-1295](catalog/quests/scp1295/README.md) | Real remote staffing, repair and resupply; no global harmful effects                                                 |
 | [SCP-2006](catalog/quests/scp2006/README.md) | Per-host rehearsal and distinct curated programmes, not arbitrary psychology/shapeshifting                           |
 | [SCP-173](catalog/quests/scp173/README.md)   | Conscious direct watch, overlapping relief and three-person maintenance; no image, automatic blinking or relocation  |
+| [SCP-131](catalog/quests/scp131/README.md)   | Two physical companions with bounded supplemental gaze, not human staffing or general wardens                        |
+| [SCP-914](catalog/quests/scp914/README.md)   | Independent machine-owned nonliving gear processing, not arbitrary recipes or an operator-bound repair job           |
 | [SCP-3008](catalog/quests/scp3008/README.md) | Field-care versus carried-evacuation choice, retained cycle and fixed reopening; explicitly capped nonlethal impacts |
 
 Source credit and adaptation limits live beside each named entry. Original

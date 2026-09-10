@@ -32,9 +32,12 @@ import { Capture } from "./Capture";
 import { Craft } from "./Craft";
 import { Observe } from "./Observe";
 import { Watch } from "./Watch";
+import { Process } from "./Process";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "process":
+      return new Process(action);
     case "watch":
       return new Watch(action);
     case "observe":

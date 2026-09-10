@@ -75,7 +75,7 @@ it("delivers complete batches to runtime callers while keeping unchanged determi
   const restored = restoreSession(JSON.stringify(c.session))!;
   expect(stepSession(restored, 2)).toEqual(result);
   expect(result.events).toHaveLength(100);
-  expect(JSON.stringify(result)).not.toContain("onTick");
+  expect(result).not.toHaveProperty("onTick");
 });
 
 it("published history retains the actual ticks of local and transit health notices", () => {

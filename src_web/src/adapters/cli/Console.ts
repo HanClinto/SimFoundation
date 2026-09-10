@@ -137,6 +137,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "process")
+    return `load/start ${action.recipeId} at ${action.targetId} with ${action.inputId} | winding ${action.workTicks}; machine owns cycle after activation`;
   if (action.kind === "watch")
     return `watch ${action.targetId} | ${action.workTicks}/${action.ticks} ticks; keep relief overlapping`;
   if (action.kind === "observe")
@@ -267,6 +269,7 @@ order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> sub
 order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
 order <worker> craft <bench> <recipe> (recorded research and physical supplies)
+order <worker> process <machine> <recipe> <input> (load/activate an independent device cycle)
 order <worker> observe <actor> <carried-recorder> (watch from current visible vantage)
 order <worker> watch <subject> <ticks> (sustained direct attention; fatigue stops watch)
 relieve <outgoing> <replacement> (replacement must already be actively watching the same subject)
@@ -789,6 +792,11 @@ export function executeLine(
             action = {
               ...action,
               recorderId: resolve(console, action.recorderId, actor.id).id,
+            };
+          if (action.kind === "process")
+            action = {
+              ...action,
+              inputId: resolve(console, action.inputId, actor.id).id,
             };
         }
         result = executeCommand(

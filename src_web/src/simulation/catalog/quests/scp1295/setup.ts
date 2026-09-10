@@ -29,23 +29,6 @@ export const DinerRegular: EntityTemplate = {
   },
 };
 
-export const MaintenanceParts: EntityTemplate = {
-  id: "maintenance-parts",
-  name: "Maintenance supply packs",
-  description:
-    "Finite ordinary spare parts for service-counter repair. Carry a chosen quantity to the work site. Completed repair persists; parts spent on a cancelled attempt are not refunded.",
-  defaults: {
-    kind: "item",
-    materialId: "steel",
-    amount: 1,
-    integrity: 100,
-    stackable: true,
-    carryable: true,
-    blocksMovement: false,
-    blocksSight: false,
-  },
-};
-
 export const DinerCounter: EntityTemplate = {
   id: "diner-counter",
   name: "Meg's service counter",

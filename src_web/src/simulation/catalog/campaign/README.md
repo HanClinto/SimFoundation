@@ -175,6 +175,14 @@ npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 
 ## Research And Engineering
 
+The [SCP-914 trial](../quests/scp914/README.md), unlocked by actual
+`kinetic-impact` research, adds a machine-owned cycle rather than another
+laboratory job that traps its operator. Commit a real unequipped vest for either
+components or a short-lived high-reduction shell. After loading/winding, the
+device keeps the input and its clock while staff leave for care or other work.
+`brief clockwork` distinguishes activation from completion and explains the
+irreversible, explicitly authored nonliving choices.
+
 `brief observation` describes useful evidence after a costly incident. Carry
 the actual `kit`, take a visible vantage and `order alex observe specimen
 @held`. It watches from that position, activating on the worker's next normal
