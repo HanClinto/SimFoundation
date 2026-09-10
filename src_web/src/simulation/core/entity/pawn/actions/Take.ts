@@ -16,6 +16,8 @@ export class Take implements Action {
       return "This entity cannot be picked up now.";
     if (target.kind === "pawn" && target.canAct && target.mobile)
       return "An active mobile pawn cannot be picked up.";
+    if (target.kind === "item" && target.requiresCase)
+      return "This specimen requires sealing into a compatible carried case.";
     if (target.kind === "facility" && facilityInUse(site, target.id))
       return "The facility is occupied.";
     if (

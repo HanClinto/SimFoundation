@@ -1,0 +1,28 @@
+# Test-only handling walkthrough with real case and nested cargo.
+load campaign
+brief courier
+order alex take case
+step 12
+prepare courier alex
+step 12
+send courier alex
+step 7
+site courier
+order alex pack vial case
+step 16
+inspect case
+prepare home alex
+step 16
+send home alex
+step 7
+site home
+order alex move 3 5
+step 12
+order alex unpack case
+step 2
+order alex study bench courier-inspection
+step 8
+inspect case
+inspect vial
+inspect bench
+status

@@ -99,6 +99,10 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "pack")
+    return `pack ${action.targetId} in ${action.caseId} | work ${action.workTicks}`;
+  if (action.kind === "unpack")
+    return `unpack ${action.targetId} | work ${action.workTicks}`;
   if (action.kind === "dispense")
     return `dispense ${action.requestId} at ${action.targetId}${action.sourceId ? ` from ${action.sourceId}` : ""} | work ${action.workTicks}${action.paymentId ? " | PAID (nonrefundable)" : ""}`;
   if (action.kind === "deliver")
@@ -187,6 +191,7 @@ order <name|@N> study <station> <planId> | autonomy <actor> <on|off> | cancel <a
 order <name|@N> deliver <target> <x> <y> (collect, carry and drop)
 order <name|@N> dispense <machine> <request> [source]
 order <name|@N> escort <person> <x> <y> (cooperative walking)
+order <name|@N> pack <specimen> <case> | order <name|@N> unpack <case>
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -341,6 +346,17 @@ export function executeLine(
         JSON.stringify(
           {
             entity,
+            contents: roster(console)
+              .filter(
+                (entry) =>
+                  entry.location.kind === "carried" &&
+                  entry.location.carrierId === entity.id,
+              )
+              .map((entry) => ({
+                id: entry.id,
+                name: entry.name,
+                amount: entry.amount,
+              })),
             label: token(console, entity),
             description: catalog[entity.definitionId]?.description,
             attribution: catalog[entity.definitionId]?.attribution,
@@ -401,6 +417,8 @@ export function executeLine(
                 }
               : parseOrder(args.slice(1));
         const kinds = [
+          "pack",
+          "unpack",
           "escort",
           "dispense",
           "deliver",
@@ -454,6 +472,8 @@ export function executeLine(
               ...action,
               sourceId: resolve(console, action.sourceId).id,
             };
+          if (action.kind === "pack")
+            action = { ...action, caseId: resolve(console, action.caseId).id };
           if (
             [
               "sleep",

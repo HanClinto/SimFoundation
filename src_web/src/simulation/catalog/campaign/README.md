@@ -73,6 +73,33 @@ The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
 npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 ```
 
+## Protective Courier Handling
+
+`brief courier` introduces an original nonliving fragile-vial recovery.
+Bring the real home `case`; the depot's case is already too worn. Bare pickup
+of `vial` is refused by its handling protocol. While carrying a compatible
+empty case, `order alex pack vial case` approaches and spends five ticks
+sealing it. Completion costs ten case condition; cancellation before closure
+does not charge partial wear. Cases hold one specimen and cannot contain people
+or other cases.
+
+The case and specimen are separate persistent entities in a carried ownership
+tree. Ordinary staff preparation and transport move both without duplication.
+`inspect case` shows contents and retained condition. At home, move Alex to
+(3,5) and `order alex unpack case` for two ticks. Unpacking leaves the vial at
+the worker's feet and does not restore case condition. Then
+`order alex study bench courier-inspection` physically inspects the exposed
+vial and its actual case. A sealed specimen is not available for study.
+
+No case repair, automatic replacement, chemical hazard or protective damage
+multiplier is modeled. The useful decision is preparation and scarce carrying
+capacity, not a hidden breakage roll. Current core version 14 discards older
+development saves. The [courier walkthrough](tests/courier.txt) is copyable:
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/courier.txt
+```
+
 `save <new-path>` and `restore <path>` preserve the entire ongoing session,
 including in-progress delivery/study and transit. Success does not stop the
 campaign; partial recovery does not reset a site. Development saves are

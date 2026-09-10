@@ -60,6 +60,8 @@ export function instantiateSite(
             : entry.action;
         if (action.kind === "dispense" && action.sourceId)
           action = { ...action, sourceId: reference(action.sourceId) };
+        if (action.kind === "pack")
+          action = { ...action, caseId: reference(action.caseId) };
         return {
           ...entry,
           id: `${reference(entity.id)}:initial-action-${index}`,

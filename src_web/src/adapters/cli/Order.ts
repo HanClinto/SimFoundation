@@ -7,6 +7,12 @@ export function parseOrder(args: readonly string[]): ActionState {
       throw new Error(`Use order <actor> ${usage}.`);
   };
   switch (kind) {
+    case "pack":
+      count(3, "pack <specimen> <case>");
+      return { kind, targetId: target!, caseId: extra!, workTicks: 0 };
+    case "unpack":
+      count(2, "unpack <case>");
+      return { kind, targetId: target!, workTicks: 0 };
     case "dispense":
       if (args.length !== 3 && args.length !== 4)
         throw new Error(

@@ -57,7 +57,7 @@ export const UnverifiedDevice = collectionItem(
   "An unidentified device left isolated by the recovery team. This mission does not authorize activating or relocating it; its actual function is not modeled.",
 );
 
-export const CorroborationBench: EntityTemplate = {
+export const CorroborationBench = {
   id: "corroboration-bench",
   name: "Collection comparison bench",
   description:
@@ -91,4 +91,4 @@ export const CorroborationBench: EntityTemplate = {
       findings: [],
     },
   },
-};
+} satisfies EntityTemplate;

@@ -2,6 +2,8 @@ import type { SiteTemplate } from "../../core/site/Site";
 import type { Position } from "../../core/entity/Entity";
 import { scp1867Scenario } from "../quests/scp1867/setup";
 import { scp1370Scenario } from "../quests/scp1370/setup";
+import { courierSite, courierInspection } from "./courier";
+import { CorroborationBench } from "../quests/scp1867/collection";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -19,6 +21,11 @@ export const home: SiteTemplate = {
   ],
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
+    {
+      id: "case",
+      definitionId: "specimen-case",
+      location: { kind: "ground", position: { x: 4, y: 7 } },
+    },
     {
       id: "machine",
       definitionId: "scp-294",
@@ -75,6 +82,15 @@ export const home: SiteTemplate = {
       id: "bench",
       definitionId: "corroboration-bench",
       location: { kind: "ground", position: { x: 3, y: 4 } },
+      overrides: {
+        study: {
+          plans: [
+            ...CorroborationBench.defaults.study.plans,
+            courierInspection,
+          ],
+          findings: [],
+        },
+      },
     },
     {
       id: "survey",
@@ -254,5 +270,17 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
       { x: 2, y: 4 },
     ],
     duration: 8,
+  },
+  courier: {
+    name: "Damaged-specimen courier",
+    briefing:
+      "Bring home case: the depot's damaged case cannot complete another seal. A carrier can bring one case and its nested specimen, not a separate loose item. At the depot, order alex pack vial case; prepare and return with the same case and vial. At home move alex 3 5, then unpack case near the bench and study courier-inspection. No repair or hazardous material effect is modeled; worn equipment and missed preparation are the logistics problem.",
+    site: courierSite,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 7,
   },
 };
