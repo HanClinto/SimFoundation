@@ -122,3 +122,30 @@ it("keeps the default point-arrival contract and rejects invalid explicit areas"
       position: request.arrival,
     });
 });
+
+it("publishes simultaneous transit health events in identity order regardless of dictionary insertion", () => {
+  const { state, request } = setup();
+  const sent = depart(state, request).state;
+  const transfer = Object.values(sent.transfers)[0]!;
+  for (const entity of Object.values(transfer.entities)) {
+    if (entity.kind === "pawn")
+      entity.health = {
+        wounds: [{ id: "critical", severity: 150, bleeding: 0 }],
+        bloodLoss: 0,
+        mortality: { criticalTicks: 0, fatalAfterTicks: 1 },
+      };
+  }
+  const reversed = structuredClone(sent);
+  const reversedTransfer = Object.values(reversed.transfers)[0]!;
+  reversedTransfer.entities = Object.fromEntries(
+    Object.entries(reversedTransfer.entities).reverse(),
+  );
+  const normal = advanceSimulation(sent, materials);
+  expect(advanceSimulation(reversed, materials)).toEqual(normal);
+  expect(
+    normal.events
+      .filter((event) => event.kind === "died")
+      .map((event) => event.entityId),
+  ).toEqual(["site-1:a", "site-1:b", "site-1:c"]);
+  expect(Object.keys(normal.state.transfers)).toHaveLength(1);
+});

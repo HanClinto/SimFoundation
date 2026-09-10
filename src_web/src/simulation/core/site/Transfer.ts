@@ -207,15 +207,19 @@ export function advanceTransfers(
   for (const id of Object.keys(state.transfers).sort()) {
     const original = state.transfers[id]!;
     const entities: Record<string, Entity> = Object.fromEntries(
-      Object.entries(original.entities).map(([key, entity]) => [
-        key,
-        entity.kind === "pawn"
-          ? advanceTransitPawn(entity, state.tick, original.originId, events)
-          : structuredClone(entity),
-      ]),
+      Object.entries(original.entities)
+        .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+        .map(([key, entity]) => [
+          key,
+          entity.kind === "pawn"
+            ? advanceTransitPawn(entity, state.tick, original.originId, events)
+            : structuredClone(entity),
+        ]),
     );
     const transfer = { ...original, entities };
-    for (const entity of Object.values(entities)) {
+    for (const entity of Object.values(entities).sort((a, b) =>
+      a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+    )) {
       if (entity.kind === "pawn")
         tickCustody(entities, entity, original.originId, events, state.tick);
     }
