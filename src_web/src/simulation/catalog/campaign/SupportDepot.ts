@@ -13,6 +13,12 @@ export const supportDepot: SiteTemplate = {
   ],
   entities: [
     {
+      id: "library",
+      definitionId: "bookshelf",
+      location: { kind: "ground", position: { x: 8, y: 1 } },
+      overrides: { name: "Donated research library" },
+    },
+    {
       id: "power",
       definitionId: "containment-charge",
       location: { kind: "ground", position: { x: 8, y: 2 } },

@@ -244,7 +244,7 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
   support: {
     name: "Verified containment support allocation",
     briefing:
-      "The actual controlled-intake finding authorizes a finite regional cache, not automatic free procurement. Spend one outbound allocation and choose physical power, suppression, wound-care or maintenance stock. Two carriers cannot take every category in one trip. Bring power beside home holding and use normal service, or bring suppression units for rearm. Removed supplies never respawn; no new staff or equipment is generated.",
+      "The actual controlled-intake finding authorizes a finite regional cache, not automatic free procurement. Spend one outbound allocation and choose physical power, suppression, wound-care, maintenance stock or the single donated library. Two carriers cannot take every category in one trip. Power funds holding service; suppression units fund rearm; placing the actual library at home enables ordinary shared reading. Removed supplies/furniture never respawn; no completion reward generates staff or equipment.",
     requiresFinding: "kinetic-intake",
     site: supportDepot,
     loading: { x: 2, y: 3 },

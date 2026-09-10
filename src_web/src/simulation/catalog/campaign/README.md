@@ -294,13 +294,21 @@ controlled-study evidence or a replacement for the powered holding cell.
 This bounded subject does not bash doors; opening the gate restores the risk.
 
 The actual `kinetic-intake` finding unlocks `support`, a retained regional
-cache. It holds three power units, two suppression units, two wound-care packs
-and two maintenance packs. An outbound allocation and real carriers are still
+cache. Fresh campaigns include three power units, two suppression units, two
+wound-care packs, two maintenance packs and one donated bookshelf. An outbound allocation and real carriers are still
 required; two carriers cannot bring every category in one trip. Deliver power
 beside holding or suppression stock beside the worker for existing service/
 rearming actions. The cache does not respawn and reserve dispatch cannot
 bypass the study gate. This makes physical research change later logistics
 without adding an unlimited shop or instant completion reward.
+
+Bringing the actual `library` home competes with those supplies for carrying
+capacity. Place it on free floor (for example6,8) to enable ordinary shared
+reading for Ben's existing curiosity/restlessness. It retains its field ID;
+the depot does not generate another one. Reading occupies the fixture until
+completed/cancelled, so it cannot simultaneously be carried away. This is
+usable transported furniture, not a passive research reward. Existing saved
+depot inventories are not silently expanded.
 
 ## Permanent Casualties And Reserve Response
 
