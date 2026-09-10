@@ -370,6 +370,10 @@ callback, which the CLI uses for alarms and watched work failures. A busy
 tick may exceed100 events without losing an early death/breach notice or
 mistaking an early failed action for success. The persisted history remains
 bounded; no event bus or duplicate authoritative ledger is added.
+Every published event is stamped with the authoritative simulation tick at the
+sequential boundary, including transit notices. `events` therefore retains
+actual historical timing rather than requiring guesses from current status;
+local action helpers do not introduce separate clocks.
 
 ## Command-Line Console
 

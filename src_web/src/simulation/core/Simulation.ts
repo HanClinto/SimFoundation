@@ -21,6 +21,7 @@ export interface Simulation {
 }
 
 export interface TickEvent {
+  tick?: number;
   siteId: string;
   entityId: string;
   kind:
@@ -81,5 +82,9 @@ export function advanceSimulation(
         publishServiceWarning(site, entity, next.tick, events);
     }
   }
-  return { state: advanceTransfers(next, events), events };
+  const stateWithArrivals = advanceTransfers(next, events);
+  return {
+    state: stateWithArrivals,
+    events: events.map((event) => ({ ...event, tick: next.tick })),
+  };
 }

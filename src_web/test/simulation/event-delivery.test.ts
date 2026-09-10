@@ -71,8 +71,47 @@ it("delivers complete batches to runtime callers while keeping unchanged determi
   const result = stepSession(c.session, 2, (events) => batches.push(events));
   expect(batches).toHaveLength(2);
   expect(batches[0]!.length).toBeGreaterThan(100);
+  expect(batches[0]!.every((event) => event.tick === 1)).toBe(true);
   const restored = restoreSession(JSON.stringify(c.session))!;
   expect(stepSession(restored, 2)).toEqual(result);
   expect(result.events).toHaveLength(100);
   expect(JSON.stringify(result)).not.toContain("onTick");
+});
+
+it("published history retains the actual ticks of local and transit health notices", () => {
+  let c = openConsole();
+  for (const line of [
+    "prepare gallery alex",
+    "finish alex",
+    "send gallery alex",
+  ])
+    c = executeLine(c, line).console;
+  const transfer = Object.values(c.session.state.transfers)[0]!;
+  const actor = transfer.entities["site-1:alex"] as Pawn;
+  actor.health = {
+    wounds: [{ id: "fatal", severity: 150, bleeding: 0 }],
+    bloodLoss: 0,
+    mortality: { criticalTicks: 0, fatalAfterTicks: 2 },
+  };
+  const start = c.session.state.tick;
+  c = executeLine(c, "step 4").console;
+  expect(c.session.events).toContainEqual(
+    expect.objectContaining({
+      kind: "warning",
+      entityId: actor.id,
+      tick: start + 1,
+    }),
+  );
+  expect(c.session.events).toContainEqual(
+    expect.objectContaining({
+      kind: "died",
+      entityId: actor.id,
+      tick: start + 2,
+    }),
+  );
+  const text = executeLine(c, "events").output;
+  expect(text).toContain(`"tick":${start + 2}`);
+  expect(restoreSession(JSON.stringify(c.session))!.events).toEqual(
+    c.session.events,
+  );
 });
