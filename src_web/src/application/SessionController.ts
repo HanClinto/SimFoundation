@@ -68,7 +68,7 @@ export class SessionController {
 
   finish(ids: readonly string[]): string {
     const result = finishCommitments(this.current, ids, true);
-    this.publish(result.session, result.alarm ? [result.alarm] : []);
+    this.publish(result.session, result.events);
     return `${result.elapsed} ticks. ${result.reason}`;
   }
 

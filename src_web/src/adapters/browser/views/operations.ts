@@ -132,6 +132,10 @@ export function createOperationsView(
   }
   return {
     render,
+    reset: () => {
+      tab = "work";
+      travel.reset();
+    },
     showTravel: () => {
       tab = "travel";
       render();

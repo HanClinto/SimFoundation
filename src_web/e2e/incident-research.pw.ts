@@ -7,12 +7,13 @@ import {
   order,
   save,
   travel,
+  openGame,
 } from "./play";
 
 test("recorded disaster evidence survives a death and produces protection for another intervention", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await order(page, "alex", "site-1:suppressor", "Fit equipment");
   await order(page, "alex", "site-1:vest", "Fit equipment");
   await order(page, "alex", "site-1:kit", "Take / recover");

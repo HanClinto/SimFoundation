@@ -138,12 +138,17 @@ export function responseOrders(
           `Currently watching: ${observers.map((entity) => entity.name).join(", ") || "NONE"}. Maintain real overlap before relief.`,
         ),
         duration.node,
-        orderButton(context, "Watch subject", {
-          kind: "watch",
-          targetId: target.id,
-          ticks: duration.value,
-          workTicks: 0,
-        }),
+        orderButton(
+          context,
+          "Watch subject",
+          () => ({
+            kind: "watch",
+            targetId: target.id,
+            ticks: duration.value,
+            workTicks: 0,
+          }),
+          [duration.node],
+        ),
       );
       if (context.tile)
         watch.append(
@@ -205,18 +210,5 @@ export function responseOrders(
         }),
       ),
     );
-  if (target.id === subject.id) {
-    const duration = quantityChoice(context, "Wait ticks", 10);
-    result.push(
-      fieldset(
-        "Deliberate wait",
-        duration.node,
-        orderButton(context, "Wait in place", {
-          kind: "wait",
-          ticks: duration.value,
-        }),
-      ),
-    );
-  }
   return result;
 }

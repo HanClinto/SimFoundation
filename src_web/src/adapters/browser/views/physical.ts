@@ -25,15 +25,20 @@ export function physicalOrders(
         "",
         `${target.amount} units exist in this stack. Collection creates physical cargo, not a second balance.`,
       ),
-      orderButton(context, "Collect selected portion", {
-        kind: "take",
-        targetId,
-        amount: quantity.value,
-      }),
+      orderButton(
+        context,
+        "Collect selected portion",
+        () => ({
+          kind: "take",
+          targetId,
+          amount: quantity.value,
+        }),
+        [quantity.node],
+      ),
     );
     result.push(section);
   }
-  if (target.carryable) {
+  if (target.carryable && target.id !== subject.id) {
     const logistics = fieldset("Delivery & handoff");
     if (context.tile)
       logistics.append(

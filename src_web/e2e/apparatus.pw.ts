@@ -7,12 +7,13 @@ import {
   order,
   save,
   travel,
+  openGame,
 } from "./play";
 
 test("SCP-294 spends coins and actual source liquid on distinct samples and a refusal", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   for (const [index, destination] of [
     [1, [8, 3]],
     [2, [9, 4]],
@@ -70,7 +71,7 @@ test("SCP-294 spends coins and actual source liquid on distinct samples and a re
 test("SCP-914 owns its irreversible cycle while the operator travels home for care", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await order(page, "alex", "site-1:suppressor", "Fit equipment");
   await order(page, "alex", "site-1:vest", "Fit equipment");
   await order(page, "alex", "site-1:kit", "Take / recover");

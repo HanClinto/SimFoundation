@@ -4,6 +4,7 @@ import { tileAt } from "../../../simulation/core/site/TileMap";
 import { carriedCargo } from "../../../simulation/core/entity/Equipment";
 import { entityArt, entitySymbol } from "./art";
 import { button, element } from "../desktop/dom";
+import { reconcileChildren } from "../desktop/reconcile";
 
 const NS = "http://www.w3.org/2000/svg";
 function svg<K extends keyof SVGElementTagNameMap>(
@@ -165,12 +166,12 @@ export function createSiteMap(
           "data-tile": `${x},${y}`,
         });
         if (!wall)
-          tile.addEventListener("click", () => {
+          tile.onclick = () => {
             floorMode = false;
             floorButton.setAttribute("aria-pressed", "false");
             drawing.classList.remove("floor-targeting");
             chooseTile({ x, y });
-          });
+          };
         nodes.push(tile);
       }
     }
@@ -269,20 +270,20 @@ export function createSiteMap(
       const title = svg("title", {});
       title.textContent = describeEntity(entity);
       group.append(title);
-      group.addEventListener("click", () => inspect(entity.id));
-      group.addEventListener("keydown", (event) => {
+      group.onclick = () => inspect(entity.id);
+      group.onkeydown = (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           inspect(entity.id);
         }
-      });
+      };
       nodes.push(group);
     }
     const focused =
       document.activeElement instanceof SVGElement
         ? document.activeElement.getAttribute("data-entity-id")
         : null;
-    drawing.replaceChildren(...nodes);
+    reconcileChildren(drawing, nodes);
     if (focused)
       [...drawing.querySelectorAll<SVGElement>("[data-entity-id]")]
         .find((node) => node.dataset.entityId === focused)

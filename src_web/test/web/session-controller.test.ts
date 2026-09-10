@@ -56,6 +56,7 @@ describe("shared replacement application controller", () => {
       entityId: "site-1:alex",
       action: { kind: "wait", ticks: 1 },
     });
+
     const batches: number[] = [];
     controller.subscribe((session, events) => {
       batches.push(events.length);
@@ -66,5 +67,27 @@ describe("shared replacement application controller", () => {
     controller.step();
     expect(batches).toHaveLength(1);
     expect(batches[0]).toBeGreaterThan(0);
+  });
+
+  it("publishes the complete final tick when finishing work, not only an alarm", () => {
+    const controller = new SessionController();
+    for (const entityId of ["site-1:alex", "site-1:ben"])
+      controller.dispatch({
+        kind: "enqueue",
+        siteId: "site-1",
+        entityId,
+        action: { kind: "wait", ticks: 1 },
+      });
+    const completed: string[] = [];
+    controller.subscribe((_session, events) =>
+      completed.push(
+        ...events
+          .filter((event) => event.kind === "completed")
+          .map((event) => event.entityId),
+      ),
+    );
+    controller.finish(["site-1:alex"]);
+    expect(completed).toContain("site-1:alex");
+    expect(completed).toContain("site-1:ben");
   });
 });

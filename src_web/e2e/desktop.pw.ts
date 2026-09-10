@@ -1,3 +1,4 @@
+import { openGame } from "./play";
 import { expect, test } from "@playwright/test";
 
 test("real desktop selection, physical work, persistence and layout", async ({
@@ -5,14 +6,14 @@ test("real desktop selection, physical work, persistence and layout", async ({
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
-  await page.goto("./");
+  await openGame(page);
   await expect(
     page.getByText("New campaign paused.", { exact: false }),
   ).toBeVisible();
   await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
   await page.getByLabel("Inspect", { exact: true }).selectOption("site-1:kit");
   await expect(
-    page.getByText("Command recipient: alex", { exact: false }),
+    page.getByText("Orders for: alex", { exact: false }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Take / recover", exact: true })

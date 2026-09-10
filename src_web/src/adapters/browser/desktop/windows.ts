@@ -9,6 +9,7 @@ interface Layout {
   width: number;
   height: number;
   open: boolean;
+  zIndex?: number;
 }
 
 export interface DesktopWindow {
@@ -49,6 +50,7 @@ export function createDesktop(
         width: node.hidden ? parseFloat(node.style.width) : node.offsetWidth,
         height: node.hidden ? parseFloat(node.style.height) : node.offsetHeight,
         open: !node.hidden,
+        zIndex: Number(node.style.zIndex) || 0,
       };
     }
     try {
@@ -96,14 +98,29 @@ export function createDesktop(
         ? stored
         : defaults;
     function place(layout: Layout): void {
-      root.style.left = `${Math.max(0, Math.min(layout.left, surface.clientWidth - 100))}px`;
-      root.style.top = `${Math.max(0, Math.min(layout.top, surface.clientHeight - 40))}px`;
-      root.style.width = `${Math.max(360, Math.min(layout.width, surface.clientWidth - 8))}px`;
-      root.style.height = `${Math.max(250, Math.min(layout.height, surface.clientHeight - 8))}px`;
+      const style = getComputedStyle(root);
+      const width = Math.max(
+        360,
+        parseFloat(style.minWidth) || 0,
+        Math.min(layout.width, surface.clientWidth - 8),
+      );
+      const height = Math.max(
+        250,
+        parseFloat(style.minHeight) || 0,
+        Math.min(layout.height, surface.clientHeight - 8),
+      );
+      root.style.left = `${Math.max(0, Math.min(layout.left, surface.clientWidth - width))}px`;
+      root.style.top = `${Math.max(0, Math.min(layout.top, surface.clientHeight - height))}px`;
+      root.style.width = `${width}px`;
+      root.style.height = `${height}px`;
     }
     surface.append(root);
     place(rect);
     root.hidden = !rect.open;
+    root.style.zIndex = String(
+      Number.isFinite(rect.zIndex) ? rect.zIndex : ++zIndex,
+    );
+    zIndex = Math.max(zIndex, Number(root.style.zIndex));
     function focus(): void {
       for (const window of windows.values())
         window.root.classList.add("inactive");
@@ -115,12 +132,20 @@ export function createDesktop(
       body,
       open: () => {
         root.hidden = false;
+        root.dispatchEvent(new Event("desktop-open"));
         focus();
         root.focus({ preventScroll: true });
         persist();
       },
     };
     windows.set(id, window);
+    const active = [...windows.values()]
+      .filter((entry) => !entry.root.hidden)
+      .sort(
+        (a, b) => Number(b.root.style.zIndex) - Number(a.root.style.zIndex),
+      )[0];
+    for (const entry of windows.values())
+      entry.root.classList.toggle("inactive", entry !== active);
     taskButtons.append(button(title, window.open));
     root.addEventListener("pointerdown", focus);
     root.addEventListener("focusin", focus);
@@ -130,8 +155,8 @@ export function createDesktop(
       const start = {
         x: event.clientX,
         y: event.clientY,
-        left: root.offsetLeft,
-        top: root.offsetTop,
+        left: parseFloat(root.style.left),
+        top: parseFloat(root.style.top),
       };
       titleBar.setPointerCapture(event.pointerId);
       const drag = (move: PointerEvent) => {
@@ -153,8 +178,8 @@ export function createDesktop(
     }).observe(root);
     globalThis.addEventListener("resize", () => {
       place({
-        left: root.offsetLeft,
-        top: root.offsetTop,
+        left: parseFloat(root.style.left),
+        top: parseFloat(root.style.top),
         width: parseFloat(root.style.width),
         height: parseFloat(root.style.height),
         open: !root.hidden,

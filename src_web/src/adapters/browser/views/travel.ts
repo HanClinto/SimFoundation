@@ -94,11 +94,12 @@ export function createTravelView() {
       check.type = "checkbox";
       check.checked = selected.has(person.id);
       check.dataset.focusKey = `crew:${person.id}`;
-      check.addEventListener("change", () => {
-        if (check.checked) selected.add(person.id);
+      check.onchange = (event) => {
+        if (!(event.currentTarget instanceof HTMLInputElement)) return;
+        if (event.currentTarget.checked) selected.add(person.id);
         else selected.delete(person.id);
         refresh();
-      });
+      };
       label.append(check, element("span", "", person.name));
       const contents = Object.values(site.entities).filter(
         (entry) =>
@@ -214,7 +215,14 @@ export function createTravelView() {
     );
     return root;
   }
-  return { render };
+  return {
+    render,
+    reset: () => {
+      destination = "blackwood";
+      lastSite = "";
+      selected.clear();
+    },
+  };
 }
 
 function manifestTable(entities: readonly Entity[]): HTMLElement {

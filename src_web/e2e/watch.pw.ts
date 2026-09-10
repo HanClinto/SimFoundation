@@ -9,6 +9,7 @@ import {
   order,
   save,
   travel,
+  openGame,
 } from "./play";
 
 async function watch(page: Page, worker: string, subject: string) {
@@ -42,7 +43,7 @@ async function relieve(page: Page, outgoing: string, replacement: string) {
 test("three real staff maintain direct watch through guarded relief, study and safe withdrawal", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await containedSpecimen(page);
   await order(
     page,

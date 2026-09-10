@@ -10,6 +10,7 @@ export function finishCommitments(
   const notices: Readonly<TickEvent>[] = [];
   let noticeCount = 0;
   let alarm: Readonly<TickEvent> | undefined;
+  let finalEvents: readonly Readonly<TickEvent>[] = [];
   const owners = [
     ...Object.values(initial.state.sites),
     ...Object.values(initial.state.transfers),
@@ -64,6 +65,7 @@ export function finishCommitments(
       notices,
       noticeCount,
       alarm,
+      events: finalEvents,
     };
   let session = initial;
   let reason = "Reached the 1000-tick limit; inspect remaining work.";
@@ -72,6 +74,7 @@ export function finishCommitments(
     session = stepSession(session, 1, (current) => {
       events = current;
     });
+    finalEvents = events;
     for (const event of events) {
       if (alarmPriority(event) < 0) continue;
       noticeCount++;
@@ -171,5 +174,6 @@ export function finishCommitments(
     notices,
     noticeCount,
     alarm,
+    events: finalEvents,
   };
 }

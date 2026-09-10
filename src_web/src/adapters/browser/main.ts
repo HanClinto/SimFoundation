@@ -5,18 +5,12 @@ import { createDesktop } from "./desktop/windows";
 import {
   button,
   element,
-  fieldset,
   iconButton,
   replaceContents,
   select,
 } from "./desktop/dom";
 import { createSiteMap } from "./map/site-map";
-import {
-  basicOrders,
-  entityFacts,
-  queueView,
-  type ViewContext,
-} from "./views/context";
+import { queueView, type ViewContext } from "./views/context";
 import { createRuntime } from "./runtime";
 import {
   exportSession,
@@ -27,12 +21,11 @@ import {
 import { refreshForNewDeployment } from "../browser_shared/deployment-version";
 import type { Position } from "../../simulation/core/entity/Entity";
 import { createOperationsView } from "./views/operations";
-import { physicalOrders } from "./views/physical";
-import { responseOrders } from "./views/response";
-import { apparatusView } from "./views/apparatus";
+import { createInspector } from "./views/inspector";
 import { firstAlarm } from "../../application/Alarms";
 import type { TickEvent } from "../../simulation/core/Simulation";
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
+import { resetChoices } from "./views/choices";
 import folderIcon from "../browser_shared/assets/folder.svg";
 import recordsIcon from "../browser_shared/assets/records.svg";
 import workerIcon from "../browser_shared/assets/site-worker.svg";
@@ -75,7 +68,8 @@ let targetId: string | null = null;
 let tile: Position | null = null;
 const siteToolbar = element("div", "site-toolbar");
 const mapLayout = element("div", "map-layout");
-const inspection = element("div", "inspection-pane");
+const inspector = createInspector(() => render());
+const inspection = inspector.root;
 const queueDock = element("div", "queue-dock");
 const portraits = element("div", "portrait-strip");
 const map = createSiteMap(inspect, (position) => {
@@ -96,9 +90,16 @@ const operationsView = createOperationsView(operations.body, () => ({
     mapWindow.open();
   },
 }));
+operations.root.addEventListener("desktop-open", () => operationsView.render());
+mapWindow.root.addEventListener("desktop-open", () => render());
 const taskbar = element("footer", "taskbar");
 const menu = element("div", "scp-menu window");
 menu.hidden = true;
+const siteMenu = element("details");
+siteMenu.append(element("summary", "", "Facilities"));
+const siteMenuEntries = element("div", "facility-menu");
+siteMenu.append(siteMenuEntries);
+menu.append(siteMenu);
 function act(operation: () => void, notice?: string): void {
   try {
     operation();
@@ -121,10 +122,28 @@ function control(id: string | null): void {
   render();
 }
 function changeSite(id: string): void {
+  if (!controller.session.state.sites[id]) {
+    report("That site is not present in this session.");
+    return;
+  }
   siteId = id;
   targetId = null;
   tile = null;
   render();
+}
+function resetSessionPresentation(): void {
+  latestAlarm = null;
+  alarmBanner.hidden = true;
+  subjectId = null;
+  targetId = null;
+  tile = null;
+  resetChoices();
+  inspector.reset();
+  operationsView.reset();
+  changeSite(
+    controller.session.campaign?.homeId ??
+      Object.keys(controller.session.state.sites)[0]!,
+  );
 }
 function renderClock(): void {
   runButton.textContent = runtime.running ? "Pause" : "Run";
@@ -132,8 +151,20 @@ function renderClock(): void {
 }
 const scp = button("SCP", () => {
   menu.hidden = !menu.hidden;
+  scp.setAttribute("aria-expanded", String(!menu.hidden));
 });
 scp.setAttribute("aria-label", "SCP menu");
+scp.setAttribute("aria-expanded", "false");
+document.addEventListener("pointerdown", (event) => {
+  if (
+    event.target instanceof Node &&
+    !menu.contains(event.target) &&
+    !scp.contains(event.target)
+  ) {
+    menu.hidden = true;
+    scp.setAttribute("aria-expanded", "false");
+  }
+});
 const runButton = button("Run", () => runtime.setRunning(!runtime.running));
 const clock = element("span", "clock");
 taskbar.append(
@@ -164,10 +195,7 @@ fileInput.addEventListener("change", async () => {
     const text = await file.text();
     act(() => {
       controller.restore(text);
-      changeSite(
-        controller.session.campaign?.homeId ??
-          Object.keys(controller.session.state.sites)[0]!,
-      );
+      resetSessionPresentation();
     }, "Imported session. Paused.");
   } catch (error) {
     report(`Import failed: ${String(error)}`);
@@ -182,10 +210,7 @@ menu.append(
     runtime.setRunning(false);
     act(() => {
       loadSavedSession(controller);
-      changeSite(
-        controller.session.campaign?.homeId ??
-          Object.keys(controller.session.state.sites)[0]!,
-      );
+      resetSessionPresentation();
     }, "Saved session loaded. Paused.");
   }),
   button("Export session", () =>
@@ -201,8 +226,7 @@ menu.append(
     )
       act(() => {
         controller.fresh();
-        subjectId = null;
-        changeSite(controller.session.campaign!.homeId);
+        resetSessionPresentation();
       }, "Fresh campaign. The previous browser save is unchanged until you Save.");
   }),
   element("p", "", `Build ${import.meta.env.VITE_BUILD_VERSION}`),
@@ -216,7 +240,6 @@ host.append(message, alarmBanner, menu, taskbar, fileInput);
 const shortcuts = element("nav", "desktop-shortcuts");
 shortcuts.setAttribute("aria-label", "Site folders");
 for (const key of ["home", "blackwood", "kestrel"]) {
-  const id = controller.session.campaign!.siteIds[key]!;
   const shortcut = iconButton(
     key === "home"
       ? "Home site"
@@ -228,6 +251,11 @@ for (const key of ["home", "blackwood", "kestrel"]) {
     `folder:${key}`,
   );
   const open = () => {
+    const id = controller.session.campaign?.siteIds[key];
+    if (!id) {
+      report("This session has no named campaign site for that shortcut.");
+      return;
+    }
     changeSite(id);
     mapWindow.open();
   };
@@ -241,12 +269,35 @@ shortcuts.append(
   iconButton("Operations", recordsIcon, () => operations.open()),
 );
 desktop.surface.prepend(shortcuts);
+let directorySignature = "";
 
 function render(): void {
   const session = controller.session;
   const site =
     session.state.sites[siteId] ?? Object.values(session.state.sites)[0]!;
   siteId = site.id;
+  const directory = Object.values(session.state.sites)
+    .map((entry) => `${entry.id}:${entry.name}`)
+    .join("|");
+  if (directory !== directorySignature) {
+    directorySignature = directory;
+    replaceContents(
+      siteMenuEntries,
+      ...Object.values(session.state.sites).map((entry) =>
+        iconButton(
+          entry.name,
+          folderIcon,
+          () => {
+            changeSite(entry.id);
+            mapWindow.open();
+            menu.hidden = true;
+            scp.setAttribute("aria-expanded", "false");
+          },
+          `facility-menu:${entry.id}`,
+        ),
+      ),
+    );
+  }
   const context: ViewContext = {
     controller,
     site,
@@ -259,113 +310,81 @@ function render(): void {
   };
   const subject = site.entities[subjectId ?? ""];
   const target = site.entities[targetId ?? ""];
-  replaceContents(
-    siteToolbar,
-    button("Travel / preparation", () => {
-      operationsView.showTravel();
-      operations.open();
-    }),
-    select(
-      "Site",
-      Object.values(session.state.sites).map((entry) => ({
-        value: entry.id,
-        label: entry.name,
-      })),
-      site.id,
-      changeSite,
-    ),
-    select(
-      "Worker",
-      [
-        { value: "", label: "No command recipient" },
-        ...Object.values(site.entities)
-          .filter((entry) => entry.kind === "pawn" && entry.playerControllable)
-          .map((entry) => ({ value: entry.id, label: entry.name })),
-      ],
-      subject?.id ?? "",
-      (id) => control(id || null),
-    ),
-    select(
-      "Inspect",
-      [
-        { value: "", label: "Choose an entity" },
-        ...Object.values(site.entities).map((entry) => ({
-          value: entry.id,
-          label: `${entry.name} (${entry.kind}) [${session.labels[entry.id] ?? entry.id}]`,
-        })),
-      ],
-      target?.id ?? "",
-      (id) => inspect(id),
-    ),
-  );
-  if (site.cycle) {
-    const phase = operatingPhase(site.cycle, session.state.tick);
-    siteToolbar.append(
-      element(
-        "strong",
-        "site-cycle",
-        `Site cycle: ${phase.phase.toUpperCase()}${phase.changesAt === null ? "" : `; changes at tick ${phase.changesAt}`}`,
-      ),
-    );
-  }
-  map.render(site, subjectId, targetId, tile);
-  replaceContents(
-    portraits,
-    ...Object.values(site.entities)
-      .filter((entry) => entry.kind === "pawn" && entry.playerControllable)
-      .map((entry) => {
-        const portrait = iconButton(
-          entry.name,
-          entityArt(entry) ?? workerIcon,
-          () => control(entry.id === subjectId ? null : entry.id),
-          `portrait:${entry.id}`,
-        );
-        portrait.setAttribute("aria-pressed", String(entry.id === subjectId));
-        return portrait;
+  if (!mapWindow.root.hidden) {
+    replaceContents(
+      siteToolbar,
+      button("Travel / preparation", () => {
+        operationsView.showTravel();
+        operations.open();
       }),
-  );
-  const content: HTMLElement[] = [];
-  if (subject?.kind === "pawn" && subject.id !== target?.id)
-    content.push(
-      fieldset(
-        `Command recipient: ${subject.name}`,
-        button("Deselect", () => control(null)),
+      select(
+        "Site",
+        Object.values(session.state.sites).map((entry) => ({
+          value: entry.id,
+          label: entry.name,
+        })),
+        site.id,
+        changeSite,
+      ),
+      select(
+        "Worker",
+        [
+          { value: "", label: "No command recipient" },
+          ...Object.values(site.entities)
+            .filter(
+              (entry) => entry.kind === "pawn" && entry.playerControllable,
+            )
+            .map((entry) => ({ value: entry.id, label: entry.name })),
+        ],
+        subject?.id ?? "",
+        (id) => control(id || null),
+      ),
+      select(
+        "Inspect",
+        [
+          { value: "", label: "Choose an entity" },
+          ...Object.values(site.entities).map((entry) => ({
+            value: entry.id,
+            label: `${entry.name} (${entry.kind}) [${session.labels[entry.id] ?? entry.id}]`,
+          })),
+        ],
+        target?.id ?? "",
+        (id) => inspect(id),
       ),
     );
-  if (subjectId && !subject)
-    content.push(
-      element(
-        "p",
-        "",
-        "Selected worker is at another site or in transit. Inspection does not issue remote orders.",
-      ),
+    if (site.cycle) {
+      const phase = operatingPhase(site.cycle, session.state.tick);
+      siteToolbar.append(
+        element(
+          "strong",
+          "site-cycle",
+          `Site cycle: ${phase.phase.toUpperCase()}${phase.changesAt === null ? "" : `; changes at tick ${phase.changesAt}`}`,
+        ),
+      );
+    }
+    map.render(site, subjectId, targetId, tile);
+    replaceContents(
+      portraits,
+      ...Object.values(site.entities)
+        .filter((entry) => entry.kind === "pawn" && entry.playerControllable)
+        .map((entry) => {
+          const portrait = iconButton(
+            entry.name,
+            entityArt(entry) ?? workerIcon,
+            () => control(entry.id === subjectId ? null : entry.id),
+            `portrait:${entry.id}`,
+          );
+          portrait.setAttribute("aria-pressed", String(entry.id === subjectId));
+          return portrait;
+        }),
     );
-  if (target) content.push(entityFacts(context, target));
-  else
-    content.push(
-      element(
-        "p",
-        "",
-        tile
-          ? `Floor target (${tile.x}, ${tile.y})`
-          : "Inspect a person or object on the map, or use the entity list.",
-      ),
+    replaceContents(
+      queueDock,
+      ...(subject ? [queueView(context, subject)] : []),
     );
-  if (target && tile)
-    content.push(
-      element(
-        "p",
-        "destination-notice",
-        `Floor destination: (${tile.x}, ${tile.y}). Inspected target remains ${target.name}.`,
-      ),
-    );
-  content.push(basicOrders(context, target));
-  content.push(...physicalOrders(context, target));
-  content.push(...responseOrders(context, target));
-  content.push(...apparatusView(context, target));
-  replaceContents(queueDock, ...(subject ? [queueView(context, subject)] : []));
-  replaceContents(inspection, ...content);
-  operationsView.render();
+    inspector.render(context);
+  }
+  if (!operations.root.hidden) operationsView.render();
   renderClock();
 }
 

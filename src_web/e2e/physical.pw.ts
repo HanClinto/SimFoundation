@@ -1,10 +1,18 @@
 import { expect, test } from "@playwright/test";
-import { finish, floor, inspectNamed, order, save, travel } from "./play";
+import {
+  finish,
+  floor,
+  inspectNamed,
+  order,
+  save,
+  travel,
+  openGame,
+} from "./play";
 
 test("cooperative medical evacuation retains the same patient and care consequences", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await travel(page, "care", ["casey"]);
   await page.getByLabel("Worker", { exact: true }).selectOption("site-1:casey");
   const mira = await inspectNamed(page, "Mira");
@@ -70,7 +78,7 @@ test("cooperative medical evacuation retains the same patient and care consequen
 test("portions and handoffs preserve quantities; fragile recovery requires an actual case", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await page.getByLabel("Worker", { exact: true }).selectOption("site-1:ben");
   await page
     .getByLabel("Inspect", { exact: true })

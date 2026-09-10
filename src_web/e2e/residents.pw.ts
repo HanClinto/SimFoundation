@@ -10,12 +10,13 @@ import {
   order,
   save,
   travel,
+  openGame,
 } from "./play";
 
 test("SCP-1370 is recovered intact, observed in the glass bay and left behind a closed door", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await travel(page, "gallery", ["alex"]);
   await page
     .getByLabel("Worker", { exact: true })
@@ -48,7 +49,7 @@ test("SCP-1370 is recovered intact, observed in the glass bay and left behind a 
 test("SCP-507 returns with the separately protected log, earns review and enters ordinary care", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await order(page, "alex", "site-1:case", "Take / recover");
   await travel(page, "returnee", ["alex"]);
   await page
@@ -87,7 +88,7 @@ test("SCP-507 returns with the separately protected log, earns review and enters
 test("SCP-2295 independently treats two returned patients, leaving real postoperative care", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await travel(page, "triage", ["alex", "casey"]);
   const site = await page.getByLabel("Site", { exact: true }).inputValue();
   await order(page, "alex", `${site}:iris`, "Take / recover");
@@ -151,7 +152,7 @@ test("SCP-2295 independently treats two returned patients, leaving real postoper
 test("SCP-3008 evacuation carries the casualty and escorts the walking survivor into home care", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await page
     .getByLabel("Site", { exact: true })
     .selectOption({ label: "SCP-3008: bounded evacuation sector" });

@@ -7,12 +7,13 @@ import {
   order,
   save,
   containedSpecimen,
+  openGame,
 } from "./play";
 
 test("live containment research crafts a real restraint used for awake care and recontainment", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   const specimen = await containedSpecimen(page);
   await page
     .getByLabel("Inspect", { exact: true })

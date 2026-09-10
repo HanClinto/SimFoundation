@@ -1,10 +1,19 @@
 import { expect, test } from "@playwright/test";
-import { deliver, finish, floor, move, order, save, travel } from "./play";
+import {
+  deliver,
+  finish,
+  floor,
+  move,
+  order,
+  save,
+  travel,
+  openGame,
+} from "./play";
 
 test("a supplied diner duty continues while the manager and relief worker are home", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   for (const [worker, source, quantity] of [
     ["alex", "meals", "4"],
     ["casey", "parts", "1"],
@@ -70,7 +79,7 @@ test("a supplied diner duty continues while the manager and relief worker are ho
 test("SCP-2006 uses personally trained hosts and three distinct physical programmes", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await travel(page, "screening", ["ben", "alex"]);
   const siteId = await page.getByLabel("Site", { exact: true }).inputValue();
   for (const worker of ["ben", "alex"])

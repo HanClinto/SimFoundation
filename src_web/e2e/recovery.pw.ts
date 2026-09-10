@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
-import { finish, inspectNamed, save, travel } from "./play";
+import { finish, inspectNamed, save, travel, openGame } from "./play";
 
 test("a critical alarm locates a death and a finite reserve recovers the original body", async ({
   page,
 }) => {
-  await page.goto("./");
+  await openGame(page);
   await page.getByLabel("Speed", { exact: true }).selectOption("16");
   await page.getByRole("button", { name: "Run", exact: true }).click();
   await expect(page.locator(".alarm-banner")).toContainText("Rowan", {

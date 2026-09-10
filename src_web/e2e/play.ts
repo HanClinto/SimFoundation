@@ -1,6 +1,11 @@
 import { expect, type Page } from "@playwright/test";
 import type { ScenarioSession } from "../src/application/ScenarioSession";
 
+export async function openGame(page: Page) {
+  await page.goto("./");
+  await page.getByRole("tab", { name: "All details", exact: true }).click();
+}
+
 export async function finish(page: Page, label = "Finish current commitments") {
   for (let attempt = 0; attempt < 8; attempt++) {
     const action = page.getByRole("button", { name: label, exact: true });

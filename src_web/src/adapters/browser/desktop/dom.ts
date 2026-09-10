@@ -1,3 +1,5 @@
+import { reconcileChildren } from "./reconcile";
+
 export function element<K extends keyof HTMLElementTagNameMap>(
   tag: K,
   className = "",
@@ -17,7 +19,7 @@ export function button(
   const node = element("button", "", text);
   node.type = "button";
   node.dataset.focusKey = key;
-  node.addEventListener("click", action);
+  node.onclick = action;
   return node;
 }
 
@@ -63,7 +65,10 @@ export function select(
     input.append(option);
   }
   input.value = value;
-  input.addEventListener("change", () => change(input.value));
+  input.onchange = (event) => {
+    if (event.currentTarget instanceof HTMLSelectElement)
+      change(event.currentTarget.value);
+  };
   wrapper.append(input);
   return wrapper;
 }
@@ -85,7 +90,7 @@ export function replaceContents(
       ),
     ].map((node) => [node.dataset.detailKey, node.open]),
   );
-  parent.replaceChildren(...children);
+  reconcileChildren(parent, children);
   for (const node of parent.querySelectorAll<HTMLDetailsElement>(
     "details[data-detail-key]",
   )) {

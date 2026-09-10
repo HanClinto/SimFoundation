@@ -13,6 +13,7 @@ import workIcon from "../../browser_shared/assets/work-orders.svg";
 import { entities } from "../../../simulation/catalog";
 import type { Command } from "../../../simulation/core/ControlPolicy";
 import { workProgress } from "./progress";
+import { quantityChoice } from "./choices";
 
 export interface ViewContext {
   controller: SessionController;
@@ -37,37 +38,57 @@ export function nameOf(context: ViewContext, id: string): string {
 export function orderButton(
   context: ViewContext,
   label: string,
-  action: ActionState,
+  action: ActionState | (() => ActionState),
+  inputs: readonly HTMLElement[] = [],
 ): HTMLElement {
-  const command = {
+  const command = () => ({
     kind: "enqueue" as const,
     siteId: context.site.id,
     entityId: context.subjectId ?? "",
-    action,
-  };
-  return commandButton(context, label, command, `Queued: ${label}.`);
+    action: typeof action === "function" ? action() : action,
+  });
+  return commandButton(context, label, command, `Queued: ${label}.`, inputs);
 }
 
 export function commandButton(
   context: ViewContext,
   label: string,
-  command: Command,
+  command: Command | (() => Command),
   notice = label,
+  inputs: readonly HTMLElement[] = [],
 ): HTMLElement {
   const row = element("div", "order-option");
-  const preview = context.controller.preview(command);
+  const current = () => (typeof command === "function" ? command() : command);
+  const identity = current();
   const node = button(
     label,
-    () => context.act(() => context.controller.dispatch(command), notice),
-    `${label}:${JSON.stringify(command)}`,
+    () => context.act(() => context.controller.dispatch(current()), notice),
+    `${label}:${identity.siteId}:${identity.entityId}`,
   );
-  node.disabled = preview.code === "rejected";
-  node.title =
-    preview.reason ??
-    "Append to this worker's queue; rechecked when work starts.";
-  row.append(node);
-  if (preview.reason)
-    row.append(element("small", "blocked-reason", preview.reason));
+  const reason = element("small", "blocked-reason");
+  const update = (target = node, detail = reason) => {
+    const preview = context.controller.preview(current());
+    target.disabled = preview.code === "rejected";
+    target.title =
+      preview.reason ?? "Rechecked when issued and when work starts.";
+    detail.textContent = preview.reason ?? "";
+    detail.hidden = !preview.reason;
+  };
+  row.append(node, reason);
+  for (const input of inputs)
+    input.oninput = (event) => {
+      if (!(event.currentTarget instanceof HTMLElement)) return;
+      const parent = event.currentTarget.closest("fieldset");
+      const target = [
+        ...(parent?.querySelectorAll<HTMLButtonElement>("button") ?? []),
+      ].find(
+        (candidate) => candidate.dataset.focusKey === node.dataset.focusKey,
+      );
+      const detail =
+        target?.parentElement?.querySelector<HTMLElement>(".blocked-reason");
+      if (target && detail) update(target, detail);
+    };
+  update();
   return row;
 }
 
@@ -204,6 +225,14 @@ export function entityFacts(context: ViewContext, entity: Entity): HTMLElement {
     );
   if (entity.kind === "pawn") {
     result.append(element("p", "", healthStatus(entity)));
+    if (entity.queue[0])
+      result.append(
+        element(
+          "p",
+          "",
+          `Current work: ${actionLabel(context, entity.queue[0].action)}${entity.queue[0].blockedReason ? ` | BLOCKED: ${entity.queue[0].blockedReason}` : ""}`,
+        ),
+      );
     result.append(
       table(
         ["Need (lower is better)", "Current"],
@@ -369,7 +398,7 @@ export function basicOrders(
   }
   if (!target) return result;
   const targetId = target.id;
-  if (target.carryable)
+  if (target.carryable && target.id !== subject.id)
     result.append(
       orderButton(context, "Take / recover", { kind: "take", targetId }),
     );
@@ -440,5 +469,20 @@ export function basicOrders(
         workTicks: 0,
       }),
     );
+  if (target.id === subject.id) {
+    const duration = quantityChoice(context, "Wait ticks", 10);
+    result.append(
+      fieldset(
+        "Deliberate wait",
+        duration.node,
+        orderButton(
+          context,
+          "Wait in place",
+          () => ({ kind: "wait", ticks: duration.value }),
+          [duration.node],
+        ),
+      ),
+    );
+  }
   return result;
 }

@@ -64,9 +64,10 @@ select:focus-visible,
   display: none !important;
 }
 #app {
+  position: relative;
   height: 100vh;
   min-width: 760px;
-  min-height: 500px;
+  min-height: 620px;
 }
 .desktop {
   position: absolute;
@@ -289,6 +290,53 @@ select:focus-visible,
   padding: 6px;
   border: 1px inset #fff;
 }
+.inspector-heading {
+  position: sticky;
+  top: -6px;
+  padding: 6px 0;
+  margin-bottom: 6px;
+  background: #ece9dc;
+  z-index: 1;
+  border-bottom: 1px solid #aaa;
+}
+.inspector-heading > strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 5px;
+}
+.inspector-recipient {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  margin: 4px 0;
+}
+.inspector-recipient button {
+  min-width: 55px;
+}
+.inspector-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 6px;
+}
+.inspector-tabs button {
+  min-width: 40px;
+  padding: 3px 6px;
+  font-size: 11px;
+}
+.inspector-tabs button[aria-selected="true"] {
+  background: #fff;
+  font-weight: bold;
+  box-shadow:
+    inset -1px -1px #888,
+    inset 1px 1px #555;
+}
+[aria-label="Site map & orders"].desktop-window {
+  min-width: 620px;
+  min-height: 470px;
+}
 fieldset {
   min-width: 0;
   margin: 0 0 10px;
@@ -440,6 +488,22 @@ small {
   width: 235px;
   padding: 8px;
   z-index: 100001;
+  max-height: calc(100% - 50px);
+  overflow: auto;
+}
+.facility-menu {
+  max-height: 310px;
+  overflow: auto;
+  margin: 6px 0;
+}
+.facility-menu .icon-button {
+  display: flex;
+  font-size: 11px;
+}
+.facility-menu img {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
 }
 .scp-menu button {
   display: block;

@@ -1,6 +1,9 @@
 # SimFoundation
 
-SimFoundation is a repository for simulation games set in and around the SCP Foundation universe. The current focus is **SCPSiteManager**, a browser-based facility management game about growing Site 828, studying SCP-9620, caring for personnel and contained anomalies, and surviving the consequences of ambitious research.
+SimFoundation is a repository for simulation games set in and around the SCP
+Foundation universe. The current focus is **SCPSiteManager**, a persistent
+management campaign about physical expeditions, care, containment and research
+that enables useful equipment, including learning from costly incidents.
 
 ## Projects
 
@@ -8,20 +11,26 @@ SimFoundation is a repository for simulation games set in and around the SCP Fou
 
 Location: [`src_web/`](src_web/)
 
-SCPSiteManager is the active project. It combines autonomous colony management, isometric facility construction, anomalous research, equipment, and temporary expeditions. The authoritative simulation is designed to remain deterministic and independent of the browser UI.
+SCPSiteManager is the active project. Its fresh 98.css operational desktop wraps
+the same deterministic simulation as its CLI. People, cargo, injuries, evidence
+and consequences persist across retained sites and reusable travel.
 
 - [Product and game design](src_web/README.md)
 - [Technical architecture](src_web/docs/architecture.md)
 - [Tiered roadmap](src_web/docs/roadmap.md)
 - [GitHub issue backlog](https://github.com/HanClinto/SimFoundation/issues)
 
-The first executable shell is deployed through GitHub Pages at [hanclinto.github.io/SimFoundation](https://hanclinto.github.io/SimFoundation/). It proves the headless simulation boundary, 98.css interface, Canvas rendering, and browser-owned pause/speed scheduling before deeper gameplay systems are added.
+Play at [hanclinto.github.io/SimFoundation](https://hanclinto.github.io/SimFoundation/).
+The browser connects preparation, recovery, home study, physical crafting,
+medical care, live custody, apparatus cycles and remote duties across eleven
+existing bounded SCP adaptations. See the game guide for current limits and
+the distinction between reference material and earned findings.
 
 ### Legacy Godot Prototype
 
 Location: [`src_dotnet/`](src_dotnet/)
 
-The original Godot 4/C# prototype demonstrates multiple selectable actors and A* pathfinding. It is retained as a reference implementation and source of early design experiments; new SCPSiteManager systems should not depend on Godot runtime code.
+The original Godot 4/C# prototype demonstrates multiple selectable actors and A\* pathfinding. It is retained as a reference implementation and source of early design experiments; new SCPSiteManager systems should not depend on Godot runtime code.
 
 - [Prototype notes and demo](src_dotnet/README.md)
 
@@ -39,7 +48,10 @@ The intended dependency direction for SCPSiteManager is:
 browser adapter -> application controller -> headless simulation
 ```
 
-The simulation owns gameplay and deterministic time. The browser owns Canvas rendering, 98.css windows, input, audio, persistence, and wall-clock scheduling. See the architecture document for the complete contract.
+The simulation owns gameplay and deterministic time. The browser owns spatial
+rendering, 98.css windows, input, persistence and wall-clock scheduling. The
+old browser is isolated as `browser_legacy`, not coupled to the replacement
+through compatibility facades. See the architecture document for the contract.
 
 ## Licensing
 

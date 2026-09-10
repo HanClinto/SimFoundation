@@ -3,6 +3,9 @@ import type { Entity } from "../../../simulation/core/entity/Entity";
 import { element, select } from "../desktop/dom";
 
 const values = new Map<string, string>();
+export function resetChoices(): void {
+  values.clear();
+}
 
 export function entityChoice(
   context: ViewContext,
@@ -54,10 +57,15 @@ export function quantityChoice(
   input.value = String(value);
   input.dataset.focusKey = key;
   input.setAttribute("aria-label", label);
-  input.addEventListener("change", () => {
-    values.set(key, input.value);
-    context.act(() => {});
-  });
+  input.oninput = (event) => {
+    if (event.currentTarget instanceof HTMLInputElement)
+      values.set(key, event.currentTarget.value);
+  };
   wrapper.append(element("span", "", label), input);
-  return { node: wrapper, value };
+  return {
+    node: wrapper,
+    get value() {
+      return Number(values.get(key) ?? input.value);
+    },
+  };
 }
