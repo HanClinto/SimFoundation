@@ -134,6 +134,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "door")
+    return `set ${action.targetId} ${action.policy} | work ${action.workTicks}`;
   if (action.kind === "repair-equipment")
     return `repair ${action.targetId} at ${action.benchId} | work ${action.workTicks}${action.supplyId ? ` | part spent: ${action.supplyId}` : ""}`;
   if (action.kind === "rearm")
@@ -249,6 +251,7 @@ reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
 order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
+order <worker> door <door> <open|closed|automatic> (physical controls)
 order <worker> restrain <hostile> <carried-restraint>
 order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
 order <worker> lockdown <cell> (physical, finite emergency fallback)

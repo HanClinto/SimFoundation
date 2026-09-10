@@ -9,7 +9,7 @@ send intervention alex ben
 step 8
 site intervention
 order alex move 5 3
-order ben move 5 4
+order ben move 4 4
 step 200
 inspect alex
 inspect ben
@@ -20,7 +20,7 @@ finish casey
 send intervention casey
 step 8
 site intervention
-order casey move 5 3
+order casey move 4 3
 step 200
 status
 # An existing regional responder must retrieve gear and handle the same threat.

@@ -7,6 +7,21 @@ export function parseOrder(args: readonly string[]): ActionState {
       throw new Error(`Use order <actor> ${usage}.`);
   };
   switch (kind) {
+    case "door":
+      count(3, "door <door> <open|closed|automatic>");
+      if (extra !== "open" && extra !== "closed" && extra !== "automatic")
+        throw new Error("Choose open, closed or automatic door policy.");
+      return {
+        kind,
+        targetId: target!,
+        policy:
+          extra === "open"
+            ? "held-open"
+            : extra === "closed"
+              ? "held-closed"
+              : "automatic",
+        workTicks: 0,
+      };
     case "repair-equipment":
       count(3, "repair-equipment <gear> <bench>");
       return { kind, targetId: target!, benchId: extra!, workTicks: 0 };

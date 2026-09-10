@@ -107,14 +107,24 @@ export const interventionSite: SiteTemplate = {
   name: "Intervention yard: lethal-risk authorization",
   terrain: [
     "############",
+    "#....#.....#",
+    "#....#.....#",
     "#..........#",
-    "#..........#",
-    "#..........#",
-    "#..........#",
-    "#..........#",
+    "#....#.....#",
+    "#....#.....#",
     "############",
   ],
   entities: [
+    {
+      id: "gate",
+      definitionId: "automatic-steel-door",
+      location: { kind: "ground", position: { x: 5, y: 3 } },
+      overrides: {
+        name: "Yard isolation gate",
+        open: true,
+        policy: "held-open",
+      },
+    },
     {
       id: "specimen",
       definitionId: KineticSpecimen.id,

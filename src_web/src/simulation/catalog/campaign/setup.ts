@@ -231,7 +231,7 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
   intervention: {
     name: "Equipment-backed intervention yard",
     briefing:
-      "LETHAL-RISK OPT-IN: responders entering this route acquire a persistent twelve-critical-tick mortality rule. The hostile kinetic specimen causes bleeding injury. Equip suppressor/vest and carry a physical restraint; subdue, then restrain before live transport. Prepare the home holding cell with parts and power units before intake. After contain, transport restraints can be recovered and the subject studied. Cell service expires; a physical lockdown spends a finite part to buy eighty ticks. Lapse releases the original hostile. Reserve responders recover actual bodies/gear after failure, not resurrect staff.",
+      "LETHAL-RISK OPT-IN: responders entering this route acquire a persistent twelve-critical-tick mortality rule. The hostile kinetic specimen causes bleeding injury. Equip suppressor/vest and carry a physical restraint; subdue, then restrain before live transport. A worker can physically close the initially open yard gate for isolation, provided its doorway is clear; it is not controlled intake. Prepare home holding with parts/power before contain. Safe holding permits band recovery and study, but upkeep expires; physical lockdown spends a finite part for eighty fallback ticks. Reserve responders recover actual bodies/gear, not resurrect staff.",
     site: interventionSite,
     loading: { x: 2, y: 3 },
     pads: [

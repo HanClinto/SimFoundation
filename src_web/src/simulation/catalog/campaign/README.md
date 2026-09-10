@@ -244,6 +244,15 @@ npm run sim < src/simulation/catalog/campaign/tests/secured-care.txt
 
 These fictional game mechanics are not real equipment instructions.
 
+Workers can operate a real door locally with
+`order alex door gate closed`, `open`, or `automatic`. They approach and spend
+two work ticks; a closing order waits until the doorway is physically clear.
+There is no remote switch or forced displacement of a person/body/item.
+The intervention yard starts with an open isolation gate. Closing it from the
+loading side provides a physical withdrawal barrier, not consent, restraint,
+controlled-study evidence or a replacement for the powered holding cell.
+This bounded subject does not bash doors; opening the gate restores the risk.
+
 The actual `kinetic-intake` finding unlocks `support`, a retained regional
 cache. It holds three power units, two suppression units, two wound-care packs
 and two maintenance packs. An outbound allocation and real carriers are still

@@ -210,6 +210,11 @@ it never hides another blocker sharing that tile. Door closure observes actual
 nearby ground occupants. Visibility uses deterministic line expansion and
 corner checks, not roofs, height, light attenuation or volumetric fog.
 
+`order <worker> door <door> <open|closed|automatic>` physically approaches and
+sets policy over work ticks. Explicit closure rejects an occupied doorway;
+it is not a remote command or a collision bypass. The original yard gate is a
+local isolation fallback, not powered custody or a door-bashing simulation.
+
 Materials define tags and optional nutritional density; a consumer's diet
 defines compatibility/efficiency. Highest matching efficiency applies once.
 An entity can override nutrition, including zero. Wood being plant/organic
