@@ -1,0 +1,30 @@
+# The local capture goal reuses physical primitives; travel and intake remain explicit.
+load campaign
+order ben take parts 1
+finish ben
+order ben deliver @held 13 7
+finish ben
+order ben service holding
+finish ben
+assign ben holding
+order alex equip suppressor
+order alex equip vest
+order alex take restraint
+finish alex
+prepare intervention alex
+finish alex
+preview-send intervention alex
+send intervention alex
+finish alex
+site intervention
+order alex capture specimen @held 2 3
+finish alex
+inspect specimen
+send home alex
+finish alex
+site home
+order alex contain @held holding
+finish alex
+order alex unrestrain specimen
+finish alex
+status

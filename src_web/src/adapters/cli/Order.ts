@@ -7,6 +7,15 @@ export function parseOrder(args: readonly string[]): ActionState {
       throw new Error(`Use order <actor> ${usage}.`);
   };
   switch (kind) {
+    case "capture":
+      count(5, "capture <subject> <restraint> <x> <y>");
+      return {
+        kind,
+        targetId: target!,
+        restraintId: extra!,
+        destination: { x: Number(args[3]), y: Number(args[4]) },
+        workTicks: 0,
+      };
     case "give":
       count(3, "give <carried-object> <teammate>");
       return { kind, targetId: target!, recipientId: extra! };

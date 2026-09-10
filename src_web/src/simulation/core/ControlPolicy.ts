@@ -113,6 +113,7 @@ export function executeCommand(
     if (intention.kind === "rearm") delete intention.supplyId;
     if (intention.kind === "repair-equipment") delete intention.supplyId;
     if (intention.kind === "escort") delete intention.trail;
+    if (intention.kind === "capture") delete intention.phase;
     if (intention.kind === "mend") {
       delete intention.material;
       delete intention.organ;

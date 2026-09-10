@@ -83,7 +83,7 @@ export function instantiateSite(
           action = { ...action, caseId: reference(action.caseId) };
         if (action.kind === "nurse")
           action = { ...action, bedId: reference(action.bedId) };
-        if (action.kind === "restrain")
+        if (action.kind === "restrain" || action.kind === "capture")
           action = { ...action, restraintId: reference(action.restraintId) };
         if (action.kind === "contain")
           action = { ...action, cellId: reference(action.cellId) };

@@ -28,9 +28,12 @@ import { Rearm } from "./Rearm";
 import { RepairEquipment } from "./RepairEquipment";
 import { OperateDoor } from "./OperateDoor";
 import { Give } from "./Give";
+import { Capture } from "./Capture";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "capture":
+      return new Capture(action);
     case "give":
       return new Give(action);
     case "door":

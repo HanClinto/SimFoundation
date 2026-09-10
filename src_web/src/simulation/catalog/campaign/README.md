@@ -220,6 +220,19 @@ npm run sim < src/simulation/catalog/campaign/tests/intervention.txt
 ```
 
 The initial intervention rehearsal withdraws after subdual. For live recovery,
+the local manager goal `order alex capture specimen @held 2 3` can delegate
+subdual, physical restraint, pickup and movement to the loading tile. It
+requires the actual prepared tool and compatible band; it selects no substitute
+equipment and does not cross sites. Phase/work is visible in the one queue
+entry, and cancellation retains real charges, subdual, attachment and cargo.
+An already secured subject does not cost another intervention charge.
+Transport and prepared-cell intake remain explicit:
+
+```sh
+npm run sim -- --strict < src/simulation/catalog/campaign/tests/delegated-capture.txt
+```
+
+For direct control of the same steps,
 carry `restraint` before departure, subdue the specimen, then
 `order alex restrain specimen @held`. Its real item attaches after four work
 ticks; only then can the hostile subject depart as carried cargo. When it wakes,

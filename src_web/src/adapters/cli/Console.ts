@@ -135,6 +135,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "capture")
+    return `capture ${action.targetId} with ${action.restraintId} to (${action.destination.x},${action.destination.y}) | ${action.phase ?? "pending"} work ${action.workTicks}`;
   if (action.kind === "give")
     return `give ${action.targetId} to ${action.recipientId}`;
   if (action.kind === "door")
@@ -258,6 +260,7 @@ order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
 order <worker> door <door> <open|closed|automatic> (physical controls)
 order <worker> give <carried-object|@held> <teammate>
+order <worker> capture <subject> <restraint|@held> <x> <y> (local physical job)
 order <worker> restrain <hostile> <carried-restraint>
 order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
 order <worker> lockdown <cell> (physical, finite emergency fallback)
@@ -675,7 +678,8 @@ export function executeLine(
         if (
           action.kind === "move" ||
           action.kind === "deliver" ||
-          action.kind === "escort"
+          action.kind === "escort" ||
+          action.kind === "capture"
         ) {
           if (
             !Number.isInteger(action.destination?.x) ||
@@ -711,7 +715,7 @@ export function executeLine(
               ...action,
               bedId: resolve(console, action.bedId, actor.id).id,
             };
-          if (action.kind === "restrain")
+          if (action.kind === "restrain" || action.kind === "capture")
             action = {
               ...action,
               restraintId: resolve(console, action.restraintId, actor.id).id,
