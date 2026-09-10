@@ -78,6 +78,13 @@ or be cancelled first; `queue alex` explains blockers. Staff take their carried
 objects with them. Each carrier can hold one object, so kit/supplies compete
 with evidence. One ground docket beside home pad (2,7) is spent only on an
 accepted outbound departure. Return trips are prepaid even if dockets run out.
+
+After assembly, `preview-send intervention alex` runs the same actual departure
+checks and shows the proposed physical manifest, including nested cargo,
+equipment condition/charges and health. It advances no time, spends nothing
+and changes no original ownership or risk state. Use `send` to commit. This is
+permission/manifest inspection, not a prediction that the destination will
+remain safe or unblocked while the team travels.
 Keep the home arrival pad clear; blocked arrivals remain in transit and continue
 physiology until admitted.
 Campaign transfers also need enough free floor within one tile of the arrival

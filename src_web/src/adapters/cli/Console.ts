@@ -248,6 +248,7 @@ export function renderMap(console: ConsoleState): string {
 export const help = `map | brief | status | events | sites | site <id>
 events <alarms|here|route|site-id|entity-id|stable-label> (retained history only)
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
+preview-send <route> <staff...> (actual checks and manifest, no departure)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
@@ -314,6 +315,7 @@ export function executeLine(
       next = { ...console, session: startSession(console.session) };
       return finish(questStatus(next));
     case "prepare":
+    case "preview-send":
     case "send": {
       const campaign = console.session.campaign;
       if (!campaign)
@@ -336,6 +338,39 @@ export function executeLine(
               args[0]!,
               ids,
             );
+      if (command === "preview-send") {
+        const transfer = Object.values(state.transfers).find(
+          (candidate) => !console.session.state.transfers[candidate.id],
+        )!;
+        return finish(
+          JSON.stringify(
+            {
+              preview: true,
+              originId: transfer.originId,
+              destinationId: transfer.destinationId,
+              duration: transfer.arrivesAt - state.tick,
+              arrival: transfer.arrival,
+              arrivalRadius: transfer.arrivalRadius,
+              manifest: Object.values(transfer.entities).map((entity) => ({
+                id: entity.id,
+                name: entity.name,
+                kind: entity.kind,
+                amount: entity.amount,
+                integrity: entity.integrity,
+                location: entity.location,
+                ...(entity.kind === "item"
+                  ? { equipment: entity.equipment, restraint: entity.restraint }
+                  : {}),
+                ...(entity.kind === "pawn" ? { health: entity.health } : {}),
+              })),
+              notice:
+                "No time, supplies, identities or ownership changed. Use send to commit this prepared departure.",
+            },
+            null,
+            2,
+          ),
+        );
+      }
       next = { ...console, session: { ...console.session, state } };
       return finish(
         command === "prepare"
