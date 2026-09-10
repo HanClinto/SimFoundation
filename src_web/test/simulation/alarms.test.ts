@@ -72,9 +72,18 @@ it("does not stop on a stale event after reload and stops on the next actual bre
   );
 });
 
-it("death halts run but explicit step remains a deliberate fixed-duration command", () => {
+it("warning then death halt run but explicit step remains a deliberate fixed-duration command", () => {
   const initial = openConsole();
-  const result = executeLine(initial, "run 400");
+  const warned = executeLine(initial, "run 400");
+  expect(warned.alarm).toMatchObject({
+    kind: "warning",
+    entityId: "site-12:rowan",
+  });
+  expect(warned.console.session.state.tick).toBe(60);
+  const critical = executeLine(warned.console, "run 400");
+  expect(critical.alarm?.kind).toBe("warning");
+  expect(critical.console.session.state.tick).toBe(80);
+  const result = executeLine(critical.console, "run 400");
   expect(result.alarm).toMatchObject({
     kind: "died",
     entityId: "site-12:rowan",

@@ -176,3 +176,21 @@ it("two actual reserves can continue after original-crew loss, without infinite 
   ]);
   expect(person(console, `${reserveId}:devon`).location.kind).toBe("ground");
 });
+
+it("a pre-fatal alarm leaves enough actual time to dispatch and stabilize with the finite reserve", () => {
+  let c = executeLine(openConsole(), "run 400").console;
+  expect(c.session.state.tick).toBe(60);
+  c = play(c, [
+    "reserve accident devon",
+    "step 12",
+    "site accident",
+    "order devon treat rowan",
+    "finish devon",
+  ]);
+  expect(person(c, "site-12:rowan").health!.death).toBeUndefined();
+  expect(person(c, "site-12:rowan").health!.wounds[0]!.bleeding).toBe(0);
+  const restored = restoreSession(JSON.stringify(c.session))!;
+  expect(stepSession(restored, 100)).toEqual(stepSession(c.session, 100));
+  c = play(c, ["step 100"]);
+  expect(person(c, "site-12:rowan").health!.death).toBeUndefined();
+});

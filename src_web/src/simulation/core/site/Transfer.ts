@@ -127,13 +127,8 @@ function advanceTransitPawn(
   events: TickEvent[],
 ): Pawn {
   const next = structuredClone(pawn);
-  if (advancePhysiology(next, tick))
-    events.push({
-      siteId: originId,
-      entityId: next.id,
-      kind: "died",
-      reason: next.health!.death!.cause,
-    });
+  const notice = advancePhysiology(next, tick);
+  if (notice) events.push({ siteId: originId, entityId: next.id, ...notice });
   return next;
 }
 

@@ -177,6 +177,12 @@ critical interval and death tick/cause. Prompt treatment can stop the bleeding;
 ordinary nursing can then address blood loss. Previously authored peaceful
 patients do not silently acquire this fatal clock.
 
+Crossing blood loss80 while bleeding emits a pre-fatal warning for opted-in
+patients; entering the critical interval emits another identified warning.
+Automatic `run` stops on those notices. The original accident's first warning
+still leaves time to dispatch Devon, physically reach Rowan and stabilize him.
+Ignoring warnings does not pause the fatal clock, including during transit.
+
 If rescue is late, the body and its carried recorder remain the original
 entities. Carry/deliver the body through ordinary transport; no treatment or
 anomalous mending resurrects it. Dead workers stop needs, autonomy and every

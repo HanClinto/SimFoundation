@@ -39,7 +39,11 @@ export interface Health {
     | "postoperative"
     | "subdued";
   subdual?: { untilTick: number; actorId: string };
-  mortality?: { criticalTicks: number; fatalAfterTicks: number };
+  mortality?: {
+    criticalTicks: number;
+    fatalAfterTicks: number;
+    warningBloodLoss?: number;
+  };
   death?: { tick: number; cause: "untreated-blood-loss" | "critical-trauma" };
 }
 
@@ -53,7 +57,7 @@ export function healthStatus(pawn: Pawn): string {
   if (pawn.health?.death)
     return `DEAD at tick ${pawn.health.death.tick}: ${pawn.health.death.cause}`;
   const mortality = pawn.health?.mortality;
-  return `${pawn.canAct ? "active" : "incapacitated"}${pawn.health?.subdual ? ` | SUBDUED until ${pawn.health.subdual.untilTick}` : ""}${mortality && mortality.criticalTicks > 0 ? ` | CRITICAL ${mortality.criticalTicks}/${mortality.fatalAfterTicks} ticks` : ""}`;
+  return `${pawn.canAct ? "active" : "incapacitated"}${pawn.health?.subdual ? ` | SUBDUED until ${pawn.health.subdual.untilTick}` : ""}${mortality ? (mortality.criticalTicks > 0 ? ` | CRITICAL ${mortality.criticalTicks}/${mortality.fatalAfterTicks} ticks` : ` | mortality enabled: ${mortality.fatalAfterTicks} critical ticks`) : ""}`;
 }
 
 export function advanceHealth(health: Health): void {
@@ -98,10 +102,17 @@ export function recoverWounds(
   }
 }
 
-export function advancePhysiology(pawn: Pawn, tick: number): boolean {
-  if (pawn.health?.death) return false;
+export function advancePhysiology(
+  pawn: Pawn,
+  tick: number,
+): {
+  kind: "died" | "warning";
+  reason: string;
+} | null {
+  if (pawn.health?.death) return null;
   pawn.needs = advanceNeeds(pawn.needs);
   if (pawn.health) {
+    const previousBloodLoss = pawn.health.bloodLoss;
     if (pawn.health.subdual && tick >= pawn.health.subdual.untilTick) {
       delete pawn.health.subdual;
       if (pawn.health.incapacity === "subdued" && !incapacitated(pawn.health)) {
@@ -141,9 +152,24 @@ export function advancePhysiology(pawn: Pawn, tick: number): boolean {
         pawn.autonomy = false;
         pawn.blocksMovement = false;
         delete pawn.serviceDuty;
-        return true;
+        return { kind: "died", reason: cause };
       }
+      if (mortality.criticalTicks === 1)
+        return {
+          kind: "warning",
+          reason: `${pawn.name} entered a fatal critical interval (${mortality.fatalAfterTicks} ticks); intervene immediately.`,
+        };
+      const threshold = mortality.warningBloodLoss ?? 80;
+      if (
+        previousBloodLoss < threshold &&
+        pawn.health.bloodLoss >= threshold &&
+        bleeding
+      )
+        return {
+          kind: "warning",
+          reason: `${pawn.name} has dangerous ongoing blood loss (${pawn.health.bloodLoss}); dispatch and stabilize before critical deterioration.`,
+        };
     }
   }
-  return false;
+  return null;
 }
