@@ -185,6 +185,11 @@ risk on a person actually injured during a later home breach, with an immediate
 warning. Staying home is not immunity. Existing mortality intervals/progress
 are not reset, and peaceful or capped attacks without this authored capability
 do not silently become lethal.
+Its actual damaging impacts also add authored stress through the existing
+need-effects rules. No new fear/diagnosis bar is created, and absent needs are
+not manufactured. Recovered staff can use ordinary sleep/relaxation; assigned
+workers treat stress50 or more as a critical break need while visible threats
+still have priority. Explicit player commitments are not silently cancelled.
 
 The home holds three finite `suppression-units`. With the serviceable tool worn,
 bring a unit beside the worker (or carry it) and `order alex rearm suppressor`.

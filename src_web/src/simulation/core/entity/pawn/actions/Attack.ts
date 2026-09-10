@@ -4,6 +4,7 @@ import { canSee, hostilityActive } from "../../../site/Visibility";
 import { incapacitated } from "../Health";
 import type { Pawn } from "../Pawn";
 import { wornEquipment } from "../../Equipment";
+import { applyNeedChanges } from "../Needs";
 
 export interface AttackState {
   kind: "attack";
@@ -95,6 +96,7 @@ export class Attack implements Action {
       severity: damage,
       bleeding: pawn.response!.attack!.bleeding ?? 0,
     });
+    applyNeedChanges(target.needs, pawn.response!.attack!.needChanges ?? {});
     if (incapacitated(target.health!)) target.canAct = false;
     events.push({
       siteId: site.id,

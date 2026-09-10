@@ -10,6 +10,7 @@ export interface Response {
     maximumSeverity?: number;
     bleeding?: number;
     fatalAfterTicks?: number;
+    needChanges?: Record<string, number>;
   };
   medicine?: { ticks: number; supplies: number };
 }

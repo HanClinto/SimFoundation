@@ -76,7 +76,13 @@ export const KineticSpecimen: EntityTemplate = {
       hostileTo: ["site"],
       sight: 4,
       threat: "confront",
-      attack: { damage: 30, bleeding: 0.5, windup: 5, fatalAfterTicks: 12 },
+      attack: {
+        damage: 30,
+        bleeding: 0.5,
+        windup: 5,
+        fatalAfterTicks: 12,
+        needChanges: { stress: 10 },
+      },
     },
   },
 };
