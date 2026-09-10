@@ -17,6 +17,17 @@ gets its own stable map label and ID, shown under `inspect alex` contents.
 Taking the entire stack keeps its original identity. There is no instant
 inventory editor or automatic merging on return.
 
+`finish alex casey` advances the existing queues until those captured
+commitments finish, block, fail or are interrupted, with a 1000-tick safety
+limit. Every site still advances; this is not free work or a solution planner.
+It does not wait forever for future autonomous tasks. The output gives elapsed
+time and remaining queues.
+
+Within an order, `@held` means that worker's actual directly carried object:
+`order alex deliver @held 7 4` delivers a collected portion without copying its
+generated ID. `order alex pack vial @held` uses the carried case. It never
+selects another worker's inventory or silently substitutes a new object.
+
 Prepare an actual team:
 
 ```text

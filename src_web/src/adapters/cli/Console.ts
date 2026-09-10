@@ -45,8 +45,25 @@ function token(console: ConsoleState, entity: Entity): string {
   return console.session.labels[entity.id] ?? "??";
 }
 
-function resolve(console: ConsoleState, value: string | undefined): Entity {
+function resolve(
+  console: ConsoleState,
+  value: string | undefined,
+  actorId?: string,
+): Entity {
   const members = roster(console);
+  if (value === "@held") {
+    if (!actorId) throw new Error("@held requires an order's worker.");
+    const carried = members.filter(
+      (entity) =>
+        entity.location.kind === "carried" &&
+        entity.location.carrierId === actorId,
+    );
+    if (carried.length !== 1)
+      throw new Error(
+        "This worker must carry exactly one object to use @held.",
+      );
+    return carried[0]!;
+  }
   const exact = members.find(
     (entity) => entity.id === value || token(console, entity) === value,
   );
@@ -197,7 +214,8 @@ export const help = `map | brief | status | events | sites | site <id>
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 deploy <staff-type> <name> | start
-step [ticks] | run [maximum ticks] | load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
+step [ticks] | run [maximum ticks] | finish <worker...> (up to 1000 ticks, stops on blockers)
+load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
 inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
 study <actor> <station> <planId>
 order <name|@N> <verb> <target> | order <name|@N> move <x> <y> | order <name|@N> wait <ticks>
@@ -208,6 +226,7 @@ order <name|@N> escort <person> <x> <y> (cooperative walking)
 order <name|@N> pack <specimen> <case> | order <name|@N> unpack <case>
 order <name|@N> nurse <patient> <clinical-bed>
 order <name|@N> take <supply-stack> [amount] (physical collection)
+Use @held as an order target for that worker's actual carried object.
 assign <worker> <counter|none> | order <worker> service <counter>
 save <path> | restore <path> | help | quit`;
 
@@ -329,6 +348,78 @@ export function executeLine(
           .map((event) => JSON.stringify(event))
           .join("\n") || "No recent events.",
       );
+    case "finish": {
+      if (console.session.phase !== "running")
+        throw new Error("Start the mission before advancing work.");
+      if (!args.length) throw new Error("Use finish <worker...>.");
+      const workers = args.map((value) => resolve(console, value));
+      if (workers.some((entity) => entity.kind !== "pawn"))
+        throw new Error("Choose workers with action queues.");
+      const watched = new Set(
+        workers.flatMap((entity) =>
+          entity.kind === "pawn" ? entity.queue.map((entry) => entry.id) : [],
+        ),
+      );
+      if (!watched.size)
+        return finish("No queued commitments to finish. No time advanced.");
+      const startedTick = console.session.state.tick;
+      let session = console.session;
+      let stop = "Reached the 1000-tick limit; inspect remaining work.";
+      for (let ticks = 0; ticks < 1000; ticks++) {
+        const priorEvents = session.events;
+        session = stepSession(session, 1);
+        const changed = session.events.filter(
+          (event) => !priorEvents.includes(event),
+        );
+        const problem = changed.find(
+          (event) =>
+            event.actionId &&
+            watched.has(event.actionId) &&
+            ["blocked", "failed", "interrupted"].includes(event.kind),
+        );
+        if (problem) {
+          stop = `${problem.entityId} ${problem.kind}: ${problem.reason ?? problem.actionKind ?? "inspect events"}`;
+          break;
+        }
+        const blocked = Object.values(session.state.sites)
+          .flatMap((site) => Object.values(site.entities))
+          .flatMap((entity) =>
+            entity.kind === "pawn"
+              ? entity.queue
+                  .filter(
+                    (entry) => watched.has(entry.id) && entry.blockedReason,
+                  )
+                  .map((entry) => `${entity.name}: ${entry.blockedReason}`)
+              : [],
+          );
+        if (blocked.length) {
+          stop = `Blocked: ${blocked.join("; ")}`;
+          break;
+        }
+        const remaining = Object.values(session.state.sites).some((site) =>
+          Object.values(site.entities).some(
+            (entity) =>
+              entity.kind === "pawn" &&
+              entity.queue.some((entry) => watched.has(entry.id)),
+          ),
+        );
+        if (!remaining) {
+          stop = "Watched commitments finished.";
+          break;
+        }
+      }
+      next = { ...console, session };
+      return finish(
+        [
+          `Advanced ${session.state.tick - startedTick} ticks. ${stop}`,
+          ...workers.map((worker) => {
+            const current =
+              session.state.sites[console.siteId]?.entities[worker.id];
+            return `${worker.name}: ${current ? describeQueue(current) : "not at this site"}`;
+          }),
+        ].join("\n"),
+      );
+    }
     case "step":
     case "run": {
       const ticks = Number(args[0] ?? (command === "run" ? 400 : 1));
@@ -468,17 +559,23 @@ export function executeLine(
             throw new Error("Study needs a plan ID; inspect the station.");
           action = {
             ...action,
-            targetId: resolve(console, action.targetId).id,
+            targetId: resolve(console, action.targetId, actor.id).id,
           };
           if (action.kind === "dispense" && action.sourceId)
             action = {
               ...action,
-              sourceId: resolve(console, action.sourceId).id,
+              sourceId: resolve(console, action.sourceId, actor.id).id,
             };
           if (action.kind === "pack")
-            action = { ...action, caseId: resolve(console, action.caseId).id };
+            action = {
+              ...action,
+              caseId: resolve(console, action.caseId, actor.id).id,
+            };
           if (action.kind === "nurse")
-            action = { ...action, bedId: resolve(console, action.bedId).id };
+            action = {
+              ...action,
+              bedId: resolve(console, action.bedId, actor.id).id,
+            };
         }
         result = executeCommand(
           console.session.state,
