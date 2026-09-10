@@ -2,6 +2,7 @@ import type { Action, ActionContext, ActionResult } from "./Action";
 import type { Item } from "../../Item";
 import { restraintFor } from "../Custody";
 import { Move } from "./Move";
+import { containmentFor, secureContainment } from "../../Containment";
 
 export interface RestrainState {
   kind: "restrain";
@@ -12,7 +13,7 @@ export interface RestrainState {
 
 export class Restrain implements Action {
   constructor(readonly state: RestrainState) {}
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({ site, pawn, tick }: ActionContext): string | null {
     const subject = site.entities[this.state.targetId];
     if (
       subject?.kind !== "pawn" ||
@@ -20,7 +21,9 @@ export class Restrain implements Action {
       subject.health?.death
     )
       return "Choose a living subject requiring restraint.";
-    if (subject.canAct) return "Subdue the subject before applying restraints.";
+    const cell = containmentFor(site.entities, subject.id);
+    if (subject.canAct && !(cell && secureContainment(cell, tick)))
+      return "Subdue the subject before applying restraints outside effective containment.";
     if (restraintFor(site.entities, subject.id))
       return "The subject already has an effective restraint.";
     const restraint = site.entities[this.state.restraintId];

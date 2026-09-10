@@ -7,6 +7,7 @@ import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { findSupply } from "../../Supply";
 import { serviceStatus } from "../../Service";
+import { isCarePatient } from "../CareAccess";
 
 export interface NurseState {
   kind: "nurse";
@@ -46,13 +47,8 @@ export class Nurse implements Action {
     const patient = site.entities[this.state.targetId];
     if (patient?.kind === "pawn" && patient.health?.death)
       return "The patient is dead; clinical recovery cannot restore life.";
-    if (
-      patient?.kind !== "pawn" ||
-      !patient.health ||
-      patient.id === pawn.id ||
-      patient.response?.faction !== pawn.response.faction
-    )
-      return "Choose another allied patient.";
+    if (!isCarePatient(site, pawn, patient, tick))
+      return "Choose another allied patient or an effectively secured custody subject.";
     if (patient.health.wounds.some((wound) => wound.bleeding > 0))
       return "Stabilize active bleeding before clinical recovery.";
     const bed = site.entities[this.state.bedId];

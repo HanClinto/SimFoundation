@@ -166,6 +166,23 @@ Status and events expose warning, breach, custody and fallback expiry.
 npm run sim < src/simulation/catalog/campaign/tests/containment-cycle.txt
 ```
 
+Safe later transfer does not require a breach. Carry the original transport
+band back to the cell and apply it while effective containment holds the awake
+subject. Ordinary `take` or `deliver` can then extract the restrained subject;
+an unrestrained live subject cannot be removed. A retained body can also be
+physically recovered from a cell without resurrection.
+
+Explicit Treat/Nurse orders may care for a nonallied custody subject only
+while effective restraint or containment makes that access safe. The ordinary
+bed/proximity/visibility/supply rules still apply; losing custody stops further
+care without refund. Neither medical work nor recovery changes hostility or
+consent. The original kinetic subject has a retained prior lesion and blood
+loss to exercise this loop:
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/secured-care.txt
+```
+
 These fictional game mechanics are not real equipment instructions.
 
 ## Permanent Casualties And Reserve Response

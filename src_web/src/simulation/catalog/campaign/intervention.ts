@@ -67,6 +67,10 @@ export const KineticSpecimen: EntityTemplate = {
     needs: {},
     diet: [],
     eatingRate: 0,
+    health: {
+      wounds: [{ id: "prior-lesion", severity: 12, bleeding: 0 }],
+      bloodLoss: 20,
+    },
     response: {
       faction: "hostile",
       hostileTo: ["site"],

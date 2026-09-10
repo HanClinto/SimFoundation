@@ -3,6 +3,7 @@ import type { Pawn } from "../Pawn";
 import { canSee, visibleThreats } from "../../../site/Visibility";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
+import { isCarePatient } from "../CareAccess";
 
 export interface TreatState {
   kind: "treat";
@@ -13,19 +14,14 @@ export interface TreatState {
 export class Treat implements Action {
   constructor(readonly state: TreatState) {}
 
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({ site, pawn, tick }: ActionContext): string | null {
     if (!pawn.response?.medicine || pawn.response.medicine.supplies < 1)
       return "Medical supplies or training are unavailable.";
     const patient = site.entities[this.state.targetId];
     if (patient?.kind === "pawn" && patient.health?.death)
       return "The patient is dead; treatment cannot restore life.";
-    if (
-      patient?.kind !== "pawn" ||
-      !patient.health ||
-      patient.id === pawn.id ||
-      patient.response?.faction !== pawn.response.faction
-    )
-      return "Choose another allied patient.";
+    if (!isCarePatient(site, pawn, patient, tick))
+      return "Choose another allied patient or an effectively secured custody subject.";
     return null;
   }
 
@@ -33,9 +29,7 @@ export class Treat implements Action {
     const { site, pawn } = context;
     const patient = site.entities[this.state.targetId];
     if (
-      patient?.kind === "pawn" &&
-      patient.health &&
-      !patient.health.death &&
+      isCarePatient(site, pawn, patient, context.tick) &&
       !patient.health.wounds.some((wound) => wound.bleeding > 0)
     )
       return { status: "completed" };

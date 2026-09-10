@@ -4,6 +4,7 @@ import { facilityInUse } from "../../Facility";
 import { serviceInputInUse } from "../../Service";
 import { availableForRecovery, carriedCargo } from "../../Equipment";
 import { restraintFor } from "../Custody";
+import { containmentFor, secureContainment } from "../../Containment";
 
 export class Take implements Action {
   constructor(
@@ -11,13 +12,20 @@ export class Take implements Action {
     readonly amount?: number,
   ) {}
 
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({ site, pawn, tick }: ActionContext): string | null {
     const target = site.entities[this.targetId];
+    const cell = target ? containmentFor(site.entities, target.id) : undefined;
+    const extraction =
+      target?.kind === "pawn" &&
+      cell &&
+      (target.health?.death ||
+        (secureContainment(cell, tick) &&
+          restraintFor(site.entities, target.id)));
     if (
       !target ||
       target.id === pawn.id ||
       !target.carryable ||
-      !availableForRecovery(site, target, pawn.id) ||
+      !(availableForRecovery(site, target, pawn.id) || extraction) ||
       (target.location.kind === "carried" &&
         target.location.carrierId === pawn.id)
     )
