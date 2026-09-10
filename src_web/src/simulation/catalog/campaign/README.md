@@ -188,6 +188,14 @@ device keeps the input and its clock while staff leave for care or other work.
 `brief clockwork` distinguishes activation from completion and explains the
 irreversible, explicitly authored nonliving choices.
 
+The [refurbished expedition continuation](tests/refurbished-expedition.txt)
+continues that story rather than resetting it: Ben remains on live custody,
+Casey retrieves real power and delivers repair parts/ammunition, and Alex
+refurbishes the same spent shell and rearms before preparing for Blackwood.
+Missing supplies remain blocked work until physical delivery. An alarm-aware
+wait catches the custody warning during the supply trip; deliberate continuation
+gets the actual shipment home. No new scheduler or replenishment reward is used.
+
 `brief observation` describes useful evidence after a costly incident. Carry
 the actual `kit`, take a visible vantage and `order alex observe specimen
 @held`. It watches from that position, activating on the worker's next normal

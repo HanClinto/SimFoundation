@@ -1,0 +1,41 @@
+# Continue scp914/tests/independent-cycle.txt without resetting people or supplies.
+order ben study holding kinetic-intake
+finish ben
+assign ben holding
+order casey sleep clinic
+order alex repair-equipment output workshop
+# The actual parts are not beside the bench yet; keep the blocked repair.
+finish --alarms alex casey
+order casey take parts 1
+finish casey
+order casey deliver @held 6 1
+finish casey
+finish alex
+# Actual ammunition is likewise not in reach until the later delivery.
+order alex rearm suppressor
+finish alex
+prepare support casey
+finish --alarms casey
+send support casey
+# A remote coverage warning stops the first wait; explicitly continue the journey.
+finish --alarms casey
+finish --alarms casey
+site support
+order casey take power
+finish --alarms casey
+prepare home casey
+finish --alarms casey
+send home casey
+finish --alarms casey
+site home
+order casey deliver @held 14 8
+finish --alarms casey
+order casey take suppression-units 1
+finish --alarms casey
+order casey deliver @held 9 1
+finish --alarms casey
+finish --alarms alex
+prepare blackwood alex
+finish --alarms alex
+preview-send blackwood alex
+status
