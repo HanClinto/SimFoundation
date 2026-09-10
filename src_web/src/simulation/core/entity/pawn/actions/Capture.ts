@@ -78,7 +78,7 @@ export class Capture implements Action {
       child.kind === "subdue"
         ? new Subdue(child).tick(context)
         : new Restrain(child).tick(context);
-    this.state.workTicks = child.workTicks;
+    this.state.workTicks = result.status === "completed" ? 0 : child.workTicks;
     return result.status === "completed" ? { status: "running" } : result;
   }
 

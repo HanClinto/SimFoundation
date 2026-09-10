@@ -8,7 +8,7 @@ import type { ActionState } from "./entity/pawn/actions/Action";
 import { beginOperatingCycle } from "./site/OperatingCycle";
 import { publishServiceWarning } from "./entity/Service";
 
-export const SIMULATION_VERSION = 39;
+export const SIMULATION_VERSION = 40;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;

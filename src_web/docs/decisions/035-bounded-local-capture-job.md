@@ -22,3 +22,11 @@ Tests compare the whole physical site state and elapsed ticks against the
 primitive command sequence, plus partial-work replay, last-charge completion,
 missing gear, blocked destination and interrupted/removed targets. Core39
 discards incompatible queued-action data without migrations.
+
+Focused review found that completed child work could remain on the parent
+while another carrier prevented observing the next phase. Capture now clears
+work immediately on primitive completion, preserving only unfinished work.
+A regression holds the subject with another earlier-turn carrier through
+natural expiry and compares resumption to a fresh two-tick Subdue: neither may
+spend its next charge after only one work tick. Core40 discards that ambiguous
+older queued progress; no completed-progress compatibility facade is retained.
