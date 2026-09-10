@@ -42,20 +42,15 @@ export function facilityInUse(
   exceptPawnId?: string,
 ): boolean {
   return Object.values(site.entities).some((entity) => {
-    if (
-      entity.kind !== "pawn" ||
-      entity.id === exceptPawnId ||
-      !entity.canAct ||
-      entity.location.kind !== "ground"
-    )
-      return false;
+    if (entity.kind !== "pawn" || entity.id === exceptPawnId) return false;
     const action = entity.queue[0]?.action;
+    if (action?.kind === "repair-equipment" && action.supplyId !== undefined)
+      return action.targetId === targetId || action.benchId === targetId;
+    if (!entity.canAct || entity.location.kind !== "ground") return false;
     return (
       action &&
       "workTicks" in action &&
-      (action.workTicks > 0 ||
-        (action.kind === "repair-equipment" &&
-          action.supplyId !== undefined)) &&
+      action.workTicks > 0 &&
       (action.targetId === targetId ||
         ("bedId" in action && action.bedId === targetId) ||
         ("benchId" in action && action.benchId === targetId) ||

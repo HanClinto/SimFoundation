@@ -75,13 +75,7 @@ export function equipmentUnderRepair(
   exceptWorkerId?: string,
 ): boolean {
   return Object.values(site.entities).some((entity) => {
-    if (
-      entity.kind !== "pawn" ||
-      entity.id === exceptWorkerId ||
-      !entity.canAct ||
-      entity.location.kind !== "ground"
-    )
-      return false;
+    if (entity.kind !== "pawn" || entity.id === exceptWorkerId) return false;
     const action = entity.queue[0]?.action;
     return (
       action?.kind === "repair-equipment" &&
