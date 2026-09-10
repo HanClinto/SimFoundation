@@ -39,6 +39,7 @@ export interface Health {
     | "postoperative"
     | "subdued";
   subdual?: { untilTick: number; actorId: string };
+  postoperative?: { sinceTick: number; actorId: string; organ: OrganKind };
   mortality?: {
     criticalTicks: number;
     fatalAfterTicks: number;
@@ -131,6 +132,9 @@ export function advancePhysiology(
           : majorOrganTrauma(pawn.health)
             ? "organ-trauma"
             : "blood-loss";
+      pawn.canAct = false;
+    } else if (pawn.health.postoperative) {
+      pawn.health.incapacity = "postoperative";
       pawn.canAct = false;
     }
     const mortality = pawn.health.mortality;

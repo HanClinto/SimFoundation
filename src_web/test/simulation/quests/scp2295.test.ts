@@ -186,3 +186,53 @@ it("a younger arrival interrupts paid older treatment and postoperative care sti
       .amount,
   ).toBe(3);
 });
+
+it.each(["wounds-first", "postoperative-first"])(
+  "preserves independent postoperative care when major wounds dominate incapacity: %s",
+  (order) => {
+    let console = nearby();
+    const younger = pawn(console, "younger");
+    younger.health!.wounds[0]!.severity = 120;
+    younger.health!.bloodLoss = 0;
+    console = play(console, ["step 9"]);
+    expect(pawn(console, "younger").health!.organs!.lung!.trauma).toBe(0);
+    expect(pawn(console, "younger").health!.postoperative).toMatchObject({
+      actorId: "site-1:bear",
+      organ: "lung",
+    });
+    pawn(console, "younger").location = {
+      kind: "ground",
+      position: { x: 3, y: 1 },
+    };
+    const first = order === "wounds-first" ? " wounds" : "";
+    const second = order === "wounds-first" ? "" : " wounds";
+    console = play(console, [
+      `order casey nurse younger clinic${first}`,
+      "finish casey",
+    ]);
+    expect(pawn(console, "younger").canAct).toBe(false);
+    const remaining = pawn(console, "younger").health!.postoperative;
+    expect(!!remaining).toBe(order === "wounds-first");
+    const restored = restoreSession(JSON.stringify(console.session))!;
+    const replay = play({ ...console, session: restored }, [
+      `order casey nurse younger clinic${second}`,
+      "finish casey",
+    ]);
+    console = play(console, [
+      `order casey nurse younger clinic${second}`,
+      "finish casey",
+    ]);
+    expect(console).toEqual(replay);
+    expect(pawn(console, "younger").canAct).toBe(true);
+    expect(pawn(console, "younger").health!.postoperative).toBeUndefined();
+    expect(pawn(console, "younger").health!.wounds[0]!.severity).toBe(80);
+    expect(
+      console.session.state.sites["site-1"]!.entities["site-1:clinical-packs"]!
+        .amount,
+    ).toBe(3);
+    expect(
+      console.session.state.sites["site-1"]!.entities["site-1:wound-packs"]!
+        .amount,
+    ).toBe(2);
+  },
+);

@@ -19,13 +19,17 @@ export interface NurseState {
 }
 
 function finishRecovery(patient: Pawn, wounds: boolean): void {
+  const postoperativeCourse = !wounds && !!patient.health?.postoperative;
+  if (postoperativeCourse) delete patient.health!.postoperative;
   if (
     (wounds
       ? patient.health?.incapacity === "wounds"
       : patient.health?.incapacity === "blood-loss" ||
-        patient.health?.incapacity === "postoperative") &&
+        patient.health?.incapacity === "postoperative" ||
+        postoperativeCourse) &&
     patient.health &&
     !patient.health.death &&
+    !patient.health.postoperative &&
     !incapacitated(patient.health)
   ) {
     if (patient.health.subdual) {
@@ -102,6 +106,7 @@ export class Nurse implements Action {
       wounds
         ? patient.health!.wounds.every((wound) => wound.severity <= 0)
         : patient.health!.bloodLoss <= 0 &&
+          !patient.health!.postoperative &&
           patient.health!.incapacity !== "postoperative"
     ) {
       finishRecovery(patient, wounds);

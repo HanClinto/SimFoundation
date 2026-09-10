@@ -53,6 +53,12 @@ course are required even if postoperative blood loss is zero. Wounds remain;
 the ordinary course improves blood loss by at most 25. Then use cooperative
 escort and normal bed admission.
 
+Pending postoperative recovery is an independent health fact, not just the
+currently dominant incapacity label. Major wounds can dominate that label,
+but treating those wounds cannot skip the real postoperative course. Either
+order of the two supported courses works without double-charging the completed
+one. Core version29 makes that distinction explicit.
+
 This keeps the decision in staffing, positioning, finite material and follow-up
 care rather than a remotely selected heal target. It is an abstract fictional
 care model, not a real clinical procedure.

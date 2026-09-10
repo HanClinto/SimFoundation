@@ -137,6 +137,11 @@ export class Mend implements Action {
     };
     patient.canAct = false;
     patient.health!.incapacity = "postoperative";
+    patient.health!.postoperative = {
+      sinceTick: context.tick,
+      actorId: pawn.id,
+      organ: this.state.organ!,
+    };
     return { status: "completed" };
   }
 }
