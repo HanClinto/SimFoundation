@@ -98,6 +98,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "dispense")
+    return `dispense ${action.requestId} at ${action.targetId}${action.sourceId ? ` from ${action.sourceId}` : ""} | work ${action.workTicks}${action.paymentId ? " | PAID (nonrefundable)" : ""}`;
   if (action.kind === "deliver")
     return `deliver ${action.targetId} to (${action.destination.x},${action.destination.y})`;
   if (action.kind === "move")
@@ -177,6 +179,7 @@ study <actor> <station> <planId>
 order <name|@N> <verb> <target> | order <name|@N> move <x> <y> | order <name|@N> wait <ticks>
 order <name|@N> study <station> <planId> | autonomy <actor> <on|off> | cancel <actor> [actionId]
 order <name|@N> deliver <target> <x> <y> (collect, carry and drop)
+order <name|@N> dispense <machine> <request> [source]
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -375,6 +378,7 @@ export function executeLine(
                 }
               : parseOrder(args.slice(1));
         const kinds = [
+          "dispense",
           "deliver",
           "move",
           "take",
@@ -417,6 +421,11 @@ export function executeLine(
             ...action,
             targetId: resolve(console, action.targetId).id,
           };
+          if (action.kind === "dispense" && action.sourceId)
+            action = {
+              ...action,
+              sourceId: resolve(console, action.sourceId).id,
+            };
           if (
             [
               "sleep",

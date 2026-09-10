@@ -54,10 +54,12 @@ export function instantiateSite(
       id: reference(entity.id),
       location,
       queue: entity.queue.map((entry, index) => {
-        const action: ActionState =
+        let action: ActionState =
           "targetId" in entry.action
             ? { ...entry.action, targetId: reference(entry.action.targetId) }
             : entry.action;
+        if (action.kind === "dispense" && action.sourceId)
+          action = { ...action, sourceId: reference(action.sourceId) };
         return {
           ...entry,
           id: `${reference(entity.id)}:initial-action-${index}`,

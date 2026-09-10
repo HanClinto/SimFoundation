@@ -20,6 +20,40 @@ export const home: SiteTemplate = {
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
     {
+      id: "machine",
+      definitionId: "scp-294",
+      location: { kind: "ground", position: { x: 8, y: 7 } },
+    },
+    {
+      id: "coins",
+      definitionId: "coin-allocation",
+      location: { kind: "ground", position: { x: 7, y: 7 } },
+      overrides: { amount: 8 },
+    },
+    {
+      id: "sample-bench",
+      definitionId: "sample-comparison-bench",
+      location: { kind: "ground", position: { x: 8, y: 4 } },
+    },
+    {
+      id: "water",
+      definitionId: "water-reservoir",
+      location: { kind: "ground", position: { x: 6, y: 4 } },
+      overrides: { amount: 4 },
+    },
+    {
+      id: "coffee",
+      definitionId: "coffee-reservoir",
+      location: { kind: "ground", position: { x: 6, y: 5 } },
+      overrides: { amount: 3 },
+    },
+    {
+      id: "tracer",
+      definitionId: "tracer-reservoir",
+      location: { kind: "ground", position: { x: 6, y: 3 } },
+      overrides: { amount: 2 },
+    },
+    {
       id: "alex",
       definitionId: "field-agent",
       location: { kind: "ground", position: { x: 2, y: 2 } },

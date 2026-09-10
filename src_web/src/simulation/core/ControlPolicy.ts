@@ -92,9 +92,17 @@ export function executeCommand(
           id: actionId,
           source: context.source,
           action:
-            "workTicks" in action
-              ? { ...structuredClone(action), workTicks: 0 }
-              : structuredClone(action),
+            action.kind === "dispense"
+              ? {
+                  kind: action.kind,
+                  targetId: action.targetId,
+                  requestId: action.requestId,
+                  ...(action.sourceId ? { sourceId: action.sourceId } : {}),
+                  workTicks: 0,
+                }
+              : "workTicks" in action
+                ? { ...structuredClone(action), workTicks: 0 }
+                : structuredClone(action),
           elapsed: 0,
           blockedReason: null,
         },

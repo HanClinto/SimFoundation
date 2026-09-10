@@ -26,7 +26,9 @@ export function campaignStatus(session: ScenarioSession): string {
     }),
     `Home stocks: ${Object.values(home.entities)
       .filter((entity) =>
-        ["packaged-meal", "transport-docket"].includes(entity.definitionId),
+        ["packaged-meal", "transport-docket", "coin-allocation"].includes(
+          entity.definitionId,
+        ),
       )
       .map(
         (entity) => `${entity.name} ${entity.amount.toFixed(1)} [${entity.id}]`,
@@ -54,12 +56,29 @@ export function campaignStatus(session: ScenarioSession): string {
           : [],
       ),
     ),
+    ...Object.values(home.entities).flatMap((entity) =>
+      entity.kind === "facility" && entity.dispenser
+        ? entity.dispenser.records.map(
+            (record) =>
+              `${entity.name}: ${record.requestId} | tick ${record.tick} | ${record.result}${record.sampleId ? ` | sample ${record.sampleId} from ${record.sourceId} (${record.amount} cup)` : ""}`,
+          )
+        : [],
+    ),
     `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
-    "brief <blackwood|gallery|kestrel> | site <home|blackwood|gallery|kestrel> | inspect <id>",
+    "brief <blackwood|gallery|kestrel|scp294> | site <home|blackwood|gallery|kestrel> | inspect <id>",
   ].join("\n");
 }
 
 export function campaignBrief(key?: string): string {
+  if (key === "scp294")
+    return [
+      "SCP-294: bounded home experiment",
+      "Inspect machine for four approved requests. Example: order ben dispense machine tracer tracer.",
+      "Eight coin allocations; two tracer portions. Payment is nonrefundable after work starts. Sources must stay grounded at this site.",
+      "Clear each output with order ben deliver <sample-id> 8 3 (first) or 9 4 (second). Inspect machine to find IDs; map also assigns stable oN labels.",
+      "Then order ben study sample-bench repeated-tracer. Diamond spends a coin and records OUT OF RANGE without a sample.",
+      "Adapted from SCP-294 by Arcibi, CC BY-SA 3.0: https://scp-wiki.wikidot.com/scp-294. No arbitrary requests or harmful effects are implemented.",
+    ].join("\n");
   if (key) {
     const opportunity = opportunities[key];
     if (!opportunity) throw new Error("Unknown opportunity.");
@@ -76,6 +95,7 @@ export function campaignBrief(key?: string): string {
     "At home, deliver journal to (3,3) and specimen to (3,5), then order ben study bench marsh-lead.",
     "Partial withdrawal is allowed. Return transport is prepaid, retained sites do not restock, and no command creates replacement staff.",
     "Use autonomy <staff> on for home routines; preparation disables it so staff wait at the loading area. Keep the arrival pad clear.",
+    "SCP-294 is installed at home for a bounded experiment. brief scp294 explains finite paid requests and sample comparison.",
     "SCP-1867 by Djoric and SCP-1370 by Sorts, SCP Wiki, CC BY-SA 3.0. Kestrel and this campaign are original adaptations; inspect evidence for source links.",
   ].join("\n");
 }

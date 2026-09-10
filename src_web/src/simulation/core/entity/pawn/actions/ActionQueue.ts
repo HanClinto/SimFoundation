@@ -14,9 +14,12 @@ import { Treat } from "./Treat";
 import { Flee } from "./Flee";
 import { Study } from "./Study";
 import { Deliver } from "./Deliver";
+import { Dispense } from "./Dispense";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "dispense":
+      return new Dispense(action);
     case "deliver":
       return new Deliver(action);
     case "study":

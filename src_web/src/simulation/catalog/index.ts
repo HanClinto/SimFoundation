@@ -19,6 +19,18 @@ import { Soldier } from "./actors/staff/Soldier";
 import { Medic } from "./actors/staff/Medic";
 import { HostileGuard } from "./actors/threats/HostileGuard";
 import { SCP1370 } from "./actors/anomalies/SCP1370";
+import { SCP294 } from "./actors/anomalies/SCP294";
+import { Water } from "./materials/Water";
+import {
+  CoinAllocation,
+  WaterReservoir,
+  CoffeeReservoir,
+  TracerReservoir,
+  WaterSample,
+  CoffeeSample,
+  TracerSample,
+  SampleBench,
+} from "./quests/scp294/apparatus";
 import {
   BlackwoodJournal,
   BlackwoodSpecimen,
@@ -49,6 +61,15 @@ export const entities: EntityTemplates = Object.fromEntries(
     Medic,
     HostileGuard,
     SCP1370,
+    SCP294,
+    CoinAllocation,
+    WaterReservoir,
+    CoffeeReservoir,
+    TracerReservoir,
+    WaterSample,
+    CoffeeSample,
+    TracerSample,
+    SampleBench,
     BlackwoodJournal,
     BlackwoodSpecimen,
     IndependentSurvey,
@@ -63,7 +84,7 @@ export const entities: EntityTemplates = Object.fromEntries(
 );
 
 export const materials: Materials = Object.fromEntries(
-  [Steel, Wood, Plastic, Stone, PlantFood, AnimalTissue].map((entry) => [
+  [Steel, Wood, Plastic, Stone, PlantFood, AnimalTissue, Water].map((entry) => [
     entry.id,
     entry,
   ]),

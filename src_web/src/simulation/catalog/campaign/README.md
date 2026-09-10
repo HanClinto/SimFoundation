@@ -65,8 +65,11 @@ This campaign, Kestrel depot and the transport agreement are original game
 fiction offered under the same license, not canonical SCP events. No images
 are included.
 
-This slice has no death, capture, living escort, vehicle simulation, automatic
-resupply or SCP-294. Incapacitated staff can be carried by available responders
+The home also hosts a [bounded SCP-294 experiment](../quests/scp294/README.md),
+with finite paid requests and source-conserving samples. Use `brief scp294`.
+
+This slice has no death, capture, living escort, vehicle simulation or automatic
+resupply. Incapacitated staff can be carried by available responders
 through existing physical rules, but treatment currently stabilizes bleeding
 only; it is not a full recovery model. There is no authored combat in these
 campaign routes. Running out of every transport allocation prevents additional
