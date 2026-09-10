@@ -59,7 +59,11 @@ it("a late ordinary CLI rescue carries, stabilizes and clinically restores one l
       id: "laceration",
       severity: 10,
       bleeding: 0,
-      treatedBy: "site-1:casey",
+      stabilization: {
+        actorId: "site-1:casey",
+        sourceId: "site-1:casey",
+        tick: expect.any(Number),
+      },
     },
   ]);
   expect(patient.health!.incapacity).toBeUndefined();

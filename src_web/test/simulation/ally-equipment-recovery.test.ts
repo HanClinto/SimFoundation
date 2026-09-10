@@ -41,6 +41,19 @@ it("rescues a still-living incapacitated ally through actual equipment recovery,
   expect(alex.health!.death).toBeUndefined();
   expect(alex.canAct).toBe(true);
   expect(alex.health!.wounds.every((wound) => wound.bleeding === 0)).toBe(true);
+  expect(
+    alex.health!.wounds.filter(
+      (wound) => wound.stabilization?.sourceId === "site-1:medical-kit",
+    ),
+  ).toHaveLength(3);
+  expect(
+    alex.health!.wounds.filter(
+      (wound) => wound.stabilization?.sourceId === "site-1:casey",
+    ),
+  ).toHaveLength(2);
+  expect(
+    alex.health!.wounds.every((wound) => (wound.stabilization?.tick ?? 0) > 0),
+  ).toBe(true);
   expect(casey.response!.medicine!.supplies).toBe(0);
   expect((home.entities["site-1:suppressor"] as Item).location).toEqual({
     kind: "carried",

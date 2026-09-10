@@ -134,7 +134,11 @@ it("an authored encounter produces attack, withdrawal and medical care within 40
   expect(patient.health!.wounds[0]).toMatchObject({
     severity: 25,
     bleeding: 0,
-    treatedBy: id("medic"),
+    stabilization: {
+      actorId: id("medic"),
+      sourceId: id("medic"),
+      tick: expect.any(Number),
+    },
   });
   expect(patient.health!.bloodLoss).toBeGreaterThan(0);
   expect(patient.health!.bloodLoss).toBeLessThan(80);

@@ -5,7 +5,7 @@ export interface Wound {
   id: string;
   severity: number;
   bleeding: number;
-  treatedBy?: string;
+  stabilization?: { actorId: string; sourceId: string; tick: number };
   recovery?: {
     actionId: string;
     actorId: string;

@@ -77,9 +77,13 @@ export class Treat implements Action {
       )[0];
     if (wound) {
       wound.bleeding = 0;
-      wound.treatedBy = pawn.id;
       medicine.supplies--;
       const kit = wornEquipment(site, pawn.id, "tool");
+      wound.stabilization = {
+        actorId: pawn.id,
+        sourceId: kit?.equipment?.medicine === medicine ? kit.id : pawn.id,
+        tick: context.tick,
+      };
       if (medicine.supplies === 0 && kit?.equipment?.medicine === medicine)
         context.events.push({
           siteId: site.id,

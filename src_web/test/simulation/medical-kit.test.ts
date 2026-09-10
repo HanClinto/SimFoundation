@@ -42,6 +42,18 @@ it("actual worn kit funds trained stabilization without copying supplies into th
     (home(c).entities["site-1:alex"] as Pawn).health!.wounds[0]!.bleeding,
   ).toBe(0);
   expect(kit(c).location).toEqual({ kind: "carried", carrierId: medic(c).id });
+  const receipt = (home(c).entities["site-1:alex"] as Pawn).health!.wounds[0]!
+    .stabilization;
+  expect(receipt).toMatchObject({
+    actorId: "site-1:casey",
+    sourceId: "site-1:medical-kit",
+    tick: expect.any(Number),
+  });
+  c = play(c, ["order casey treat alex", "finish casey"]);
+  expect(
+    (home(c).entities["site-1:alex"] as Pawn).health!.wounds[0]!.stabilization,
+  ).toEqual(receipt);
+  expect(kit(c).equipment!.medicine!.supplies).toBe(2);
 });
 it("empty or broken worn kit does not silently use innate supplies, and untrained wearers cannot treat", () => {
   let c = play(openConsole(), [

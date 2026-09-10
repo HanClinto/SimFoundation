@@ -326,6 +326,10 @@ empty or broken kit is worn there is no silent fallback. The kit does not grant
 training to other staff. `rearm medical-kit` spends one real
 `field-medical-unit` and six work ticks per restored supply, up to three.
 Unequipping, transit and body recovery preserve the same kit and its balance.
+Each stopped wound retains a dated stabilization record naming the medic and
+the actual source entity: the worn kit or the medic's initial allowance.
+Repeated no-op treatment does not overwrite that record or spend another unit.
+This replaces the old bare medic-name marker rather than duplicating it.
 
 Crossing blood loss80 while bleeding emits a pre-fatal warning for opted-in
 patients; entering the critical interval emits another identified warning.

@@ -65,7 +65,13 @@ it("plays living transfer and home bed admission without cloning or erasing inju
     playerControllable: false,
     autonomy: true,
     health: {
-      wounds: [{ severity: 10, bleeding: 0, treatedBy: "site-1:casey" }],
+      wounds: [
+        {
+          severity: 10,
+          bleeding: 0,
+          stabilization: { actorId: "site-1:casey", sourceId: "site-1:casey" },
+        },
+      ],
     },
   });
   expect(person(console).health!.bloodLoss).toBeGreaterThan(0);
