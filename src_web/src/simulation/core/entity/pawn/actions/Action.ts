@@ -13,6 +13,7 @@ import type { PackState, UnpackState } from "./Pack";
 import type { NurseState } from "./Nurse";
 import type { MendState } from "./Mend";
 import type { ServiceState } from "./Service";
+import type { SubdueState } from "./Subdue";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -23,6 +24,8 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | SubdueState
+  | { kind: "equip" | "unequip"; targetId: string }
   | ServiceState
   | MendState
   | NurseState

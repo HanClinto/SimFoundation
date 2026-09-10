@@ -3,6 +3,7 @@ import { Move } from "./Move";
 import { canSee, hostilityActive } from "../../../site/Visibility";
 import { incapacitated } from "../Health";
 import type { Pawn } from "../Pawn";
+import { wornEquipment } from "../../Equipment";
 
 export interface AttackState {
   kind: "attack";
@@ -49,7 +50,7 @@ export class Attack implements Action {
       (sum, wound) => sum + wound.severity,
       0,
     );
-    const damage = Math.max(
+    let damage = Math.max(
       0,
       Math.min(
         pawn.response!.attack!.damage,
@@ -57,10 +58,19 @@ export class Attack implements Action {
       ),
     );
     if (damage <= 0) return { status: "completed" };
+    const armor = wornEquipment(site, target.id, "armor");
+    if (armor?.equipment?.armor && (armor.integrity ?? 100) > 0) {
+      damage = Math.max(0, damage - armor.equipment.armor.reduction);
+      armor.integrity = Math.max(
+        0,
+        (armor.integrity ?? 100) - armor.equipment.armor.wear,
+      );
+    }
+    if (damage <= 0) return { status: "running" };
     target.health!.wounds.push({
       id: `impact:${context.tick}:${pawn.id}`,
       severity: damage,
-      bleeding: 0,
+      bleeding: pawn.response!.attack!.bleeding ?? 0,
     });
     if (incapacitated(target.health!)) target.canAct = false;
     events.push({

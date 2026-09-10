@@ -150,14 +150,15 @@ it("two actual reserves can continue after original-crew loss, without infinite 
   ]);
   for (const id of ["site-1:alex", "site-1:ben", "site-1:casey"])
     expect(person(console, id).health!.death).toBeDefined();
-  expect(person(console, "site-13:devon").canAct).toBe(true);
-  expect(person(console, "site-13:riley").canAct).toBe(true);
+  const reserveId = console.session.campaign!.siteIds.reserve!;
+  expect(person(console, `${reserveId}:devon`).canAct).toBe(true);
+  expect(person(console, `${reserveId}:riley`).canAct).toBe(true);
   expect(console.session.campaign!.staffIds).toHaveLength(5);
   expect(() => executeLine(console, "reserve home devon")).toThrow(
     "unused reserve",
   );
   expect(
-    console.session.state.sites["site-13"]!.entities["site-13:dispatches"]!
+    console.session.state.sites[reserveId]!.entities[`${reserveId}:dispatches`]!
       .amount,
   ).toBe(0);
   console = play(console, [
@@ -168,5 +169,5 @@ it("two actual reserves can continue after original-crew loss, without infinite 
     "send gallery devon",
     "step 6",
   ]);
-  expect(person(console, "site-13:devon").location.kind).toBe("ground");
+  expect(person(console, `${reserveId}:devon`).location.kind).toBe("ground");
 });

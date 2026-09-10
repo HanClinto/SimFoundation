@@ -24,6 +24,7 @@ import { admitToCare } from "../../simulation/catalog/campaign/Care";
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 import { dispatchReserve } from "../../simulation/catalog/campaign/Reserve";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
+import { carriedCargo } from "../../simulation/core/entity/Equipment";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -55,10 +56,9 @@ function resolve(
   const members = roster(console);
   if (value === "@held") {
     if (!actorId) throw new Error("@held requires an order's worker.");
-    const carried = members.filter(
-      (entity) =>
-        entity.location.kind === "carried" &&
-        entity.location.carrierId === actorId,
+    const carried = carriedCargo(
+      console.session.state.sites[console.siteId]!.entities,
+      actorId,
     );
     if (carried.length !== 1)
       throw new Error(
@@ -216,6 +216,7 @@ export const help = `map | brief | status | events | sites | site <id>
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 reserve <home|route> <devon|riley> (finite physical emergency dispatch)
+order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
 deploy <staff-type> <name> | start
 step [ticks] | run [maximum ticks] | finish <worker...> (up to 1000 ticks, stops on blockers)
 load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>

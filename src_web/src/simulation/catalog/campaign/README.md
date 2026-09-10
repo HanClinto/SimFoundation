@@ -101,6 +101,31 @@ The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
 npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 ```
 
+## Equipment-Backed Intervention
+
+`brief intervention` describes an original hostile anomaly in a bounded yard.
+The route visibly opts dispatched staff into lethal-risk mortality (twelve
+critical ticks). Equip the real `suppressor` and `vest` at home with
+`order alex equip suppressor` and `order alex equip vest`, then prepare/send.
+An item merely carried in hand is not worn. `unequip` physically places gear
+on the ground. Worn gear travels with the wearer and remains with the body
+after death; another worker can recover it without restoring charges/condition.
+
+`order alex subdue specimen` uses one of the fictional instrument's two charges
+for temporary eighty-tick subdual. This does not produce consent or heal the
+subject. Armor reduces impacts but wears out and does not erase bleeding.
+The ordinary cargo slot remains available while tool/armor are worn; `@held`
+refers to that loose cargo rather than the worn equipment.
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/intervention.txt
+```
+
+The initial intervention rehearsal withdraws after subdual. Permanent
+restraint and safe containment must be handled explicitly, not inferred from
+temporary incapacity. These fictional game mechanics are not real equipment
+instructions.
+
 ## Permanent Casualties And Reserve Response
 
 `brief accident` introduces an original urgent casualty. This route explicitly

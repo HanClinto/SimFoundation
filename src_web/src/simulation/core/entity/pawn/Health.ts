@@ -25,7 +25,13 @@ export interface Health {
   wounds: Wound[];
   bloodLoss: number;
   organs?: Partial<Record<OrganKind, OrganState>>;
-  incapacity?: "blood-loss" | "wounds" | "organ-trauma" | "postoperative";
+  incapacity?:
+    | "blood-loss"
+    | "wounds"
+    | "organ-trauma"
+    | "postoperative"
+    | "subdued";
+  subdual?: { untilTick: number; actorId: string };
   mortality?: { criticalTicks: number; fatalAfterTicks: number };
   death?: { tick: number; cause: "untreated-blood-loss" | "critical-trauma" };
 }
@@ -40,7 +46,7 @@ export function healthStatus(pawn: Pawn): string {
   if (pawn.health?.death)
     return `DEAD at tick ${pawn.health.death.tick}: ${pawn.health.death.cause}`;
   const mortality = pawn.health?.mortality;
-  return `${pawn.canAct ? "active" : "incapacitated"}${mortality && mortality.criticalTicks > 0 ? ` | CRITICAL ${mortality.criticalTicks}/${mortality.fatalAfterTicks} ticks` : ""}`;
+  return `${pawn.canAct ? "active" : "incapacitated"}${pawn.health?.subdual ? ` | SUBDUED until ${pawn.health.subdual.untilTick}` : ""}${mortality && mortality.criticalTicks > 0 ? ` | CRITICAL ${mortality.criticalTicks}/${mortality.fatalAfterTicks} ticks` : ""}`;
 }
 
 export function advanceHealth(health: Health): void {
@@ -63,6 +69,13 @@ export function advancePhysiology(pawn: Pawn, tick: number): boolean {
   if (pawn.health?.death) return false;
   pawn.needs = advanceNeeds(pawn.needs);
   if (pawn.health) {
+    if (pawn.health.subdual && tick >= pawn.health.subdual.untilTick) {
+      delete pawn.health.subdual;
+      if (pawn.health.incapacity === "subdued" && !incapacitated(pawn.health)) {
+        delete pawn.health.incapacity;
+        pawn.canAct = true;
+      }
+    }
     advanceHealth(pawn.health);
     if (incapacitated(pawn.health)) {
       pawn.health.incapacity =

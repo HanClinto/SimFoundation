@@ -80,7 +80,7 @@ export function campaignStatus(session: ScenarioSession): string {
       .join("; ")}`,
     ...Object.entries(opportunities).map(([key, opportunity]) => {
       const reason = opportunityBlocker(state, campaign, key);
-      return `${key} (${campaign.siteIds[key]}): ${reason ? `LOCKED: ${reason}` : readyDocket(state, campaign) ? "AVAILABLE" : "BLOCKED: no transport docket ready at home pad"} | ${opportunity.duration} travel ticks | 1 outbound docket/group; return prepaid`;
+      return `${key} (${campaign.siteIds[key]}): ${reason ? `LOCKED: ${reason}` : readyDocket(state, campaign) ? "AVAILABLE" : "BLOCKED: no transport docket ready at home pad"} | ${opportunity.duration} travel ticks | 1 outbound docket/group; return prepaid${opportunity.fatalAfterTicks ? ` | LETHAL RISK: ${opportunity.fatalAfterTicks} critical ticks; equip before departure` : ""}`;
     }),
     ...Object.values(state.transfers).map(
       (transfer) =>

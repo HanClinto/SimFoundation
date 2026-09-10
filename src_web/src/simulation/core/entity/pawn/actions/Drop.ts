@@ -6,6 +6,8 @@ export class Drop implements Action {
 
   canStart({ site, pawn }: ActionContext): string | null {
     const target = site.entities[this.targetId];
+    if (target?.kind === "item" && target.equipment?.worn)
+      return "Use unequip to remove worn equipment.";
     return target?.location.kind === "carried" &&
       target.location.carrierId === pawn.id
       ? null

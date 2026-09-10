@@ -4,6 +4,11 @@ export interface Response {
   sight: number;
   threat: "flee" | "confront";
   hostileDuring?: "day" | "night";
-  attack?: { damage: number; windup: number; maximumSeverity?: number };
+  attack?: {
+    damage: number;
+    windup: number;
+    maximumSeverity?: number;
+    bleeding?: number;
+  };
   medicine?: { ticks: number; supplies: number };
 }

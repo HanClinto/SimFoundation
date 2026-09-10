@@ -2,6 +2,7 @@ import type { Action, ActionContext, ActionResult } from "./Action";
 import { Move } from "./Move";
 import { facilityInUse } from "../../Facility";
 import { serviceInputInUse } from "../../Service";
+import { availableForRecovery, carriedCargo } from "../../Equipment";
 
 export class Take implements Action {
   constructor(
@@ -15,7 +16,9 @@ export class Take implements Action {
       !target ||
       target.id === pawn.id ||
       !target.carryable ||
-      target.location.kind !== "ground"
+      !availableForRecovery(site, target, pawn.id) ||
+      (target.location.kind === "carried" &&
+        target.location.carrierId === pawn.id)
     )
       return "This entity cannot be picked up now.";
     if (target.kind === "pawn" && target.canAct && target.mobile)
@@ -47,13 +50,7 @@ export class Take implements Action {
       return "The facility is occupied.";
     if (serviceInputInUse(site, target.id))
       return "Finish or cancel the active presentation before moving its programme.";
-    if (
-      Object.values(site.entities).some(
-        (entity) =>
-          entity.location.kind === "carried" &&
-          entity.location.carrierId === pawn.id,
-      )
-    )
+    if (carriedCargo(site.entities, pawn.id).length)
       return "This pawn is already carrying an entity.";
     return null;
   }
@@ -81,6 +78,8 @@ export class Take implements Action {
       return { status: "completed" };
     }
     target.location = { kind: "carried", carrierId: context.pawn.id };
+    if (target.kind === "item" && target.equipment)
+      target.equipment.worn = false;
     return { status: "completed" };
   }
 }

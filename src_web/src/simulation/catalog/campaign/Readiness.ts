@@ -1,4 +1,5 @@
 import type { Pawn } from "../../core/entity/pawn/Pawn";
+import type { Simulation } from "../../core/Simulation";
 
 export function departureReadiness(pawn: Pawn): string | null {
   const needs = ["hunger", "fatigue"]
@@ -14,4 +15,23 @@ export function requireDepartureReadiness(pawns: readonly Pawn[]): void {
     const reason = departureReadiness(pawn);
     if (reason) throw new Error(reason);
   }
+}
+
+export function authorizeRisk(
+  state: Simulation,
+  transferId: string,
+  fatalAfterTicks?: number,
+): Simulation {
+  if (fatalAfterTicks === undefined) return state;
+  const result = structuredClone(state);
+  for (const entity of Object.values(result.transfers[transferId]!.entities)) {
+    if (
+      entity.kind === "pawn" &&
+      entity.playerControllable &&
+      entity.health &&
+      !entity.health.mortality
+    )
+      entity.health.mortality = { criticalTicks: 0, fatalAfterTicks };
+  }
+  return result;
 }

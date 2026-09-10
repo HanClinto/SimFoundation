@@ -20,9 +20,17 @@ import { Pack, Unpack } from "./Pack";
 import { Nurse } from "./Nurse";
 import { Mend } from "./Mend";
 import { Service } from "./Service";
+import { Equip } from "./Equip";
+import { Subdue } from "./Subdue";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "equip":
+      return new Equip(action.targetId);
+    case "unequip":
+      return new Equip(action.targetId, true);
+    case "subdue":
+      return new Subdue(action);
     case "service":
       return new Service(action);
     case "mend":

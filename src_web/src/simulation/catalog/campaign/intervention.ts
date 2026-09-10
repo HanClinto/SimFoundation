@@ -1,0 +1,88 @@
+import type { EntityTemplate } from "../../core/entity/EntityTemplate";
+import type { SiteTemplate } from "../../core/site/Site";
+import { FieldAgent } from "../actors/staff/FieldAgent";
+
+export const InterventionTool: EntityTemplate = {
+  id: "intervention-tool",
+  name: "Fictional suppression instrument",
+  description:
+    "A bounded game instrument, not a real device: two charges, two adjacent work ticks per intervention, eighty ticks of temporary subdual. Must be worn in the tool slot. Charges and condition remain attached to this item through transfer or death. Subdual does not mean consent or permanent containment.",
+  defaults: {
+    kind: "item",
+    materialId: "steel",
+    amount: 1,
+    integrity: 100,
+    carryable: true,
+    blocksMovement: false,
+    blocksSight: false,
+    equipment: {
+      slot: "tool",
+      worn: false,
+      subdual: { charges: 2, ticks: 2, duration: 80 },
+    },
+  },
+};
+
+export const ProtectiveVest: EntityTemplate = {
+  id: "protective-vest",
+  name: "Protective intervention vest",
+  description:
+    "Actual worn armor reduces each modeled impact by ten severity and loses twenty condition. At zero condition it offers no protection. It does not erase bleeding or make mortality impossible.",
+  defaults: {
+    kind: "item",
+    materialId: "plastic",
+    amount: 1,
+    integrity: 100,
+    carryable: true,
+    blocksMovement: false,
+    blocksSight: false,
+    equipment: {
+      slot: "armor",
+      worn: false,
+      armor: { reduction: 10, wear: 20 },
+    },
+  },
+};
+
+export const KineticSpecimen: EntityTemplate = {
+  id: "kinetic-specimen",
+  name: "Kinetic specimen",
+  description:
+    "An original hostile mobile anomaly used to prove intervention and live recovery. It strikes nearby people with damaging, bleeding impacts; it does not consent to escort. Temporary equipment-backed subdual wears off. This is game-authored content, not an adaptation of an SCP article.",
+  defaults: {
+    ...FieldAgent.defaults,
+    human: false,
+    playerControllable: false,
+    acceptsEscort: false,
+    needs: {},
+    diet: [],
+    eatingRate: 0,
+    response: {
+      faction: "hostile",
+      hostileTo: ["site"],
+      sight: 4,
+      threat: "confront",
+      attack: { damage: 30, bleeding: 2, windup: 5 },
+    },
+  },
+};
+
+export const interventionSite: SiteTemplate = {
+  name: "Intervention yard: lethal-risk authorization",
+  terrain: [
+    "############",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "#..........#",
+    "############",
+  ],
+  entities: [
+    {
+      id: "specimen",
+      definitionId: KineticSpecimen.id,
+      location: { kind: "ground", position: { x: 8, y: 3 } },
+    },
+  ],
+};

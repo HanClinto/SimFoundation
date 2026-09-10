@@ -62,6 +62,8 @@ export function parseOrder(args: readonly string[]): ActionState {
         ...(extra !== undefined ? { amount: Number(extra) } : {}),
       };
     case "drop":
+    case "equip":
+    case "unequip":
     case "eat":
     case "flee":
       count(2, `${kind} <target>`);
@@ -73,6 +75,7 @@ export function parseOrder(args: readonly string[]): ActionState {
     case "exercise":
     case "attack":
     case "treat":
+    case "subdue":
       count(2, `${kind} <target>`);
       return { kind, targetId: target!, workTicks: 0 };
     default:

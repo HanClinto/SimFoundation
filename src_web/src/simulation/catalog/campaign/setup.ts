@@ -10,6 +10,7 @@ import { dinerSite } from "../quests/scp1295/setup";
 import { screeningSite } from "../quests/scp2006/setup";
 import { storeSite } from "../quests/scp3008/setup";
 import { accidentSite } from "./emergency";
+import { interventionSite } from "./intervention";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -27,6 +28,16 @@ export const home: SiteTemplate = {
   ],
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
+    {
+      id: "suppressor",
+      definitionId: "intervention-tool",
+      location: { kind: "ground", position: { x: 1, y: 5 } },
+    },
+    {
+      id: "vest",
+      definitionId: "protective-vest",
+      location: { kind: "ground", position: { x: 1, y: 4 } },
+    },
     {
       id: "parts",
       definitionId: "maintenance-parts",
@@ -199,6 +210,7 @@ export interface Opportunity {
   maximumPassengers?: number;
   loadingRadius?: number;
   daytimeReturn?: boolean;
+  fatalAfterTicks?: number;
 }
 
 export const homeLoading = { x: 2, y: 7 };
@@ -405,5 +417,18 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
       { x: 2, y: 4 },
     ],
     duration: 8,
+  },
+  intervention: {
+    name: "Equipment-backed intervention yard",
+    briefing:
+      "LETHAL-RISK OPT-IN: responders entering this route acquire a persistent twelve-critical-tick mortality rule. The hostile kinetic specimen causes bleeding injury. Equip the actual suppressor and vest before travel; bare possession is not equipment. Subdue costs a finite charge and only lasts eighty ticks; it is not cooperation or containment. If intervention fails, reserve responders can recover bodies and actual gear, not resurrect staff. Withdraw rather than wait beside a recovered hostile. Restraint and safe containment are the next operational prerequisites.",
+    site: interventionSite,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 8,
+    fatalAfterTicks: 12,
   },
 };

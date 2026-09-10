@@ -7,7 +7,7 @@ import { distance } from "../../core/site/TileMap";
 import { executeCommand } from "../../core/ControlPolicy";
 import type { Materials } from "../../core/material/Material";
 import { home, homeLoading, homePads, opportunities } from "./setup";
-import { requireDepartureReadiness } from "./Readiness";
+import { requireDepartureReadiness, authorizeRisk } from "./Readiness";
 import { operatingPhase } from "../../core/site/OperatingCycle";
 import { reserveSite } from "./emergency";
 
@@ -230,6 +230,11 @@ export function departTeam(
     duration: trip.duration,
   });
   if (result.reason) throw new Error(result.reason);
+  result.state = authorizeRisk(
+    result.state,
+    result.transferId!,
+    trip.outbound ? opportunities[trip.key]!.fatalAfterTicks : undefined,
+  );
   if (!docket) return result.state;
   const origin = result.state.sites[originId]!;
   return {

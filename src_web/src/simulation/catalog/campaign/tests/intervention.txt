@@ -1,0 +1,22 @@
+# Equipment enables temporary subdual; it is not restraint or safe intake.
+load campaign
+brief intervention
+order alex equip suppressor
+order alex equip vest
+finish alex
+prepare intervention alex
+finish alex
+send intervention alex
+step 8
+site intervention
+order alex subdue specimen
+finish alex
+inspect specimen
+inspect suppressor
+prepare home alex
+finish alex
+send home alex
+step 8
+site home
+inspect alex
+status

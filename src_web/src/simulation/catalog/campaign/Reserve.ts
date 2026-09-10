@@ -2,6 +2,7 @@ import type { Simulation } from "../../core/Simulation";
 import { depart } from "../../core/site/Transfer";
 import type { Campaign } from "./Campaign";
 import { homeLoading, opportunities } from "./setup";
+import { authorizeRisk } from "./Readiness";
 
 export function dispatchReserve(
   state: Simulation,
@@ -44,7 +45,11 @@ export function dispatchReserve(
     throw new Error("Reserve departure lost its responder.");
   incoming.playerControllable = true;
   return {
-    state: result,
+    state: authorizeRisk(
+      result,
+      sent.transferId!,
+      opportunity?.fatalAfterTicks,
+    ),
     campaign: { ...campaign, staffIds: [...campaign.staffIds, responder.id] },
   };
 }
