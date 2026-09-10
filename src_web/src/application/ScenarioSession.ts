@@ -28,7 +28,15 @@ import {
 } from "../simulation/core/site/Deployment";
 
 export const scenarios: Readonly<
-  Record<string, { site: SiteTemplate; quest?: Quest; deployment?: Deployment }>
+  Record<
+    string,
+    {
+      site: SiteTemplate;
+      quest?: Quest;
+      deployment?: Deployment;
+      bindings?: Readonly<Record<string, string>>;
+    }
+  >
 > = {
   response: responseScenario,
   daily: dailyScenario,
@@ -40,7 +48,7 @@ export const scenarios: Readonly<
 };
 
 export interface ScenarioSession {
-  version: 2;
+  version: 3;
   phase: "setup" | "running";
   teamIds: string[];
   bindings: Record<string, string>;
@@ -58,11 +66,17 @@ export function loadScenario(name: string): ScenarioSession {
   const scenario = scenarios[name];
   if (!scenario) throw new Error(`Unknown scenario: ${name}`);
   const created = instantiateSite(createSimulation(), scenario.site, entities);
+  const bindings = Object.fromEntries(
+    Object.entries(scenario.bindings ?? {}).map(([role, localId]) => [
+      role,
+      `${created.siteId}:${localId}`,
+    ]),
+  );
   return labelEntities({
-    version: 2,
+    version: 3,
     phase: scenario.deployment ? "setup" : "running",
     teamIds: [],
-    bindings: {},
+    bindings,
     labels: {},
     nextPawnLabel: 1,
     nextObjectLabel: 1,
@@ -71,7 +85,7 @@ export function loadScenario(name: string): ScenarioSession {
     state: created.state,
     quest:
       scenario.quest && !scenario.deployment
-        ? startQuest(scenario.quest, created.siteId, 0)
+        ? startQuest(scenario.quest, created.siteId, 0, bindings)
         : null,
     events: [],
   });
@@ -206,7 +220,7 @@ export function restoreSession(text: string): ScenarioSession | null {
     return value &&
       typeof value === "object" &&
       !Array.isArray(value) &&
-      value.version === 2 &&
+      value.version === 3 &&
       value.simulationVersion === SIMULATION_VERSION
       ? (value as ScenarioSession)
       : null;

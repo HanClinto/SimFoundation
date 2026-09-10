@@ -10,7 +10,7 @@ export const ConsumptionTrial: Quest = {
       description: "Satisfy the diner's hunger",
       condition: {
         kind: "need",
-        actor: "daniel",
+        actor: "diner",
         need: "hunger",
         maximum: 0.001,
       },
@@ -27,7 +27,7 @@ export const ConsumptionTrial: Quest = {
         kind: "event",
         event: "completed",
         action: "eat",
-        actor: "daniel",
+        actor: "diner",
         target: "meal",
         count: 1,
       },
@@ -37,7 +37,7 @@ export const ConsumptionTrial: Quest = {
     {
       id: "incapable",
       description: "The diner is incapacitated",
-      condition: { kind: "acting", actor: "daniel", value: false },
+      condition: { kind: "acting", actor: "diner", value: false },
     },
   ],
 };

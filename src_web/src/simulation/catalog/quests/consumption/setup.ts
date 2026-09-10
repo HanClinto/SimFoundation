@@ -24,4 +24,8 @@ const site: SiteTemplate = {
   ],
 };
 
-export const consumptionScenario = { site, quest: ConsumptionTrial };
+export const consumptionScenario = {
+  site,
+  quest: ConsumptionTrial,
+  bindings: { diner: "daniel", meal: "meal" },
+};
