@@ -55,6 +55,14 @@ Within an order, `@held` means that worker's actual directly carried object:
 generated ID. `order alex pack vial @held` uses the carried case. It never
 selects another worker's inventory or silently substitutes a new object.
 
+`order alex give @held casey` physically hands loose cargo to an available
+controllable teammate of the same faction. The giver approaches; the receiver
+must have a free ordinary cargo slot. A carried casualty keeps its own worn
+gear/nested possessions through the handoff. Worn equipment and attached
+restraints are not silently removed, and cancellation leaves the original
+carrier in ownership. This replaces a manual drop/pickup sequence, not a
+remote inventory transfer or new receiver planner.
+
 Prepare an actual team:
 
 ```text

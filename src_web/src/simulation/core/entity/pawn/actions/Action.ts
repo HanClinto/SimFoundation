@@ -19,6 +19,7 @@ import type { ContainState, LockdownState } from "./Contain";
 import type { RearmState } from "./Rearm";
 import type { RepairEquipmentState } from "./RepairEquipment";
 import type { OperateDoorState } from "./OperateDoor";
+import type { GiveState } from "./Give";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -29,6 +30,7 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | GiveState
   | OperateDoorState
   | RepairEquipmentState
   | RearmState

@@ -134,6 +134,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "give")
+    return `give ${action.targetId} to ${action.recipientId}`;
   if (action.kind === "door")
     return `set ${action.targetId} ${action.policy} | work ${action.workTicks}`;
   if (action.kind === "repair-equipment")
@@ -252,6 +254,7 @@ order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> sub
 order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
 order <worker> door <door> <open|closed|automatic> (physical controls)
+order <worker> give <carried-object|@held> <teammate>
 order <worker> restrain <hostile> <carried-restraint>
 order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
 order <worker> lockdown <cell> (physical, finite emergency fallback)
@@ -670,6 +673,11 @@ export function executeLine(
             action = {
               ...action,
               benchId: resolve(console, action.benchId, actor.id).id,
+            };
+          if (action.kind === "give")
+            action = {
+              ...action,
+              recipientId: resolve(console, action.recipientId).id,
             };
         }
         result = executeCommand(
