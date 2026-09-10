@@ -578,6 +578,15 @@ close the door behind the three-person group for work, then withdraw and lock
 the door while coverage remains. This is a bounded source adaptation, not
 automatic blink physiology, source relocation or camera-based containment.
 
+## Supervised Companion Visit
+
+After actual annex protocol study, the
+[SCP-131 supervised visit](../quests/scp131/README.md) adds two physical
+companions, not staff or an inventory buff. Their specifically authored local
+gaze can supplement SCP-173 coverage while accompanied by a visible conscious
+human. Human maintenance staffing is unchanged, and no eating/sleeping upkeep
+is invented. `brief companions` explains the trial and its explicit limits.
+
 ## Bounded Store Evacuation
 
 [SCP-3008](../quests/scp3008/README.md) combines field service, clinical care,

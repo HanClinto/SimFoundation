@@ -12,6 +12,7 @@ import { accidentSite } from "./emergency";
 import { interventionSite } from "./intervention";
 import { supportDepot } from "./SupportDepot";
 import { scp173Site } from "../quests/scp173/setup";
+import { eyePodSite } from "../quests/scp131/setup";
 
 export interface Opportunity {
   name: string;
@@ -21,6 +22,7 @@ export interface Opportunity {
   pads: readonly Position[];
   duration: number;
   requiresFinding?: string;
+  findingSite?: string;
   maximumPassengers?: number;
   loadingRadius?: number;
   daytimeReturn?: boolean;
@@ -268,5 +270,21 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
     ],
     duration: 8,
     fatalAfterTicks: 1,
+    maximumPassengers: 2,
+  },
+  companions: {
+    name: "SCP-131 supervised companion trial",
+    briefing:
+      "The actual direct-watch-protocol finding at the retained statue annex authorizes this original supervised visit. Guide the two existing cooperative Eye Pods (pod-a/pod-b) to loading positions (2,2)/(2,4), then bring both with a real staff member. They are passengers, not new staff or inventory buffs. At the statue annex, their specifically authored unblinking gaze may supplement SCP-173 coverage while grounded, capable, in sight and near a visible conscious human (six tiles). They do not replace two HUMAN observers or the third maintenance worker. Keep human protocol, close gate before withdrawing people, and physically guide the pair out. No food/sleep upkeep is invented; full bonding, roaming, climbing, momentum and general warden duties are outside this trial. Their documented specific interaction is not a certified universal guard system.",
+    requiresFinding: "direct-watch-protocol",
+    findingSite: "statue",
+    site: eyePodSite,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 3, y: 3 },
+    ],
+    duration: 8,
+    maximumPassengers: 2,
   },
 };

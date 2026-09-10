@@ -74,9 +74,12 @@ export function campaignStatus(session: ScenarioSession): string {
           ? [
               `Direct watch ${entity.name} at ${site.id}: ${
                 directWatchers(site, entity.id)
-                  .map((watcher) => `${watcher.name} (${watcher.id})`)
+                  .map(
+                    (watcher) =>
+                      `${watcher.name} (${watcher.id}; ${watcher.human ? "human watch" : "supplemental gaze"})`,
+                  )
                   .join(", ") || "NONE; subject may move"
-              } | passive visibility/recording is not coverage`,
+              } | only active human Watch or explicitly authored supplemental gaze counts`,
             ]
           : [],
       ),
@@ -92,7 +95,7 @@ export function campaignStatus(session: ScenarioSession): string {
       Object.values(owner.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.acceptsEscort
           ? [
-              `${session.labels[entity.id]} ${entity.name}: ${owner.id} | ${healthStatus(entity)} | blood loss ${entity.health?.bloodLoss.toFixed(1) ?? "-"}${entity.health?.death ? " | body retained for recovery" : campaign.admissions[entity.id] ? ` | admitted tick ${campaign.admissions[entity.id]!.tick}` : " | awaiting care"}`,
+              `${session.labels[entity.id]} ${entity.name}: ${owner.id} | ${healthStatus(entity)} | blood loss ${entity.health?.bloodLoss.toFixed(1) ?? "-"}${entity.health?.death ? " | body retained for recovery" : !entity.needs.fatigue ? " | companion; no ordinary rest admission" : campaign.admissions[entity.id] ? ` | admitted tick ${campaign.admissions[entity.id]!.tick}` : " | awaiting care"}`,
             ]
           : [],
       ),

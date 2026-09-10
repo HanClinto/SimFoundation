@@ -300,6 +300,12 @@ stations require the actual subject and other observers beside the work area.
 The [SCP-173 annex](catalog/quests/scp173/README.md) exercises coverage, relief,
 third-worker work and locked withdrawal after prior campaign research.
 
+Specifically authored companion gaze can supplement that coverage using the
+same physical availability/sight query, without substituting for human work
+supervision or guarded relief. The [SCP-131 visit](catalog/quests/scp131/README.md)
+uses two actual passengers and a retained-site research prerequisite, not a
+remote camera flag or general warden programme.
+
 [Observe](core/entity/pawn/actions/Observe.ts) operates an actual carried
 recorder from a visible vantage. [ImpactRecording](core/entity/ImpactRecording.ts)
 captures only a real impact seen by an active, capable operator; it does not

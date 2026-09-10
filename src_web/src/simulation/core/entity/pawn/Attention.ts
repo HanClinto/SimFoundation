@@ -5,19 +5,58 @@ import { canSee } from "../../site/Sight";
 import { restraintFor } from "./Custody";
 import { distance, positionOf } from "../../site/TileMap";
 
+export function canObserveIndependently(site: Site, pawn: Pawn): boolean {
+  const current = pawn.queue[0]?.action;
+  return (
+    pawn.canAct &&
+    !pawn.health?.death &&
+    !(current?.kind === "sleep" && current.workTicks > 0) &&
+    pawn.location.kind === "ground" &&
+    !restraintFor(site.entities, pawn.id)
+  );
+}
+
+export function supportsDirectWatch(
+  site: Site,
+  observer: Pawn,
+  targetId: string,
+): boolean {
+  const support = observer.attentionSupport;
+  const target = site.entities[targetId];
+  if (
+    !support ||
+    !canObserveIndependently(site, observer) ||
+    target?.kind !== "pawn" ||
+    !target.stillWhenWatched ||
+    target.health?.death ||
+    target.location.kind !== "ground" ||
+    !support.targets.includes(target.definitionId) ||
+    !canSee(site, observer, target.id)
+  )
+    return false;
+  return Object.values(site.entities).some(
+    (human) =>
+      human.kind === "pawn" &&
+      human.id !== observer.id &&
+      human.human === true &&
+      canObserveIndependently(site, human) &&
+      distance(positionOf(site, observer.id)!, positionOf(site, human.id)!) <=
+        support.humanRange &&
+      canSee(site, observer, human.id),
+  );
+}
+
 export function directWatchers(site: Site, targetId: string): Pawn[] {
   return Object.values(site.entities)
     .filter((entity): entity is Pawn => {
       if (
         entity.kind !== "pawn" ||
-        entity.human !== true ||
         entity.id === targetId ||
-        !entity.canAct ||
-        entity.health?.death ||
-        entity.location.kind !== "ground" ||
-        (entity.needs.fatigue?.value ?? 0) >= 85 ||
-        restraintFor(site.entities, entity.id)
+        !canObserveIndependently(site, entity)
       )
+        return false;
+      if (supportsDirectWatch(site, entity, targetId)) return true;
+      if (entity.human !== true || (entity.needs.fatigue?.value ?? 0) >= 85)
         return false;
       const current = entity.queue[0];
       return (
@@ -56,6 +95,7 @@ export function supervisionBlocker(
     return "The supervised subject must remain beside this work station.";
   const observers = directWatchers(site, target.id).filter(
     (observer) =>
+      observer.human === true &&
       observer.id !== workerId &&
       distance(
         positionOf(site, observer.id)!,
@@ -85,6 +125,7 @@ export function watchHandoffBlocker(
     return "Choose a different allied replacement at this site.";
   const active = directWatchers(site, watch.targetId);
   if (
+    replacement.queue[0]?.action.kind !== "watch" ||
     !active.some((observer) => observer.id === outgoing.id) ||
     !active.some((observer) => observer.id === replacement.id)
   )

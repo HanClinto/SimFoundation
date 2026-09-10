@@ -4,7 +4,7 @@ import type { Pawn } from "./pawn/Pawn";
 import type { Site } from "../site/Site";
 import type { ActionContext } from "./pawn/actions/Action";
 import { canSee } from "../site/Visibility";
-import { restraintFor } from "./pawn/Custody";
+import { canObserveIndependently } from "./pawn/Attention";
 
 export interface RecordedImpact {
   id: string;
@@ -63,13 +63,7 @@ export function recordWitnessedImpact(
   for (const observer of Object.values(site.entities).sort((a, b) =>
     a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
   )) {
-    if (
-      observer.kind !== "pawn" ||
-      !observer.canAct ||
-      observer.health?.death ||
-      observer.location.kind !== "ground" ||
-      restraintFor(site.entities, observer.id)
-    )
+    if (observer.kind !== "pawn" || !canObserveIndependently(site, observer))
       continue;
     const watch = observer.queue[0];
     if (

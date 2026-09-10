@@ -1063,6 +1063,23 @@
       "assets": 0,
       "capture": "Article body archived as searchable text only; no media or embedded frames fetched. Navigation, rating controls, and account UI omitted.",
       "transformations": "Article textContent extracted with whitespace normalized; no runtime content or image adaptation implied."
+    },
+    {
+      "id": "scp-131-2026-09-10-revision-38-text-only",
+      "title": "SCP-131",
+      "author": "Unknown Author",
+      "url": "https://scp-wiki.wikidot.com/scp-131",
+      "license": "CC-BY-SA-3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0/",
+      "revision": 38,
+      "sourceModified": "29 Aug 2026 20:15",
+      "retrieved": "2026-09-10",
+      "text": "scp-131/2026-09-10-revision-38-text-only.txt",
+      "notes": "scp-131/adaptation.md",
+      "recommendation": "Explicit additional-source review; not from the recommendation list.",
+      "assets": 0,
+      "capture": "Article body archived as searchable text only; no media or embedded frames fetched. Navigation, rating controls, and account UI omitted.",
+      "transformations": "Article textContent extracted with whitespace normalized; no runtime content or image adaptation implied."
     }
   ]
 }

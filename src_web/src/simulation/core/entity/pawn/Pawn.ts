@@ -21,6 +21,7 @@ export interface Pawn extends EntityBase {
   acceptsEscort?: boolean;
   requiresRestraint?: boolean;
   stillWhenWatched?: boolean;
+  attentionSupport?: { targets: readonly string[]; humanRange: number };
   human?: boolean;
   ageYears?: number;
   organMending?: OrganMending;

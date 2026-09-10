@@ -11,7 +11,11 @@ export const scp173Attribution = {
     "Text-only bounded direct-attention maintenance scene, based on archived revision57. No image/sculpture adaptation. A fixed viewing gallery, slow turn-based movement, fatigue cutoff, finite cleaning supplies and local work protocol are original game abstractions. Automatic blinking, exact source attack speed, relocation and wider source behavior are not modeled.",
 };
 
-const { health: _health, ...inanimateActor } = FieldAgent.defaults;
+const {
+  health: _health,
+  ageYears: _ageYears,
+  ...inanimateActor
+} = FieldAgent.defaults;
 export const SCP173: EntityTemplate = {
   id: "scp-173",
   name: "SCP-173",

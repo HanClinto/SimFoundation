@@ -24,6 +24,10 @@ export function admitToCare(
     throw new Error(
       "Bring an available cooperative person home and finish their escort first.",
     );
+  if (!person.needs.fatigue)
+    throw new Error(
+      "This subject has no ordinary rest need; home-bed admission is not applicable.",
+    );
   if (
     bed?.kind !== "facility" ||
     !bed.activities.sleep ||

@@ -55,11 +55,14 @@ export function opportunityBlocker(
 ): string | null {
   const opportunity = opportunities[key];
   if (!opportunity) return "Unknown opportunity.";
+  const findingSite = opportunity.findingSite ?? "home";
+  const research = state.sites[campaign.siteIds[findingSite]!];
+  if (!research) return `Research site unavailable: ${findingSite}.`;
   if (
     opportunity.requiresFinding &&
-    !recordedFinding(state.sites[campaign.homeId]!, opportunity.requiresFinding)
+    !recordedFinding(research, opportunity.requiresFinding)
   )
-    return `Home study required: ${opportunity.requiresFinding}.`;
+    return `${findingSite === "home" ? "Home" : findingSite} study required: ${opportunity.requiresFinding}.`;
   return null;
 }
 

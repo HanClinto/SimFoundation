@@ -1,0 +1,60 @@
+# Continue after scp173/tests/watch-maintenance.txt; no scenario reset.
+brief companions
+order riley move 1 8
+finish riley
+order riley sleep bed
+order casey sleep clinic
+finish riley casey
+# Continued home custody still consumes real power; bring the existing cache.
+prepare support riley
+finish riley
+send support riley
+finish riley
+site support
+order riley take power
+finish riley
+prepare home riley
+finish riley
+send home riley
+finish riley
+site home
+order riley deliver @held 14 8
+finish riley
+prepare companions casey
+finish casey
+send companions casey
+finish casey
+site companions
+order casey escort pod-a 2 2
+finish casey pod-a
+order casey escort pod-b 2 4
+finish casey pod-b
+prepare home casey
+finish casey
+send home casey pod-a pod-b
+finish casey
+site home
+# Same local complex, actual passenger transfer; the pair are not roster staff.
+prepare statue casey
+finish casey
+send statue casey pod-a pod-b
+finish casey
+site statue
+order casey escort pod-a 4 1
+finish casey pod-a
+order casey escort pod-b 4 5
+finish casey pod-b
+status
+order casey wait 12
+finish casey
+# The inner gate stays locked. The human work protocol has not been replaced.
+order casey escort pod-a 2 2
+finish casey pod-a
+order casey escort pod-b 2 4
+finish casey pod-b
+prepare home casey
+finish casey
+send home casey pod-a pod-b
+finish casey
+site home
+status
