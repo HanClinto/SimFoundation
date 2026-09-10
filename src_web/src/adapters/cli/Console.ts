@@ -63,6 +63,27 @@ export function questStatus(console: ConsoleState): string {
   ].join("\n");
 }
 
+function describeAction(action: ActionState): string {
+  if (action.kind === "move")
+    return `move to (${action.destination.x},${action.destination.y})`;
+  if (action.kind === "wait") return `wait ${action.ticks} ticks`;
+  if (action.kind === "study")
+    return `study ${action.planId} at ${action.targetId}`;
+  return `${action.kind} ${action.targetId}`;
+}
+
+function describeQueue(entity: Entity): string {
+  if (entity.kind !== "pawn") return "Only pawns have action queues.";
+  return (
+    entity.queue
+      .map(
+        (entry, index) =>
+          `${index + 1}. ${index === 0 ? "current" : "pending"} ${entry.id}: ${describeAction(entry.action)} [${entry.source}]${entry.blockedReason ? ` | blocked: ${entry.blockedReason}` : ""}`,
+      )
+      .join("\n") || "No queued actions."
+  );
+}
+
 export function renderMap(console: ConsoleState): string {
   const site = console.session.state.sites[console.siteId];
   if (!site) return "No selected site.";
@@ -96,14 +117,14 @@ export function renderMap(console: ConsoleState): string {
           ? `${entity.location.position.x},${entity.location.position.y}`
           : `carried by ${entity.location.carrierId}`;
       const current = entity.kind === "pawn" ? entity.queue[0] : null;
-      return `${token(index)} ${entity.name} [${entity.id}] @ ${location}${entity.kind === "pawn" ? ` | ${entity.canAct ? "active" : "incapable"} | ${current?.action.kind ?? "idle"}${current?.blockedReason ? `: ${current.blockedReason}` : ""}` : ""}`;
+      return `${token(index)} ${entity.name} [${entity.id}] @ ${location}${entity.kind === "pawn" ? ` | ${entity.canAct ? "active" : "incapable"} | ${current ? `${current.id}: ${describeAction(current.action)}` : "idle"}${current?.blockedReason ? ` | blocked: ${current.blockedReason}` : ""}${entity.queue.length > 1 ? ` | ${entity.queue.length - 1} pending` : ""}` : ""}`;
     }),
   ].join("\n");
 }
 
 export const help = `map | brief | status | events | sites | site <id>
 step [ticks] | run [maximum ticks] | load <response|daily|sight|colony|consumption|scp1867|scp1370>
-inspect <token|id> | move <actor> <x> <y>
+inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
 study <actor> <station> <planId>
 order <actor> <action JSON> | autonomy <actor> <on|off> | cancel <actor> [actionId]
 save <path> | restore <path> | help | quit`;
@@ -209,6 +230,8 @@ export function executeLine(
         ),
       );
     }
+    case "queue":
+      return finish(describeQueue(resolve(console, args[0])));
     case "move":
     case "study":
     case "order":
@@ -314,6 +337,19 @@ export function executeLine(
         ...console,
         session: { ...console.session, state: result.state },
       };
+      if (result.actionId) {
+        const updated = result.state.sites[console.siteId]!.entities[actor.id];
+        if (updated?.kind === "pawn") {
+          const index = updated.queue.findIndex(
+            (entry) => entry.id === result.actionId,
+          );
+          const entry = updated.queue[index]!;
+          const current = updated.queue[0]!;
+          return finish(
+            `accepted (${result.actionId}): ${describeAction(entry.action)}; ${index === 0 ? "first in queue, starts on the next tick" : `queued at position ${index + 1} behind ${current.id}: ${describeAction(current.action)}`}${index > 0 && current.blockedReason ? `\nCurrent action is blocked: ${current.blockedReason}\nUse queue ${args[0]} to inspect or cancel ${args[0]} ${current.id} to remove it.` : ""}`,
+          );
+        }
+      }
       return finish(
         `${result.code}${result.reason ? `: ${result.reason}` : ""}${result.actionId ? ` (${result.actionId})` : ""}`,
       );

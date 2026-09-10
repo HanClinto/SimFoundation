@@ -348,6 +348,7 @@ status
 step 10
 run 40
 inspect researcher
+queue researcher
 events
 autonomy researcher off
 move researcher 6 4
@@ -381,6 +382,8 @@ Completion writes one finding per plan at that station, with the actor ID, globa
 These quests use one persistent local map with an intake area, not a complete expedition-to-home campaign. The Blackwood lead is not yet an unlocked playable destination. Portable cases, resident aquarium care, independently walking SCP-1370, dialogue and extensive containment systems are deliberately deferred. SCP-294 remains the next candidate once dispensing can conserve input/output identities. No new images or browser bindings are added.
 
 Save requires a new filename and never overwrites an existing file. Restore replaces the session with its saved simulation and quest state. Batch mode accepts `--restore <path>` as an alternative starting session, and returns exit code 0 for success/sandbox, 1 for quest failure, 2 for an active quest whose requested tick limit expired. Input can also be piped to the ordinary console. This is a developer/playtest surface, not a shipped UI or network API.
+
+Movement and other orders **append**, not replace the current intention. Acceptance reports the new action's queue position and any earlier blocked action. The map legend shows the current action ID, its destination/target and pending count. `queue <actor>` lists every intention without advancing time. If an earlier move targets an occupied tile, a later move waits behind it; `cancel <actor> <earlier-action-id>` removes only that blocker, then `step` advances the remaining order. Accepting a move does not imply it is currently executing or that a route is available.
 
 ## Quests As Integration Tests
 
