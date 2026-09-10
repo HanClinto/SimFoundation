@@ -170,3 +170,18 @@ it("new care orders cannot forge a consumed physical pack", () => {
     workTicks: 0,
   });
 });
+
+it("blood recovery preserves a separate active subdual, then expires without a second supply charge", () => {
+  let console = prepared();
+  actor(console, "alex").health!.subdual = {
+    untilTick: 100,
+    actorId: "test-intervention",
+  };
+  console = play(console, ["order casey nurse alex clinic", "finish casey"]);
+  expect(actor(console, "alex").health!.bloodLoss).toBe(75);
+  expect(actor(console, "alex").health!.incapacity).toBe("subdued");
+  expect(actor(console, "alex").canAct).toBe(false);
+  console = play(console, [`step ${100 - console.session.state.tick}`]);
+  expect(actor(console, "alex").canAct).toBe(true);
+  expect(packs(console).amount).toBe(3);
+});

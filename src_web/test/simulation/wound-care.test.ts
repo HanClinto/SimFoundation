@@ -140,3 +140,22 @@ it("new bleeding and absent physical packs prevent further benefit", () => {
   expect(packs(c).amount).toBe(0);
   expect(executeLine(c, "queue casey").output).toContain("Stabilize");
 });
+
+it("completing medical care does not bypass a still-active independent subdual interval", () => {
+  let c = casualty();
+  const expiry = c.session.state.tick + 80;
+  person(c).health!.subdual = {
+    untilTick: expiry,
+    actorId: "test-intervention",
+  };
+  c = play(c, ["order casey nurse alex clinic wounds", "finish casey"]);
+  expect(person(c).health!.wounds[0]!.severity).toBe(80);
+  expect(person(c).canAct).toBe(false);
+  expect(person(c).health!.incapacity).toBe("subdued");
+  const restored = restoreSession(JSON.stringify(c.session))!;
+  expect(stepSession(restored, expiry - c.session.state.tick)).toEqual(
+    stepSession(c.session, expiry - c.session.state.tick),
+  );
+  c = play(c, [`step ${expiry - c.session.state.tick}`]);
+  expect(person(c).canAct).toBe(true);
+});

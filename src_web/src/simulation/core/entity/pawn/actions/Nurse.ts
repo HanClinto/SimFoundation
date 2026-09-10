@@ -27,8 +27,13 @@ function finishRecovery(patient: Pawn, wounds: boolean): void {
     !patient.health.death &&
     !incapacitated(patient.health)
   ) {
-    patient.canAct = true;
-    delete patient.health.incapacity;
+    if (patient.health.subdual) {
+      patient.canAct = false;
+      patient.health.incapacity = "subdued";
+    } else {
+      patient.canAct = true;
+      delete patient.health.incapacity;
+    }
   }
 }
 
