@@ -1,0 +1,94 @@
+# One uninterrupted manager session. No scenario resets after this line.
+load campaign
+brief care
+prepare care casey
+finish casey
+send care casey
+step 8
+site care
+order casey treat mira
+finish casey
+order casey escort mira 2 3
+finish casey mira
+send home casey mira
+step 8
+site home
+order casey escort mira 6 2
+finish casey mira
+admit mira bed
+finish mira
+# Keep home care running while two actual staff recover corroboration.
+prepare blackwood alex ben
+finish alex ben
+send blackwood alex ben
+step 8
+site blackwood
+order alex take journal
+order ben take specimen
+finish alex ben
+prepare home alex ben
+finish alex ben
+send home alex ben
+step 8
+site home
+order alex deliver @held 3 3
+order ben deliver @held 3 5
+finish alex ben
+order ben study bench marsh-lead
+finish ben
+brief kestrel
+order alex take kit
+finish alex
+prepare kestrel alex ben
+finish alex ben
+send kestrel alex ben
+step 10
+site kestrel
+order alex study station depot-survey
+order ben take dockets
+finish alex ben
+order alex drop @held
+finish alex
+order alex take rations
+finish alex
+prepare home alex ben
+finish alex ben
+send home alex ben
+step 10
+site home
+order ben deliver @held 1 7
+order alex deliver @held 5 6
+finish alex ben
+status
+# Rest before another field trip, without resetting needs or conjuring food.
+order alex sleep guest-bed
+finish alex
+order casey sleep clinic
+finish casey
+brief store
+prepare store alex casey
+finish alex casey
+send store alex casey
+step 8
+site store
+# Choose carried evacuation, keeping the shelter's supplies for a later visit.
+order casey take eli
+order alex escort nora 2 4
+finish alex casey nora
+order casey move 2 5
+finish casey
+send home alex casey nora
+step 8
+site home
+# Care for the casualty first; the earlier resident still lives at home.
+order casey deliver @held 4 2
+order alex escort nora 10 3
+finish alex casey nora
+admit nora guest-bed
+order casey nurse eli clinic
+finish casey nora
+order casey escort eli 4 2
+finish casey eli
+admit eli clinic
+finish eli
+status

@@ -368,6 +368,18 @@ export function executeLine(
       for (let ticks = 0; ticks < 1000; ticks++) {
         const priorEvents = session.events;
         session = stepSession(session, 1);
+        for (const site of Object.values(session.state.sites)) {
+          for (const entity of Object.values(site.entities)) {
+            if (entity.kind !== "pawn") continue;
+            for (const entry of entity.queue) {
+              if (
+                entry.action.kind === "follow" &&
+                watched.has(entry.action.escortActionId)
+              )
+                watched.add(entry.id);
+            }
+          }
+        }
         const changed = session.events.filter(
           (event) => !priorEvents.includes(event),
         );

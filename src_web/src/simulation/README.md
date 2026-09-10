@@ -350,9 +350,9 @@ const created = instantiateSite(
 const next = advanceSimulation(created.state, materials);
 ```
 
-Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
+Transfers accept prepared ground entities within an explicit loading radius (zero by default), require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Core helpers are headless domain operations; campaign prepare/send adds actual roster, route, passenger, supply and readiness rules above them. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 11 adds physical study plans and findings, discarding earlier experimental shapes; there are no migrations or deep save validators. CLI session saves also retain quest counters/status and the most recent 100 events, with a session root version and matching simulation version. These are trusted development saves, not a hardened external input format.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Current core version 20 includes physical work, care, service and operating-cycle state; earlier development shapes are discarded with no migrations or deep save validators. CLI session saves also retain campaign/admission facts, quest counters/status and the most recent 100 events, with session version 6 and a matching simulation version. These are trusted development saves, not a hardened external input format.
 
 ## Command-Line Console
 
@@ -402,6 +402,13 @@ Session saves are now version 6 and preserve campaign identity, care admissions,
 `npm run sim` now starts the [Provisional Site campaign](catalog/campaign/README.md). Inspect finite staff and supplies, `prepare blackwood alex ben`, wait for physical assembly, then `send blackwood alex ben`. One physical docket funds an outbound group and its return. `site blackwood` selects the retained outpost; prepare/send home uses the same ownership transfer with carried cargo and injuries. `status` shows transit and blocked admission. Every site keeps ticking.
 
 Deliver the journal/specimen to the home comparison bench and perform physical study to unlock the Kestrel depot. Carry the real field kit for its survey and choose which finite supplies to bring back. The gallery route transfers SCP-1370 into the home display. Findings, removed supplies, staff and sites persist after success or partial withdrawal. No outcome resets a mission map. See [decision 021](../../docs/decisions/021-persistent-text-campaign.md) and the [ordinary-command walkthrough](catalog/campaign/tests/home-loop.txt).
+
+The [connected management walkthrough](catalog/campaign/tests/connected-management.txt)
+continues through early care, Blackwood/Kestrel and store evacuation without a
+reset. `finish <workers...>` advances their captured commitments, including
+linked escort followers, until completion or a blocker/failure/interruption,
+with a 1000-tick bound. `@held` in an order resolves that worker's actual cargo.
+Neither command changes simulation rules or invents a solution.
 
 ```text
 help

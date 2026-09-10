@@ -31,9 +31,7 @@ it("advances all sites but stops on a watched blocker without burning the whole 
   let console = openConsole();
   console = executeLine(console, "order alex deliver meals 3 2").console;
   const result = executeLine(console, "finish alex");
-  expect(result.output).toContain(
-    "blocked: The destination is occupied.",
-  );
+  expect(result.output).toContain("blocked: The destination is occupied.");
   expect(result.console.session.state.tick).toBeLessThan(100);
   const patient = result.console.session.state.sites["site-5"]!.entities[
     "site-5:mira"
@@ -97,4 +95,30 @@ it("rejects empty carried aliases and missing workers without mutation or a glob
     "No time advanced",
   );
   expect(JSON.stringify(console)).toBe(before);
+});
+
+it("finishes the linked follower handoff even when that queue starts after the wait begins", () => {
+  let console = openConsole();
+  for (const line of [
+    "prepare care casey",
+    "finish casey",
+    "send care casey",
+    "step 8",
+    "site care",
+    "order casey treat mira",
+    "finish casey",
+    "order casey escort mira 2 3",
+    "finish casey",
+    "send home casey mira",
+    "step 8",
+    "site home",
+    "order casey escort mira 6 2",
+    "finish casey",
+  ])
+    console = executeLine(console, line).console;
+  const patient = console.session.state.sites["site-1"]!.entities[
+    "site-5:mira"
+  ] as Pawn;
+  expect(patient.queue).toEqual([]);
+  expect(executeLine(console, "admit mira bed").output).toContain("Admitted");
 });

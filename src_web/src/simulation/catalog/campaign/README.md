@@ -200,10 +200,13 @@ campaign; partial recovery does not reset a site. Development saves are
 disposable and only current versions load.
 
 The [home-loop walkthrough](tests/home-loop.txt) is a normal-command,
-test-only example of recovery, home study, equipment use and supply return:
+test-only example of recovery, home study, equipment use and supply return.
+The [connected management session](tests/connected-management.txt) adds early
+resident care and group evacuation in the same saved campaign, without resets:
 
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/home-loop.txt
+npm run sim < src/simulation/catalog/campaign/tests/connected-management.txt
 ```
 
 ## Attribution And Limits

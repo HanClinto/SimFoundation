@@ -2,7 +2,32 @@
 
 Draft for review, 2026-09-09. Companion to the [59-work proposal catalog](scp-expedition-proposals.md), which contains the source links, individual missions, scores, caveats and additional candidates. This is a recommended content portfolio and dependency order, not an approved implementation schedule.
 
-Implementation checkpoint: the default replacement CLI now has a [persistent home campaign](../src/simulation/catalog/campaign/README.md) reusing [SCP-1867](../src/simulation/catalog/quests/scp1867/README.md) evidence and [SCP-1370](../src/simulation/catalog/quests/scp1370/README.md) recovery. Existing staff and carried cargo transfer between retained sites; home study unlocks the Kestrel depot, whose kit-backed survey and finite supply cache support continued management. Delegated delivery and physical preparation reuse ordinary actions. Isolated pass/fail trials still use local intake. SCP-1370's glass bay abstracts display containment. [Bounded SCP-294](../src/simulation/catalog/quests/scp294/README.md) now adds four paid requests, explicit source depletion, stable sample provenance and repeat physical comparison at home. The remaining portfolio is not implemented by this checkpoint. Historical absence claims below describe the proposal baseline, not current replacement coverage.
+## Replacement Checkpoint: 2026-09-10
+
+The [persistent text campaign](../src/simulation/catalog/campaign/README.md)
+now connects actual finite staff, supplies, retained sites and home follow-up.
+The browser still runs the unchanged archived engine. The proposal sections
+below retain their historical baseline; they are not current absence claims.
+
+| Playable slice                                                        | Implemented consequence                                                                 | Deliberate boundary                                                          |
+| --------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [SCP-1867](../src/simulation/catalog/quests/scp1867/README.md)        | Returned evidence and home comparison unlock retained Kestrel supply work               | Blackwood remains off-map; no live aquarium transfer                         |
+| [SCP-1370](../src/simulation/catalog/quests/scp1370/README.md)        | Original pawn identity returns to a home display and physical study                     | No speech or independently mobile wrestling                                  |
+| [SCP-294](../src/simulation/catalog/quests/scp294/README.md)          | Paid requests, exact source depletion, distinct physical samples and comparison         | Four authored requests; no arbitrary effects or restocking                   |
+| [Original care/courier](../src/simulation/catalog/campaign/README.md) | Cooperative escort, nested protective case, finite bedside recovery                     | No hostile capture, death or universal healing                               |
+| [SCP-507](../src/simulation/catalog/quests/scp507/README.md)          | Passenger, flashlight and cased log return for home review                              | Ordinary-world return only; no subsequent shift or verified dimensional lead |
+| [SCP-2295](../src/simulation/catalog/quests/scp2295/README.md)        | Youngest-patient lung replacement, material provenance and postoperative care           | Brain trauma remains; finite self-fabric, not a full anatomy model           |
+| [SCP-1295](../src/simulation/catalog/quests/scp1295/README.md)        | Real remote staffing, finite portions, persistent repair and recoverable service lapses | Patrons/entrance remain; no source-wide harmful effects                      |
+| [SCP-2006](../src/simulation/catalog/quests/scp2006/README.md)        | Per-host rehearsal and distinct retained programmes maintain coverage                   | The one selected showcase; SCP-173 and broad psychology are deferred         |
+| [SCP-3008](../src/simulation/catalog/quests/scp3008/README.md)        | Shelter-vs-carried-care choice, timed group evacuation and persistent night wounds      | Fixed recurring exit, capped nonlethal impacts, no infinite topology         |
+
+The [connected management walkthrough](../src/simulation/catalog/campaign/tests/connected-management.txt)
+plays care, Blackwood/Kestrel resupply and group evacuation without a scenario
+reset. It retains three admitted residents, physical findings and remaining
+trip allocations, with current-version reload during the loop. `finish` and
+actor-scoped `@held` reduce guessed work ticks and generated-ID copying; they
+do not perform work for free. Automated completion does not establish
+subjective fun or full canonical containment behavior.
 
 ## Recommendation
 
