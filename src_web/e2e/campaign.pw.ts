@@ -1,0 +1,134 @@
+import { expect, test, type Page } from "@playwright/test";
+
+async function finish(page: Page) {
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await page
+      .getByRole("button", { name: "Finish current commitments", exact: true })
+      .click();
+    const status = await page.getByRole("status").innerText();
+    if (status.includes("ALARM")) {
+      await page.screenshot({
+        path: "test-results/campaign-alarm.png",
+        fullPage: true,
+      });
+      continue; // Deliberate resume after a visible global alarm, not a hidden fast-forward.
+    }
+    expect(status).toContain("Watched commitments finished");
+    return;
+  }
+  throw new Error("Repeated alarms prevented completion.");
+}
+
+async function travel(page: Page, destination: string) {
+  await page
+    .getByRole("button", { name: "Travel / preparation", exact: true })
+    .click();
+  await page
+    .getByLabel("Destination", { exact: true })
+    .selectOption(destination);
+  await page.getByRole("checkbox", { name: "alex", exact: true }).check();
+  await page.getByRole("checkbox", { name: "ben", exact: true }).check();
+  await page.getByRole("button", { name: "Assemble selected staff" }).click();
+  await page
+    .getByRole("button", { name: "Finish selected preparation" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Depart with this manifest" }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Depart with this manifest" }).click();
+  await page
+    .getByRole("button", { name: "Wait for arrival", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Open destination map", exact: true })
+    .click();
+}
+
+async function order(
+  page: Page,
+  worker: string,
+  target: string,
+  label: string,
+) {
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption(`site-1:${worker}`);
+  await page.getByLabel("Inspect", { exact: true }).selectOption(target);
+  await page.getByRole("button", { name: label, exact: true }).click();
+  await finish(page);
+}
+
+async function deliver(page: Page, worker: string, x: number, y: number) {
+  await page
+    .getByLabel("Worker", { exact: true })
+    .selectOption(`site-1:${worker}`);
+  await page.getByRole("button", { name: "Choose floor destination" }).click();
+  await page.locator(`[data-tile="${x},${y}"]`).click();
+  await page.getByRole("button", { name: /^Deliver .+ here$/ }).click();
+  await finish(page);
+}
+
+test("Blackwood recovery, home corroboration and Kestrel all use normal GUI commands", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (error) => errors.push(error.message));
+  await page.goto("./");
+  await page
+    .getByRole("button", { name: "Travel / preparation", exact: true })
+    .click();
+  await page.getByLabel("Destination", { exact: true }).selectOption("kestrel");
+  await expect(
+    page.getByRole("button", { name: "Assemble selected staff" }),
+  ).toBeDisabled();
+  await expect(page.locator(".travel-view")).toContainText(
+    "Home study required: marsh-lead",
+  );
+  await page
+    .getByRole("button", { name: "Close Operations & history" })
+    .click();
+  await travel(page, "blackwood");
+  await order(page, "alex", "site-2:journal", "Take / recover");
+  await order(page, "ben", "site-2:specimen", "Take / recover");
+  await travel(page, "home");
+  await deliver(page, "alex", 3, 3);
+  await deliver(page, "ben", 3, 5);
+  await order(
+    page,
+    "ben",
+    "site-1:bench",
+    "Study Corroborated lead: Kestrel Marsh",
+  );
+  await order(page, "alex", "site-1:kit", "Take / recover");
+  await travel(page, "kestrel");
+  const station = await page
+    .getByLabel("Inspect", { exact: true })
+    .locator("option")
+    .filter({ hasText: "Kestrel" })
+    .getAttribute("value");
+  expect(station).toBeTruthy();
+  await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
+  await page.getByLabel("Inspect", { exact: true }).selectOption(station!);
+  await page.getByRole("button", { name: /^Study / }).click();
+  await finish(page);
+  await page.getByRole("button", { name: "SCP menu" }).click();
+  await page.getByRole("button", { name: "Save", exact: true }).click();
+  const session = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("simfoundation.web.session.v1")!),
+  );
+  expect(
+    session.state.sites["site-1"].entities["site-1:bench"].study.findings[0]
+      .planId,
+  ).toBe("marsh-lead");
+  const kestrel = session.state.sites[session.campaign.siteIds.kestrel];
+  expect(kestrel.entities[station!].study.findings[0].planId).toBe(
+    "depot-survey",
+  );
+  expect(kestrel.entities["site-1:alex"]).toBeTruthy();
+  await page.screenshot({
+    path: "test-results/campaign-kestrel.png",
+    fullPage: true,
+  });
+  await page.reload();
+  expect(errors).toEqual([]);
+});

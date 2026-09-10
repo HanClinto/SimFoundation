@@ -9,7 +9,6 @@ import {
   iconButton,
   replaceContents,
   select,
-  table,
 } from "./desktop/dom";
 import { createSiteMap } from "./map/site-map";
 import {
@@ -27,10 +26,7 @@ import {
 } from "./persistence";
 import { refreshForNewDeployment } from "../browser_shared/deployment-version";
 import type { Position } from "../../simulation/core/entity/Entity";
-import {
-  serviceDeadline,
-  serviceStatus,
-} from "../../simulation/core/entity/Service";
+import { createOperationsView } from "./views/operations";
 import folderIcon from "../browser_shared/assets/folder.svg";
 import recordsIcon from "../browser_shared/assets/records.svg";
 import workerIcon from "../browser_shared/assets/site-worker.svg";
@@ -79,6 +75,18 @@ const map = createSiteMap(inspect, (position) => {
 });
 mapLayout.append(map.root, inspection);
 mapWindow.body.append(siteToolbar, portraits, mapLayout, queueDock);
+const operationsView = createOperationsView(operations.body, () => ({
+  controller,
+  siteId,
+  act,
+  report,
+  refresh: () => operationsView.render(),
+  locate: (id, entityId) => {
+    changeSite(id);
+    if (entityId) inspect(entityId);
+    mapWindow.open();
+  },
+}));
 const taskbar = element("footer", "taskbar");
 const menu = element("div", "scp-menu window");
 menu.hidden = true;
@@ -244,6 +252,10 @@ function render(): void {
   const target = site.entities[targetId ?? ""];
   replaceContents(
     siteToolbar,
+    button("Travel / preparation", () => {
+      operationsView.showTravel();
+      operations.open();
+    }),
     select(
       "Site",
       Object.values(session.state.sites).map((entry) => ({
@@ -323,86 +335,8 @@ function render(): void {
   content.push(basicOrders(context, target));
   replaceContents(queueDock, ...(subject ? [queueView(context, subject)] : []));
   replaceContents(inspection, ...content);
-  renderOperations();
+  operationsView.render();
   renderClock();
-}
-
-function renderOperations(): void {
-  const session = controller.session;
-  const rows: (string | Node)[][] = [];
-  for (const site of Object.values(session.state.sites)) {
-    for (const entity of Object.values(site.entities)) {
-      if (
-        entity.kind === "pawn" &&
-        (entity.playerControllable || entity.queue.length)
-      )
-        rows.push([
-          button(
-            entity.name,
-            () => {
-              changeSite(site.id);
-              inspect(entity.id);
-              mapWindow.open();
-            },
-            `locate:${entity.id}`,
-          ),
-          site.name,
-          entity.queue[0]?.action.kind ??
-            (entity.health?.death ? "DEAD" : "Idle"),
-          entity.queue[0]?.blockedReason ?? "",
-        ]);
-      if (
-        entity.kind === "facility" &&
-        entity.service &&
-        serviceDeadline(entity.service) !== null
-      )
-        rows.push([
-          entity.name,
-          site.name,
-          serviceStatus(entity.service, session.state.tick),
-          `Due ${serviceDeadline(entity.service)}`,
-        ]);
-    }
-  }
-  const transfers = Object.values(session.state.transfers).map((transfer) => [
-    transfer.id,
-    session.state.sites[transfer.destinationId]?.name ?? transfer.destinationId,
-    String(transfer.arrivesAt),
-    transfer.blockedReason ?? "Travelling",
-    Object.values(transfer.entities)
-      .map((entity) => entity.name)
-      .join(", "),
-  ]);
-  const events = [...session.events].reverse().map((event) => [
-    String(event.tick ?? "?"),
-    event.kind,
-    button(
-      session.state.sites[event.siteId]?.name ?? event.siteId,
-      () => {
-        if (session.state.sites[event.siteId]) {
-          changeSite(event.siteId);
-          inspect(event.targetId ?? event.entityId);
-          mapWindow.open();
-        }
-      },
-      `event:${event.tick}:${event.entityId}:${event.kind}`,
-    ),
-    event.reason ?? `${event.actionKind ?? ""} ${event.entityId}`,
-  ]);
-  replaceContents(
-    operations.body,
-    element("h3", "", "Current commitments"),
-    table(["Person / apparatus", "Site", "Work / coverage", "Blocker"], rows),
-    element("h3", "", "Physical transit"),
-    transfers.length
-      ? table(
-          ["Transfer", "Destination", "Due tick", "State", "Manifest"],
-          transfers,
-        )
-      : element("p", "", "No travellers in transit."),
-    element("h3", "", "History - most recent 100 events"),
-    table(["Tick", "Event", "Locate", "Detail"], events),
-  );
 }
 
 controller.subscribe(() => render());

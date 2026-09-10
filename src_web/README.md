@@ -6,8 +6,10 @@ The active browser is a fresh 98.css wrapper over the deterministic replacement
 campaign, shared with the CLI. Start paused, choose a worker, inspect a target,
 and issue physical queued work. Site folders, a spatial map, visible action
 tiles, operations/history, playback and separate session/layout storage are
-available. Connected campaign travel and advanced operation controls are being
-added in [#106](https://github.com/HanClinto/SimFoundation/issues/106).
+available. Travel/preparation shows actual crew readiness, physical manifests,
+assembly, reusable departure and blocked arrivals. The Blackwood recovery,
+home corroboration and Kestrel survey loop is playable through the GUI.
+Advanced operation controls continue under [#106](https://github.com/HanClinto/SimFoundation/issues/106).
 
 The previous browser lives in `src/adapters/browser_legacy`, with its application
 bindings in `src/application/legacy`; it is not bundled by the active entry.

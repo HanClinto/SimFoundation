@@ -61,6 +61,7 @@ export function createDesktop(
   function create(id: string, title: string, defaults: Layout): DesktopWindow {
     const root = element("section", "window desktop-window");
     root.setAttribute("aria-label", title);
+    root.tabIndex = -1;
     const titleBar = element("div", "title-bar");
     const controls = element("div", "title-bar-controls");
     const close = button("X", () => {
@@ -70,7 +71,10 @@ export function createDesktop(
         .sort(
           (a, b) => Number(b.root.style.zIndex) - Number(a.root.style.zIndex),
         )[0];
-      if (remaining) remaining.root.classList.remove("inactive");
+      if (remaining) {
+        remaining.root.classList.remove("inactive");
+        remaining.root.focus({ preventScroll: true });
+      }
       persist();
     });
     close.setAttribute("aria-label", `Close ${title}`);
@@ -112,6 +116,7 @@ export function createDesktop(
       open: () => {
         root.hidden = false;
         focus();
+        root.focus({ preventScroll: true });
         persist();
       },
     };

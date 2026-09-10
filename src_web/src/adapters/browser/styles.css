@@ -4,6 +4,37 @@
   background: #087c7c;
   font-synthesis: none;
 }
+
+.panel-tabs {
+  display: flex;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+.panel-tabs button[aria-pressed="true"] {
+  font-weight: bold;
+  background: #eeeadd;
+}
+.crew-choice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.crew-choice input[type="checkbox"] {
+  appearance: auto;
+  position: static;
+  opacity: 1;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+.travel-view > button {
+  margin: 4px;
+}
+.briefing {
+  background: #ffffe8;
+  border: 1px solid #b5af8a;
+  padding: 8px;
+}
 * {
   box-sizing: border-box;
 }
@@ -70,6 +101,7 @@ select:focus-visible,
   margin-right: 5px;
 }
 .window-body {
+  font-size: 12px;
   margin: 0;
   flex: 1;
   min-height: 0;
@@ -211,6 +243,14 @@ select:focus-visible,
 .map-entity {
   cursor: pointer;
 }
+.floor-targeting .map-entity {
+  pointer-events: none;
+  opacity: 0.45;
+}
+.map-toolbar button[aria-pressed="true"] {
+  background: #ffffce;
+  outline: 1px dotted #333;
+}
 .map-entity:focus {
   outline: none;
 }
@@ -244,6 +284,20 @@ legend {
 p {
   line-height: 1.4;
   margin: 6px 0;
+}
+h3 {
+  font-size: 15px;
+  margin: 8px 0;
+}
+h4 {
+  font-size: 12px;
+  margin: 8px 0;
+}
+.finding {
+  padding: 8px;
+  margin-top: 8px;
+  background: #ffffed;
+  border: 1px solid #b8b29e;
 }
 small {
   display: block;

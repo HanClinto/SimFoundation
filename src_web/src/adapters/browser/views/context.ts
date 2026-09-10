@@ -10,6 +10,7 @@ import { healthStatus } from "../../../simulation/core/entity/pawn/Health";
 import { carriedCargo } from "../../../simulation/core/entity/Equipment";
 import { entityArt } from "../map/art";
 import workIcon from "../../browser_shared/assets/work-orders.svg";
+import { entities } from "../../../simulation/catalog";
 
 export interface ViewContext {
   controller: SessionController;
@@ -156,6 +157,28 @@ export function entityFacts(context: ViewContext, entity: Entity): HTMLElement {
       ? `At (${entity.location.position.x}, ${entity.location.position.y})`
       : `Carried / held by ${nameOf(context, entity.location.carrierId)}`;
   result.append(element("p", "", `${entity.kind} | ${location}`));
+  const definition = entities[entity.definitionId];
+  if (definition) {
+    result.append(element("p", "entity-description", definition.description));
+    if (definition.attribution) {
+      const attribution = element("details");
+      attribution.append(element("summary", "", "Source and adaptation"));
+      const link = element(
+        "a",
+        "",
+        `Source by ${definition.attribution.author}`,
+      );
+      link.href = definition.attribution.source;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      attribution.append(
+        link,
+        element("p", "", definition.attribution.license),
+        element("p", "", definition.attribution.adaptation),
+      );
+      result.append(attribution);
+    }
+  }
   if (entity.integrity !== undefined)
     result.append(
       element("p", "", `Integrity: ${entity.integrity.toFixed(1)}`),
@@ -250,6 +273,23 @@ export function entityFacts(context: ViewContext, entity: Entity): HTMLElement {
           `Restraint: ${entity.restraint.attached ? "attached" : "loose"} | wear ${entity.restraint.wearPerTick}/tick`,
         ),
       );
+  }
+  if (entity.kind === "facility" && entity.study?.findings.length) {
+    const findings = element("details");
+    findings.open = true;
+    findings.append(element("summary", "", "Earned findings"));
+    for (const finding of entity.study.findings) {
+      findings.append(
+        element("strong", "", `${finding.title} - tick ${finding.tick}`),
+        element("p", "", finding.text),
+        element(
+          "small",
+          "",
+          `Investigator: ${nameOf(context, finding.actorId)}. Sources: ${finding.sourceIds.map((id) => nameOf(context, id)).join(", ")}`,
+        ),
+      );
+    }
+    result.append(findings);
   }
   const contents = Object.values(context.site.entities).filter(
     (item) =>
@@ -363,7 +403,7 @@ export function basicOrders(
         element(
           "p",
           "",
-          `Study: ${plan.title} | ${plan.ticks} work ticks | physical sources: ${plan.requires.join(", ")}`,
+          `Study: ${plan.title} | ${plan.ticks} work ticks | physical sources: ${plan.requires.map((id) => entities[id]?.name ?? id).join(", ")}`,
         ),
       );
       result.append(

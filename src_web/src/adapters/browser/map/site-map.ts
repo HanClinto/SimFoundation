@@ -33,6 +33,14 @@ export function createSiteMap(
   });
   viewport.append(drawing);
   let zoom = 1;
+  let floorMode = false;
+  const floorButton = button("Choose floor destination", () => {
+    floorMode = !floorMode;
+    floorButton.setAttribute("aria-pressed", String(floorMode));
+    drawing.classList.toggle("floor-targeting", floorMode);
+  });
+  floorButton.title =
+    "Temporarily select the floor beneath objects. Selecting a destination does not issue an order.";
   let size = { width: 800, height: 500 };
   const zoomLabel = element("span");
   function resize(): void {
@@ -41,6 +49,7 @@ export function createSiteMap(
     zoomLabel.textContent = `${Math.round(zoom * 100)}%`;
   }
   toolbar.append(
+    floorButton,
     button(
       "-",
       () => {
@@ -110,7 +119,13 @@ export function createSiteMap(
           "stroke-width": selected ? "2" : "0.6",
           "data-tile": `${x},${y}`,
         });
-        if (!wall) tile.addEventListener("click", () => chooseTile({ x, y }));
+        if (!wall)
+          tile.addEventListener("click", () => {
+            floorMode = false;
+            floorButton.setAttribute("aria-pressed", "false");
+            drawing.classList.remove("floor-targeting");
+            chooseTile({ x, y });
+          });
         nodes.push(tile);
       }
     }
