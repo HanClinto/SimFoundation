@@ -3,7 +3,8 @@ import { fileURLToPath } from "node:url";
 
 const server = await createServer({
   root: fileURLToPath(new URL("..", import.meta.url)),
-  server: { middlewareMode: true },
+  // Vite's WebSocket switch is separate from HMR; this runner only loads modules.
+  server: { middlewareMode: true, hmr: false, ws: false },
   appType: "custom",
 });
 try {
