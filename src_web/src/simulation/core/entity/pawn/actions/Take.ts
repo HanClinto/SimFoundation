@@ -1,6 +1,7 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
 import { Move } from "./Move";
 import { facilityInUse } from "../../Facility";
+import { serviceInputInUse } from "../../Service";
 
 export class Take implements Action {
   constructor(
@@ -44,6 +45,8 @@ export class Take implements Action {
     }
     if (target.kind === "facility" && facilityInUse(site, target.id))
       return "The facility is occupied.";
+    if (serviceInputInUse(site, target.id))
+      return "Finish or cancel the active presentation before moving its programme.";
     if (
       Object.values(site.entities).some(
         (entity) =>

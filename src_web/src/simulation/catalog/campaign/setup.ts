@@ -7,6 +7,7 @@ import { CorroborationBench } from "../quests/scp1867/collection";
 import { returneeSite } from "../quests/scp507/setup";
 import { triageSite } from "../quests/scp2295/setup";
 import { dinerSite } from "../quests/scp1295/setup";
+import { screeningSite } from "../quests/scp2006/setup";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -354,6 +355,18 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
     briefing:
       "Support four retained regulars without removing them. Bring a food portion and one maintenance pack: for example take meals 4 and take parts 1 with two staff. Deliver both beside counter (8,4); assign alex counter to repair once and keep serving while you manage home. The worker uses normal food/rest routines too, so budget their meals. Completed service starts a 100-tick deadline; later lapses block the counter register until service resumes. The entrance remains open and no global anomaly effects are modeled. To withdraw, assign alex none, autonomy alex off, finish or cancel current work, then prepare/send home. Revisit does not restock anything.",
     site: dinerSite,
+    loading: { x: 2, y: 4 },
+    pads: [
+      { x: 2, y: 4 },
+      { x: 2, y: 5 },
+    ],
+    duration: 8,
+  },
+  screening: {
+    name: "SCP-2006 curated hosting",
+    briefing:
+      "Each host must physically study rehearsal acting-rehearsal with the guide nearby. Then deliver an approved programme beside rig (8,5); service rig or assign a hosting duty. The audience must remain present. The three original approved prints are retained, but each counts only once; unreviewed footage is refused. Coverage lasts 160 ticks with 32 ticks of preparation lead time. Bring fresh food for a long staffing stay and train relief staff independently. This is bounded protocol work, not arbitrary shapeshifting or psychological simulation.",
+    site: screeningSite,
     loading: { x: 2, y: 4 },
     pads: [
       { x: 2, y: 4 },

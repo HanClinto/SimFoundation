@@ -37,9 +37,14 @@ export class Study implements Action {
     if (reason) return { status: "blocked", reason };
     const { site, pawn } = context;
     const station = site.entities[this.state.targetId] as Facility;
+    const plan = station.study!.plans.find(
+      (entry) => entry.id === this.state.planId,
+    )!;
     if (
       station.study!.findings.some(
-        (entry) => entry.planId === this.state.planId,
+        (entry) =>
+          entry.planId === this.state.planId &&
+          (!plan.perActor || entry.actorId === pawn.id),
       )
     )
       return { status: "completed" };
@@ -48,9 +53,6 @@ export class Study implements Action {
       this.state.workTicks = 0;
       return approach;
     }
-    const plan = station.study!.plans.find(
-      (entry) => entry.id === this.state.planId,
-    )!;
     const position = positionOf(site, station.id)!;
     const sources = Object.values(site.entities).sort((first, second) =>
       first.id < second.id ? -1 : first.id > second.id ? 1 : 0,

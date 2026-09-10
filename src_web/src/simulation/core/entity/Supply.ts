@@ -10,12 +10,14 @@ export function findSupply(
   position: Position,
   range: number,
   carrierId?: string,
+  excludedIds: readonly string[] = [],
 ): Item | undefined {
   return Object.values(site.entities)
     .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
     .find(
       (entity): entity is Item =>
         entity.kind === "item" &&
+        !excludedIds.includes(entity.id) &&
         entity.definitionId === definitionId &&
         entity.amount >= amount &&
         (entity.integrity ?? 100) > 0 &&

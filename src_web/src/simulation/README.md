@@ -183,6 +183,14 @@ duplicate timer. The [SCP-1295 diner](catalog/quests/scp1295/README.md) proves
 remote staffing, resupply, lapse and revisit. Core version 18 adds duty/profile
 state without another execution system or a generic planner.
 
+[SCP-2006 curated hosting](catalog/quests/scp2006/README.md) adds only the
+contracts that the reused work needs: per-actor physical rehearsal, a nearby
+participant, and distinct reusable input identities. A presented print remains
+physical and is claimed by current service work; it cannot be moved during
+presentation or counted twice at the rig. Core version 19 adds these fields.
+This is the one containment showcase, not a simultaneous SCP-173 or general
+psychology framework.
+
 ## Concerns And Response
 
 A **cause** is a fact the pawn observes, such as a hostile actor or a bleeding person. A **concern** is the reason to respond to that cause. **Urgency** is the concern's priority, not another need to replenish. A **response** is the action selected using the pawn's policy and capabilities. [Concern.ts](core/entity/pawn/concerns/Concern.ts) carries cause ID, category, urgency and action; it is derived from current observation rather than stored as a second world-state ledger.

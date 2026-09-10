@@ -1,0 +1,38 @@
+# Test-only showcase. All programme titles are original game fiction.
+load campaign
+brief screening
+prepare screening ben alex
+step 12
+send screening ben alex
+step 8
+site screening
+order ben study rehearsal acting-rehearsal
+step 12
+order alex study rehearsal acting-rehearsal
+step 12
+inspect rehearsal
+order ben deliver teapot 7 5
+step 30
+order ben service rig
+step 12
+order alex deliver moon 9 5
+step 30
+order alex deliver fog 8 6
+step 20
+assign ben rig
+# A real host stays; the manager and relief worker return home.
+prepare home alex
+step 20
+send home alex
+step 8
+site home
+step 300
+status
+step 160
+site screening
+queue ben
+inspect rig
+inspect teapot
+inspect moon
+inspect fog
+status

@@ -119,13 +119,20 @@ function labelEntities(session: ScenarioSession): ScenarioSession {
   const labels = { ...session.labels };
   let nextPawnLabel = session.nextPawnLabel;
   let nextObjectLabel = session.nextObjectLabel;
+  const team = session.campaign?.staffIds ?? session.teamIds;
+  const rank = (id: string) => {
+    const index = team.indexOf(id);
+    return index < 0 ? team.length : index;
+  };
   const all = [
     ...Object.values(session.state.sites),
     ...Object.values(session.state.transfers),
   ]
     .flatMap((owner) => Object.values(owner.entities))
-    .sort((first, second) =>
-      first.id < second.id ? -1 : first.id > second.id ? 1 : 0,
+    .sort(
+      (first, second) =>
+        rank(first.id) - rank(second.id) ||
+        (first.id < second.id ? -1 : first.id > second.id ? 1 : 0),
     );
   for (const entity of all) {
     if (!labels[entity.id])

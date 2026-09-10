@@ -25,6 +25,14 @@ import { SCP1370 } from "./actors/anomalies/SCP1370";
 import { SCP294 } from "./actors/anomalies/SCP294";
 import { SCP507 } from "./actors/anomalies/SCP507";
 import { SCP2295 } from "./actors/anomalies/SCP2295";
+import { SCP2006 } from "./actors/anomalies/SCP2006";
+import {
+  ActingGuide,
+  RehearsalDesk,
+  ApprovedProgramme,
+  UnreviewedProgramme,
+  ScreeningRig,
+} from "./quests/scp2006/setup";
 import { TextileBundle, OrganTraumaPatient } from "./quests/scp2295/setup";
 import { Fabric } from "./materials/Fabric";
 import {
@@ -86,6 +94,12 @@ export const entities: EntityTemplates = Object.fromEntries(
     SCP294,
     SCP507,
     SCP2295,
+    SCP2006,
+    ActingGuide,
+    RehearsalDesk,
+    ApprovedProgramme,
+    UnreviewedProgramme,
+    ScreeningRig,
     TextileBundle,
     OrganTraumaPatient,
     DinerRegular,

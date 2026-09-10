@@ -4,6 +4,7 @@ export interface StudyPlan {
   ticks: number;
   requires: readonly string[];
   finding: string;
+  perActor?: boolean;
 }
 
 export interface Finding {

@@ -143,6 +143,13 @@ not close the entrance or erase patrons. Revisit preserves depletion and
 completed repair. `assign alex none` clears future duty without cancelling
 current paid work.
 
+The [SCP-2006 screening annex](../quests/scp2006/README.md) reuses this duty
+loop for the selected containment showcase. Each host physically rehearses;
+unused approved programmes and the actual audience are required. Prints are
+retained, not consumed or cloned, and each counts once at the rig. `brief
+screening` explains the finite curation/staffing loop and its explicitly
+unmodeled psychological/shapeshifting behavior.
+
 ## Protective Courier Handling
 
 `brief courier` introduces an original nonliving fragile-vial recovery.

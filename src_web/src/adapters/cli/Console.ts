@@ -100,7 +100,7 @@ export function questStatus(console: ConsoleState): string {
 
 function describeAction(action: ActionState): string {
   if (action.kind === "service")
-    return `service ${action.targetId} | work ${action.workTicks}${action.repairSupplyId ? ` | repair supply spent: ${action.repairSupplyId}` : ""}${action.supplyId ? ` | service supply spent: ${action.supplyId}` : ""}`;
+    return `service ${action.targetId} | work ${action.workTicks}${action.repairSupplyId ? ` | repair supply spent: ${action.repairSupplyId}` : ""}${action.supplyId ? ` | service input: ${action.supplyId}` : ""}`;
   if (action.kind === "take" && action.amount !== undefined)
     return `take ${action.amount} from ${action.targetId}`;
   if (action.kind === "mend")

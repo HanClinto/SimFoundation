@@ -25,6 +25,18 @@ import {
 import { quest } from "../../src/simulation/catalog/quests/scp1370/quest";
 import fs from "node:fs";
 
+it("labels the actual campaign roster before remote content without renumbering existing labels", () => {
+  const console = openConsole("campaign");
+  expect(console.session.labels).toMatchObject({
+    "site-1:alex": "@1",
+    "site-1:ben": "@2",
+    "site-1:casey": "@3",
+  });
+  expect(stepSession(console.session, 1).labels).toEqual(
+    console.session.labels,
+  );
+});
+
 const deployment: Deployment = {
   entries: { entry: [{ x: 1, y: 0 }] },
   templates: ["field-agent"],
