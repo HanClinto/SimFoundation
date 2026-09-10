@@ -40,6 +40,7 @@ export class Escort implements Action {
     const current = person.queue[0]?.action;
     if (
       person.queue.length &&
+      !(person.queue.length === 1 && person.queue[0]?.source === "autonomy") &&
       !(
         current?.kind === "follow" &&
         current.targetId === pawn.id &&
@@ -67,6 +68,18 @@ export class Escort implements Action {
       positionOf(site, pawn.id)!,
       positionOf(site, person.id)!,
     );
+    if (person.queue[0]?.source === "autonomy") {
+      if (separation > 1) return Move.approach(context, person)!;
+      const interrupted = person.queue.shift()!;
+      context.events.push({
+        siteId: site.id,
+        entityId: person.id,
+        kind: "interrupted",
+        actionId: interrupted.id,
+        actionKind: interrupted.action.kind,
+        reason: `Accepting cooperative escort from ${pawn.name}.`,
+      });
+    }
     if (!person.queue.length) {
       if (separation > 1) return Move.approach(context, person)!;
       person.queue.push({

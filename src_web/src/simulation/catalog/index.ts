@@ -22,6 +22,12 @@ import { CourierSpecimen, SpecimenCase } from "./campaign/courier";
 import { HostileGuard } from "./actors/threats/HostileGuard";
 import { SCP1370 } from "./actors/anomalies/SCP1370";
 import { SCP294 } from "./actors/anomalies/SCP294";
+import { SCP507 } from "./actors/anomalies/SCP507";
+import {
+  ReturneeFlashlight,
+  ReturneeLog,
+  ReturneeReviewStation,
+} from "./quests/scp507/setup";
 import { Water } from "./materials/Water";
 import {
   CoinAllocation,
@@ -67,6 +73,10 @@ export const entities: EntityTemplates = Object.fromEntries(
     HostileGuard,
     SCP1370,
     SCP294,
+    SCP507,
+    ReturneeFlashlight,
+    ReturneeLog,
+    ReturneeReviewStation,
     CoinAllocation,
     WaterReservoir,
     CoffeeReservoir,

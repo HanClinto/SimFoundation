@@ -82,6 +82,15 @@ The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
 npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 ```
 
+## SCP-507 Returnee
+
+The [SCP-507 returnee route](../quests/scp507/README.md) reuses cooperative
+walking, nested cases, physical transfer and home review. `brief returnee`
+introduces the source-backed contact and original local log. A person-only
+return leaves the log behind; a complete retrieval brings the person, his
+personal flashlight and cased evidence as their original records. The review
+does not verify an alternate-world journey or simulate future shifts.
+
 ## Protective Courier Handling
 
 `brief courier` introduces an original nonliving fragile-vial recovery.

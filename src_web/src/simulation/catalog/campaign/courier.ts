@@ -32,7 +32,7 @@ export const SpecimenCase: EntityTemplate = {
   id: "specimen-case",
   name: "Padded specimen case",
   description:
-    "Holds one nonliving survey vial. Carry this actual case while sealing; five work ticks and ten condition points close it. The case must retain positive condition. Its contents keep their own identity through transport. Unpacking does not restore spent condition.",
+    "Holds one approved fragile survey vial or returnee recorder. Carry this actual case while sealing; five work ticks and ten condition points close it. The case must retain positive condition. Its contents keep their own identity through transport. Unpacking does not restore spent condition.",
   defaults: {
     kind: "item",
     materialId: "plastic",
@@ -42,7 +42,7 @@ export const SpecimenCase: EntityTemplate = {
     blocksMovement: false,
     blocksSight: false,
     case: {
-      accepts: ["courier-specimen"],
+      accepts: ["courier-specimen", "returnee-log"],
       sealTicks: 5,
       sealWear: 10,
       sealed: false,

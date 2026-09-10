@@ -183,6 +183,7 @@ it("rejects earlier session versions rather than migrating campaign state", () =
   const session = openConsole().session;
   expect(restoreSession(JSON.stringify({ ...session, version: 3 }))).toBeNull();
   expect(restoreSession(JSON.stringify({ ...session, version: 4 }))).toBeNull();
+  expect(restoreSession(JSON.stringify({ ...session, version: 5 }))).toBeNull();
   expect(restoreSession(JSON.stringify(session))).toEqual(session);
 });
 

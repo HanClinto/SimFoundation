@@ -4,6 +4,7 @@ import { scp1867Scenario } from "../quests/scp1867/setup";
 import { scp1370Scenario } from "../quests/scp1370/setup";
 import { courierSite, courierInspection } from "./courier";
 import { CorroborationBench } from "../quests/scp1867/collection";
+import { returneeSite } from "../quests/scp507/setup";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -21,6 +22,17 @@ export const home: SiteTemplate = {
   ],
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
+    {
+      id: "guest-bed",
+      definitionId: "bed",
+      location: { kind: "ground", position: { x: 10, y: 2 } },
+      overrides: { name: "Guest bed" },
+    },
+    {
+      id: "review",
+      definitionId: "returnee-review-station",
+      location: { kind: "ground", position: { x: 10, y: 5 } },
+    },
     {
       id: "case",
       definitionId: "specimen-case",
@@ -282,5 +294,17 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
       { x: 2, y: 4 },
     ],
     duration: 7,
+  },
+  returnee: {
+    name: "SCP-507 ordinary-world pickup",
+    briefing:
+      "Tommy is waiting for accompanied transport after an ordinary-world return. Bring case for the fragile local log; his personal flashlight travels with him. Pack log, escort tommy to (2,3), then send home alex tommy with the same people and carried tree. Person-only withdrawal is allowed but leaves evidence behind. At home, unpack log at (10,4), escort Tommy to (10,6), and study review returnee-review. Then escort him to (10,3) and admit tommy guest-bed. The record does not verify another reality. No involuntary shift or dangerous contact window is modeled.",
+    site: returneeSite,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 9,
   },
 };

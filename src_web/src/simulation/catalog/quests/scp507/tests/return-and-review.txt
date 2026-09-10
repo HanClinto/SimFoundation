@@ -1,0 +1,33 @@
+# Test-only source-backed retrieval using ordinary manager orders.
+load campaign
+brief returnee
+order alex take case
+step 12
+prepare returnee alex
+step 12
+send returnee alex
+step 9
+site returnee
+inspect tommy
+order alex pack log case
+step 20
+order alex escort tommy 2 3
+step 24
+send home alex tommy
+step 9
+site home
+order alex move 10 4
+step 20
+order alex unpack case
+step 2
+order alex escort tommy 10 6
+step 24
+order alex study review returnee-review
+step 12
+order alex escort tommy 10 3
+step 16
+admit tommy guest-bed
+step 12
+inspect tommy
+inspect review
+status
