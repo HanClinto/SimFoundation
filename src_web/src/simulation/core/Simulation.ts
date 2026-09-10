@@ -5,7 +5,7 @@ import { tickPawn } from "./entity/pawn/Pawn";
 import { tickDoor } from "./entity/Door";
 import { advanceTransfers } from "./site/Transfer";
 
-export const SIMULATION_VERSION = 6;
+export const SIMULATION_VERSION = 7;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;
@@ -20,7 +20,15 @@ export interface Simulation {
 export interface TickEvent {
   siteId: string;
   entityId: string;
-  kind: "completed" | "blocked" | "opened" | "closed";
+  kind:
+    | "completed"
+    | "blocked"
+    | "opened"
+    | "closed"
+    | "attacked"
+    | "treated"
+    | "fled";
+  targetId?: string;
   actionId?: string;
   reason?: string;
 }

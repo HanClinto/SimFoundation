@@ -1,0 +1,52 @@
+{
+  "name": "Threat and casualty response",
+  "terrain": [
+    "#################",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#...............#",
+    "#################"
+  ],
+  "entities": [
+    {
+      "id": "soldier",
+      "definitionId": "soldier",
+      "location": { "kind": "ground", "position": { "x": 6, "y": 4 } }
+    },
+    {
+      "id": "researcher",
+      "definitionId": "researcher",
+      "location": { "kind": "ground", "position": { "x": 8, "y": 5 } }
+    },
+    {
+      "id": "medic",
+      "definitionId": "medic",
+      "location": { "kind": "ground", "position": { "x": 2, "y": 2 } }
+    },
+    {
+      "id": "patient",
+      "definitionId": "field-agent",
+      "location": { "kind": "ground", "position": { "x": 4, "y": 2 } },
+      "overrides": {
+        "name": "Wounded staff member",
+        "mobile": false,
+        "canAct": false,
+        "health": {
+          "bloodLoss": 0,
+          "wounds": [{ "id": "initial-wound", "severity": 25, "bleeding": 2 }]
+        }
+      }
+    },
+    {
+      "id": "threat",
+      "definitionId": "hostile-guard",
+      "location": { "kind": "ground", "position": { "x": 10, "y": 4 } }
+    }
+  ]
+}

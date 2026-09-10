@@ -34,7 +34,14 @@ simulation/
 			pawn/
 				Pawn.ts
 				Needs.ts
+				Health.ts
+				Response.ts
 				Autonomy.ts
+				concerns/
+					Concern.ts
+					Concerns.ts
+					Threat.ts
+					Care.ts
 				actions/
 					Action.ts
 					ActionQueue.ts
@@ -49,6 +56,9 @@ simulation/
 					Research.ts
 					Read.ts
 					Exercise.ts
+					Attack.ts
+					Flee.ts
+					Treat.ts
 					FacilityAction.ts
 					FindTarget.ts
 		material/
@@ -58,10 +68,14 @@ simulation/
 			EntityPlacement.ts
 			TileMap.ts
 			Pathfinding.ts
+			Visibility.ts
 			Transfer.ts
 	catalog/
 		actors/staff/FieldAgent.ts
 		actors/staff/Researcher.ts
+		actors/staff/Soldier.ts
+		actors/staff/Medic.ts
+		actors/threats/HostileGuard.ts
 		entities/doors/AutomaticSteelDoor.ts
 		entities/supplies/PackagedMeal.ts
 		entities/furniture/Bed.ts
@@ -79,6 +93,7 @@ simulation/
 		sites/tests/SharedActions.json
 		sites/tests/RestAndResearch.json
 		sites/tests/DailyLife.json
+		sites/tests/ThreatAndCasualty.json
 		index.ts
 ```
 
@@ -116,16 +131,42 @@ The proposal/resolver system has been deleted. [Simulation.ts](core/Simulation.t
 1. Increment the global tick and capture each site's starting entity IDs.
 2. Tick sites and entities in ascending, case-sensitive ID order.
 3. Each entity sees changes made by earlier turns. Removed entities are skipped; newly added IDs wait until the next tick.
-4. Advance transit needs and commit unblocked arrivals after all site turns.
+4. Advance transit physiology and commit unblocked arrivals after all site turns.
 5. Return the finished state and events. The input remains untouched.
 
 This boundary copy is for caller isolation, not simultaneous simulation: actions do not read an old snapshot or emit proposals for a later resolver. Stable ordering makes replay reproducible but deliberately gives earlier IDs priority. First successful movement/consumption wins. Later movers can enter a tile vacated earlier in the same tick. Swaps, fairness rotation, and traffic optimization are not implemented. Pathfinding routes around current blocking entities, including pawns. If no route exists, an active action waits and retries against the next tick's state.
 
 Opening a closed automatic door spends the opener's turn without movement. A later entity sees that door as open immediately. Door closure checks current nearby ground occupants when the door gets its own turn. There is no special end-of-tick door resolver.
 
-Pawn needs advance once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs once outside sites, and arrivals receive no extra local turn. `canAct` and `mobile` can represent inactivity/immobility but do not themselves implement injury, death, or recovery.
+Pawn physiology advances once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs and bleeding once outside sites, and arrivals receive no extra local turn. Optional health conditions are separate from needs. Incapacitating wound severity or blood loss disables `canAct`; death and recovery are not implemented.
 
-Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) asks the Needs system for a suitable action, otherwise selects a configured patrol destination. It names no individual need or need-satisfying action and never performs a separate version of an action.
+Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) asks for a response to an observed concern first, then a needs-based action, then a configured patrol destination. It names no individual need or named actor and never performs a separate version of an action.
+
+## Concerns And Response
+
+A **cause** is a fact the pawn observes, such as a hostile actor or a bleeding person. A **concern** is the reason to respond to that cause. **Urgency** is the concern's priority, not another need to replenish. A **response** is the action selected using the pawn's policy and capabilities. [Concern.ts](core/entity/pawn/concerns/Concern.ts) carries cause ID, category, urgency and action; it is derived from current observation rather than stored as a second world-state ledger.
+
+[Threat.ts](core/entity/pawn/concerns/Threat.ts) and [Care.ts](core/entity/pawn/concerns/Care.ts) own the local reasoning. [Concerns.ts](core/entity/pawn/concerns/Concerns.ts) selects a concern and owns conservative interruption policy. Concerns take precedence over routine needs as a separate priority group; their numeric urgency is not compared with hunger or curiosity. Initial priorities are immediate danger/confrontation 100, allied bleeding care 80, and withdrawal from a more distant threat 60. Equal concern scores follow provider order; threat distance and patient bleeding use stable ID ties.
+
+Optional [Response.ts](core/entity/pawn/Response.ts) data specifies faction, hostile factions, sight range, flee/confront policy and attack/medical capabilities. Catalog staff are not special-cased in the core: Soldier confronts because its data allows attacking, Researcher flees, and Medic treats when immediate danger does not take precedence. Faction hostility is explicit observer policy, not an assumption about every other faction. Medical supply charges and attack capability values are prototypes, not equipment or qualifications systems.
+
+[Visibility.ts](core/site/Visibility.ts) uses the existing pathfinding library's line expansion within Manhattan sight range. Walls and closed doors block sight, including blocked diagonal corners. Ordinary items, furniture and other pawns do not occlude sight in this slice. There is no hearing, shared radio knowledge, observation memory or pursuit of last-known positions. A lost target is not tracked through walls by Attack or Treat. No Fear or Sanity bar is added: perceived danger creates a concern directly. Social remains deferred.
+
+### Physical Responses
+
+- **Attack:** approach through shared movement, then spend consecutive adjacent windup ticks before adding an actual wound. Moving or blocked approach resets windup. Loss of sight or target incapacitation ends the attack. The initial attacks are close-range; no projectiles, ammo, armor, death or ranged tactics are implemented. Soldiers deal 30 severity per two productive ticks; the stationary hostile guard deals 8 per three ticks and can actually injure nearby opponents.
+- **Flee:** re-evaluate visible hostiles and step toward a cardinal neighbor that increases distance from the nearest of them. It uses normal obstruction/door handling. No currently visible threat ends the action. This is local withdrawal, not guaranteed escape: a corner or route requiring a temporary approach can leave it blocked. Loss of sight means no current observed danger, not proof the area is safe.
+- **Treat:** approach a visible allied patient, work four consecutive adjacent ticks, then spend one medical charge to stop the most actively bleeding wound. Moving, blocked approach or nearby danger resets treatment progress. Treatment changes bleeding and records the medic ID, but preserves wound severity and accumulated blood loss. Another medic completing first cannot cause duplicate spending on that wound. A medic can finish further wounds in later actions while supplies remain.
+
+[Health.ts](core/entity/pawn/Health.ts) holds wounds (ID, severity, bleeding rate, optional treating actor) and accumulated blood loss. Bleeding advances regardless of autonomy, queue or transit ownership. A total wound severity or blood loss of 100 incapacitates immediately; stabilization does not automatically restore the ability to act. Values are prototype units, not clinical physiology. Wounds are not a generic low-health bar to fill, and injury is not copied into a synthetic treatment need. No self-treatment, long-term healing or medical appointment system is included.
+
+### Commitments And Interruption
+
+New concerns interrupt only self-chosen facility activities, movement or waiting. Abandoning such an intention preserves earned output and releases facility use through the existing queue-derived ownership. Pending explicit orders are retained. Player/script/debug orders are not automatically overridden; turning autonomy off suppresses new response selection, not health progression or already queued responses. There is no new draft/enlistment state.
+
+Attack and Flee remain active commitments. Self-chosen Treat can be abandoned for immediate danger; explicit Treat instead blocks until safe or cancelled. Care avoids patients within two tiles of a visible threat, and treatment also checks the medic's immediate surroundings. These are bounded safety heuristics, not coordinated squad tactics or complete interruption arbitration. Carrying is never silently undone and physiology/capability guards still apply before execution.
+
+[ThreatAndCasualty.json](catalog/sites/tests/ThreatAndCasualty.json) is the acceptance scenario: soldier, civilian researcher, medic, wounded staff member and a stationary hostile guard. No timed script or controller order forces responses. The test advances up to 40 ticks and checks attacks, increased civilian separation and treated bleeding with finite supply consumption. It also checks unchanged input, insertion-order independence and save/reload continuation. Exact routes and response ticks are intentionally not the contract.
 
 ### Need-Driven Selection
 
@@ -226,10 +267,10 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 6 removes hygiene and washing and discards earlier experimental shapes; there are no migrations or deep save validators.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 7 adds wound conditions and response actions and discards earlier experimental shapes; there are no migrations or deep save validators.
 
 ## Verification And Scope
 
 Run `npm run test:simulation` from the web project. Tests cover sequential contention and following, detached inputs, door behavior, material-driven eating and quantities, autonomous versus explicit targets, control/autonomy/cancellation, carried-pawn identity, authored instances, save replay, multi-site/transit ownership, and forbidden dependency directions.
 
-`npm run check` also validates the archived application's tests/build. That does not mean the replacement is connected to the browser. Not ported: full Site 828, SCP behaviors, quests, personnel dossiers, qualifications, jobs, construction, power, clinical care, combat, richer transport, or UI binding. Selectively reuse useful legacy calculations; do not preserve old implementations merely to satisfy old tests.
+`npm run check` also validates the archived application's tests/build. That does not mean the replacement is connected to the browser. Not ported: full Site 828, SCP behaviors, quests, personnel dossiers, qualifications, jobs, construction, power, full clinical care or combat systems, richer transport, or UI binding. The response encounter above implements only its stated bounded physical behaviors. Selectively reuse useful legacy calculations; do not preserve old implementations merely to satisfy old tests.

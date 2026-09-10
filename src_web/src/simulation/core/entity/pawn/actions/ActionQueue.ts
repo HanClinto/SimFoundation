@@ -9,9 +9,18 @@ import { Relax } from "./Relax";
 import { Research } from "./Research";
 import { Read } from "./Read";
 import { Exercise } from "./Exercise";
+import { Attack } from "./Attack";
+import { Treat } from "./Treat";
+import { Flee } from "./Flee";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "attack":
+      return new Attack(action);
+    case "treat":
+      return new Treat(action);
+    case "flee":
+      return new Flee(action.targetId);
     case "read":
       return new Read(action);
     case "exercise":

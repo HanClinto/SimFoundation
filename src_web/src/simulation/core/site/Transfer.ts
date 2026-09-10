@@ -1,7 +1,8 @@
 import type { Entity, Position } from "../entity/Entity";
 import type { Simulation } from "../Simulation";
 import { facilityInUse } from "../entity/Facility";
-import { advanceNeeds } from "../entity/pawn/Needs";
+import { advancePhysiology } from "../entity/pawn/Health";
+import type { Pawn } from "../entity/pawn/Pawn";
 import { floorAt, samePosition, traversalAt } from "./TileMap";
 
 export interface Transfer {
@@ -105,6 +106,12 @@ export function depart(
   };
 }
 
+function advanceTransitPawn(pawn: Pawn): Pawn {
+  const next = structuredClone(pawn);
+  advancePhysiology(next);
+  return next;
+}
+
 export function advanceTransfers(state: Simulation): Simulation {
   let result = state;
   for (const id of Object.keys(state.transfers).sort()) {
@@ -112,9 +119,7 @@ export function advanceTransfers(state: Simulation): Simulation {
     const entities: Record<string, Entity> = Object.fromEntries(
       Object.entries(original.entities).map(([key, entity]) => [
         key,
-        entity.kind === "pawn"
-          ? { ...entity, needs: advanceNeeds(entity.needs) }
-          : entity,
+        entity.kind === "pawn" ? advanceTransitPawn(entity) : entity,
       ]),
     );
     const transfer = { ...original, entities };

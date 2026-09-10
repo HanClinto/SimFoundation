@@ -3,6 +3,8 @@ import type { Pawn } from "../Pawn";
 import type { Site } from "../../../site/Site";
 import type { Materials } from "../../../material/Material";
 import type { TickEvent } from "../../../Simulation";
+import type { AttackState } from "./Attack";
+import type { TreatState } from "./Treat";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -13,6 +15,9 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | AttackState
+  | TreatState
+  | { kind: "flee"; targetId: string }
   | ActivityState
   | { kind: "move"; destination: Position }
   | { kind: "take"; targetId: string }

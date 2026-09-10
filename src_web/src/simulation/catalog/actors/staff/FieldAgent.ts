@@ -16,6 +16,13 @@ export const FieldAgent = {
     canAct: true,
     autonomy: true,
     playerControllable: true,
+    health: { wounds: [], bloodLoss: 0 },
+    response: {
+      faction: "site",
+      hostileTo: ["hostile"],
+      sight: 8,
+      threat: "flee",
+    },
     needs: {
       hunger: { value: 20, increasePerTick: 0.1 },
       fatigue: { value: 10, increasePerTick: 0.2 },

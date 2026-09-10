@@ -1,0 +1,70 @@
+import PF from "pathfinding";
+import type { Site } from "./Site";
+import type { Pawn } from "../entity/pawn/Pawn";
+import { distance, floorAt, positionOf, samePosition } from "./TileMap";
+import type { Position } from "../entity/Entity";
+
+function transparent(site: Site, position: Position): boolean {
+  return (
+    floorAt(site, position) &&
+    !Object.values(site.entities).some(
+      (entity) =>
+        entity.kind === "door" &&
+        !entity.open &&
+        entity.location.kind === "ground" &&
+        samePosition(entity.location.position, position),
+    )
+  );
+}
+
+export function canSee(site: Site, observer: Pawn, targetId: string): boolean {
+  const origin = positionOf(site, observer.id);
+  const target = positionOf(site, targetId);
+  if (
+    !origin ||
+    !target ||
+    !observer.response ||
+    distance(origin, target) > observer.response.sight
+  )
+    return false;
+  const line = PF.Util.expandPath([
+    [origin.x, origin.y],
+    [target.x, target.y],
+  ]);
+  let previous = origin;
+  for (const [column, row] of line) {
+    const point = { x: column!, y: row! };
+    if (!transparent(site, point)) return false;
+    if (
+      previous.x !== point.x &&
+      previous.y !== point.y &&
+      (!transparent(site, { x: previous.x, y: point.y }) ||
+        !transparent(site, { x: point.x, y: previous.y }))
+    )
+      return false;
+    previous = point;
+  }
+  return true;
+}
+
+export function visibleThreats(site: Site, observer: Pawn): Pawn[] {
+  return Object.values(site.entities)
+    .filter(
+      (entity): entity is Pawn =>
+        entity.kind === "pawn" &&
+        entity.id !== observer.id &&
+        entity.canAct &&
+        entity.location.kind === "ground" &&
+        !!entity.response &&
+        !!observer.response?.hostileTo.includes(entity.response.faction) &&
+        canSee(site, observer, entity.id),
+    )
+    .sort((first, second) => {
+      const origin = positionOf(site, observer.id)!;
+      return (
+        distance(origin, positionOf(site, first.id)!) -
+          distance(origin, positionOf(site, second.id)!) ||
+        (first.id < second.id ? -1 : first.id > second.id ? 1 : 0)
+      );
+    });
+}
