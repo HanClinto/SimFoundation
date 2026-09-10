@@ -10,6 +10,7 @@ import { screeningSite } from "../quests/scp2006/setup";
 import { storeSite } from "../quests/scp3008/setup";
 import { accidentSite } from "./emergency";
 import { interventionSite } from "./intervention";
+import { supportDepot } from "./SupportDepot";
 
 export interface Opportunity {
   name: string;
@@ -239,5 +240,18 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
     ],
     duration: 8,
     fatalAfterTicks: 12,
+  },
+  support: {
+    name: "Verified containment support allocation",
+    briefing:
+      "The actual controlled-intake finding authorizes a finite regional cache, not automatic free procurement. Spend one outbound allocation and choose physical power, suppression, wound-care or maintenance stock. Two carriers cannot take every category in one trip. Bring power beside home holding and use normal service, or bring suppression units for rearm. Removed supplies never respawn; no new staff or equipment is generated.",
+    requiresFinding: "kinetic-intake",
+    site: supportDepot,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 8,
   },
 };

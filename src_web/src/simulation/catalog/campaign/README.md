@@ -212,6 +212,15 @@ npm run sim < src/simulation/catalog/campaign/tests/secured-care.txt
 
 These fictional game mechanics are not real equipment instructions.
 
+The actual `kinetic-intake` finding unlocks `support`, a retained regional
+cache. It holds three power units, two suppression units, two wound-care packs
+and two maintenance packs. An outbound allocation and real carriers are still
+required; two carriers cannot bring every category in one trip. Deliver power
+beside holding or suppression stock beside the worker for existing service/
+rearming actions. The cache does not respawn and reserve dispatch cannot
+bypass the study gate. This makes physical research change later logistics
+without adding an unlimited shop or instant completion reward.
+
 ## Permanent Casualties And Reserve Response
 
 `brief accident` introduces an original urgent casualty. This route explicitly
