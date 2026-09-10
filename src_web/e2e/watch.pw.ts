@@ -70,7 +70,9 @@ test("three real staff maintain direct watch through guarded relief, study and s
   await page
     .getByRole("button", { name: "Dispatch riley to inspected site" })
     .click();
-  await page.getByRole("button", { name: "Travel", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Travel / preparation", exact: true })
+    .click();
   await finish(page, "Wait for arrival");
   await page
     .getByRole("button", { name: "Site map & orders", exact: true })

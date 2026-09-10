@@ -2,6 +2,9 @@ import { expect, test, type Page } from "@playwright/test";
 import { save } from "./play";
 
 async function raiseAlarm(page: Page) {
+  await page
+    .getByRole("button", { name: "Inspect / more orders", exact: true })
+    .click();
   await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
   await page.getByRole("tab", { name: "Orders", exact: true }).click();
   await page.getByLabel("Wait ticks").fill("100");
@@ -18,6 +21,9 @@ test("editing a quantity validates immediately and the first following click iss
   page,
 }) => {
   await page.goto("./");
+  await page
+    .getByRole("button", { name: "Inspect / more orders", exact: true })
+    .click();
   await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
   await page
     .getByLabel("Inspect", { exact: true })
@@ -73,18 +79,18 @@ test("successful load, new campaign and import clear old alarms; failed import p
   await raiseAlarm(page);
   await page.getByRole("button", { name: "SCP menu" }).click();
   await page
-    .getByRole("button", { name: "Load saved session", exact: true })
+    .getByRole("menuitem", { name: "Load saved session", exact: true })
     .click();
   await expect(page.locator(".alarm-banner")).toBeHidden();
   await expect(page.locator(".clock")).toHaveText("Tick 0 | PAUSED");
-  await page.getByRole("button", { name: "SCP menu" }).click();
   await raiseAlarm(page);
   await page.getByRole("button", { name: "SCP menu" }).click();
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "New campaign", exact: true }).click();
+  await page
+    .getByRole("menuitem", { name: "New campaign", exact: true })
+    .click();
   await expect(page.locator(".alarm-banner")).toBeHidden();
   await expect(page.locator(".clock")).toHaveText("Tick 0 | PAUSED");
-  await page.getByRole("button", { name: "SCP menu" }).click();
   await raiseAlarm(page);
   const tick = await page.locator(".clock").innerText();
   await page.locator('input[type="file"]').setInputFiles({
@@ -109,6 +115,9 @@ test("a pointer click held across running ticks is not swallowed by rendering", 
   page,
 }) => {
   await page.goto("./");
+  await page
+    .getByRole("button", { name: "Inspect / more orders", exact: true })
+    .click();
   await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
   await page.getByLabel("Inspect", { exact: true }).selectOption("site-1:kit");
   const action = page.getByRole("button", {
@@ -137,6 +146,9 @@ test("compact inspector tabs and map destinations are keyboard accessible withou
   page,
 }) => {
   await page.goto("./");
+  await page
+    .getByRole("button", { name: "Inspect / more orders", exact: true })
+    .click();
   await page.getByLabel("Worker", { exact: true }).selectOption("site-1:alex");
   const record = page.getByRole("tab", { name: "Record", exact: true });
   await record.focus();
@@ -175,7 +187,7 @@ test("desktop remains usable at its minimum workspace and catalogs actual sites"
     .click();
   await page
     .locator(".facility-menu")
-    .getByRole("button", {
+    .getByRole("menuitem", {
       name: "SCP-914 bounded nonliving trial cell",
       exact: true,
     })

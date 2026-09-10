@@ -3,6 +3,9 @@ import type { ScenarioSession } from "../src/application/ScenarioSession";
 
 export async function openGame(page: Page) {
   await page.goto("./");
+  await page
+    .getByRole("button", { name: "Inspect / more orders", exact: true })
+    .click();
   await page.getByRole("tab", { name: "All details", exact: true }).click();
 }
 
@@ -112,8 +115,7 @@ export async function inspectNamed(page: Page, name: string): Promise<string> {
 
 export async function save(page: Page): Promise<ScenarioSession> {
   await page.getByRole("button", { name: "SCP menu" }).click();
-  await page.getByRole("button", { name: "Save", exact: true }).click();
-  await page.getByRole("button", { name: "SCP menu" }).click();
+  await page.getByRole("menuitem", { name: "Save", exact: true }).click();
   return page.evaluate(() =>
     JSON.parse(localStorage.getItem("simfoundation.web.session.v1")!),
   );

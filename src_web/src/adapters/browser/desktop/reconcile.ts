@@ -39,6 +39,8 @@ function update(existing: Node, proposed: Node): Node {
     (existing instanceof SVGElement && proposed instanceof SVGElement)
   ) {
     existing.onclick = proposed.onclick;
+    existing.ondblclick = proposed.ondblclick;
+    existing.oncontextmenu = proposed.oncontextmenu;
     existing.onchange = proposed.onchange;
     existing.oninput = proposed.oninput;
     existing.onkeydown = proposed.onkeydown;

@@ -18,8 +18,9 @@ function svg<K extends keyof SVGElementTagNameMap>(
 }
 
 export function createSiteMap(
+  selectEntity: (entityId: string, event?: MouseEvent | KeyboardEvent) => void,
+  chooseTile: (position: Position, event?: MouseEvent | KeyboardEvent) => void,
   inspect: (entityId: string) => void,
-  chooseTile: (position: Position) => void,
 ) {
   const root = element("div", "site-map");
   const toolbar = element("div", "map-toolbar");
@@ -72,7 +73,7 @@ export function createSiteMap(
         ?.setAttribute("data-keyboard-cursor", "true");
     } else if (event.key === "Enter") {
       event.preventDefault();
-      chooseTile(cursor);
+      chooseTile(cursor, event);
     }
   });
   viewport.append(drawing);
@@ -122,7 +123,7 @@ export function createSiteMap(
     element(
       "span",
       "map-legend",
-      "Person / resident | Facility | Cargo | Click to inspect",
+      "Select worker, then click a target to queue. Double-click to inspect.",
     ),
   );
   root.append(toolbar, viewport);
@@ -166,11 +167,12 @@ export function createSiteMap(
           "data-tile": `${x},${y}`,
         });
         if (!wall)
-          tile.onclick = () => {
+          tile.onclick = (event) => {
+            const explicitDestination = floorMode;
             floorMode = false;
             floorButton.setAttribute("aria-pressed", "false");
             drawing.classList.remove("floor-targeting");
-            chooseTile({ x, y });
+            chooseTile({ x, y }, explicitDestination ? undefined : event);
           };
         nodes.push(tile);
       }
@@ -270,11 +272,16 @@ export function createSiteMap(
       const title = svg("title", {});
       title.textContent = describeEntity(entity);
       group.append(title);
-      group.onclick = () => inspect(entity.id);
+      group.onclick = (event) => selectEntity(entity.id, event);
+      group.ondblclick = () => inspect(entity.id);
+      group.oncontextmenu = (event) => {
+        event.preventDefault();
+        selectEntity(entity.id, event);
+      };
       group.onkeydown = (event) => {
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
-          inspect(entity.id);
+          selectEntity(entity.id, event);
         }
       };
       nodes.push(group);

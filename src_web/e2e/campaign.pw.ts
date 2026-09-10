@@ -17,9 +17,7 @@ test("Blackwood recovery, home corroboration and Kestrel all use normal GUI comm
   await expect(page.locator(".travel-view")).toContainText(
     "Home study required: marsh-lead",
   );
-  await page
-    .getByRole("button", { name: "Close Operations & history" })
-    .click();
+  await page.getByRole("button", { name: "Close Expeditions" }).click();
   await travel(page, "blackwood");
   await order(page, "alex", "site-2:journal", "Take / recover");
   await order(page, "ben", "site-2:specimen", "Take / recover");
@@ -45,7 +43,7 @@ test("Blackwood recovery, home corroboration and Kestrel all use normal GUI comm
   await page.getByRole("button", { name: /^Study / }).click();
   await finish(page);
   await page.getByRole("button", { name: "SCP menu" }).click();
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Save", exact: true }).click();
   const session = await page.evaluate(() =>
     JSON.parse(localStorage.getItem("simfoundation.web.session.v1")!),
   );

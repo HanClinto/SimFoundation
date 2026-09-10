@@ -1,0 +1,92 @@
+.playback {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 4px;
+  max-width: 100%;
+  padding: 3px;
+  color: #151515;
+  background: #c0c0c0;
+  box-shadow:
+    inset 1px 1px #808080,
+    inset -1px -1px #fff;
+  font:
+    12px Arial,
+    sans-serif;
+}
+
+.playback .playback-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 28px;
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 5px;
+  color: #151515;
+  text-shadow: none;
+}
+
+.playback-button svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.playback .playback-button[aria-pressed="true"] {
+  background: #d8d8d8;
+  box-shadow:
+    inset -1px -1px #fff,
+    inset 1px 1px #808080;
+}
+
+.playback .playback-speed {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+}
+
+.playback-speed > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.playback .playback-speed select {
+  width: 53px;
+  min-width: 53px;
+  height: 26px;
+  margin: 0;
+  font: inherit;
+}
+
+.playback-clock {
+  min-width: 8ch;
+  padding: 5px 7px;
+  border-left: 1px solid #808080;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.playback button:focus-visible,
+.playback select:focus-visible {
+  outline: 2px solid #002e96;
+  outline-offset: 1px;
+}
+
+@media (max-width: 900px) {
+  .playback {
+    gap: 2px;
+    padding: 2px;
+  }
+
+  .playback-clock {
+    padding-inline: 4px;
+  }
+}

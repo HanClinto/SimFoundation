@@ -1,4 +1,4 @@
-import { button, element } from "./dom";
+import { button, element, iconButton } from "./dom";
 import folderIcon from "../../browser_shared/assets/folder.svg";
 
 const LAYOUT_KEY = "simfoundation.web.desktop.v1";
@@ -60,7 +60,12 @@ export function createDesktop(
     }
   }
 
-  function create(id: string, title: string, defaults: Layout): DesktopWindow {
+  function create(
+    id: string,
+    title: string,
+    defaults: Layout,
+    iconUrl = folderIcon,
+  ): DesktopWindow {
     const root = element("section", "window desktop-window");
     root.setAttribute("aria-label", title);
     root.tabIndex = -1;
@@ -77,13 +82,14 @@ export function createDesktop(
         remaining.root.classList.remove("inactive");
         remaining.root.focus({ preventScroll: true });
       }
+      updateTasks();
       persist();
     });
     close.setAttribute("aria-label", `Close ${title}`);
     controls.append(close);
     const titleText = element("div", "title-bar-text", title);
     const icon = element("img");
-    icon.src = folderIcon;
+    icon.src = iconUrl;
     icon.alt = "";
     titleText.prepend(icon);
     titleBar.append(titleText, controls);
@@ -126,6 +132,7 @@ export function createDesktop(
         window.root.classList.add("inactive");
       root.classList.remove("inactive");
       root.style.zIndex = String(++zIndex);
+      updateTasks();
     }
     const window: DesktopWindow = {
       root,
@@ -146,7 +153,10 @@ export function createDesktop(
       )[0];
     for (const entry of windows.values())
       entry.root.classList.toggle("inactive", entry !== active);
-    taskButtons.append(button(title, window.open));
+    const task = iconButton(title, iconUrl, window.open);
+    task.dataset.windowId = id;
+    taskButtons.append(task);
+    updateTasks();
     root.addEventListener("pointerdown", focus);
     root.addEventListener("focusin", focus);
     titleBar.addEventListener("pointerdown", (event) => {
@@ -186,6 +196,22 @@ export function createDesktop(
       });
     });
     return window;
+  }
+  function updateTasks(): void {
+    for (const task of taskButtons.querySelectorAll<HTMLButtonElement>(
+      "button",
+    )) {
+      const window = windows.get(task.dataset.windowId ?? "");
+      task.hidden = !window || window.root.hidden;
+      task.setAttribute(
+        "aria-pressed",
+        String(
+          !!window &&
+            !window.root.hidden &&
+            !window.root.classList.contains("inactive"),
+        ),
+      );
+    }
   }
   return { surface, taskButtons, create };
 }

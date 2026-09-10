@@ -9,6 +9,15 @@ checklist. Research, evidence and physical crafting now exist in the replacement
 engine; old statements that research does not exist are superseded. Development
 inspection exposes current state; camera and clinical fog remain deferred.
 
+The focused windows separate map/orders, expeditions, personnel, entity
+inspection and operations/history; not every subsystem needs another window.
+Primary action flow is **worker portrait -> target or floor -> contextual verb
+-> visible queue**. Windows-style submenus hold additional study/door choices;
+the entity inspector handles records and parameterized orders. Both paths share
+action descriptions and command eligibility. Cancelling retains physical cargo
+and spent work. Iconographic playback lives beside the taskbar clock, not in a
+separate control window.
+
 ## Core Metaphor
 
 **The simulation is the desktop.**
@@ -44,7 +53,7 @@ Temporary expedition maps and future facilities use the same pattern. They are a
 
 Use the spatial grammar of a desktop: icons, folders, title bars, menus, task buttons, status bars, system trays, and direct manipulation. Controls should look operable and states should be visibly selected, disabled, active, or inactive.
 
-The bottom taskbar is global. Its **SCP** menu owns metagame entry points such as site selection, save/load, settings, and exit-equivalent actions. The bottom-right simulation clock occupies the conceptual place of the operating-system clock and opens global playback controls.
+The bottom taskbar is global. Its **SCP** menu owns metagame entry points such as site selection, save/load, settings, and exit-equivalent actions. The bottom-right simulation clock occupies the conceptual place of the operating-system clock, with compact iconographic playback controls beside it rather than another window.
 
 Facilities is a folder inside the SCP menu. Individual sites such as Site 828 are entries within it so the hierarchy naturally extends to multiple managed facilities.
 

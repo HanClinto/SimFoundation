@@ -9,11 +9,18 @@ owns presentation; the simulation owns what happens.
 
 ## Start playing
 
-The campaign starts paused. Open a site folder, select a worker by portrait or
-the **Worker** list, then inspect a person, object or facility. Inspection never
-issues work or changes the command recipient. **Choose floor destination** lets
-you select the floor beneath objects; map keyboard focus supports arrows and
-Enter. Selecting a destination also does not issue an order.
+The campaign starts paused. Open a site folder and choose a worker portrait,
+then click an object or floor tile for its icon-labelled action menu. Choosing
+a verb appends that real intention; clicking the target alone never issues
+work. Common movement, carrying, equipment, routines and study do not require
+opening an inspector. Door policies and study plans use submenus.
+
+Double-click an entity or choose **Inspect / more orders** for its focused
+inspector and parameterized actions. Its **Worker** and **Inspect** lists remain
+available for precise selection. **Choose floor destination** selects the floor
+beneath objects for an inspector action; map keyboard focus supports arrows and
+Enter. Menu arrows navigate, Right opens a submenu, and Escape dismisses it
+without changing work.
 
 Orders append to the visible action queue. Current and pending work show their
 actual target, elapsed/productive ticks and blockers. **Cancel** removes that
@@ -21,19 +28,27 @@ intention, not spent supplies or existing physical ownership. **Finish current
 commitments** advances complete world ticks until the captured work finishes,
 blocks or raises an alarm. It is not a planner or a promise of success.
 
-**Run**, **Pause**, **Step** and speed are global. Every retained site and transfer
+The bottom-right media/clock tray owns **Run**, **Pause**, **Step** and speed;
+it is not a separate window. Its clock displays authoritative simulation ticks,
+not invented hours. Every retained site and transfer
 continues while another site is inspected. New warnings, escapes, breaches and
 deaths stop running/finish after the complete tick. The persistent notice offers
 **Locate incident** and **Open response desk**. Acknowledgement does not fix an
 incident; deliberate resumption is allowed.
 
-The two modeless windows can be dragged and resized for comparisons. Operations
-groups **Travel**, **Work & duties**, **Response desk**, **Research records** and
+Five focused modeless windows can be dragged and resized for comparisons:
+**Site map & orders**, **Expeditions**, **Personnel**, **Entity inspector** and
+**Operations & history**. Only the map opens by default. Expeditions owns
+preparation/manifests; Personnel opens the chosen person's inspector.
+Operations groups **Work & duties**, **Response desk**, **Research records** and
 **Alarm history**, rather than creating an application for every anomaly.
 The contextual inspector separates **Record**, **Orders**, **Care & cargo** /
 **Cargo & gear**, **Response** and **Apparatus**, keeping the worker and visible
 queue outside those sections. **All details** is an optional expanded view.
-The **SCP > Facilities** folder lists every actual site. The desktop supports
+The icon-labelled taskbar shows open windows. **SCP > Facilities** lists every
+actual site; **SCP > Windows** and the map's Windows menu reopen focused tools.
+Start and context menus use Win32-style rows, submenus and keyboard navigation.
+The desktop supports
 a minimum 760-by-620 workspace; smaller browser viewports scroll that workspace
 rather than hiding controls.
 
@@ -99,6 +114,20 @@ preferences are not simulation state.
 Successful replacement clears session-bound alarms and selections, while keeping
 the desktop arrangement. Failed imports leave the current session and its
 incidents intact. Window positions and stacking are retained separately.
+
+## Deployment caching
+
+The previous deployment-version refresh is retained in
+`adapters/browser_shared/deployment-version.ts` and called when the new browser
+starts. Production requests `version.json` with a timestamp and `cache: no-store`.
+If its commit differs from the loaded build, the page navigates with `?v=<commit>`,
+preserving other query parameters and the fragment. A matching version query
+prevents reload loops; an unavailable version endpoint does not prevent play.
+Vite also fingerprints the built JavaScript and CSS filenames.
+
+This is a startup check, not continuous polling or an automatic reload halfway
+through an unsaved session. Reload the page to discover a deployment made while
+that tab was already open.
 
 ## Development
 

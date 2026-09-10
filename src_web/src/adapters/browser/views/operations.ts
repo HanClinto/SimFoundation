@@ -3,7 +3,7 @@ import {
   serviceStatus,
 } from "../../../simulation/core/entity/Service";
 import { button, element, replaceContents, table } from "../desktop/dom";
-import { createTravelView, type OperationsContext } from "./travel";
+import type { OperationsContext } from "./travel";
 import { researchView } from "./research";
 import { attentionView } from "./attention";
 
@@ -11,12 +11,10 @@ export function createOperationsView(
   body: HTMLElement,
   context: () => OperationsContext,
 ) {
-  let tab: "travel" | "work" | "history" | "research" | "response" = "work";
-  const travel = createTravelView();
+  let tab: "work" | "history" | "research" | "response" = "work";
   const tabs = element("div", "panel-tabs");
   const content = element("div");
   for (const [key, title] of [
-    ["travel", "Travel"],
     ["work", "Work & duties"],
     ["response", "Response desk"],
     ["research", "Research records"],
@@ -35,10 +33,6 @@ export function createOperationsView(
     const current = context();
     for (const node of tabs.querySelectorAll("button"))
       node.setAttribute("aria-pressed", String(node.dataset.tab === tab));
-    if (tab === "travel") {
-      replaceContents(content, travel.render(current));
-      return;
-    }
     if (tab === "research") {
       replaceContents(content, researchView(current));
       return;
@@ -134,11 +128,6 @@ export function createOperationsView(
     render,
     reset: () => {
       tab = "work";
-      travel.reset();
-    },
-    showTravel: () => {
-      tab = "travel";
-      render();
     },
     showResponse: () => {
       tab = "response";

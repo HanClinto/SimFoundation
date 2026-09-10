@@ -215,8 +215,7 @@ select:focus-visible,
   height: 26px;
 }
 .map-layout {
-  display: grid;
-  grid-template-columns: minmax(200px, 1fr) 330px;
+  display: flex;
   min-height: 0;
   flex: 1;
   gap: 8px;
@@ -226,6 +225,7 @@ select:focus-visible,
   flex-direction: column;
   min-width: 0;
   min-height: 0;
+  flex: 1;
 }
 .map-toolbar {
   display: flex;
@@ -289,6 +289,39 @@ select:focus-visible,
   background: #ece9dc;
   padding: 6px;
   border: 1px inset #fff;
+  flex: 1;
+  min-height: 0;
+}
+[aria-label="Entity inspector"] > .window-body {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.inspector-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding-bottom: 7px;
+}
+.selection-summary {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 4px 0;
+  font-size: 11px;
+}
+.selection-summary .icon-button {
+  margin-left: auto;
+}
+.selection-summary img,
+.site-toolbar .icon-button img {
+  width: 18px;
+  height: 18px;
+}
+.personnel-view .icon-button img {
+  width: 24px;
+  height: 24px;
 }
 .inspector-heading {
   position: sticky;
@@ -467,57 +500,36 @@ small {
   display: flex;
   gap: 4px;
   flex: 1;
+  min-width: 0;
   overflow: auto;
 }
 .task-buttons button {
-  min-width: 130px;
+  min-width: 100px;
+  max-width: 180px;
+  flex-shrink: 0;
+  font-size: 11px;
 }
-.clock {
-  min-width: 140px;
-  padding: 5px;
+.task-buttons button[aria-pressed="true"] {
+  background: #dedede;
   box-shadow:
-    inset 1px 1px #777,
+    inset 1px 1px #555,
     inset -1px -1px white;
-  font-size: 12px;
+}
+.taskbar .icon-button img {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.task-buttons .icon-button span {
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
-.scp-menu {
-  position: absolute;
-  bottom: 38px;
-  left: 3px;
-  width: 235px;
-  padding: 8px;
-  z-index: 100001;
-  max-height: calc(100% - 50px);
-  overflow: auto;
-}
-.facility-menu {
-  max-height: 310px;
-  overflow: auto;
-  margin: 6px 0;
-}
-.facility-menu .icon-button {
-  display: flex;
-  font-size: 11px;
-}
-.facility-menu img {
-  width: 20px;
-  height: 20px;
-  flex: 0 0 auto;
-}
-.scp-menu button {
-  display: block;
-  width: 100%;
-  margin-bottom: 5px;
-  text-align: left;
-}
-.scp-menu p {
-  font-size: 11px;
+.taskbar > .icon-button {
+  min-width: 65px;
+  font-weight: bold;
 }
 @media (max-width: 1000px) {
-  .map-layout {
-    grid-template-columns: minmax(200px, 1fr) 290px;
-  }
   .select-field select {
     max-width: 180px;
   }

@@ -34,7 +34,7 @@ test("real desktop selection, physical work, persistence and layout", async ({
     .click();
   await expect(page.locator(".queue-dock")).toContainText("No queued work");
   await page.getByRole("button", { name: "SCP menu" }).click();
-  await page.getByRole("button", { name: "Save", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Save", exact: true }).click();
   const saved = await page.evaluate(() =>
     localStorage.getItem("simfoundation.web.session.v1"),
   );

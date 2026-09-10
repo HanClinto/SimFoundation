@@ -43,7 +43,9 @@ test("a critical alarm locates a death and a finite reserve recovers the origina
   await expect(
     page.getByRole("button", { name: "Dispatch devon to inspected site" }),
   ).toBeDisabled();
-  await page.getByRole("button", { name: "Travel", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Travel / preparation", exact: true })
+    .click();
   await finish(page, "Wait for arrival");
   await page
     .getByRole("button", { name: "Site map & orders", exact: true })
