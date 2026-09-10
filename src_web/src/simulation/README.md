@@ -114,6 +114,13 @@ events remain delivered. Old history does not repeatedly stop resumed time.
 Explicit `step` and scoped `finish` remain deliberate operations, not implicit
 rollback or automatic response. Batch mode returns exit2 if an alarm stops it.
 
+`finish --alarms <workers...>` combines selected work/transport completion with
+stopping on any new critical event, including remote sites. Ordinary `finish`
+retains target-scoped stopping but reports a bounded highest-severity summary of
+critical events it passed. Both use full tick delivery; old saved history never
+creates a new alarm. This avoids silently passing a remote watcher's collapse
+while waiting for a local worker to eat or sleep.
+
 ## Physical Entities And Ownership
 
 An entity has a persistent ID, definition ID, material, amount and location.

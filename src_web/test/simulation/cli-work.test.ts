@@ -89,7 +89,9 @@ it("rejects empty carried aliases and missing workers without mutation or a glob
     "exactly one",
   );
   expect(() => executeLine(console, "inspect @held")).toThrow("order's worker");
-  expect(() => executeLine(console, "finish")).toThrow("finish <worker");
+  expect(() => executeLine(console, "finish")).toThrow(
+    "finish [--alarms] <worker",
+  );
   expect(() => executeLine(console, "finish meals")).toThrow("workers");
   expect(executeLine(console, "finish alex").output).toContain(
     "No time advanced",

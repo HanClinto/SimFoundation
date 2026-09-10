@@ -30,6 +30,7 @@ import { directWatchers } from "../../simulation/core/entity/pawn/Attention";
 import type { TickEvent } from "../../simulation/core/Simulation";
 import { finishCommitments } from "./Finish";
 import { medicalOverview } from "./Medical";
+import { alarmPriority, firstAlarm } from "./Alarms";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -276,7 +277,7 @@ order <worker> restrain <hostile> <carried-restraint>
 order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
 order <worker> lockdown <cell> (physical, finite emergency fallback)
 deploy <staff-type> <name> | start
-step [ticks] | run [maximum ticks] | finish <worker...> (up to 1000 ticks, stops on blockers)
+step [ticks] | run [maximum ticks] | finish [--alarms] <worker...> (up to 1000 ticks; --alarms stops for any new critical event)
 load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
 inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
 study <actor> <station> <planId>
@@ -479,9 +480,7 @@ export function executeLine(
       let events = console.session.events;
       const filter = args[0];
       if (filter === "alarms")
-        events = events.filter((event) =>
-          ["warning", "breached", "escaped", "died"].includes(event.kind),
-        );
+        events = events.filter((event) => alarmPriority(event) >= 0);
       else if (filter) {
         const siteId =
           filter === "here"
@@ -506,28 +505,49 @@ export function executeLine(
     case "finish": {
       if (console.session.phase !== "running")
         throw new Error("Start the mission before advancing work.");
-      if (!args.length) throw new Error("Use finish <worker...>.");
-      const workers = args.map((value) =>
+      const stopOnAlarms = args[0] === "--alarms";
+      const names = stopOnAlarms ? args.slice(1) : args;
+      if (!names.length || names.some((name) => name.startsWith("--")))
+        throw new Error("Use finish [--alarms] <worker...>.");
+      const workers = names.map((value) =>
         resolve(console, value, undefined, true),
       );
-      const { session, elapsed, reason } = finishCommitments(
-        console.session,
-        workers.map((worker) => worker.id),
-      );
+      const { session, elapsed, reason, notices, noticeCount, alarm } =
+        finishCommitments(
+          console.session,
+          workers.map((worker) => worker.id),
+          stopOnAlarms,
+        );
       next = { ...console, session };
-      return finish(
-        [
-          `Advanced ${elapsed} ticks. ${reason}`,
-          ...workers.map((worker) => {
-            const owner = [
-              ...Object.values(session.state.sites),
-              ...Object.values(session.state.transfers),
-            ].find((candidate) => candidate.entities[worker.id]);
-            const current = owner?.entities[worker.id];
-            return `${worker.name} at ${owner?.id ?? "MISSING"}: ${current ? describeQueue(current) : "not present"}`;
-          }),
-        ].join("\n"),
-      );
+      return {
+        ...finish(
+          [
+            `Advanced ${elapsed} ticks. ${reason}`,
+            ...workers.map((worker) => {
+              const owner = [
+                ...Object.values(session.state.sites),
+                ...Object.values(session.state.transfers),
+              ].find((candidate) => candidate.entities[worker.id]);
+              const current = owner?.entities[worker.id];
+              return `${worker.name} at ${owner?.id ?? "MISSING"}: ${current ? describeQueue(current) : "not present"}`;
+            }),
+            ...(alarm
+              ? [
+                  "Stopped after the complete tick. Inspect selected queues and respond before continuing.",
+                ]
+              : noticeCount
+                ? [
+                    `New critical events during this wait (${notices.length} of ${noticeCount}, highest severity first). Use finish --alarms to stop on them:`,
+                    ...notices.map(
+                      (event) =>
+                        `tick ${event.tick}: ${event.siteId} ${event.entityId} ${event.kind}: ${event.reason ?? "inspect events"}`,
+                    ),
+                  ]
+                : []),
+          ].join("\n"),
+        ),
+        ...(alarm ? { alarm } : {}),
+      };
     }
     case "step":
     case "run": {
@@ -548,9 +568,7 @@ export function executeLine(
           current = events;
         });
         if (command === "run" && session.campaign) {
-          alarm = ["died", "breached", "escaped", "warning"]
-            .map((kind) => current.find((event) => event.kind === kind))
-            .find((event) => event !== undefined);
+          alarm = firstAlarm(current);
           if (alarm) break;
         }
       }

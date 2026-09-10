@@ -48,6 +48,12 @@ physically close the door before the last watchers stop. Clear the narrow door
 approach so others can pass. Use `finish riley` for Riley's work, not
 `finish alex casey` while their active watches are the safety coverage.
 
+If a worker returns home to rest while others remain on watch, use
+`finish --alarms <worker>`: it stops that targeted wait for a new remote warning
+or casualty. Ordinary `finish` reports remote critical events after the wait but
+does not promise to stop before the remote situation worsens. Neither command
+automatically supplies relief or rolls back the tick.
+
 The [normal-command walkthrough](tests/watch-maintenance.txt) captures/studies the
 kinetic source first, then plays three-person entry, locked work, overlapping
 relief, withdrawal and return. The first return team clears the home pad for

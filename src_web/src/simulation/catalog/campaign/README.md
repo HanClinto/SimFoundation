@@ -31,6 +31,19 @@ limit. Every site still advances; this is not free work or a solution planner.
 It does not wait forever for future autonomous tasks. The output gives elapsed
 time and remaining queues.
 
+Use `finish --alarms alex` when work at other sites needs attention. It retains
+Alex's selected completion target but stops after a complete tick on any new
+warning, breach, escape or death, with death/breach/escape taking presentation
+priority over routine warnings. Old history does not repeatedly stop it.
+This stops the wait, not the world retroactively; inspect remaining queues and
+respond before advancing again.
+
+Ordinary `finish alex` keeps its targeted stopping behavior, but now lists up to
+eight highest-severity critical events that occurred during the wait. For example,
+Riley's remote Watch fatigue or death is no longer hidden behind Alex's successful
+sleep completion. The summary uses complete current-tick event batches, not only
+the saved100-event history, and reports how many notices occurred.
+
 After `send`, `finish @1` can also watch that person's actual transfer until
 arrival or blocked admission, without guessing its duration. It reports the
 final owner and stops on a new critical notice for the travelling payload.

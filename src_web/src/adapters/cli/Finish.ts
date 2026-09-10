@@ -3,11 +3,16 @@ import {
   type ScenarioSession,
 } from "../../application/ScenarioSession";
 import type { TickEvent } from "../../simulation/core/Simulation";
+import { alarmPriority, firstAlarm } from "./Alarms";
 
 export function finishCommitments(
   initial: ScenarioSession,
   workerIds: readonly string[],
+  stopOnAlarms = false,
 ) {
+  const notices: Readonly<TickEvent>[] = [];
+  let noticeCount = 0;
+  let alarm: Readonly<TickEvent> | undefined;
   const owners = [
     ...Object.values(initial.state.sites),
     ...Object.values(initial.state.transfers),
@@ -34,6 +39,9 @@ export function finishCommitments(
       elapsed: 0,
       reason:
         "No queued or travelling commitments to finish. No time advanced.",
+      notices,
+      noticeCount,
+      alarm,
     };
   let session = initial;
   let reason = "Reached the 1000-tick limit; inspect remaining work.";
@@ -42,6 +50,20 @@ export function finishCommitments(
     session = stepSession(session, 1, (current) => {
       events = current;
     });
+    for (const event of events) {
+      if (alarmPriority(event) < 0) continue;
+      noticeCount++;
+      notices.push(event);
+      notices.sort((a, b) => alarmPriority(a) - alarmPriority(b));
+      if (notices.length > 8) notices.pop();
+    }
+    if (stopOnAlarms) {
+      alarm = firstAlarm(events);
+      if (alarm) {
+        reason = `ALARM at tick ${session.state.tick}: ${alarm.siteId} ${alarm.entityId} ${alarm.kind}: ${alarm.reason ?? "inspect events"}`;
+        break;
+      }
+    }
     const pawns = Object.values(session.state.sites)
       .flatMap((site) => Object.values(site.entities))
       .filter((entity) => entity.kind === "pawn");
@@ -93,5 +115,12 @@ export function finishCommitments(
       break;
     }
   }
-  return { session, elapsed: session.state.tick - initial.state.tick, reason };
+  return {
+    session,
+    elapsed: session.state.tick - initial.state.tick,
+    reason,
+    notices,
+    noticeCount,
+    alarm,
+  };
 }
