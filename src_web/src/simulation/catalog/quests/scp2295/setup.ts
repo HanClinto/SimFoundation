@@ -9,6 +9,7 @@ export const TextileBundle: EntityTemplate = {
     "Finite prepared cloth and stuffing for patchwork organ work. Lay beside the bear; one bundle funds one attempt. Interrupted work keeps the spent material. No chemistry, crafting chain or instant medical benefit is implied.",
   defaults: {
     kind: "item",
+    stackable: true,
     materialId: "fabric",
     amount: 1,
     integrity: 100,

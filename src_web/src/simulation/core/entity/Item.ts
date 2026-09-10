@@ -3,6 +3,7 @@ import type { SampleProvenance } from "./Dispenser";
 
 export interface Item extends EntityBase {
   kind: "item";
+  stackable?: boolean;
   sample?: SampleProvenance;
   requiresCase?: boolean;
   case?: {

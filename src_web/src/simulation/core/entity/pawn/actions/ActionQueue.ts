@@ -59,7 +59,7 @@ export function actionHandler(action: ActionState): Action {
     case "move":
       return new Move(action.destination);
     case "take":
-      return new Take(action.targetId);
+      return new Take(action.targetId, action.amount);
     case "drop":
       return new Drop(action.targetId);
     case "eat":

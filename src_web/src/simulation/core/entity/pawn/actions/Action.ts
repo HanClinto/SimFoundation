@@ -36,7 +36,7 @@ export type ActionState =
   | { kind: "flee"; targetId: string }
   | ActivityState
   | { kind: "move"; destination: Position }
-  | { kind: "take"; targetId: string }
+  | { kind: "take"; targetId: string; amount?: number }
   | { kind: "drop"; targetId: string }
   | { kind: "eat"; targetId: string }
   | { kind: "wait"; ticks: number };

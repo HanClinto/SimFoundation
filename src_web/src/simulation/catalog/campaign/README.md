@@ -10,6 +10,13 @@ allocations, a reusable field kit, a comparison bench, independent records,
 ordinary rest furniture and a glass display bay. No campaign command deploys
 new staff. Home routines can be enabled with `autonomy casey on`.
 
+`order alex take meals 3` physically collects three portions while leaving five
+at home. Only explicitly stackable ordinary supplies accept quantities; people,
+cases, specimens and identified samples are not divisible. A partial collection
+gets its own stable map label and ID, shown under `inspect alex` contents.
+Taking the entire stack keeps its original identity. There is no instant
+inventory editor or automatic merging on return.
+
 Prepare an actual team:
 
 ```text

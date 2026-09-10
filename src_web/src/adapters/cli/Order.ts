@@ -46,6 +46,18 @@ export function parseOrder(args: readonly string[]): ActionState {
       count(3, "study <station> <planId>");
       return { kind, targetId: target!, planId: extra!, workTicks: 0 };
     case "take":
+      if (args.length !== 2 && args.length !== 3)
+        throw new Error("Use order <actor> take <target> [amount].");
+      if (
+        extra !== undefined &&
+        (!Number.isFinite(Number(extra)) || Number(extra) <= 0)
+      )
+        throw new Error("Choose a positive finite supply quantity.");
+      return {
+        kind,
+        targetId: target!,
+        ...(extra !== undefined ? { amount: Number(extra) } : {}),
+      };
     case "drop":
     case "eat":
     case "flee":

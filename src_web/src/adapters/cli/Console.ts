@@ -99,6 +99,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "take" && action.amount !== undefined)
+    return `take ${action.amount} from ${action.targetId}`;
   if (action.kind === "mend")
     return `mend ${action.targetId}${action.organ ? ` ${action.organ}` : ""} | work ${action.workTicks}${action.material ? ` | fabric spent from ${action.material.sourceId}` : ""}`;
   if (action.kind === "nurse")
@@ -197,6 +199,7 @@ order <name|@N> dispense <machine> <request> [source]
 order <name|@N> escort <person> <x> <y> (cooperative walking)
 order <name|@N> pack <specimen> <case> | order <name|@N> unpack <case>
 order <name|@N> nurse <patient> <clinical-bed>
+order <name|@N> take <supply-stack> [amount] (physical collection)
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(

@@ -21,6 +21,7 @@ export const ClinicalPack: EntityTemplate = {
     "Finite abstract supplies for a bedside recovery course. One is consumed when care starts, not on admission. Cancellation retains both spent supplies and earned partial recovery. These are not a drug recipe or an infinite medic charge refill.",
   defaults: {
     kind: "item",
+    stackable: true,
     materialId: "plastic",
     amount: 1,
     integrity: 100,

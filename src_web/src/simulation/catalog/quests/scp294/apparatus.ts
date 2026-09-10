@@ -8,6 +8,7 @@ export const CoinAllocation: EntityTemplate = {
     "Finite ordinary coins for approved machine trials. Each paid attempt spends one allocation, including a solid-request refusal or a cancelled paid action.",
   defaults: {
     kind: "item",
+    stackable: true,
     materialId: "steel",
     amount: 1,
     integrity: 100,

@@ -7,6 +7,7 @@ export const TransportDocket: EntityTemplate = {
     "Finite contracted transport allocations. One docket funds an outbound group and its return; it is spent only after physical departure is accepted. Keep loose dockets beside the home loading pad (2,7).",
   defaults: {
     kind: "item",
+    stackable: true,
     materialId: "wood",
     amount: 1,
     carryable: true,

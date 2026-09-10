@@ -8,6 +8,7 @@ export const PackagedMeal = {
     "One portion of prepared plant food. Packaging is not simulated separately.",
   defaults: {
     kind: "item",
+    stackable: true,
     carryable: true,
     blocksMovement: false,
     blocksSight: false,
