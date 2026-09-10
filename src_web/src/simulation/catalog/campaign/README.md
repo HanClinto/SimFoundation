@@ -44,6 +44,35 @@ The gallery route recovers SCP-1370 without combat. Deliver `exhibit` to home
 (13,3), `order alex study display safe-exhibit`, then walk outside the bay so
 its door can close. The exhibit retains its original pawn identity.
 
+## Cooperative Care Transfer
+
+`brief care` describes an original closing aid station, not an SCP article.
+Mira accepts escort but not direct pawn orders. Her minor wound bleeds at
+0.1 blood loss per tick, including while unattended. Casey has two finite
+stabilization charges. A medic should `order casey treat mira` before
+`order casey escort mira 2 3`. The responder approaches and the person walks on
+her own turn. Escort places the person at the exact destination and yields
+the tile rather than stacking them.
+
+When both queues finish in the loading area, `send home casey mira` transfers
+both actual people; there is at most one walking passenger per group. At home,
+`order casey escort mira 6 2`, wait for arrival, then `admit mira bed`.
+Admission requires proximity and stopped bleeding, queues ordinary rest and
+enables home needs autonomy. Injury and lost blood remain; Mira is a resident,
+not a cloned staff recruit.
+
+Cancel the leader's escort to release following on the next tick. The person
+stays where she is. If she becomes incapable, stabilize and carry her through
+ordinary `take` and staff preparation instead; do not list a carried passenger
+again in `send`. Incapacitated bed care is not yet implemented. A partial
+withdrawal leaves the same patient at the same persistent site, with no reset.
+
+The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
+```
+
 `save <new-path>` and `restore <path>` preserve the entire ongoing session,
 including in-progress delivery/study and transit. Success does not stop the
 campaign; partial recovery does not reset a site. Development saves are
@@ -68,7 +97,7 @@ are included.
 The home also hosts a [bounded SCP-294 experiment](../quests/scp294/README.md),
 with finite paid requests and source-conserving samples. Use `brief scp294`.
 
-This slice has no death, capture, living escort, vehicle simulation or automatic
+This slice has no death, hostile capture, vehicle simulation or automatic
 resupply. Incapacitated staff can be carried by available responders
 through existing physical rules, but treatment currently stabilizes bleeding
 only; it is not a full recovery model. There is no authored combat in these

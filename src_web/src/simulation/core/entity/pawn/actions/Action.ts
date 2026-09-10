@@ -8,6 +8,7 @@ import type { TreatState } from "./Treat";
 import type { StudyState } from "./Study";
 import type { DeliverState } from "./Deliver";
 import type { DispenseState } from "./Dispense";
+import type { EscortState, FollowState } from "./Escort";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -18,6 +19,8 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | EscortState
+  | FollowState
   | DispenseState
   | DeliverState
   | StudyState

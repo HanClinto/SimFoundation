@@ -15,6 +15,7 @@ export interface Pawn extends EntityBase {
   canAct: boolean;
   autonomy: boolean;
   playerControllable: boolean;
+  acceptsEscort?: boolean;
   needs: Record<string, Need>;
   diet: readonly DietRule[];
   eatingRate: number;

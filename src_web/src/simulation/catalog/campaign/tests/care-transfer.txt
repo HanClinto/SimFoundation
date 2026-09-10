@@ -1,0 +1,24 @@
+# Original scenario, normal commands. No runtime-imported solution.
+load campaign
+brief care
+prepare care casey
+step 12
+send care casey
+step 8
+site care
+inspect mira
+order casey treat mira
+step 16
+order casey escort mira 2 3
+step 24
+queue casey
+queue mira
+send home casey mira
+step 8
+site home
+order casey escort mira 6 2
+step 24
+admit mira bed
+step 12
+inspect mira
+status

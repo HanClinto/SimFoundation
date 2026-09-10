@@ -362,7 +362,7 @@ Syntax is `deploy <staff-type> <name>`: `researcher` is a template, `ben` is one
 
 `start` requires every declared role to be assigned to an available pawn. It creates the quest progress and starts its deadline at the current tick. Deployment and a second start are rejected once running; no free reinforcements are implied. Pre-staffed trials (`response`, `daily`, `colony`, `consumption`) and the sight sandbox still start immediately; they do not offer deployment. These trials retain their authored actors because their purpose is testing those particular states.
 
-Session saves are now version 4 and preserve campaign identity, setup/running phase, deployed trial teams, role bindings, label mappings and counters. Earlier sessions are discarded without migration; simulation snapshots retain their current core version. A saved setup can be restored and started normally. Batch mode reports a setup-phase session as incomplete (exit 2); prepare/start/save it through normal commands before using batch restore. Deployment from templates belongs only to isolated trials. The default campaign transfers actual roster identities.
+Session saves are now version 5 and preserve campaign identity, care admissions, setup/running phase, deployed trial teams, role bindings, label mappings and counters. Earlier sessions are discarded without migration; simulation snapshots retain their current core version. A saved setup can be restored and started normally. Batch mode reports a setup-phase session as incomplete (exit 2); prepare/start/save it through normal commands before using batch restore. Deployment from templates belongs only to isolated trials. The default campaign transfers actual roster identities.
 
 ### Persistent Home Campaign
 
@@ -412,6 +412,10 @@ The first two candidates come from the [prioritized portfolio](../../docs/scp-ex
 Completion writes one finding per plan at that station, with the actor ID, global tick and actual source IDs. Repeating a completed plan does not duplicate the finding or consume evidence. Save/reload preserves partial work and findings. This is named evidence, not spending the earlier Research action's generic progress counter. The initial plans are explicit orders, not new autonomous needs. Source-specific result text belongs in the catalog; core contains no SCP-ID switches.
 
 The isolated quests use one local map with intake. The default campaign instead reuses their evidence and exhibit across retained remote sites and home intake; its Blackwood finding unlocks the Kestrel depot. Portable cases, resident aquarium care, independently walking SCP-1370, dialogue and extensive containment systems are deliberately deferred. No new images or browser bindings are added.
+
+### Cooperative Care Transfer
+
+The original [care-transfer scenario](catalog/campaign/README.md#cooperative-care-transfer) adds explicit cooperative escort and living admission before SCP-507. `order casey escort mira 2 3` guides the person through ordinary movement, one turn per pawn. `send home casey mira` preserves both identities; `admit mira bed` requires physical home arrival and stabilized bleeding before ordinary rest. Core version 13 adds linked escort/follow actions; no hostile capture or universal healing is implied.
 
 ### Bounded SCP-294
 

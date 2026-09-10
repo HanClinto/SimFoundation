@@ -19,8 +19,9 @@ export function parseOrder(args: readonly string[]): ActionState {
         ...(args[3] ? { sourceId: args[3] } : {}),
         workTicks: 0,
       };
+    case "escort":
     case "deliver":
-      count(4, "deliver <target> <x> <y>");
+      count(4, `${kind} <target> <x> <y>`);
       return {
         kind,
         targetId: target!,

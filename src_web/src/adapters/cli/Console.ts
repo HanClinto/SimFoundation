@@ -20,6 +20,7 @@ import {
   prepareTeam,
   departTeam,
 } from "../../simulation/catalog/campaign/Campaign";
+import { admitToCare } from "../../simulation/catalog/campaign/Care";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -102,6 +103,10 @@ function describeAction(action: ActionState): string {
     return `dispense ${action.requestId} at ${action.targetId}${action.sourceId ? ` from ${action.sourceId}` : ""} | work ${action.workTicks}${action.paymentId ? " | PAID (nonrefundable)" : ""}`;
   if (action.kind === "deliver")
     return `deliver ${action.targetId} to (${action.destination.x},${action.destination.y})`;
+  if (action.kind === "escort")
+    return `escort ${action.targetId} to (${action.destination.x},${action.destination.y})`;
+  if (action.kind === "follow")
+    return `follow ${action.targetId} for ${action.escortActionId}`;
   if (action.kind === "move")
     return `move to (${action.destination.x},${action.destination.y})`;
   if (action.kind === "wait") return `wait ${action.ticks} ticks`;
@@ -172,6 +177,7 @@ export function renderMap(console: ConsoleState): string {
 
 export const help = `map | brief | status | events | sites | site <id>
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
+send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 deploy <staff-type> <name> | start
 step [ticks] | run [maximum ticks] | load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
 inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
@@ -180,6 +186,7 @@ order <name|@N> <verb> <target> | order <name|@N> move <x> <y> | order <name|@N>
 order <name|@N> study <station> <planId> | autonomy <actor> <on|off> | cancel <actor> [actionId]
 order <name|@N> deliver <target> <x> <y> (collect, carry and drop)
 order <name|@N> dispense <machine> <request> [source]
+order <name|@N> escort <person> <x> <y> (cooperative walking)
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -243,6 +250,22 @@ export function executeLine(
         command === "prepare"
           ? "Preparation ordered. Staff walk to loading pads with autonomy off; inspect their queues, then send when ready."
           : "Departed with actual staff and carried cargo. Use status for transit and blocked admission; step advances every site.",
+      );
+    }
+    case "admit": {
+      const campaign = console.session.campaign;
+      if (!campaign || args.length !== 2)
+        throw new Error("Use admit <person> <home-bed> in a campaign.");
+      const result = admitToCare(
+        console.session.state,
+        campaign,
+        resolve(console, args[0]).id,
+        resolve(console, args[1]).id,
+        materials,
+      );
+      next = { ...console, session: { ...console.session, ...result } };
+      return finish(
+        "Admitted to home care. Ordinary bed rest is queued; injury and blood loss are retained.",
       );
     }
     case "sites":
@@ -378,6 +401,7 @@ export function executeLine(
                 }
               : parseOrder(args.slice(1));
         const kinds = [
+          "escort",
           "dispense",
           "deliver",
           "move",
@@ -401,7 +425,11 @@ export function executeLine(
           !kinds.includes(action.kind)
         )
           throw new Error("Unknown action kind.");
-        if (action.kind === "move" || action.kind === "deliver") {
+        if (
+          action.kind === "move" ||
+          action.kind === "deliver" ||
+          action.kind === "escort"
+        ) {
           if (
             !Number.isInteger(action.destination?.x) ||
             !Number.isInteger(action.destination?.y)

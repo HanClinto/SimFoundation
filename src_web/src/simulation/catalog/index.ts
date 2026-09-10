@@ -17,6 +17,7 @@ import { ExerciseBike } from "./entities/equipment/ExerciseBike";
 import { Researcher } from "./actors/staff/Researcher";
 import { Soldier } from "./actors/staff/Soldier";
 import { Medic } from "./actors/staff/Medic";
+import { CareRecipient } from "./actors/staff/CareRecipient";
 import { HostileGuard } from "./actors/threats/HostileGuard";
 import { SCP1370 } from "./actors/anomalies/SCP1370";
 import { SCP294 } from "./actors/anomalies/SCP294";
@@ -59,6 +60,7 @@ export const entities: EntityTemplates = Object.fromEntries(
     Researcher,
     Soldier,
     Medic,
+    CareRecipient,
     HostileGuard,
     SCP1370,
     SCP294,

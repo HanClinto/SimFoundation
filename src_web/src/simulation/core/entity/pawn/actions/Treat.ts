@@ -38,8 +38,6 @@ export class Treat implements Action {
       return { status: "completed" };
     const reason = this.canStart(context);
     if (reason) return { status: "blocked", reason };
-    if (!canSee(site, pawn, this.state.targetId))
-      return { status: "completed" };
     const target = patient as Pawn;
     if (
       visibleThreats(site, pawn).some(
@@ -62,6 +60,13 @@ export class Treat implements Action {
     if (approach) {
       this.state.workTicks = 0;
       return approach;
+    }
+    if (!canSee(site, pawn, this.state.targetId)) {
+      this.state.workTicks = 0;
+      return {
+        status: "blocked",
+        reason: "The patient is not visible from the treatment position.",
+      };
     }
     if (++this.state.workTicks < pawn.response!.medicine!.ticks)
       return { status: "running" };

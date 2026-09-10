@@ -24,6 +24,15 @@ export function campaignStatus(session: ScenarioSession): string {
       const pawn = owner?.entities[id];
       return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${pawn.canAct ? "active" : "incapacitated"} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"}` : ""}`;
     }),
+    ...owners.flatMap((owner) =>
+      Object.values(owner.entities).flatMap((entity) =>
+        entity.kind === "pawn" && entity.acceptsEscort
+          ? [
+              `${session.labels[entity.id]} ${entity.name}: ${owner.id} | ${entity.canAct ? "cooperative" : "incapacitated: needs carrying"} | blood loss ${entity.health?.bloodLoss.toFixed(1) ?? "-"}${campaign.admissions[entity.id] ? ` | admitted tick ${campaign.admissions[entity.id]!.tick}` : " | awaiting care"}`,
+            ]
+          : [],
+      ),
+    ),
     `Home stocks: ${Object.values(home.entities)
       .filter((entity) =>
         ["packaged-meal", "transport-docket", "coin-allocation"].includes(
@@ -65,7 +74,7 @@ export function campaignStatus(session: ScenarioSession): string {
         : [],
     ),
     `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
-    "brief <blackwood|gallery|kestrel|scp294> | site <home|blackwood|gallery|kestrel> | inspect <id>",
+    `brief <${Object.keys(opportunities).join("|")}|scp294> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
   ].join("\n");
 }
 

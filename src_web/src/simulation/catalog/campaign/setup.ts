@@ -220,4 +220,39 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
     ],
     duration: 10,
   },
+  care: {
+    name: "Closing aid station: cooperative care transfer",
+    briefing:
+      "Mira, a cooperative adult, needs transfer to home care. Her wound continues bleeding while the site is unattended (0.1 blood loss/tick). Casey has two finite stabilization charges; send a medic rather than treating this as cargo collection. After treatment, order casey escort mira 2 3. Send home casey mira when both queues finish and both are at the loading area. At home, escort Mira to (6,2), then admit mira bed for ordinary rest. If she cannot walk, stabilize and carry her with an available responder; incapacitated people are not silently abandoned or healed.",
+    site: {
+      name: "Closing aid station",
+      terrain: [
+        "############",
+        "#..........#",
+        "#..........#",
+        "#....#.....#",
+        "#..........#",
+        "#..........#",
+        "############",
+      ],
+      entities: [
+        {
+          id: "mira",
+          definitionId: "care-recipient",
+          location: { kind: "ground", position: { x: 8, y: 3 } },
+        },
+        {
+          id: "field-bed",
+          definitionId: "bed",
+          location: { kind: "ground", position: { x: 9, y: 4 } },
+        },
+      ],
+    },
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 8,
+  },
 };

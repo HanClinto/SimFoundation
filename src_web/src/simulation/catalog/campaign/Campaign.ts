@@ -12,6 +12,7 @@ export interface Campaign {
   homeId: string;
   siteIds: Record<string, string>;
   staffIds: string[];
+  admissions: Record<string, { tick: number; bedId: string }>;
 }
 
 export function createCampaign(definitions: EntityTemplates): {
@@ -34,6 +35,7 @@ export function createCampaign(definitions: EntityTemplates): {
       staffIds: ["alex", "ben", "casey"].map(
         (name) => `${created.siteId}:${name}`,
       ),
+      admissions: {},
     },
   };
 }
@@ -166,11 +168,32 @@ export function departTeam(
   ids: readonly string[],
 ): Simulation {
   const trip = route(campaign, originId, destination);
-  team(state, campaign, originId, ids);
+  const staffIds = ids.filter((id) => campaign.staffIds.includes(id));
+  team(state, campaign, originId, staffIds);
+  const passengerIds = ids.filter((id) => !campaign.staffIds.includes(id));
+  if (passengerIds.length > 1 || new Set(ids).size !== ids.length)
+    throw new Error(
+      "Choose distinct travellers, with at most one cooperative passenger.",
+    );
+  for (const id of passengerIds) {
+    const person = state.sites[originId]?.entities[id];
+    if (
+      person?.kind !== "pawn" ||
+      !person.acceptsEscort ||
+      !person.canAct ||
+      !person.mobile ||
+      person.location.kind !== "ground" ||
+      person.queue.length
+    )
+      throw new Error(
+        "A passenger must consent, be able to walk, and finish following before departure. Carry incapacitated passengers instead.",
+      );
+  }
   if (trip.outbound) {
     const reason = opportunityBlocker(state, campaign, trip.key);
     if (reason) throw new Error(reason);
   }
+
   const docket = trip.outbound ? readyDocket(state, campaign) : null;
   if (trip.outbound && !docket)
     throw new Error(
