@@ -24,6 +24,8 @@ Start with `brief`, `status`, `map` and `help`. The
 [campaign guide](catalog/campaign/README.md) explains the finite home roster,
 equipment, care, research, routes and fallback choices. Transcripts are
 test-only normal commands, never imported or executed by gameplay.
+Use `status work` for a compact current-operations view without the full
+portfolio, using the same authoritative queues/coverage/device state.
 The CLI and benchmark use Vite only as a local module loader, with HMR and
 WebSocket listeners disabled; they do not compete with the browser dev server
 for a hot-reload port.

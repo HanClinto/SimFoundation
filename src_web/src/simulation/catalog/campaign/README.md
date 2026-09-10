@@ -5,6 +5,13 @@ Run `npm run sim` from `src_web`. `brief` introduces the finite home site;
 `brief blackwood`, `brief gallery` and `brief kestrel` explain the next work.
 Use `site home` or the route name to inspect a retained site.
 
+`status work` is a compact read-only workboard: current roster commitments and
+blockers, actual transit, running devices, started service deadlines and
+attended watch coverage. It omits the unvisited opportunity list, idle apparatus
+and historical findings. Up to24 rows are shown with a total count; use full
+`status`, `queue`, `inspect` or `medical all` for details. It is not a safety or
+resource-sufficiency verdict.
+
 Authoring starts with [Home.ts](Home.ts) for the home layout and finite initial
 inventory, and [setup.ts](setup.ts) for route opportunities. Campaign rules,
 reserve dispatch, care admission and named apparatus stay in their own files;
