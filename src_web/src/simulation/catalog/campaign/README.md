@@ -9,6 +9,9 @@ Authoring starts with [Home.ts](Home.ts) for the home layout and finite initial
 inventory, and [setup.ts](setup.ts) for route opportunities. Campaign rules,
 reserve dispatch, care admission and named apparatus stay in their own files;
 the setup does not execute test solutions.
+The existing armchair sits on the lower service lane rather than closing the
+guest-bed departure path beside the workshop. This is authored circulation,
+not permission for workers to pass through one another.
 
 The home begins with Alex, Ben and Casey, eight meals, four round-trip transport
 allocations, a reusable field kit, a comparison bench, independent records,

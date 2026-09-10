@@ -219,7 +219,7 @@ export const home: SiteTemplate = {
     {
       id: "chair",
       definitionId: "armchair",
-      location: { kind: "ground", position: { x: 8, y: 2 } },
+      location: { kind: "ground", position: { x: 11, y: 8 } },
     },
     {
       id: "meals",
