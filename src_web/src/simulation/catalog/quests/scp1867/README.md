@@ -19,6 +19,7 @@ Blackwood remains at the outpost off-map. Aquarium care, live transfer, the full
 - `quest.ts`: briefing, sources, success/failure conditions and deadline.
 - `setup.ts`: shared playable setup; no success commands.
 - `collection.ts`: named physical evidence and study station definitions.
-- Test-only answer keys: `src_web/test/simulation/quests/scp1867/quest.test.ts`.
+- Copyable test-only solutions: [pass](tests/pass.txt) and [fail: missing corroboration](tests/fail-missing-corroboration.txt). Every non-comment line is a normal CLI command. The failure deliberately moves a required independent record away from the bench.
+- Automated provenance, deduplication and injected-damage/source checks remain in `src_web/test/simulation/quests/scp1867/quest.test.ts`; the successful recovery replays the transcript above.
 
 Run `npm run sim -- --scenario scp1867` from `src_web`. Use `brief`, `status`, and `inspect bench` to read the task and study plan. Orders use the existing Take/Move/Drop actions; `study investigator bench marsh-lead` starts the physical comparison. Failure covers damage or loss of essential evidence, investigator incapacitation, and missed deadline.

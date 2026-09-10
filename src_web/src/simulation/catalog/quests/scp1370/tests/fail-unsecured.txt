@@ -1,0 +1,16 @@
+# Expected: failed, Deadline reached with incomplete objectives.
+# Recover and observe the exhibit, but remain next to the open door.
+load scp1370
+order handler {"kind":"take","targetId":"exhibit"}
+step 10
+move handler 9 3
+step 20
+order handler {"kind":"drop","targetId":"exhibit"}
+step 1
+study handler station safe-exhibit
+step 10
+move handler 6 3
+step 10
+run 140
+status
+inspect door

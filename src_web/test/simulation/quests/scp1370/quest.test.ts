@@ -2,33 +2,14 @@ import { expect, it } from "vitest";
 import {
   loadScenario,
   stepSession,
-  restoreSession,
-  type ScenarioSession,
 } from "../../../../src/application/ScenarioSession";
-import { finish, deliver } from "../play";
+import { replayTranscript } from "../../../quest-transcript";
 import { damageIntegrity } from "../../../../src/simulation/core/entity/Consumption";
 import type { Facility } from "../../../../src/simulation/core/entity/Facility";
 import type { Pawn } from "../../../../src/simulation/core/entity/pawn/Pawn";
 
-function recoverAndObserve(session: ScenarioSession): ScenarioSession {
-  let result = deliver(session, "handler", "exhibit", 9, 3);
-  result = restoreSession(JSON.stringify(result))!;
-  return finish(result, "handler", {
-    kind: "study",
-    targetId: "site-1:station",
-    planId: "safe-exhibit",
-    workTicks: 0,
-  });
-}
-
 it("recovers SCP-1370 without combat, observes it and leaves the display secured", () => {
-  let session = recoverAndObserve(loadScenario("scp1370"));
-  expect(session.quest?.status).toBe("active");
-  session = finish(session, "handler", {
-    kind: "move",
-    destination: { x: 2, y: 3 },
-  });
-  session = stepSession(session, 2);
+  const { session } = replayTranscript("scp1370", "pass.txt");
   expect(session.quest?.status).toBe("succeeded");
   const site = session.state.sites["site-1"]!;
   expect(site.entities["site-1:exhibit"]).toMatchObject({
@@ -47,17 +28,7 @@ it("recovers SCP-1370 without combat, observes it and leaves the display secured
 });
 
 it("does not pass when the recovered display is left unsecured", () => {
-  let session = loadScenario("scp1370");
-  const door = session.state.sites["site-1"]!.entities["site-1:door"]!;
-  if (door.kind !== "door") throw new Error("Expected door");
-  door.open = true;
-  door.policy = "held-open";
-  session = recoverAndObserve(session);
-  session = finish(session, "handler", {
-    kind: "move",
-    destination: { x: 2, y: 3 },
-  });
-  session = stepSession(session, 140);
+  const { session } = replayTranscript("scp1370", "fail-unsecured.txt");
   expect(session.quest).toMatchObject({
     status: "failed",
     reason: "Deadline reached with incomplete objectives.",

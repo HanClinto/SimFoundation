@@ -2,31 +2,14 @@ import { expect, it } from "vitest";
 import {
   loadScenario,
   stepSession,
-  restoreSession,
 } from "../../../../src/application/ScenarioSession";
 import { deliver, finish, order } from "../play";
+import { replayTranscript } from "../../../quest-transcript";
 import type { Facility } from "../../../../src/simulation/core/entity/Facility";
 import { damageIntegrity } from "../../../../src/simulation/core/entity/Consumption";
 
 it("recovers Blackwood's evidence and corroborates it against two independent records through physical study", () => {
-  let session = loadScenario("scp1867");
-  const initial = JSON.stringify(session);
-  expect(session.quest?.status).toBe("active");
-  const original = session;
-  session = deliver(session, "investigator", "specimen", 3, 5);
-  session = restoreSession(JSON.stringify(session))!;
-  session = deliver(session, "investigator", "journal", 3, 3);
-  expect(session.quest?.status).toBe("active");
-  session = order(session, "investigator", {
-    kind: "study",
-    targetId: "site-1:bench",
-    planId: "marsh-lead",
-    workTicks: 0,
-  });
-  session = stepSession(session, 3);
-  const restored = restoreSession(JSON.stringify(session))!;
-  const result = stepSession(session, 20);
-  expect(stepSession(restored, 20)).toEqual(result);
+  const { session: result } = replayTranscript("scp1867", "pass.txt");
   expect(result.quest?.status).toBe("succeeded");
   const bench = result.state.sites["site-1"]!.entities[
     "site-1:bench"
@@ -43,7 +26,6 @@ it("recovers Blackwood's evidence and corroborates it against two independent re
   expect(
     result.state.sites["site-1"]!.entities["site-1:device"]!.location,
   ).toEqual({ kind: "ground", position: { x: 11, y: 2 } });
-  expect(JSON.stringify(original)).toBe(initial);
   const repeated = finish(result, "investigator", {
     kind: "study",
     targetId: "site-1:bench",

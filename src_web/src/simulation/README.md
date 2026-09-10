@@ -116,7 +116,7 @@ simulation/
 
 There are no redundant `entity/entities` or `action/actions` levels. Actions belong beneath Pawn because pawns execute them. Materials have their own branch because a material is a definition, not an entity. Spatial mechanics and ownership transfers live with sites.
 
-When implemented, named anomalies belong under `catalog/actors/anomalies` and ordinary authored maps under `catalog/sites`. Quests live under `catalog/quests/<quest>/quest.ts` with shared gameplay initialization in `setup.ts`. Passing/failing test configurations belong under `test/simulation/quests/<quest>/`, never in the gameplay catalog or scenario registry. Stage folders are useful when a stage actually has multiple files/assets. Do not create empty quest, actor, or site stubs just to fill out the proposed tree. Quest content must not own a site's lifetime.
+When implemented, named anomalies belong under `catalog/actors/anomalies` and ordinary authored maps under `catalog/sites`. Quests live under `catalog/quests/<quest>/quest.ts` with shared gameplay initialization in `setup.ts`. Human-readable pass/fail transcripts live alongside each quest in its explicitly test-only `tests/` folder. They are not imported by gameplay or registered as variants. The automated replayer and additional state-level tests remain under the web project's `test/` tree. Stage folders are useful when a stage actually has multiple files/assets. Do not create empty quest, actor, or site stubs just to fill out the proposed tree. Quest content must not own a site's lifetime.
 
 ## Entity, Template, Material
 
@@ -391,7 +391,20 @@ Movement and other orders **append**, not replace the current intention. Accepta
 
 [Response](catalog/quests/response/quest.ts) succeeds when the soldier attacks, researcher withdraws and gains separation, and medic treats the casualty. It fails for soldier/civilian incapacitation or an incomplete deadline. [Daily life](catalog/quests/daily/quest.ts) requires sustained work/care and retained food. [Colony](catalog/quests/colony/quest.ts) checks a 12-worker, 42x26 site with shared facilities, a medic, a bleeding worker and finite food for at least 1000 ticks. Its resource condition is total food, not even usage of individual piles. [Consumption](catalog/quests/consumption/quest.ts) checks completion of eating, satiety and retained leftovers; it can fail by incapacity or deadline.
 
-Each quest package has `quest.ts` (the challenge) and `setup.ts` (the shared playable site setup). Gameplay and tests both load that setup. Success/failure "answer keys" are tests, not catalog variants: see [consumption/quest.test.ts](../../test/simulation/quests/consumption/quest.test.ts). Minimal setup stays inline unless extracting a helper improves readability. Tests may configure initial conditions and issue ordinary commands, but never alter objective counters, waive prerequisites or force completion. Genuine in-game variants would be separate authored content, not these answer keys.
+Each quest package has `quest.ts` (the challenge) and `setup.ts` (the shared playable site setup). Gameplay and tests both load that setup. Success/failure "answer keys" are tests, not catalog variants. At the user's request they are now easy to find beside the scenario: `catalog/quests/<quest>/tests/*.txt`. SCP-1370, SCP-1867 and Consumption have transcripts containing exactly the commands accepted by the interactive CLI, starting with `load`. Lines beginning with `#` are comments accepted by the CLI too. No hidden state edits, test-only commands or automatic quest completion are needed to play these solutions.
+
+For example, open [SCP-1370's passing transcript](catalog/quests/scp1370/tests/pass.txt), enter its commands one at a time, and inspect the simulation between them. Or run it unchanged from `src_web`:
+
+```sh
+npm run sim < src/simulation/catalog/quests/scp1370/tests/pass.txt
+npm run sim < src/simulation/catalog/quests/scp1370/tests/fail-unsecured.txt
+```
+
+Also available: [SCP-1867 pass](catalog/quests/scp1867/tests/pass.txt), [missing corroboration failure](catalog/quests/scp1867/tests/fail-missing-corroboration.txt), [Consumption pass](catalog/quests/consumption/tests/pass.txt), [interrupted meal solution](catalog/quests/consumption/tests/pass-resume.txt), and [missed deadline](catalog/quests/consumption/tests/fail-deadline.txt). The step counts leave readable time for travel and work; they demonstrate a solution, not the only permissible route or exact completion timing. Interactive/piped mode prints the quest outcome; unlike `--batch`, it does not set a failure exit code for a failed quest.
+
+[quest-transcripts.test.ts](../../test/quest-transcripts.test.ts) executes these same files through the real CLI parser and checks the expected status, failure reason and important physical outcomes. The test-only replayer reports the transcript line on command failure, rejects rejected commands, checks nonmutation, and verifies continuation from a saved session after each command. Existing SCP success tests use these files rather than duplicate opaque order sequences. Focused injected-damage, incompatible-source, and persistence tests remain TypeScript tests under `test/simulation/quests/`; they complement the playable solutions rather than pretending to be commands a player can enter.
+
+Colocation is for discoverability only: no production module imports `tests/` or reads these files. Genuine in-game variants would be separate authored content. Test-only configuration should remain minimal, and must never alter objective counters, waive prerequisites or force completion.
 
 The consumption tests demonstrate two successful solutions (uninterrupted and cancel/leave/reload/resume) and two named failure outcomes (incompatible food until the deadline, and an incapacitated diner). They check intermediate material conservation and that success cannot occur before eating. This is the acceptance-test backbone, not the entire test suite: focused nutrition, rate, occupancy, structural damage and reference-safety tests remain alongside it.
 

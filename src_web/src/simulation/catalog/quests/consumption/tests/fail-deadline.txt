@@ -1,0 +1,6 @@
+# Expected: failed, Deadline reached with incomplete objectives.
+# The diner has no autonomous orders; taking no action misses the deadline.
+load consumption
+run 80
+status
+inspect meal

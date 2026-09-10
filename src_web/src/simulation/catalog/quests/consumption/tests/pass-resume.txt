@@ -1,0 +1,13 @@
+# Expected: succeeded, All objectives satisfied.
+# Leave a partially consumed meal, walk away, then return to finish eating.
+load consumption
+order diner {"kind":"eat","targetId":"meal"}
+step 3
+cancel diner
+inspect meal
+move diner 5 3
+step 8
+order diner {"kind":"eat","targetId":"meal"}
+run 40
+status
+inspect meal

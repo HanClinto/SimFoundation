@@ -18,6 +18,7 @@ The oversized one-level glass bay abstracts an adequate enclosure. Tile dimensio
 - `setup.ts`: shared gallery setup.
 - `display.ts`: source-specific observation station and finding.
 - `catalog/actors/anomalies/SCP1370.ts`: the named pawn definition.
-- Test-only answer keys: `src_web/test/simulation/quests/scp1370/quest.test.ts`.
+- Copyable test-only solutions: [pass](tests/pass.txt) and [fail: left unsecured](tests/fail-unsecured.txt). Enter these commands directly in the CLI; `#` lines are comments. The failure leaves the handler beside the open door rather than returning to reception.
+- Automated assertions and injected-damage checks remain in `src_web/test/simulation/quests/scp1370/quest.test.ts`; the passing and unsecured runs replay the files above.
 
 Run `npm run sim -- --scenario scp1370` from `src_web`. Use `brief`, `status`, and `inspect station`. `study handler station safe-exhibit` performs the observation after the exhibit has been physically brought nearby. Damage/loss, handler incapacitation and deadline failure are separate from successful secure recovery.

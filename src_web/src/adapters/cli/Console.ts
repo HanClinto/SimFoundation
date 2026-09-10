@@ -136,7 +136,7 @@ export function executeLine(
   const [command, ...args] = line.trim().split(/\s+/);
   let next = console;
   const finish = (output: string) => ({ console: next, output });
-  if (!command) return finish("");
+  if (!command || command.startsWith("#")) return finish("");
   switch (command) {
     case "help":
       return finish(help);
