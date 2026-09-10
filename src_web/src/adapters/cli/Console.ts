@@ -54,6 +54,7 @@ function resolve(
   console: ConsoleState,
   value: string | undefined,
   actorId?: string,
+  globalInspection = false,
 ): Entity {
   const members = roster(console);
   if (value === "@held") {
@@ -68,13 +69,24 @@ function resolve(
       );
     return carried[0]!;
   }
-  const exact = members.find(
+  const all = globalInspection
+    ? [
+        ...Object.values(console.session.state.sites),
+        ...Object.values(console.session.state.transfers),
+      ].flatMap((owner) => Object.values(owner.entities))
+    : members;
+  const exact = all.find(
     (entity) => entity.id === value || token(console, entity) === value,
   );
   if (exact) return exact;
-  const matches = members.filter(
+  let matches = members.filter(
     (entity) => entity.name === value || entity.id.split(":").at(-1) === value,
   );
+  if (!matches.length && globalInspection)
+    matches = all.filter(
+      (entity) =>
+        entity.name === value || entity.id.split(":").at(-1) === value,
+    );
   if (matches.length > 1)
     throw new Error(
       `Ambiguous entity: ${value}. Use a stable label or full ID.`,
@@ -513,12 +525,16 @@ export function executeLine(
       };
     }
     case "inspect": {
-      const entity = resolve(console, args[0]);
+      const entity = resolve(console, args[0], undefined, true);
+      const owner = [
+        ...Object.values(console.session.state.sites),
+        ...Object.values(console.session.state.transfers),
+      ].find((candidate) => candidate.entities[entity.id])!;
       const context =
-        entity.kind === "pawn"
+        entity.kind === "pawn" && "terrain" in owner
           ? {
               pawn: entity,
-              site: console.session.state.sites[console.siteId]!,
+              site: owner,
               tick: console.session.state.tick,
               materials,
               events: [],
@@ -528,11 +544,20 @@ export function executeLine(
         JSON.stringify(
           {
             entity,
-            restraint: restraintFor(
-              console.session.state.sites[console.siteId]!.entities,
-              entity.id,
-            ),
-            contents: roster(console)
+            owner:
+              "terrain" in owner
+                ? { kind: "site", id: owner.id, name: owner.name }
+                : {
+                    kind: "transit",
+                    id: owner.id,
+                    originId: owner.originId,
+                    destinationId: owner.destinationId,
+                    arrivesAt: owner.arrivesAt,
+                    blockedReason: owner.blockedReason,
+                    mapPosition: null,
+                  },
+            restraint: restraintFor(owner.entities, entity.id),
+            contents: Object.values(owner.entities)
               .filter(
                 (entry) =>
                   entry.location.kind === "carried" &&

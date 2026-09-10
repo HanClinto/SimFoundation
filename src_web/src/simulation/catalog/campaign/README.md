@@ -58,6 +58,14 @@ accepted outbound departure. Return trips are prepaid even if dockets run out.
 Keep the home arrival pad clear; blocked arrivals remain in transit and continue
 physiology until admitted.
 
+`inspect <full-id|stable-label>` reads the actual entity even while it belongs
+to transit or another site. It includes its owner, destination/arrival blocker,
+actual carried contents and restraint condition. Transit inspection has no map
+position or local-autonomy preview. Gameplay orders still require the worker
+and targets at the selected site; inspection does not authorize remote care or
+mid-transit changes. Local aliases take precedence; ambiguous nonlocal aliases
+require a full ID or stable label.
+
 Outbound staff must have hunger and fatigue below 85, both when preparing and
 when sending. `status` shows each person's work, autonomy and actual readiness
 blocker. Enable `autonomy alex on` to use ordinary home food/rest routines, or
