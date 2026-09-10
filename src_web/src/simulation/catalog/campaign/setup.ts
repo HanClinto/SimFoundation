@@ -29,6 +29,11 @@ export const home: SiteTemplate = {
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
     {
+      id: "workshop",
+      definitionId: "equipment-bench",
+      location: { kind: "ground", position: { x: 7, y: 1 } },
+    },
+    {
       id: "suppression-units",
       definitionId: "suppression-unit",
       location: { kind: "ground", position: { x: 1, y: 2 } },

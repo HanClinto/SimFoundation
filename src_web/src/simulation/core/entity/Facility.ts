@@ -19,6 +19,11 @@ export interface Facility extends EntityBase {
   dispenser?: Dispenser;
   service?: ServiceProfile;
   containment?: Containment;
+  equipmentRepair?: {
+    supplyDefinitionId: string;
+    ticks: number;
+    condition: number;
+  };
   care?: {
     supplyDefinitionId: string;
     ticks: number;
@@ -51,6 +56,7 @@ export function facilityInUse(
       action.workTicks > 0 &&
       (action.targetId === targetId ||
         ("bedId" in action && action.bedId === targetId) ||
+        ("benchId" in action && action.benchId === targetId) ||
         ("cellId" in action && action.cellId === targetId))
     );
   });

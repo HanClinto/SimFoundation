@@ -9,6 +9,7 @@ import {
   KineticSpecimen,
   TransportRestraint,
   SuppressionUnit,
+  EquipmentBench,
 } from "./campaign/intervention";
 import { AutomaticSteelDoor } from "./entities/doors/AutomaticSteelDoor";
 import { PackagedMeal } from "./entities/supplies/PackagedMeal";
@@ -121,6 +122,7 @@ export const entities: EntityTemplates = Object.fromEntries(
     KineticSpecimen,
     TransportRestraint,
     SuppressionUnit,
+    EquipmentBench,
     ActingGuide,
     RehearsalDesk,
     ApprovedProgramme,

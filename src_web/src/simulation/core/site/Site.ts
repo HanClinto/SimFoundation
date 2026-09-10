@@ -87,6 +87,8 @@ export function instantiateSite(
           action = { ...action, restraintId: reference(action.restraintId) };
         if (action.kind === "contain")
           action = { ...action, cellId: reference(action.cellId) };
+        if (action.kind === "repair-equipment")
+          action = { ...action, benchId: reference(action.benchId) };
         return {
           ...entry,
           id: `${reference(entity.id)}:initial-action-${index}`,

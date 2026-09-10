@@ -124,6 +124,14 @@ Six ticks and one unit restore one charge, up to capacity two. Cancellation
 keeps a consumed unit but does not grant an unfinished charge; body-recovered
 tools use exactly the same operation. There is no automatic or infinite refill.
 
+Worn condition has separate maintenance: bring a real maintenance pack and the
+equipment to `workshop`, then `order alex repair-equipment vest workshop`.
+Ten productive ticks restore up to40 condition, capped at100, without refilling
+charges or replacing the item. Funded cancellation loses the part without
+granting unfinished repair. Cases, restraints and specimens are not generic
+equipment-repair targets. In the compact home clinic, move the clinician aside
+after treatment if their position blocks the recovered worker's exit.
+
 `order alex subdue specimen` uses one of the fictional instrument's two charges
 for temporary eighty-tick subdual. This does not produce consent or heal the
 subject. Armor reduces impacts but wears out and does not erase bleeding.

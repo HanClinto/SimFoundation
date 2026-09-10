@@ -121,6 +121,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "repair-equipment")
+    return `repair ${action.targetId} at ${action.benchId} | work ${action.workTicks}${action.supplyId ? ` | part spent: ${action.supplyId}` : ""}`;
   if (action.kind === "rearm")
     return `rearm ${action.targetId} | work ${action.workTicks}${action.supplyId ? ` | unit spent: ${action.supplyId}` : ""}`;
   if (action.kind === "contain")
@@ -232,6 +234,7 @@ send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
 order <worker> rearm <worn-tool> (finite physical supply)
+order <worker> repair-equipment <gear> <bench>
 order <worker> restrain <hostile> <carried-restraint>
 order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
 order <worker> lockdown <cell> (physical, finite emergency fallback)
@@ -660,6 +663,11 @@ export function executeLine(
             action = {
               ...action,
               cellId: resolve(console, action.cellId, actor.id).id,
+            };
+          if (action.kind === "repair-equipment")
+            action = {
+              ...action,
+              benchId: resolve(console, action.benchId, actor.id).id,
             };
         }
         result = executeCommand(

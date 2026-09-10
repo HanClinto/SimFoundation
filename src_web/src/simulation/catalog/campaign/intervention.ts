@@ -139,3 +139,25 @@ export const SuppressionUnit: EntityTemplate = {
     blocksSight: false,
   },
 };
+
+export const EquipmentBench: EntityTemplate = {
+  id: "equipment-bench",
+  name: "Equipment maintenance bench",
+  description:
+    "Ten productive work ticks and one physical maintenance pack restore up to forty condition on actual equipment. Gear must be beside the bench or worn/held by the worker; charges are not replenished, and cancelled funded work does not refund parts.",
+  defaults: {
+    kind: "facility",
+    materialId: "steel",
+    amount: 1,
+    integrity: 100,
+    carryable: false,
+    blocksMovement: true,
+    blocksSight: false,
+    activities: {},
+    equipmentRepair: {
+      supplyDefinitionId: "maintenance-parts",
+      ticks: 10,
+      condition: 40,
+    },
+  },
+};
