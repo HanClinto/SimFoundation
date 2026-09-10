@@ -1,5 +1,7 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
 import { canSee } from "../../../site/Visibility";
+import { chooseNeedAction } from "../Needs";
+import { needActions } from "./NeedActions";
 
 export interface WatchState {
   kind: "watch";
@@ -10,7 +12,10 @@ export interface WatchState {
 
 export class Watch implements Action {
   constructor(readonly state: WatchState) {}
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({
+    site,
+    pawn,
+  }: Pick<ActionContext, "site" | "pawn">): string | null {
     if (pawn.human !== true)
       return "Direct watch requires a conscious human observer.";
     const target = site.entities[this.state.targetId];
@@ -46,6 +51,21 @@ export class Watch implements Action {
         reason: `Direct watch lost: ${reason}`,
       });
       return { status: "interrupted", reason };
+    }
+    if (
+      context.pawn.queue[0]?.source === "autonomy" &&
+      context.pawn.watchDuty?.targetId === this.state.targetId &&
+      chooseNeedAction(context, needActions, true)
+    ) {
+      context.events.push({
+        siteId: context.site.id,
+        entityId: context.pawn.id,
+        targetId: this.state.targetId,
+        kind: "warning",
+        reason:
+          "Assigned observer is leaving watch for actual restorative work; maintain replacement coverage.",
+      });
+      return { status: "completed" };
     }
     if (this.state.workTicks >= this.state.ticks) {
       context.events.push({

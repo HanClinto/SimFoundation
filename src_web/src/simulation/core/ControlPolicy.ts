@@ -4,8 +4,16 @@ import type { Entity } from "./entity/Entity";
 import type { Simulation } from "./Simulation";
 import type { Materials } from "./material/Material";
 import { watchHandoffBlocker } from "./entity/pawn/Attention";
+import { floorAt } from "./site/TileMap";
+import type { Position } from "./entity/Entity";
 
 export type Command =
+  | {
+      readonly kind: "watch-duty";
+      readonly siteId: string;
+      readonly entityId: string;
+      readonly duty: { targetId: string; post: Position } | null;
+    }
   | {
       readonly kind: "relieve";
       readonly siteId: string;
@@ -78,12 +86,42 @@ export function executeCommand(
     if (entity.autonomy === command.enabled)
       return { state, code: "unchanged", reason: null };
     updated = { ...entity, autonomy: command.enabled };
+  } else if (command.kind === "watch-duty") {
+    if (command.duty) {
+      const subject = site.entities[command.duty.targetId];
+      if (
+        entity.human !== true ||
+        subject?.kind !== "pawn" ||
+        !subject.stillWhenWatched ||
+        subject.id === entity.id ||
+        subject.health?.death ||
+        !Number.isInteger(command.duty.post.x) ||
+        !Number.isInteger(command.duty.post.y) ||
+        !floorAt(site, command.duty.post)
+      )
+        return fail(
+          "Choose a human worker, local attention-sensitive subject and valid floor post.",
+        );
+      const assigned = {
+        ...entity,
+        watchDuty: structuredClone(command.duty),
+        autonomy: true,
+      };
+      delete assigned.serviceDuty;
+      updated = assigned;
+    } else {
+      const cleared = { ...entity };
+      delete cleared.watchDuty;
+      updated = cleared;
+    }
   } else if (command.kind === "duty") {
     if (command.targetId !== null) {
       const target = site.entities[command.targetId];
       if (target?.kind !== "facility" || !target.service)
         return fail("Choose a service counter at this worker's site.");
-      updated = { ...entity, serviceDuty: target.id, autonomy: true };
+      const assigned = { ...entity, serviceDuty: target.id, autonomy: true };
+      delete assigned.watchDuty;
+      updated = assigned;
     } else {
       const cleared = { ...entity };
       delete cleared.serviceDuty;

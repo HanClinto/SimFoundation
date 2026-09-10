@@ -5,11 +5,18 @@ import { positionOf, samePosition } from "../../site/TileMap";
 import { chooseConcern } from "./concerns/Concerns";
 import { Mend } from "./actions/Mend";
 import { Service } from "./actions/Service";
+import { watchDutyAction } from "./WatchDuty";
 
 export function chooseAction(context: ActionContext): ActionState | null {
   const { site, pawn } = context;
   const concern = chooseConcern(context);
   if (concern) return concern.action;
+  if (pawn.watchDuty) {
+    const urgent = chooseNeedAction(context, needActions, true);
+    if (urgent) return urgent;
+    const watch = watchDutyAction(context);
+    if (watch) return watch;
+  }
   const mending = Mend.offer(context);
   if (mending) return mending;
   if (pawn.serviceDuty) {

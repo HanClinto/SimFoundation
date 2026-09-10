@@ -35,6 +35,36 @@ control, consciousness or independent ground position removes coverage.
 The subject resumes physical movement/attack when every valid observer stops.
 The closed door remains a separate physical fallback.
 
+`assign-watch alex subject 10 3` adds an **individual** recurring post intent.
+Ordinary autonomy reaches that actual floor position and starts direct Watch.
+When a critical restorative need has an actual usable provider, self-chosen
+watch warns/releases, the worker performs ordinary supplied food/rest work,
+then returns to the post. Explicit player Watch commitments retain their
+existing duration/fatigue semantics. This is not an automatic team-relief or
+safety policy: keep another observer active, or use the locked-door fallback.
+Existing emergency concerns can interrupt self-chosen watch for real response;
+the assignment does not override an adjacent casualty or imminent threat.
+
+Future service and watch duty are exclusive; assigning one clears the other
+intent without erasing the current commitment. `assign-watch alex none` clears
+only future duty, not a current Watch or paid work. Use guarded `relieve` or
+explicit `cancel` as appropriate. `status work` shows the chosen post and current
+blocker; assignment itself does not mean coverage is active or that a post is
+reachable/visible.
+
+The [individual-duty continuation](tests/watch-duty.txt) follows the first
+`status` in the maintenance walkthrough. Casey deliberately stays on watch while
+Riley retrieves the **actual spare guest bed** from home and installs it at the
+annex. Ben keeps his occupied home bed. Alex's assigned watch then yields to real
+sleep and resumes at his post; no fatigue reset or spare furniture is created.
+The guest bed remains in the field after withdrawal, a real loadout consequence.
+
+```sh
+{ awk '1; $0 == "status" { exit }' src/simulation/catalog/quests/scp173/tests/watch-maintenance.txt
+  awk '1' src/simulation/catalog/quests/scp173/tests/watch-duty.txt
+} | npm run sim -- --strict
+```
+
 To relieve a watcher, activate the replacement **before** releasing the earlier
 commitment. `relieve alex riley` releases only Alex's current Watch after
 confirming Riley is already actively watching the same subject. Pending work,

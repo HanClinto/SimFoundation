@@ -9,7 +9,7 @@ import { beginOperatingCycle } from "./site/OperatingCycle";
 import { publishServiceWarning } from "./entity/Service";
 import { advanceProcessor } from "./entity/Processor";
 
-export const SIMULATION_VERSION = 47;
+export const SIMULATION_VERSION = 48;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;

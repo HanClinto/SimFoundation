@@ -6,6 +6,7 @@ import {
   serviceStatus,
 } from "../../simulation/core/entity/Service";
 import { directWatchers } from "../../simulation/core/entity/pawn/Attention";
+import { watchDutyBlocker } from "../../simulation/core/entity/pawn/WatchDuty";
 
 export function workboard(session: ScenarioSession): string {
   const { state, campaign } = session;
@@ -24,12 +25,14 @@ export function workboard(session: ScenarioSession): string {
       continue;
     }
     const current = worker.queue[0];
+    const dutyProblem =
+      owner && "terrain" in owner ? watchDutyBlocker(owner, worker) : null;
     rows.push(
       `${session.labels[id]} ${worker.name} at ${owner!.id}: ${healthStatus(worker)} | ${
         current
           ? `${describeAction(current.action)}${worker.queue.length > 1 ? ` (+${worker.queue.length - 1} queued)` : ""}${current.blockedReason ? ` | BLOCKED: ${current.blockedReason}` : ""}`
           : "idle"
-      }${worker.serviceDuty ? ` | duty ${worker.serviceDuty}` : ""}`,
+      }${worker.serviceDuty ? ` | duty ${worker.serviceDuty}` : ""}${worker.watchDuty ? ` | watch duty ${worker.watchDuty.targetId} at (${worker.watchDuty.post.x},${worker.watchDuty.post.y})${dutyProblem ? ` | UNAVAILABLE: ${dutyProblem}` : ""}` : ""}`,
     );
   }
   for (const transfer of Object.values(state.transfers).sort((a, b) =>

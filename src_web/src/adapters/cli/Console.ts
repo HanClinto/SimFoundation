@@ -234,6 +234,7 @@ order <name|@N> nurse <patient> <clinical-bed> [wounds]
 order <name|@N> take <supply-stack> [amount] (physical collection)
 Use @held as an order target for that worker's actual carried object.
 assign <worker> <counter|none> | order <worker> service <counter>
+assign-watch <worker> <subject> <x> <y> | assign-watch <worker> none (individual post duty, not automatic team relief)
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -616,6 +617,7 @@ export function executeLine(
     case "study":
     case "order":
     case "assign":
+    case "assign-watch":
     case "relieve":
     case "autonomy":
     case "cancel": {
@@ -624,7 +626,27 @@ export function executeLine(
       const actor = resolve(console, args[0]);
       const base = { siteId: console.siteId, entityId: actor.id };
       let result;
-      if (command === "relieve") {
+      if (command === "assign-watch") {
+        if (args.length !== 4 && !(args.length === 2 && args[1] === "none"))
+          throw new Error(
+            "Use assign-watch <worker> <subject> <x> <y>, or assign-watch <worker> none.",
+          );
+        result = executeCommand(
+          console.session.state,
+          {
+            ...base,
+            kind: "watch-duty",
+            duty:
+              args[1] === "none"
+                ? null
+                : {
+                    targetId: resolve(console, args[1]).id,
+                    post: { x: Number(args[2]), y: Number(args[3]) },
+                  },
+          },
+          materials,
+        );
+      } else if (command === "relieve") {
         if (args.length !== 2)
           throw new Error("Use relieve <outgoing> <replacement>.");
         result = executeCommand(

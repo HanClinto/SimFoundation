@@ -43,6 +43,15 @@ export function campaignStatus(session: ScenarioSession): string {
     ),
     ...owners.flatMap((owner) =>
       Object.values(owner.entities).flatMap((entity) =>
+        entity.kind === "pawn" && entity.watchDuty
+          ? [
+              `Watch duty: ${entity.name} -> ${entity.watchDuty.targetId} at (${entity.watchDuty.post.x},${entity.watchDuty.post.y})${"terrain" in owner && owner.entities[entity.watchDuty.targetId] ? "" : " (subject is not at assigned worker's site)"}`,
+            ]
+          : [],
+      ),
+    ),
+    ...owners.flatMap((owner) =>
+      Object.values(owner.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.serviceDuty
           ? [
               `Duty: ${entity.name} -> ${entity.serviceDuty}${"terrain" in owner && owner.entities[entity.serviceDuty] ? "" : " (not at the assigned site)"}`,

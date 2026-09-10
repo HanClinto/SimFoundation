@@ -26,6 +26,7 @@ export interface Pawn extends EntityBase {
   ageYears?: number;
   organMending?: OrganMending;
   serviceDuty?: string;
+  watchDuty?: { targetId: string; post: Position };
   needs: Record<string, Need>;
   diet: readonly DietRule[];
   eatingRate: number;
@@ -98,6 +99,14 @@ export function tickPawn(context: ActionContext): void {
       : null;
   if (current && concern && shouldInterrupt(current, concern)) {
     pawn.queue.shift();
+    if (current.action.kind === "watch")
+      context.events.push({
+        siteId: context.site.id,
+        entityId: pawn.id,
+        targetId: current.action.targetId,
+        kind: "warning",
+        reason: `Direct watch interrupted for ${concern.kind}; maintain replacement coverage.`,
+      });
     context.events.push({
       siteId: context.site.id,
       entityId: pawn.id,

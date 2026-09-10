@@ -1,0 +1,69 @@
+# Continue watch-maintenance.txt through its FIRST status (three people inside).
+# Alex has an individual duty; Casey deliberately keeps the other direct watch.
+assign-watch alex subject 10 3
+relieve alex casey
+step 1
+# Riley fetches the real spare guest bed; Ben keeps his occupied home bed.
+order riley door gate open
+finish riley
+order riley move 3 3
+finish riley
+order riley door gate closed
+finish riley
+prepare home riley
+finish riley
+send home riley
+finish riley
+site home
+order riley take guest-bed
+finish riley
+prepare statue riley
+finish riley
+send statue riley
+finish riley
+site statue
+order riley door gate open
+finish riley
+order riley deliver @held 7 1
+finish riley
+order riley move 6 1
+finish riley
+# With actual rest now available, Alex leaves self-chosen watch, sleeps, returns.
+step 25
+status work
+inspect alex
+# End the assignment without erasing its current commitment; then safely withdraw.
+assign-watch alex none
+order riley watch subject 120
+step 1
+relieve alex riley
+order alex move 4 1
+finish alex
+order alex watch subject 100
+step 1
+relieve casey alex
+order casey move 4 5
+finish casey
+order casey watch subject 100
+step 1
+relieve riley alex
+order riley move 3 3
+finish riley
+order riley door gate closed
+finish riley
+cancel alex
+cancel casey
+prepare home alex casey
+finish alex casey
+send home alex casey
+finish alex casey
+site home
+order alex move 1 7
+finish alex
+site statue
+prepare home riley
+finish riley
+send home riley
+finish riley
+site home
+status work

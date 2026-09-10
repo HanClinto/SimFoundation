@@ -601,6 +601,12 @@ replacement is actually watching the same subject. It preserves later queued
 work and refuses to remove coverage required by currently productive supervised
 work. It adds no time, movement or hidden watch; `cancel` remains the exception.
 
+`assign-watch <worker> <subject> <x> <y>` assigns an individual post. Self-chosen
+watch can yield with a warning to actual critical food/rest work, then the worker
+returns using ordinary movement. Bring real furniture/supplies; there is no
+automatic team relief or safety guarantee. Clearing the assignment changes
+future intent only. The annex guide includes a spare-bed transport example.
+
 Stage in the viewing gallery, move observers inside under overlapping coverage,
 close the door behind the three-person group for work, then withdraw and lock
 the door while coverage remains. This is a bounded source adaptation, not

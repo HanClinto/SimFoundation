@@ -72,6 +72,14 @@ export function instantiateSite(
       ...(entity.serviceDuty
         ? { serviceDuty: reference(entity.serviceDuty) }
         : {}),
+      ...(entity.watchDuty
+        ? {
+            watchDuty: {
+              ...entity.watchDuty,
+              targetId: reference(entity.watchDuty.targetId),
+            },
+          }
+        : {}),
       queue: entity.queue.map((entry, index) => {
         let action: ActionState =
           "targetId" in entry.action
