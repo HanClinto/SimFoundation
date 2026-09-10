@@ -6,6 +6,7 @@ import { facilityInUse } from "../../Facility";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { findSupply } from "../../Supply";
+import { serviceStatus } from "../../Service";
 
 export interface NurseState {
   kind: "nurse";
@@ -29,7 +30,7 @@ function finishRecovery(patient: Pawn): void {
 export class Nurse implements Action {
   constructor(readonly state: NurseState) {}
 
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({ site, pawn, tick }: ActionContext): string | null {
     if (!pawn.response?.medicine)
       return "A medically trained worker is required.";
     const patient = site.entities[this.state.targetId];
@@ -50,6 +51,12 @@ export class Nurse implements Action {
       (bed.integrity ?? 100) <= 0
     )
       return "A usable clinical bed is required.";
+    if (
+      bed.service &&
+      ((bed.integrity ?? 100) < 100 ||
+        ["unstarted", "overdue"].includes(serviceStatus(bed.service, tick)))
+    )
+      return "Restore shelter service before clinical care.";
     if (
       patient.location.kind !== "ground" ||
       distance(patient.location.position, bed.location.position) > 1

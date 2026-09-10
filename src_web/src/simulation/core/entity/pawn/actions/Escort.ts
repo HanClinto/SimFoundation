@@ -13,6 +13,7 @@ export interface EscortState {
   kind: "escort";
   targetId: string;
   destination: Position;
+  trail?: Position;
 }
 
 export interface FollowState {
@@ -23,6 +24,14 @@ export interface FollowState {
 
 export class Escort implements Action {
   constructor(readonly state: EscortState) {}
+
+  private move(context: ActionContext, destination: Position): ActionResult {
+    const origin = positionOf(context.site, context.pawn.id)!;
+    const result = new Move(destination).tick(context);
+    if (!samePosition(origin, positionOf(context.site, context.pawn.id)!))
+      this.state.trail = { ...origin };
+    return result.status === "completed" ? { status: "running" } : result;
+  }
 
   canStart(context: ActionContext): string | null {
     const reason = new Move(this.state.destination).canStart(context);
@@ -123,8 +132,7 @@ export class Escort implements Action {
           status: "blocked",
           reason: "No space to step aside for the escorted person.",
         };
-      const result = new Move(aside).tick(context);
-      return result.status === "completed" ? { status: "running" } : result;
+      return this.move(context, aside);
     }
     if (distance(positionOf(site, pawn.id)!, this.state.destination) === 1) {
       if (
@@ -136,16 +144,14 @@ export class Escort implements Action {
         )
       )
         return { status: "running" };
-      const result = new Move(this.state.destination).tick(context);
-      return result.status === "completed" ? { status: "running" } : result;
+      return this.move(context, this.state.destination);
     }
     if (separation > 1)
       return {
         status: "blocked",
         reason: `Waiting for ${person.name} to catch up${person.queue[0]?.blockedReason ? `: ${person.queue[0].blockedReason}` : "."}`,
       };
-    const result = new Move(this.state.destination).tick(context);
-    return result.status === "completed" ? { status: "running" } : result;
+    return this.move(context, this.state.destination);
   }
 }
 
@@ -181,6 +187,18 @@ export class Follow implements Action {
       ) <= 1
     ) {
       const result = new Move(current.action.destination).tick(context);
+      return result.status === "completed" ? { status: "running" } : result;
+    }
+    if (
+      distance(
+        positionOf(context.site, context.pawn.id)!,
+        leader.location.position,
+      ) <= 1
+    )
+      return { status: "running" };
+    if (current.action.trail) {
+      // Follow the vacated tile, not a shortcut into the leader's next step.
+      const result = new Move(current.action.trail).tick(context);
       return result.status === "completed" ? { status: "running" } : result;
     }
     return Move.approach(context, leader) ?? { status: "running" };

@@ -71,7 +71,7 @@ her own turn. Escort places the person at the exact destination and yields
 the tile rather than stacking them.
 
 When both queues finish in the loading area, `send home casey mira` transfers
-both actual people; there is at most one walking passenger per group. At home,
+both actual people; this care route permits one walking passenger per group. At home,
 `order casey escort mira 6 2`, wait for arrival, then `admit mira bed`.
 Admission requires proximity and stopped bleeding, queues ordinary rest and
 enables home needs autonomy. Injury and lost blood remain; Mira is a resident,
@@ -114,9 +114,6 @@ Mira cannot walk and completes the entire rescue through normal commands:
 npm run sim < src/simulation/catalog/campaign/tests/carried-recovery.txt
 ```
 
-Core version 15 records incapacity cause and paid clinical work. Old development
-saves are discarded, not migrated.
-
 [SCP-2295 supported care](../quests/scp2295/README.md) extends this with specific
 lung replacement, finite textiles/self-fabric and paid postoperative nursing.
 `brief triage` explains the two-adult transfer. The bear acts on the youngest
@@ -150,6 +147,16 @@ retained, not consumed or cloned, and each counts once at the rig. `brief
 screening` explains the finite curation/staffing loop and its explicitly
 unmodeled psychological/shapeshifting behavior.
 
+## Bounded Store Evacuation
+
+[SCP-3008](../quests/scp3008/README.md) combines field service, clinical care,
+escort/carry and a timed return. `brief store` introduces the fixed sector and
+its two survivors. First responder entry starts a persistent day/night cycle;
+night employees cause capped, nonlethal wounds and the exit reports its next
+reopening. Restore the shelter and use field care, or carry the casualty home
+and spend a home pack instead. Two walking passengers fit this route's larger
+loading area. Neither path resets the people or the site.
+
 ## Protective Courier Handling
 
 `brief courier` introduces an original nonliving fragile-vial recovery.
@@ -170,8 +177,7 @@ vial and its actual case. A sealed specimen is not available for study.
 
 No case repair, automatic replacement, chemical hazard or protective damage
 multiplier is modeled. The useful decision is preparation and scarce carrying
-capacity, not a hidden breakage roll. Case state was introduced in core version
-14 without save migrations. The [courier walkthrough](tests/courier.txt) is copyable:
+capacity, not a hidden breakage roll. The [courier walkthrough](tests/courier.txt) is copyable:
 
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/courier.txt
@@ -204,6 +210,6 @@ with finite paid requests and source-conserving samples. Use `brief scp294`.
 This slice has no death, hostile capture, vehicle simulation or automatic
 resupply. Incapacitated staff can be carried by available responders
 through existing physical rules. Treatment stabilizes bleeding; finite bedside
-care can improve blood loss, but neither is a universal wound cure. There is no authored combat in these
-campaign routes. Running out of every transport allocation prevents additional
+care can improve blood loss, but neither is a universal wound cure. The bounded
+store has capped night impacts, not source-level lethal combat. Running out of every transport allocation prevents additional
 departures, not prepaid return or continued home management.

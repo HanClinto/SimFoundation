@@ -5,6 +5,7 @@ import type { EntityTemplates } from "../entity/EntityTemplate";
 import { instantiateEntity, type EntityPlacement } from "./EntityPlacement";
 import { floorAt, positionOf, samePosition, tileAt } from "./TileMap";
 import type { Tile } from "./Tile";
+import type { OperatingCycle } from "./OperatingCycle";
 
 export interface Site {
   id: string;
@@ -12,6 +13,7 @@ export interface Site {
   terrain: readonly string[];
   tiles?: Readonly<Record<string, Tile>>;
   entities: Record<string, Entity>;
+  cycle?: OperatingCycle;
 }
 
 export interface SiteTemplate {
@@ -19,6 +21,7 @@ export interface SiteTemplate {
   readonly terrain: readonly string[];
   readonly tiles?: Readonly<Record<string, Tile>>;
   readonly entities: readonly EntityPlacement[];
+  readonly cycle?: Pick<OperatingCycle, "dayTicks" | "nightTicks">;
 }
 
 export function instantiateSite(
@@ -27,6 +30,19 @@ export function instantiateSite(
   definitions: EntityTemplates,
 ): { state: Simulation; siteId: string } {
   const siteId = `site-${state.nextSiteId}`;
+  if (
+    template.cycle &&
+    (!Number.isSafeInteger(template.cycle.dayTicks) ||
+      template.cycle.dayTicks < 1 ||
+      !Number.isSafeInteger(template.cycle.nightTicks) ||
+      template.cycle.nightTicks < 1 ||
+      !Number.isSafeInteger(
+        template.cycle.dayTicks + template.cycle.nightTicks,
+      ))
+  )
+    throw new Error(
+      "Operating cycle durations must be positive safe integers.",
+    );
   if (state.sites[siteId]) throw new Error("Site ID is already in use.");
   const ids = new Map(
     template.entities.map((entity) => [entity.id, `${siteId}:${entity.id}`]),
@@ -78,6 +94,9 @@ export function instantiateSite(
   const site: Site = {
     id: siteId,
     name: template.name,
+    ...(template.cycle
+      ? { cycle: { ...template.cycle, startedTick: null } }
+      : {}),
     terrain: [...template.terrain],
     ...(template.tiles ? { tiles: structuredClone(template.tiles) } : {}),
     entities: Object.fromEntries(entities.map((entity) => [entity.id, entity])),

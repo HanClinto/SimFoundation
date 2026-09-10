@@ -8,6 +8,7 @@ import { executeCommand } from "../../core/ControlPolicy";
 import type { Materials } from "../../core/material/Material";
 import { home, homeLoading, homePads, opportunities } from "./setup";
 import { requireDepartureReadiness } from "./Readiness";
+import { operatingPhase } from "../../core/site/OperatingCycle";
 
 export interface Campaign {
   homeId: string;
@@ -95,6 +96,9 @@ function route(campaign: Campaign, originId: string, destination: string) {
     pads: outbound ? homePads : opportunity.pads,
     arrival: outbound ? opportunity.loading : homeLoading,
     duration: opportunity.duration,
+    maximumPassengers: opportunity.maximumPassengers ?? 1,
+    loadingRadius: outbound ? 1 : (opportunity.loadingRadius ?? 1),
+    daytimeReturn: opportunity.daytimeReturn ?? false,
   };
 }
 
@@ -174,9 +178,12 @@ export function departTeam(
   const crew = team(state, campaign, originId, staffIds);
   if (trip.outbound) requireDepartureReadiness(crew);
   const passengerIds = ids.filter((id) => !campaign.staffIds.includes(id));
-  if (passengerIds.length > 1 || new Set(ids).size !== ids.length)
+  if (
+    passengerIds.length > trip.maximumPassengers ||
+    new Set(ids).size !== ids.length
+  )
     throw new Error(
-      "Choose distinct travellers, with at most one cooperative passenger.",
+      `Choose distinct travellers, with at most ${trip.maximumPassengers} cooperative passengers on this route.`,
     );
   for (const id of passengerIds) {
     const person = state.sites[originId]?.entities[id];
@@ -196,6 +203,13 @@ export function departTeam(
     const reason = opportunityBlocker(state, campaign, trip.key);
     if (reason) throw new Error(reason);
   }
+  if (!trip.outbound && trip.daytimeReturn) {
+    const cycle = operatingPhase(state.sites[originId]!.cycle, state.tick);
+    if (cycle.phase === "night")
+      throw new Error(
+        `The night exit window is closed; it reopens at tick ${cycle.changesAt}. Return remains prepaid.`,
+      );
+  }
 
   const docket = trip.outbound ? readyDocket(state, campaign) : null;
   if (trip.outbound && !docket)
@@ -207,7 +221,7 @@ export function departTeam(
     destinationId: trip.destinationId,
     entityIds: ids,
     loading: trip.loading,
-    loadingRadius: 1,
+    loadingRadius: trip.loadingRadius,
     arrival: trip.arrival,
     duration: trip.duration,
   });

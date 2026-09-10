@@ -12,6 +12,7 @@ import {
   serviceDeadline,
   serviceStatus,
 } from "../../simulation/core/entity/Service";
+import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 
 export function campaignStatus(session: ScenarioSession): string {
   const { campaign, state } = session;
@@ -46,6 +47,13 @@ export function campaignStatus(session: ScenarioSession): string {
             ]
           : [],
       ),
+    ),
+    ...Object.values(state.sites).flatMap((site) =>
+      site.cycle
+        ? [
+            `Cycle at ${site.id}: ${operatingPhase(site.cycle, state.tick).phase.toUpperCase()} | changes at ${operatingPhase(site.cycle, state.tick).changesAt ?? "first responder entry"}`,
+          ]
+        : [],
     ),
     ...owners.flatMap((owner) =>
       Object.values(owner.entities).flatMap((entity) =>

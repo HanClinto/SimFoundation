@@ -5,8 +5,9 @@ import { tickPawn } from "./entity/pawn/Pawn";
 import { tickDoor } from "./entity/Door";
 import { advanceTransfers } from "./site/Transfer";
 import type { ActionState } from "./entity/pawn/actions/Action";
+import { beginOperatingCycle } from "./site/OperatingCycle";
 
-export const SIMULATION_VERSION = 19;
+export const SIMULATION_VERSION = 20;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;
@@ -65,6 +66,7 @@ export function advanceSimulation(
   for (const { siteId, entityIds } of turns) {
     const site = next.sites[siteId];
     if (!site) continue;
+    beginOperatingCycle(site, next.tick);
     for (const id of entityIds) {
       const entity = site.entities[id];
       if (entity?.kind === "pawn")

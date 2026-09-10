@@ -3,6 +3,7 @@ import type { Site } from "./Site";
 import type { Pawn } from "../entity/pawn/Pawn";
 import { distance, tileAt, positionOf, samePosition } from "./TileMap";
 import type { Position } from "../entity/Entity";
+import { operatingPhase } from "./OperatingCycle";
 
 function transparent(
   site: Site,
@@ -67,7 +68,15 @@ export function canSee(site: Site, observer: Pawn, targetId: string): boolean {
   return true;
 }
 
-export function visibleThreats(site: Site, observer: Pawn): Pawn[] {
+export function hostilityActive(site: Site, pawn: Pawn, tick: number): boolean {
+  return (
+    !pawn.response?.hostileDuring ||
+    operatingPhase(site.cycle, tick).phase === pawn.response.hostileDuring
+  );
+}
+
+export function visibleThreats(site: Site, observer: Pawn, tick = 0): Pawn[] {
+  if (!hostilityActive(site, observer, tick)) return [];
   return Object.values(site.entities)
     .filter(
       (entity): entity is Pawn =>
@@ -76,6 +85,7 @@ export function visibleThreats(site: Site, observer: Pawn): Pawn[] {
         entity.canAct &&
         entity.location.kind === "ground" &&
         !!entity.response &&
+        hostilityActive(site, entity, tick) &&
         !!observer.response?.hostileTo.includes(entity.response.faction) &&
         canSee(site, observer, entity.id),
     )

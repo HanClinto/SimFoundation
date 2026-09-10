@@ -191,6 +191,15 @@ presentation or counted twice at the rig. Core version 19 adds these fields.
 This is the one containment showcase, not a simultaneous SCP-173 or general
 psychology framework.
 
+[SCP-3008 bounded evacuation](catalog/quests/scp3008/README.md) integrates those
+mechanics with one optional site operating cycle. Phase derives from a retained
+start tick; nighttime hostility and the next return opening are legible.
+Employees use existing attacks with an explicit nonlethal ceiling. A restored
+field shelter permits ordinary clinical care, or the same casualty can be
+carried home. Route-specific passenger/loading limits preserve actual group
+ownership. Core version 20 adds the cycle and fixes escort trail coordination
+when follower IDs sort before leaders.
+
 ## Concerns And Response
 
 A **cause** is a fact the pawn observes, such as a hostile actor or a bleeding person. A **concern** is the reason to respond to that cause. **Urgency** is the concern's priority, not another need to replenish. A **response** is the action selected using the pawn's policy and capabilities. [Concern.ts](core/entity/pawn/concerns/Concern.ts) carries cause ID, category, urgency and action; it is derived from current observation rather than stored as a second world-state ledger.

@@ -40,7 +40,7 @@ export class Treat implements Action {
     if (reason) return { status: "blocked", reason };
     const target = patient as Pawn;
     if (
-      visibleThreats(site, pawn).some(
+      visibleThreats(site, pawn, context.tick).some(
         (threat) =>
           distance(
             positionOf(site, target.id)!,

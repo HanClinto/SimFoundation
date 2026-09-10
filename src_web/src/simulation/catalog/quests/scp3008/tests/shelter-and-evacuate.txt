@@ -1,0 +1,35 @@
+# Test-only bounded group rescue with real shelter work and field care.
+load campaign
+brief store
+order alex take meals 2
+order casey take parts 1
+step 20
+prepare store alex casey
+step 12
+send store alex casey
+step 8
+site store
+order alex deliver site-1:meals:portion-action-1 9 2
+order casey deliver site-1:parts:portion-action-2 10 1
+step 24
+order alex service shelter
+step 20
+order casey nurse eli shelter
+step 24
+order alex escort nora 2 4
+order casey escort eli 2 5
+step 40
+status
+send home alex casey nora eli
+step 8
+site home
+order alex escort nora 6 2
+step 28
+admit nora bed
+step 12
+order casey escort eli 10 3
+step 32
+admit eli guest-bed
+step 12
+inspect eli
+status

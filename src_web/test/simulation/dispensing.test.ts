@@ -188,13 +188,18 @@ it("interruption and source removal do not refund coins or create a sample", () 
   expect(coins(console)).toBe(7);
   expect(entity(console, "tracer").amount).toBe(2);
   console = startPaid();
+  const actionId = pawn(console).queue[0]!.id;
   delete console.session.state.sites["site-1"]!.entities["site-1:tracer"];
   console = executeLine(console, "step").console;
   expect(pawn(console).queue).toHaveLength(0);
-  expect(console.session.events.at(-1)).toMatchObject({
-    kind: "failed",
-    reason: "The named liquid source is no longer at this site.",
-  });
+  expect(console.session.events).toContainEqual(
+    expect.objectContaining({
+      kind: "failed",
+      actionId,
+      entityId: "site-1:ben",
+      reason: "The named liquid source is no longer at this site.",
+    }),
+  );
   expect(coins(console)).toBe(7);
   expect(machine(console).dispenser!.records).toHaveLength(0);
 });

@@ -1,6 +1,6 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
 import { Move } from "./Move";
-import { canSee } from "../../../site/Visibility";
+import { canSee, hostilityActive } from "../../../site/Visibility";
 import { incapacitated } from "../Health";
 import type { Pawn } from "../Pawn";
 
@@ -13,9 +13,11 @@ export interface AttackState {
 export class Attack implements Action {
   constructor(readonly state: AttackState) {}
 
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({ site, pawn, tick }: ActionContext): string | null {
     const target = site.entities[this.state.targetId];
     if (!pawn.response?.attack) return "This pawn has no attack capability.";
+    if (!hostilityActive(site, pawn, tick))
+      return "This actor is not hostile during the current operating phase.";
     if (
       target?.kind !== "pawn" ||
       !target.health ||
@@ -27,6 +29,8 @@ export class Attack implements Action {
   }
 
   tick(context: ActionContext): ActionResult {
+    if (!hostilityActive(context.site, context.pawn, context.tick))
+      return { status: "completed" };
     const reason = this.canStart(context);
     if (reason) return { status: "blocked", reason };
     const { site, pawn, events } = context;
@@ -41,9 +45,21 @@ export class Attack implements Action {
     if (++this.state.workTicks < pawn.response!.attack!.windup)
       return { status: "running" };
     this.state.workTicks = 0;
+    const totalSeverity = target.health!.wounds.reduce(
+      (sum, wound) => sum + wound.severity,
+      0,
+    );
+    const damage = Math.max(
+      0,
+      Math.min(
+        pawn.response!.attack!.damage,
+        (pawn.response!.attack!.maximumSeverity ?? Infinity) - totalSeverity,
+      ),
+    );
+    if (damage <= 0) return { status: "completed" };
     target.health!.wounds.push({
       id: `impact:${context.tick}:${pawn.id}`,
-      severity: pawn.response!.attack!.damage,
+      severity: damage,
       bleeding: 0,
     });
     if (incapacitated(target.health!)) target.canAct = false;

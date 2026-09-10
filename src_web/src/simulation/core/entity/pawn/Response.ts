@@ -3,6 +3,7 @@ export interface Response {
   hostileTo: string[];
   sight: number;
   threat: "flee" | "confront";
-  attack?: { damage: number; windup: number };
+  hostileDuring?: "day" | "night";
+  attack?: { damage: number; windup: number; maximumSeverity?: number };
   medicine?: { ticks: number; supplies: number };
 }

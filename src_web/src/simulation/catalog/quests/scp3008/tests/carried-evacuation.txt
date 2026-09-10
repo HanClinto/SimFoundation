@@ -1,0 +1,26 @@
+# Alternative: no field repair; carry the casualty and use home clinical care.
+load campaign
+prepare store alex casey
+step 12
+send store alex casey
+step 8
+site store
+order casey take eli
+order alex escort nora 2 4
+step 36
+order casey move 2 5
+step 24
+send home alex casey nora
+step 8
+site home
+order alex escort nora 6 2
+order casey deliver eli 4 2
+step 28
+admit nora bed
+order casey nurse eli clinic
+step 24
+order casey escort eli 10 3
+step 32
+admit eli guest-bed
+step 12
+status

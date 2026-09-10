@@ -8,6 +8,7 @@ import { returneeSite } from "../quests/scp507/setup";
 import { triageSite } from "../quests/scp2295/setup";
 import { dinerSite } from "../quests/scp1295/setup";
 import { screeningSite } from "../quests/scp2006/setup";
+import { storeSite } from "../quests/scp3008/setup";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -194,6 +195,9 @@ export interface Opportunity {
   pads: readonly Position[];
   duration: number;
   requiresFinding?: string;
+  maximumPassengers?: number;
+  loadingRadius?: number;
+  daytimeReturn?: boolean;
 }
 
 export const homeLoading = { x: 2, y: 7 };
@@ -373,5 +377,20 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
       { x: 2, y: 5 },
     ],
     duration: 8,
+  },
+  store: {
+    name: "SCP-3008 bounded group evacuation",
+    briefing:
+      "First actual responder entry starts a persistent 120-tick day / 60-tick night cycle. The fixed authored exit accepts returns by day and reports the next reopening at night. Employees become hostile after closing, but impacts are capped below incapacity for this prototype. Nora can walk; Eli is a stabilized blood-loss casualty. Bring food and a maintenance pack to restore shelter at (10,2), then use its one real clinical pack for field care, or carry Eli home instead. Two cooperative passengers may leave with staff; assemble everyone within two tiles of (2,4). Escort to separate positions, rather than blocking another person's loading pad. Revisit does not reset people, supplies, repair or the cycle.",
+    site: storeSite,
+    loading: { x: 2, y: 4 },
+    pads: [
+      { x: 2, y: 4 },
+      { x: 2, y: 5 },
+    ],
+    duration: 8,
+    maximumPassengers: 2,
+    loadingRadius: 2,
+    daytimeReturn: true,
   },
 };

@@ -194,11 +194,16 @@ it("incapacity interrupts sealing before closure and a missing source fails expl
   expect(box(console).integrity).toBe(45);
   expect(get(console, "site-6:vial").location.kind).toBe("ground");
   console = play(visit(), ["order alex pack vial case"]);
+  const actionId = actor(console).queue[0]!.id;
   delete console.session.state.sites[console.siteId]!.entities["site-6:vial"];
   console = executeLine(console, "step").console;
-  expect(console.session.events.at(-1)).toMatchObject({
-    kind: "failed",
-    reason: "The target is no longer present.",
-  });
+  expect(console.session.events).toContainEqual(
+    expect.objectContaining({
+      kind: "failed",
+      actionId,
+      entityId: "site-1:alex",
+      reason: "The target is no longer present.",
+    }),
+  );
   expect(box(console).integrity).toBe(45);
 });

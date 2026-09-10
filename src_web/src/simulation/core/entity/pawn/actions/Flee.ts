@@ -16,7 +16,7 @@ export class Flee implements Action {
     const reason = this.canStart(context);
     if (reason) return { status: "blocked", reason };
     const { site, pawn } = context;
-    const threats = visibleThreats(site, pawn);
+    const threats = visibleThreats(site, pawn, context.tick);
     if (!threats.length) return { status: "completed" };
     const origin = positionOf(site, pawn.id)!;
     const separation = (position: typeof origin) =>

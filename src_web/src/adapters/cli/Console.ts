@@ -21,6 +21,7 @@ import {
   departTeam,
 } from "../../simulation/catalog/campaign/Campaign";
 import { admitToCare } from "../../simulation/catalog/campaign/Care";
+import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -156,6 +157,11 @@ export function renderMap(console: ConsoleState): string {
   });
   return [
     `${site.name} (${site.id}) | tick ${console.session.state.tick}`,
+    ...(site.cycle
+      ? [
+          `Cycle: ${operatingPhase(site.cycle, console.session.state.tick).phase.toUpperCase()} | changes at ${operatingPhase(site.cycle, console.session.state.tick).changesAt ?? "first responder entry"}`,
+        ]
+      : []),
     "    " +
       [...(site.terrain[0] ?? "")]
         .map((_symbol, index) => String(index).padEnd(cellWidth))

@@ -27,6 +27,11 @@ import { SCP507 } from "./actors/anomalies/SCP507";
 import { SCP2295 } from "./actors/anomalies/SCP2295";
 import { SCP2006 } from "./actors/anomalies/SCP2006";
 import {
+  StoreEmployee,
+  StoreSurvivor,
+  StoreShelter,
+} from "./quests/scp3008/setup";
+import {
   ActingGuide,
   RehearsalDesk,
   ApprovedProgramme,
@@ -95,6 +100,9 @@ export const entities: EntityTemplates = Object.fromEntries(
     SCP507,
     SCP2295,
     SCP2006,
+    StoreEmployee,
+    StoreSurvivor,
+    StoreShelter,
     ActingGuide,
     RehearsalDesk,
     ApprovedProgramme,
