@@ -21,7 +21,7 @@ export interface Equipment {
 }
 
 export function wornEquipment(
-  site: Site,
+  site: Pick<Site, "entities">,
   pawnId: string,
   slot: Equipment["slot"],
 ): Item | undefined {
@@ -86,7 +86,7 @@ export function equipmentUnderRepair(
 }
 
 export function stabilizationCapability(
-  site: Site,
+  site: Pick<Site, "entities">,
   pawn: Pawn,
 ): { supplies: number; ticks: number } | undefined {
   if (!pawn.response?.medicine) return undefined;

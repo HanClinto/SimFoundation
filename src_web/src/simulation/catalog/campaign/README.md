@@ -374,6 +374,13 @@ This proves finite continuation after catastrophic loss, not unlimited rescue.
 
 ## Clinical Recovery After Evacuation
 
+`medical` gives a read-only overview of current local health cases and trained
+medical workers; `medical all` includes other sites and transit. It exposes
+actual wounds, bleeding, blood loss, organ facts, pending postoperative care
+and real kit/initial supply balance. Retained bodies are separate from patients.
+The inspection ordering issues no treatment, grants no remote access and does
+not override the bear's youngest-patient rule.
+
 Stabilization stops bleeding; it does not restore lost blood. A late Mira rescue
 can still carry her home without a free cure. Deliver her to (4,2), beside the
 home `clinic`, and `order casey nurse mira clinic`. A medically trained worker

@@ -28,6 +28,7 @@ import { carriedCargo } from "../../simulation/core/entity/Equipment";
 import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
 import type { TickEvent } from "../../simulation/core/Simulation";
 import { finishCommitments } from "./Finish";
+import { medicalOverview } from "./Medical";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -247,6 +248,7 @@ export function renderMap(console: ConsoleState): string {
 
 export const help = `map | brief | status | events | sites | site <id>
 events <alarms|here|route|site-id|entity-id|stable-label> (retained history only)
+medical [all] (read-only current care facts)
 brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 preview-send <route> <staff...> (actual checks and manifest, no departure)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
@@ -428,6 +430,17 @@ export function executeLine(
       return finish(renderMap(next));
     case "status":
       return finish(questStatus(next));
+    case "medical":
+      if (args.length > 1 || (args.length === 1 && args[0] !== "all"))
+        throw new Error(
+          "Use medical [all]; select a site for a local overview.",
+        );
+      return finish(
+        medicalOverview(
+          console.session,
+          args[0] === "all" ? undefined : console.siteId,
+        ),
+      );
     case "brief": {
       if (console.session.campaign) return finish(campaignBrief(args[0]));
       const quest = scenarios[console.session.scenario]?.quest;
