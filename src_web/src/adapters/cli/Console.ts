@@ -503,7 +503,12 @@ export function executeLine(
         ...Object.values(console.session.state.transfers),
       ].find((candidate) => candidate.entities[entity.id])!;
       const context =
-        entity.kind === "pawn" && "terrain" in owner
+        entity.kind === "pawn" &&
+        entity.canAct &&
+        !entity.health?.death &&
+        entity.location.kind === "ground" &&
+        !restraintFor(owner.entities, entity.id) &&
+        "terrain" in owner
           ? {
               pawn: entity,
               site: owner,
