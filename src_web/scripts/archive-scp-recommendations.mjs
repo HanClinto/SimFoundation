@@ -12,8 +12,19 @@ const userAgent =
   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140 Safari/537.36";
 const argumentsList = process.argv.slice(2);
 const historicalMode = argumentsList.includes("--historical");
+const textOnly = argumentsList.includes("--text-only");
 const requestedSlugs = new Set(
-  argumentsList.filter((argument) => argument !== "--historical"),
+  argumentsList
+    .filter(
+      (argument) => argument !== "--historical" && argument !== "--text-only",
+    )
+    .map((argument) => {
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(argument))
+        throw new Error(
+          `Use an SCP Wiki page slug, not an unknown option or path: ${argument}`,
+        );
+      return argument.toLowerCase();
+    }),
 );
 const virtualConsole = new VirtualConsole();
 const historicalEntries = [
@@ -364,25 +375,29 @@ async function archive(entry, retrieved) {
   const outputSlug = entry.outputSlug ?? entry.slug;
   const outputDirectory = path.join(root, outputSlug);
   await mkdir(outputDirectory, { recursive: true });
-  let assetCount = await localizeFrames(article, response.url, outputDirectory);
-  assetCount += await localizeMedia(article, response.url, outputDirectory);
-  const stem = `${retrieved}${revision === null ? "" : `-revision-${revision}`}`;
+  let assetCount = 0;
+  if (!textOnly) {
+    assetCount = await localizeFrames(article, response.url, outputDirectory);
+    assetCount += await localizeMedia(article, response.url, outputDirectory);
+  }
+  const stem = `${retrieved}${revision === null ? "" : `-revision-${revision}`}${textOnly ? "-text-only" : ""}`;
   const textPath = `${outputSlug}/${stem}.txt`;
   const htmlPath = `${outputSlug}/${stem}.html`;
   await writeFile(path.join(root, textPath), `${articleText(article)}\n`);
-  await writeFile(
-    path.join(root, htmlPath),
-    archiveHtml({
-      title,
-      url: response.url,
-      retrieved,
-      revisionLabel,
-      provenance: entry.archiveTimestamp
-        ? `Historical Internet Archive capture from ${entry.archiveTimestamp}. ${entry.sourceStatus}`
-        : "",
-      article,
-    }),
-  );
+  if (!textOnly)
+    await writeFile(
+      path.join(root, htmlPath),
+      archiveHtml({
+        title,
+        url: response.url,
+        retrieved,
+        revisionLabel,
+        provenance: entry.archiveTimestamp
+          ? `Historical Internet Archive capture from ${entry.archiveTimestamp}. ${entry.sourceStatus}`
+          : "",
+        article,
+      }),
+    );
 
   const notesPath = `${outputSlug}/adaptation.md`;
   const notes = (await fileExists(path.join(root, notesPath)))
@@ -411,14 +426,16 @@ async function archive(entry, retrieved) {
     sourceModified,
     retrieved,
     text: textPath,
-    html: htmlPath,
+    ...(!textOnly ? { html: htmlPath } : {}),
     ...(notes ? { notes } : {}),
     recommendation: entry.recommendation,
     assets: assetCount,
-    capture:
-      "Article body archived as searchable text and standalone HTML with referenced media downloaded where available; navigation, rating controls, and account UI omitted.",
-    transformations:
-      "Links were made absolute and downloaded media links were rewritten to local assets. Article markup and wording were otherwise retained.",
+    capture: textOnly
+      ? "Article body archived as searchable text only; no media or embedded frames fetched. Navigation, rating controls, and account UI omitted."
+      : "Article body archived as searchable text and standalone HTML with referenced media downloaded where available; navigation, rating controls, and account UI omitted.",
+    transformations: textOnly
+      ? "Article textContent extracted with whitespace normalized; no runtime content or image adaptation implied."
+      : "Links were made absolute and downloaded media links were rewritten to local assets. Article markup and wording were otherwise retained.",
   };
 }
 
@@ -428,6 +445,17 @@ let entries = historicalMode
   : recommendationEntries(markdown);
 if (requestedSlugs.size > 0) {
   entries = entries.filter((entry) => requestedSlugs.has(entry.slug));
+  if (!historicalMode) {
+    for (const slug of requestedSlugs) {
+      if (!entries.some((entry) => entry.slug === slug))
+        entries.push({
+          slug,
+          url: `https://scp-wiki.wikidot.com/${slug}`,
+          recommendation:
+            "Explicit additional-source review; not from the recommendation list.",
+        });
+    }
+  }
 }
 if (entries.length === 0) {
   throw new Error("No matching SCP Wiki recommendations found.");

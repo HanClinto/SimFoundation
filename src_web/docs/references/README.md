@@ -10,4 +10,12 @@ For the 2026-09-09 adaptation draft, see the [ranked expedition proposals](../sc
 
 Run `node scripts/archive-scp-recommendations.mjs` from `src_web` to refresh every SCP Wiki article linked in Abby's recommendation list. Pass one or more page slugs, such as `scp-049`, to refresh only those entries. The archiver uses a browser user agent because Wikidot rejects some generic HTTP clients. It writes searchable text, standalone HTML, and local copies of article images and media; unavailable media remain absolute source links and are reported during the run.
 
+An explicitly requested safe page slug can also add a source outside that list
+without rewriting someone else's recommendations. Use `--text-only` for a
+separate article-text snapshot/catalog entry that fetches no images, media or
+embedded frames, for example
+`node scripts/archive-scp-recommendations.mjs --text-only scp-914`.
+This does not replace a same-day full-media capture or authorize runtime use
+of any source asset. Review credit, license and the intended adaptation first.
+
 Run `npm run archive:scp:historical` to refresh the pinned Internet Archive snapshots of deleted SCP-001-O5 and SCP-963. These copies are cataloged as historical snapshots with their original canonical URLs and capture timestamps; they do not replace the current SCP Wiki removal notice.
