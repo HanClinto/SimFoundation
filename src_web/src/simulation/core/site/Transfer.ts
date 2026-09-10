@@ -3,7 +3,8 @@ import type { Simulation, TickEvent } from "../Simulation";
 import { facilityInUse } from "../entity/Facility";
 import { advancePhysiology } from "../entity/pawn/Health";
 import type { Pawn } from "../entity/pawn/Pawn";
-import { distance, floorAt, traversalAt } from "./TileMap";
+import { distance, floorAt, traversalAt, samePosition } from "./TileMap";
+import type { Site } from "./Site";
 import { restraintFor, tickCustody } from "../entity/pawn/Custody";
 import { equipmentUnderRepair } from "../entity/Equipment";
 
@@ -12,6 +13,7 @@ export interface Transfer {
   originId: string;
   destinationId: string;
   arrival: Position;
+  arrivalRadius?: number;
   arrivesAt: number;
   blockedReason: string | null;
   entities: Record<string, Entity>;
@@ -24,6 +26,7 @@ export interface TransferRequest {
   readonly loading: Position;
   readonly loadingRadius?: number;
   readonly arrival: Position;
+  readonly arrivalRadius?: number;
   readonly duration: number;
 }
 
@@ -44,6 +47,13 @@ export function depart(
   )
     return fail("Choose valid endpoints and a positive travel duration.");
   const selected = new Set(request.entityIds);
+  if (
+    request.arrivalRadius !== undefined &&
+    (!Number.isSafeInteger(request.arrivalRadius) ||
+      request.arrivalRadius < 0 ||
+      request.arrivalRadius > 3)
+  )
+    return fail("Arrival radius must be an integer from zero to three.");
   const loadingRadius = request.loadingRadius ?? 0;
   if (!Number.isSafeInteger(loadingRadius) || loadingRadius < 0)
     return fail("Loading radius must be a nonnegative integer.");
@@ -97,6 +107,9 @@ export function depart(
     originId: origin.id,
     destinationId: destination.id,
     arrival: { ...request.arrival },
+    ...(request.arrivalRadius !== undefined
+      ? { arrivalRadius: request.arrivalRadius }
+      : {}),
     arrivesAt: state.tick + request.duration,
     blockedReason: null,
     entities: Object.fromEntries(
@@ -135,6 +148,57 @@ function advanceTransitPawn(
   return next;
 }
 
+function landingPositions(
+  site: Site,
+  transfer: Transfer,
+): Record<string, Position> | null {
+  if (transfer.arrivalRadius === undefined) return {};
+  const radius = transfer.arrivalRadius;
+  const candidates: Position[] = [];
+  for (
+    let y = transfer.arrival.y - radius;
+    y <= transfer.arrival.y + radius;
+    y++
+  )
+    for (
+      let x = transfer.arrival.x - radius;
+      x <= transfer.arrival.x + radius;
+      x++
+    ) {
+      const position = { x, y };
+      if (
+        distance(position, transfer.arrival) <= radius &&
+        traversalAt(site, position).kind === "clear"
+      )
+        candidates.push(position);
+    }
+  candidates.sort(
+    (a, b) =>
+      distance(a, transfer.arrival) - distance(b, transfer.arrival) ||
+      a.y - b.y ||
+      a.x - b.x,
+  );
+  const assigned: Record<string, Position> = {};
+  const used: Position[] = [];
+  for (const entity of Object.values(transfer.entities).sort((a, b) =>
+    a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+  )) {
+    if (entity.location.kind !== "ground") continue;
+    if (!entity.blocksMovement || (entity.integrity ?? 100) <= 0) {
+      assigned[entity.id] = transfer.arrival;
+      continue;
+    }
+    const position = candidates.find(
+      (candidate) =>
+        !used.some((existing) => samePosition(existing, candidate)),
+    );
+    if (!position) return null;
+    assigned[entity.id] = position;
+    used.push(position);
+  }
+  return assigned;
+}
+
 export function advanceTransfers(
   state: Simulation,
   events: TickEvent[] = [],
@@ -159,7 +223,7 @@ export function advanceTransfers(
     const traversal = destination
       ? traversalAt(destination, transfer.arrival)
       : null;
-    const reason =
+    let reason =
       !destination || !traversal || traversal.kind === "open-door"
         ? "Arrival tile is unavailable."
         : traversal.kind === "blocked"
@@ -169,6 +233,11 @@ export function advanceTransfers(
               )
             ? "Arrival would duplicate an entity identity."
             : null;
+    const landing =
+      !reason && destination ? landingPositions(destination, transfer) : null;
+    if (!reason && !landing)
+      reason =
+        "The complete travelling group needs more free space in the arrival area.";
     if (state.tick < transfer.arrivesAt || reason) {
       result = {
         ...result,
@@ -190,7 +259,10 @@ export function advanceTransfers(
           location:
             entity.location.kind === "carried"
               ? entity.location
-              : { kind: "ground" as const, position: { ...transfer.arrival } },
+              : {
+                  kind: "ground" as const,
+                  position: { ...(landing![key] ?? transfer.arrival) },
+                },
         },
       ]),
     );

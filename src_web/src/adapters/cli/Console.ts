@@ -532,6 +532,8 @@ export function executeLine(
                     id: owner.id,
                     originId: owner.originId,
                     destinationId: owner.destinationId,
+                    arrival: owner.arrival,
+                    arrivalRadius: owner.arrivalRadius ?? 0,
                     arrivesAt: owner.arrivesAt,
                     blockedReason: owner.blockedReason,
                     mapPosition: null,

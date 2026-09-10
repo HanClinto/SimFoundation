@@ -232,6 +232,7 @@ export function departTeam(
     loading: trip.loading,
     loadingRadius: trip.loadingRadius,
     arrival: trip.arrival,
+    arrivalRadius: 1,
     duration: trip.duration,
   });
   if (result.reason) throw new Error(result.reason);

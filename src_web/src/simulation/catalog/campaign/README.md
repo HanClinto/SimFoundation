@@ -80,6 +80,12 @@ with evidence. One ground docket beside home pad (2,7) is spent only on an
 accepted outbound departure. Return trips are prepaid even if dockets run out.
 Keep the home arrival pad clear; blocked arrivals remain in transit and continue
 physiology until admitted.
+Campaign transfers also need enough free floor within one tile of the arrival
+pad for all blocking ground passengers. They are admitted together to distinct
+tiles in deterministic order, not stacked on one another. If the complete group
+cannot fit, the whole manifest stays in transit with an explicit space blocker.
+Carried gear/case/casualty children keep their actual parents; nonblocking loose
+cargo and bodies follow their normal occupancy rules.
 
 `inspect <full-id|stable-label>` reads the actual entity even while it belongs
 to transit or another site. It includes its owner, destination/arrival blocker,

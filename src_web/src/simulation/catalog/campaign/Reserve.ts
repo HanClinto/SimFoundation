@@ -40,6 +40,7 @@ export function dispatchReserve(
     loading: { x: 2, y: 2 },
     loadingRadius: 1,
     arrival: destination === "home" ? homeLoading : opportunity!.loading,
+    arrivalRadius: 1,
     duration: 12,
   });
   if (sent.reason) throw new Error(sent.reason);
