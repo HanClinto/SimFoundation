@@ -8,6 +8,7 @@ import {
 } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { route } from "../../../site/Pathfinding";
+import { restraintFor } from "../Custody";
 
 export interface EscortState {
   kind: "escort";
@@ -41,7 +42,7 @@ export class Escort implements Action {
     if (
       person?.kind !== "pawn" ||
       person.id === pawn.id ||
-      !person.acceptsEscort
+      !(person.acceptsEscort || restraintFor(site.entities, person.id))
     )
       return "Choose another person who explicitly accepts cooperative escort.";
     if (!person.canAct || !person.mobile || person.location.kind !== "ground")
@@ -158,8 +159,9 @@ export class Escort implements Action {
 export class Follow implements Action {
   constructor(readonly state: FollowState) {}
 
-  canStart({ pawn }: ActionContext): string | null {
-    return pawn.acceptsEscort && pawn.mobile
+  canStart({ pawn, site }: ActionContext): string | null {
+    return (pawn.acceptsEscort || restraintFor(site.entities, pawn.id)) &&
+      pawn.mobile
       ? null
       : "Cooperative following is no longer available.";
   }

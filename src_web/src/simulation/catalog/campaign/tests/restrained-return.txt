@@ -1,0 +1,26 @@
+# Real restraint before living hostile transport; custody wears after waking.
+load campaign
+order alex equip suppressor
+order alex equip vest
+order alex take restraint
+finish alex
+prepare intervention alex
+finish alex
+send intervention alex
+step 8
+site intervention
+order alex subdue specimen
+finish alex
+order alex restrain specimen @held
+finish alex
+order alex take specimen
+finish alex
+prepare home alex
+finish alex
+send home alex
+step 8
+site home
+order alex deliver @held 12 7
+finish alex
+inspect specimen
+status

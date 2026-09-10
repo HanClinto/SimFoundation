@@ -29,6 +29,16 @@ export const home: SiteTemplate = {
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
     {
+      id: "restraint",
+      definitionId: "transport-restraint",
+      location: { kind: "ground", position: { x: 1, y: 3 } },
+    },
+    {
+      id: "spare-restraint",
+      definitionId: "transport-restraint",
+      location: { kind: "ground", position: { x: 2, y: 1 } },
+    },
+    {
       id: "suppressor",
       definitionId: "intervention-tool",
       location: { kind: "ground", position: { x: 1, y: 5 } },

@@ -54,6 +54,7 @@ export const KineticSpecimen: EntityTemplate = {
     human: false,
     playerControllable: false,
     acceptsEscort: false,
+    requiresRestraint: true,
     needs: {},
     diet: [],
     eatingRate: 0,
@@ -63,6 +64,28 @@ export const KineticSpecimen: EntityTemplate = {
       sight: 4,
       threat: "confront",
       attack: { damage: 30, bleeding: 2, windup: 5 },
+    },
+  },
+};
+
+export const TransportRestraint: EntityTemplate = {
+  id: "transport-restraint",
+  name: "Fictional transport restraint",
+  description:
+    "A physical bounded-game restraint fitted to the subdued kinetic specimen over four ticks. Two hundred condition points wear by one each conscious tick, including transit. Breakage leaves the broken item and permits escape. This is not consent, a case, or an indefinite cure.",
+  defaults: {
+    kind: "item",
+    materialId: "steel",
+    amount: 1,
+    integrity: 200,
+    carryable: true,
+    blocksMovement: false,
+    blocksSight: false,
+    restraint: {
+      attached: false,
+      ticks: 4,
+      wearPerTick: 1,
+      accepts: ["kinetic-specimen"],
     },
   },
 };

@@ -8,7 +8,10 @@ export const samePosition = (first: Position, second: Position): boolean =>
 export const distance = (first: Position, second: Position): number =>
   Math.abs(first.x - second.x) + Math.abs(first.y - second.y);
 
-export function positionOf(site: Site, entityId: string): Position | null {
+export function positionOf(
+  site: Pick<Site, "entities">,
+  entityId: string,
+): Position | null {
   const visited = new Set<string>();
   let entity = site.entities[entityId];
   while (entity) {

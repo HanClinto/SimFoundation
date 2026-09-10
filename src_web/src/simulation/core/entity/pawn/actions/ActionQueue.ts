@@ -22,9 +22,12 @@ import { Mend } from "./Mend";
 import { Service } from "./Service";
 import { Equip } from "./Equip";
 import { Subdue } from "./Subdue";
+import { Restrain } from "./Restrain";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "restrain":
+      return new Restrain(action);
     case "equip":
       return new Equip(action.targetId);
     case "unequip":

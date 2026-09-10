@@ -8,6 +8,8 @@ export class Drop implements Action {
     const target = site.entities[this.targetId];
     if (target?.kind === "item" && target.equipment?.worn)
       return "Use unequip to remove worn equipment.";
+    if (target?.kind === "item" && target.restraint?.attached)
+      return "An attached restraint is not loose cargo.";
     return target?.location.kind === "carried" &&
       target.location.carrierId === pawn.id
       ? null

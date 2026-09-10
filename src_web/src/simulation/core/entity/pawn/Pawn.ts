@@ -9,6 +9,7 @@ import { chooseConcern, shouldInterrupt } from "./concerns/Concerns";
 import { tickActionQueue } from "./actions/ActionQueue";
 import { chooseAction } from "./Autonomy";
 import type { OrganMending } from "./actions/Mend";
+import { restraintFor, tickCustody } from "./Custody";
 
 export interface Pawn extends EntityBase {
   kind: "pawn";
@@ -17,6 +18,7 @@ export interface Pawn extends EntityBase {
   autonomy: boolean;
   playerControllable: boolean;
   acceptsEscort?: boolean;
+  requiresRestraint?: boolean;
   human?: boolean;
   ageYears?: number;
   organMending?: OrganMending;
@@ -49,6 +51,23 @@ export function tickPawn(context: ActionContext): void {
         actionKind: entry.action.kind,
         kind: "interrupted",
         reason: "The worker died.",
+      });
+    pawn.queue = [];
+    return;
+  }
+  tickCustody(context.site.entities, pawn, context.site.id, context.events);
+  if (
+    restraintFor(context.site.entities, pawn.id) &&
+    pawn.queue[0]?.action.kind !== "follow"
+  ) {
+    for (const entry of pawn.queue)
+      context.events.push({
+        siteId: context.site.id,
+        entityId: pawn.id,
+        actionId: entry.id,
+        kind: "interrupted",
+        actionKind: entry.action.kind,
+        reason: "Physical restraints prevent independent work.",
       });
     pawn.queue = [];
     return;

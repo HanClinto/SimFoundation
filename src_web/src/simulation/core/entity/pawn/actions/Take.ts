@@ -3,6 +3,7 @@ import { Move } from "./Move";
 import { facilityInUse } from "../../Facility";
 import { serviceInputInUse } from "../../Service";
 import { availableForRecovery, carriedCargo } from "../../Equipment";
+import { restraintFor } from "../Custody";
 
 export class Take implements Action {
   constructor(
@@ -21,7 +22,12 @@ export class Take implements Action {
         target.location.carrierId === pawn.id)
     )
       return "This entity cannot be picked up now.";
-    if (target.kind === "pawn" && target.canAct && target.mobile)
+    if (
+      target.kind === "pawn" &&
+      target.canAct &&
+      target.mobile &&
+      !restraintFor(site.entities, target.id)
+    )
       return "An active mobile pawn cannot be picked up.";
     if (target.kind === "item" && target.requiresCase)
       return "This specimen requires sealing into a compatible carried case.";
@@ -80,6 +86,8 @@ export class Take implements Action {
     target.location = { kind: "carried", carrierId: context.pawn.id };
     if (target.kind === "item" && target.equipment)
       target.equipment.worn = false;
+    if (target.kind === "item" && target.restraint)
+      target.restraint.attached = false;
     return { status: "completed" };
   }
 }

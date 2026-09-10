@@ -10,6 +10,7 @@ import { home, homeLoading, homePads, opportunities } from "./setup";
 import { requireDepartureReadiness, authorizeRisk } from "./Readiness";
 import { operatingPhase } from "../../core/site/OperatingCycle";
 import { reserveSite } from "./emergency";
+import { restraintFor } from "../../core/entity/pawn/Custody";
 
 export interface Campaign {
   homeId: string;
@@ -193,7 +194,10 @@ export function departTeam(
     const person = state.sites[originId]?.entities[id];
     if (
       person?.kind !== "pawn" ||
-      !person.acceptsEscort ||
+      !(
+        person.acceptsEscort ||
+        restraintFor(state.sites[originId]!.entities, id)
+      ) ||
       !person.canAct ||
       !person.mobile ||
       person.location.kind !== "ground" ||

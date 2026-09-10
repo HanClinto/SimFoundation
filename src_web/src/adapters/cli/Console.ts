@@ -25,6 +25,7 @@ import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 import { dispatchReserve } from "../../simulation/catalog/campaign/Reserve";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 import { carriedCargo } from "../../simulation/core/entity/Equipment";
+import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -119,6 +120,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "restrain")
+    return `restrain ${action.targetId} with ${action.restraintId} | work ${action.workTicks}`;
   if (action.kind === "service")
     return `service ${action.targetId} | work ${action.workTicks}${action.repairSupplyId ? ` | repair supply spent: ${action.repairSupplyId}` : ""}${action.supplyId ? ` | service input: ${action.supplyId}` : ""}`;
   if (action.kind === "take" && action.amount !== undefined)
@@ -217,6 +220,7 @@ brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
+order <worker> restrain <hostile> <carried-restraint>
 deploy <staff-type> <name> | start
 step [ticks] | run [maximum ticks] | finish <worker...> (up to 1000 ticks, stops on blockers)
 load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
@@ -486,6 +490,10 @@ export function executeLine(
         JSON.stringify(
           {
             entity,
+            restraint: restraintFor(
+              console.session.state.sites[console.siteId]!.entities,
+              entity.id,
+            ),
             contents: roster(console)
               .filter(
                 (entry) =>
@@ -607,6 +615,11 @@ export function executeLine(
             action = {
               ...action,
               bedId: resolve(console, action.bedId, actor.id).id,
+            };
+          if (action.kind === "restrain")
+            action = {
+              ...action,
+              restraintId: resolve(console, action.restraintId, actor.id).id,
             };
         }
         result = executeCommand(

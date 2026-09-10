@@ -121,10 +121,21 @@ refers to that loose cargo rather than the worn equipment.
 npm run sim < src/simulation/catalog/campaign/tests/intervention.txt
 ```
 
-The initial intervention rehearsal withdraws after subdual. Permanent
-restraint and safe containment must be handled explicitly, not inferred from
-temporary incapacity. These fictional game mechanics are not real equipment
-instructions.
+The initial intervention rehearsal withdraws after subdual. For live recovery,
+carry `restraint` before departure, subdue the specimen, then
+`order alex restrain specimen @held`. Its real item attaches after four work
+ticks; only then can the hostile subject depart as carried cargo. When it wakes,
+it remains noncooperative but can be escorted under effective restraint.
+Conscious struggle consumes one restraint condition per tick, including transit.
+At zero condition the broken item remains and the subject escapes its carrier.
+Inspect the subject/status for remaining restraint condition before travel.
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/restrained-return.txt
+```
+
+This is temporary physical custody, not safe indefinite containment. These
+fictional game mechanics are not real equipment instructions.
 
 ## Permanent Casualties And Reserve Response
 

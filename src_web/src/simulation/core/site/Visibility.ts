@@ -4,6 +4,7 @@ import type { Pawn } from "../entity/pawn/Pawn";
 import { distance, tileAt, positionOf, samePosition } from "./TileMap";
 import type { Position } from "../entity/Entity";
 import { operatingPhase } from "./OperatingCycle";
+import { restraintFor } from "../entity/pawn/Custody";
 
 function transparent(
   site: Site,
@@ -83,6 +84,7 @@ export function visibleThreats(site: Site, observer: Pawn, tick = 0): Pawn[] {
         entity.kind === "pawn" &&
         entity.id !== observer.id &&
         entity.canAct &&
+        !restraintFor(site.entities, entity.id) &&
         entity.location.kind === "ground" &&
         !!entity.response &&
         hostilityActive(site, entity, tick) &&

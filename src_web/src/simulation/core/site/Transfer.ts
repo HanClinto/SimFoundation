@@ -4,6 +4,7 @@ import { facilityInUse } from "../entity/Facility";
 import { advancePhysiology } from "../entity/pawn/Health";
 import type { Pawn } from "../entity/pawn/Pawn";
 import { distance, floorAt, traversalAt } from "./TileMap";
+import { restraintFor, tickCustody } from "../entity/pawn/Custody";
 
 export interface Transfer {
   id: string;
@@ -73,6 +74,15 @@ export function depart(
   }
   for (const id of selected) {
     const entity = origin.entities[id]!;
+    if (
+      entity.kind === "pawn" &&
+      entity.requiresRestraint &&
+      !entity.health?.death &&
+      !restraintFor(origin.entities, id)
+    )
+      return fail(
+        "Living hostile recovery requires an effective physical restraint, even during subdual.",
+      );
     if (entity.kind === "facility" && facilityInUse(origin, id))
       return fail("Finish or cancel use of the travelling facility first.");
     if (entity.kind === "pawn" && entity.queue.length)
@@ -139,10 +149,14 @@ export function advanceTransfers(
         key,
         entity.kind === "pawn"
           ? advanceTransitPawn(entity, state.tick, original.originId, events)
-          : entity,
+          : structuredClone(entity),
       ]),
     );
     const transfer = { ...original, entities };
+    for (const entity of Object.values(entities)) {
+      if (entity.kind === "pawn")
+        tickCustody(entities, entity, original.originId, events);
+    }
     const destination = result.sites[transfer.destinationId];
     const traversal = destination
       ? traversalAt(destination, transfer.arrival)

@@ -32,7 +32,10 @@ export function carriedCargo(
     (entity) =>
       entity.location.kind === "carried" &&
       entity.location.carrierId === pawnId &&
-      !(entity.kind === "item" && entity.equipment?.worn),
+      !(
+        entity.kind === "item" &&
+        (entity.equipment?.worn || entity.restraint?.attached)
+      ),
   );
 }
 

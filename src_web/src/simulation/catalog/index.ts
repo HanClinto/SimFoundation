@@ -6,6 +6,7 @@ import {
   InterventionTool,
   ProtectiveVest,
   KineticSpecimen,
+  TransportRestraint,
 } from "./campaign/intervention";
 import { AutomaticSteelDoor } from "./entities/doors/AutomaticSteelDoor";
 import { PackagedMeal } from "./entities/supplies/PackagedMeal";
@@ -113,6 +114,7 @@ export const entities: EntityTemplates = Object.fromEntries(
     InterventionTool,
     ProtectiveVest,
     KineticSpecimen,
+    TransportRestraint,
     ActingGuide,
     RehearsalDesk,
     ApprovedProgramme,

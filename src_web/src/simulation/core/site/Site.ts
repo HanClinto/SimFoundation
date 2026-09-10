@@ -83,6 +83,8 @@ export function instantiateSite(
           action = { ...action, caseId: reference(action.caseId) };
         if (action.kind === "nurse")
           action = { ...action, bedId: reference(action.bedId) };
+        if (action.kind === "restrain")
+          action = { ...action, restraintId: reference(action.restraintId) };
         return {
           ...entry,
           id: `${reference(entity.id)}:initial-action-${index}`,

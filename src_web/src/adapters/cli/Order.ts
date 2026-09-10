@@ -7,6 +7,9 @@ export function parseOrder(args: readonly string[]): ActionState {
       throw new Error(`Use order <actor> ${usage}.`);
   };
   switch (kind) {
+    case "restrain":
+      count(3, "restrain <subject> <restraint>");
+      return { kind, targetId: target!, restraintId: extra!, workTicks: 0 };
     case "service":
       count(2, "service <counter>");
       return { kind, targetId: target!, workTicks: 0 };

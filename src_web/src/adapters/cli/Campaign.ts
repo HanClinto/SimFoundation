@@ -14,6 +14,7 @@ import {
 } from "../../simulation/core/entity/Service";
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
+import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
 
 export function campaignStatus(session: ScenarioSession): string {
   const { campaign, state } = session;
@@ -31,6 +32,15 @@ export function campaignStatus(session: ScenarioSession): string {
       const pawn = owner?.entities[id];
       return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${healthStatus(pawn)} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"} | autonomy ${pawn.autonomy ? "on" : "off"} | ${pawn.queue[0]?.action.kind ?? "idle"}${pawn.queue[0]?.blockedReason ? ` BLOCKED: ${pawn.queue[0].blockedReason}` : ""}${!pawn.health?.death && departureReadiness(pawn) ? `\n  ${departureReadiness(pawn)}` : ""}` : ""}`;
     }),
+    ...owners.flatMap((owner) =>
+      Object.values(owner.entities).flatMap((entity) =>
+        entity.kind === "pawn" && entity.requiresRestraint
+          ? [
+              `Custody ${entity.name} at ${owner.id}: ${healthStatus(entity)} | ${restraintFor(owner.entities, entity.id) ? `restraint condition ${restraintFor(owner.entities, entity.id)!.integrity}` : "UNRESTRAINED"}`,
+            ]
+          : [],
+      ),
+    ),
     ...owners.flatMap((owner) =>
       Object.values(owner.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.serviceDuty
