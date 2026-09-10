@@ -13,6 +13,11 @@ export function entityChoice(
   const saved = values.get(key);
   const id =
     candidates.find((entry) => entry.id === saved)?.id ??
+    candidates.find(
+      (entry) =>
+        entry.location.kind === "carried" &&
+        entry.location.carrierId === context.subjectId,
+    )?.id ??
     candidates[0]?.id ??
     "";
   return {
@@ -20,7 +25,10 @@ export function entityChoice(
     node: select(
       label,
       candidates.length
-        ? candidates.map((entry) => ({ value: entry.id, label: entry.name }))
+        ? candidates.map((entry) => ({
+            value: entry.id,
+            label: `${entry.name} [${context.controller.session.labels[entry.id] ?? entry.id}]${entry.location.kind === "carried" ? ` - held by ${context.site.entities[entry.location.carrierId]?.name ?? entry.location.carrierId}` : ""}`,
+          }))
         : [{ value: "", label: "None at this site" }],
       id,
       (value) => {

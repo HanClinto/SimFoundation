@@ -5,18 +5,20 @@ import {
 import { button, element, replaceContents, table } from "../desktop/dom";
 import { createTravelView, type OperationsContext } from "./travel";
 import { researchView } from "./research";
+import { attentionView } from "./attention";
 
 export function createOperationsView(
   body: HTMLElement,
   context: () => OperationsContext,
 ) {
-  let tab: "travel" | "work" | "history" | "research" = "work";
+  let tab: "travel" | "work" | "history" | "research" | "response" = "work";
   const travel = createTravelView();
   const tabs = element("div", "panel-tabs");
   const content = element("div");
   for (const [key, title] of [
     ["travel", "Travel"],
     ["work", "Work & duties"],
+    ["response", "Response desk"],
     ["research", "Research records"],
     ["history", "Alarm history"],
   ] as const) {
@@ -39,6 +41,10 @@ export function createOperationsView(
     }
     if (tab === "research") {
       replaceContents(content, researchView(current));
+      return;
+    }
+    if (tab === "response") {
+      replaceContents(content, attentionView(current));
       return;
     }
     const session = current.controller.session;
@@ -108,6 +114,10 @@ export function createOperationsView(
     render,
     showTravel: () => {
       tab = "travel";
+      render();
+    },
+    showResponse: () => {
+      tab = "response";
       render();
     },
   };

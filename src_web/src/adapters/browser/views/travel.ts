@@ -5,6 +5,7 @@ import { opportunityBlocker } from "../../../simulation/catalog/campaign/Campaig
 import { departureReadiness } from "../../../simulation/catalog/campaign/Readiness";
 import type { Entity } from "../../../simulation/core/entity/Entity";
 import type { Transfer } from "../../../simulation/core/site/Transfer";
+import { healthStatus } from "../../../simulation/core/entity/pawn/Health";
 import { button, element, fieldset, select, table } from "../desktop/dom";
 
 export interface OperationsContext {
@@ -68,6 +69,14 @@ export function createTravelView() {
           "p",
           "",
           `Reusable transport: ${route.duration} ticks each way, no fare. Other sites continue working. Keep arrival space clear.`,
+        ),
+      );
+    if (route?.fatalAfterTicks)
+      root.append(
+        element(
+          "p",
+          "blocked-reason",
+          "DANGER: this operation enables permanent casualties. Bring protection, supplies and a recovery plan; observation is not safety.",
         ),
       );
     const crew = fieldset("Team and walking passengers");
@@ -210,7 +219,13 @@ export function createTravelView() {
 
 function manifestTable(entities: readonly Entity[]): HTMLElement {
   return table(
-    ["Identity", "Kind", "Quantity", "Condition / ownership"],
+    [
+      "Identity",
+      "Kind",
+      "Quantity",
+      "Condition / ownership",
+      "Vitals / equipment",
+    ],
     entities.map((entity) => {
       const location = entity.location;
       const owner =
@@ -222,6 +237,15 @@ function manifestTable(entities: readonly Entity[]): HTMLElement {
         entity.kind,
         String(entity.amount),
         `${entity.integrity === undefined ? "" : `Integrity ${entity.integrity.toFixed(1)} | `}${owner}${entity.kind === "item" && entity.equipment?.worn ? " (worn)" : ""}`,
+        entity.kind === "pawn"
+          ? `${healthStatus(entity)} | blood ${entity.health?.bloodLoss.toFixed(1) ?? "n/a"} | ${Object.entries(
+              entity.needs,
+            )
+              .map(([key, need]) => `${key} ${need.value.toFixed(1)}`)
+              .join(", ")}`
+          : entity.kind === "item" && entity.equipment
+            ? `${entity.equipment.slot}${entity.equipment.subdual ? ` | charges ${entity.equipment.subdual.charges}` : ""}${entity.equipment.medicine ? ` | supplies ${entity.equipment.medicine.supplies}` : ""}`
+            : "",
       ];
     }),
   );

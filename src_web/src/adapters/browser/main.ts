@@ -28,9 +28,14 @@ import { refreshForNewDeployment } from "../browser_shared/deployment-version";
 import type { Position } from "../../simulation/core/entity/Entity";
 import { createOperationsView } from "./views/operations";
 import { physicalOrders } from "./views/physical";
+import { responseOrders } from "./views/response";
+import { apparatusView } from "./views/apparatus";
+import { firstAlarm } from "../../application/Alarms";
+import type { TickEvent } from "../../simulation/core/Simulation";
 import folderIcon from "../browser_shared/assets/folder.svg";
 import recordsIcon from "../browser_shared/assets/records.svg";
 import workerIcon from "../browser_shared/assets/site-worker.svg";
+import { entityArt } from "./map/art";
 
 const host = document.querySelector<HTMLElement>("#app");
 if (!host) throw new Error("Application host missing.");
@@ -44,6 +49,9 @@ message.setAttribute("role", "status");
 const report = (text: string) => {
   message.textContent = text;
 };
+let latestAlarm: Readonly<TickEvent> | null = null;
+const alarmBanner = element("div", "alarm-banner");
+alarmBanner.hidden = true;
 const desktop = createDesktop(host, report);
 const mapWindow = desktop.create("site", "Site map & orders", {
   left: 12,
@@ -203,7 +211,7 @@ menu.append(
     "Development saves are disposable. Incompatible versions are rejected.",
   ),
 );
-host.append(message, menu, taskbar, fileInput);
+host.append(message, alarmBanner, menu, taskbar, fileInput);
 const shortcuts = element("nav", "desktop-shortcuts");
 shortcuts.setAttribute("aria-label", "Site folders");
 for (const key of ["home", "blackwood", "kestrel"]) {
@@ -282,7 +290,7 @@ function render(): void {
         { value: "", label: "Choose an entity" },
         ...Object.values(site.entities).map((entry) => ({
           value: entry.id,
-          label: `${entry.name} (${entry.kind})`,
+          label: `${entry.name} (${entry.kind}) [${session.labels[entry.id] ?? entry.id}]`,
         })),
       ],
       target?.id ?? "",
@@ -297,7 +305,7 @@ function render(): void {
       .map((entry) => {
         const portrait = iconButton(
           entry.name,
-          workerIcon,
+          entityArt(entry) ?? workerIcon,
           () => control(entry.id === subjectId ? null : entry.id),
           `portrait:${entry.id}`,
         );
@@ -342,13 +350,45 @@ function render(): void {
     );
   content.push(basicOrders(context, target));
   content.push(...physicalOrders(context, target));
+  content.push(...responseOrders(context, target));
+  content.push(...apparatusView(context, target));
   replaceContents(queueDock, ...(subject ? [queueView(context, subject)] : []));
   replaceContents(inspection, ...content);
   operationsView.render();
   renderClock();
 }
 
-controller.subscribe(() => render());
+controller.subscribe((_session, events) => {
+  const alarm = firstAlarm(events);
+  if (alarm) {
+    latestAlarm = alarm;
+    alarmBanner.hidden = false;
+    replaceContents(
+      alarmBanner,
+      element(
+        "strong",
+        "",
+        `${alarm.kind.toUpperCase()} | tick ${alarm.tick}: ${alarm.reason ?? alarm.entityId}`,
+      ),
+      button("Locate incident", () => {
+        if (latestAlarm && controller.session.state.sites[latestAlarm.siteId]) {
+          changeSite(latestAlarm.siteId);
+          inspect(latestAlarm.targetId ?? latestAlarm.entityId);
+          mapWindow.open();
+        }
+      }),
+      button("Response desk", () => {
+        operationsView.showResponse();
+        operations.open();
+      }),
+      button("Acknowledge alarm", () => {
+        latestAlarm = null;
+        alarmBanner.hidden = true;
+      }),
+    );
+  }
+  render();
+});
 try {
   if (localStorage.getItem(SAVE_KEY)) {
     loadSavedSession(controller);

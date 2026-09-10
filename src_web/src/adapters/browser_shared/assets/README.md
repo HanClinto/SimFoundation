@@ -7,6 +7,11 @@ crate/case, bottle, document, bench and abstract nonhuman resident markers,
 authored by GitHub Copilot for SimFoundation under CC BY-SA 3.0. These deliberately
 simple markers depict object categories, not source-article photographs or
 canonical likenesses. Existing worker and furniture SVGs are reused unchanged.
+The replacement map recolors the original worker SVG's head, hair and uniform
+groups using deterministic presentation palettes shared with portrait shortcuts.
+It rotates that same figure for incapacity/death, labels the state in words,
+and shows the actual carried cargo marker. These 2026-09-10 modifications are
+original project presentation work by GitHub Copilot under CC BY-SA 3.0.
 
 On 2026-09-05 the original facility, folder, library, alarm, budget, records, work orders, playback, monitor, camera, personnel, and medical icons were redrawn by GitHub Copilot on a shared 32x32 canvas with consistent outlines and limited-color highlights. Their editable SVGs are the sources, licensed CC BY-SA 3.0. The canonical SCP emblem was not changed. Pawn portraits derive from the original personnel reference illustration with per-person display palettes; these are provisional appearance choices, not inferred personality or clinical information.
 

@@ -32,6 +32,48 @@ export function createSiteMap(
     role: "group",
     "aria-label": "Site entities and floor",
   });
+  let cursor: Position = { x: 1, y: 1 };
+  let currentSite: Site | null = null;
+  const cursorLabel = element(
+    "span",
+    "map-legend",
+    "Keyboard: focus map, arrows choose tile, Enter sets destination.",
+  );
+  viewport.addEventListener("keydown", (event) => {
+    if (event.target !== viewport || !currentSite) return;
+    const direction = {
+      ArrowLeft: [-1, 0],
+      ArrowRight: [1, 0],
+      ArrowUp: [0, -1],
+      ArrowDown: [0, 1],
+    }[event.key];
+    if (direction) {
+      event.preventDefault();
+      cursor = {
+        x: Math.max(
+          0,
+          Math.min(
+            currentSite.terrain[0]!.length - 1,
+            cursor.x + direction[0]!,
+          ),
+        ),
+        y: Math.max(
+          0,
+          Math.min(currentSite.terrain.length - 1, cursor.y + direction[1]!),
+        ),
+      };
+      cursorLabel.textContent = `Floor cursor (${cursor.x}, ${cursor.y}) - Enter selects, arrows move.`;
+      drawing
+        .querySelector("[data-keyboard-cursor]")
+        ?.removeAttribute("data-keyboard-cursor");
+      drawing
+        .querySelector(`[data-tile="${cursor.x},${cursor.y}"]`)
+        ?.setAttribute("data-keyboard-cursor", "true");
+    } else if (event.key === "Enter") {
+      event.preventDefault();
+      chooseTile(cursor);
+    }
+  });
   viewport.append(drawing);
   let zoom = 1;
   let floorMode = false;
@@ -73,6 +115,7 @@ export function createSiteMap(
         viewport.clientWidth / size.width,
         viewport.clientHeight / size.height,
       );
+      toolbar.append(cursorLabel);
       resize();
     }),
     element(
@@ -89,6 +132,7 @@ export function createSiteMap(
     targetId: string | null,
     selectedTile: Position | null,
   ): void {
+    currentSite = site;
     const rows = site.terrain.length;
     const columns = site.terrain[0]?.length ?? 0;
     const ox = rows * 24 + 28;
@@ -186,6 +230,13 @@ export function createSiteMap(
             y: "-34",
             width: "34",
             height: "36",
+            ...(entity.kind === "pawn" &&
+            (!entity.canAct || entity.health?.death)
+              ? {
+                  transform: "rotate(80 0 -8)",
+                  opacity: entity.health?.death ? ".65" : "1",
+                }
+              : {}),
           }),
         );
       if (entity.kind === "pawn") {
@@ -210,7 +261,7 @@ export function createSiteMap(
       });
       label.textContent =
         entity.kind === "pawn" || entity.id === targetId
-          ? entity.name
+          ? `${entity.name}${entity.kind === "pawn" ? (entity.health?.death ? " [DEAD]" : !entity.canAct ? " [DOWN]" : "") : ""}`
           : entity.kind === "door"
             ? entitySymbol(entity)
             : "";

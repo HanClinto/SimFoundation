@@ -18,6 +18,20 @@ the worker and target first; **Choose floor destination** selects the floor
 beneath objects without issuing work. The inspection target stays distinct from
 that destination. Care consumes actual packs and keeps patient/treatment records.
 
+Danger and engineering are connected: equip a responder, capture a living
+subject into serviced holding, study it, then spend physical maintenance supplies
+on a slower-wearing restraint for awake care. Alternatively, actively record an
+actual impact with the field kit; recover and analyze that device to enable
+protective equipment. Evidence can survive the observer's death. Crafted items
+retain the investigator, input sources and maker; a finding does not heal anyone.
+
+Warnings, escapes, breaches and deaths stop running/finish after a complete tick.
+The persistent alarm notice offers **Locate incident** and **Response desk**;
+acknowledging it does not repair the situation. The response desk shows current
+patients/bodies and the two finite reserve responders. Use Travel to inspect
+their real incoming manifest. Subdual, restraints, intake, lockdown, recurring
+service, direct watch and guarded relief all use normal shared commands.
+
 The previous browser lives in `src/adapters/browser_legacy`, with its application
 bindings in `src/application/legacy`; it is not bundled by the active entry.
 Historical prototype features below are not claims about the replacement UI.

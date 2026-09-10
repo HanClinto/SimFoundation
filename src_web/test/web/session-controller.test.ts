@@ -1,8 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { SessionController } from "../../src/application/SessionController";
 import { openConsole, executeLine } from "../../src/adapters/cli/Console";
+import { loadScenario } from "../../src/application/ScenarioSession";
 
 describe("shared replacement application controller", () => {
+  it("rejects both previews and dispatch while a restored scenario is in setup", () => {
+    const controller = new SessionController(loadScenario("scp1867"));
+    const command = {
+      kind: "enqueue" as const,
+      siteId: "site-1",
+      entityId: "missing",
+      action: { kind: "wait" as const, ticks: 1 },
+    };
+    expect(controller.preview(command).reason).toMatch(/Start the mission/);
+    expect(() => controller.dispatch(command)).toThrow(/Start the mission/);
+  });
   it("uses the same physical command and completion as the CLI", () => {
     const controller = new SessionController();
     controller.dispatch({

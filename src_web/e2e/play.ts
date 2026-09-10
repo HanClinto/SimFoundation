@@ -58,7 +58,7 @@ export async function order(
 ) {
   await page
     .getByLabel("Worker", { exact: true })
-    .selectOption(`site-1:${worker}`);
+    .selectOption({ label: worker });
   await page.getByLabel("Inspect", { exact: true }).selectOption(target);
   await page.getByRole("button", { name: label, exact: true }).click();
   await finish(page);
@@ -77,7 +77,7 @@ export async function deliver(
 ) {
   await page
     .getByLabel("Worker", { exact: true })
-    .selectOption(`site-1:${worker}`);
+    .selectOption({ label: worker });
   await floor(page, x, y);
   await page.getByRole("button", { name: /^Deliver .+ here$/ }).click();
   await finish(page);

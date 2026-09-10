@@ -195,6 +195,15 @@ select:focus-visible,
 .action-tray .queue-entry small {
   clear: both;
 }
+.work-progress {
+  clear: both;
+  padding-top: 4px;
+}
+.work-progress progress {
+  width: 100%;
+  height: 9px;
+  accent-color: #426439;
+}
 .select-field {
   display: flex;
   align-items: center;
@@ -244,6 +253,11 @@ select:focus-visible,
 }
 .map-entity {
   cursor: pointer;
+}
+[data-keyboard-cursor] {
+  stroke: #fff;
+  stroke-width: 3px;
+  stroke-dasharray: 3 2;
 }
 .floor-targeting .map-entity {
   pointer-events: none;
@@ -365,6 +379,27 @@ small {
   padding: 6px 10px;
   font-size: 12px;
   z-index: 99999;
+}
+.alarm-banner {
+  position: absolute;
+  right: 8px;
+  bottom: 72px;
+  max-width: 620px;
+  padding: 8px;
+  background: #fff0c0;
+  border: 2px solid #863e00;
+  z-index: 99999;
+  font:
+    12px Arial,
+    sans-serif;
+  box-shadow: 2px 2px #303030;
+}
+.alarm-banner strong {
+  display: block;
+  margin-bottom: 5px;
+}
+.alarm-banner button {
+  margin-right: 5px;
 }
 .taskbar {
   position: absolute;

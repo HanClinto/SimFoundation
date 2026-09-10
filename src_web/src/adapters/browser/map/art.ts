@@ -1,11 +1,30 @@
 import type { Entity } from "../../../simulation/core/entity/Entity";
-import worker from "../../browser_shared/assets/site-worker.svg";
+import workerSource from "../../browser_shared/assets/site-worker.svg?raw";
 import bed from "../../browser_shared/assets/station-bed.svg";
 import meal from "../../browser_shared/assets/station-meal.svg";
 import rest from "../../browser_shared/assets/station-break.svg";
 import medical from "../../browser_shared/assets/medical.svg";
 
 const images = new Map<string, string>();
+const palettes = [
+  ["#d9aa7e", "#594a3c", "#d1d8e5"],
+  ["#b77d54", "#292725", "#c5d2af"],
+  ["#efc7a0", "#80552f", "#cbbbbb"],
+  ["#87583f", "#292321", "#d4c59d"],
+] as const;
+
+function personArt(id: string): string {
+  const cached = images.get(id);
+  if (cached) return cached;
+  const hash = [...id].reduce(
+    (value, letter) => (value * 31 + letter.charCodeAt(0)) >>> 0,
+    0,
+  );
+  const [skin, hair, uniform] = palettes[hash % palettes.length]!;
+  const image = `data:image/svg+xml,${encodeURIComponent(workerSource.replace("#d9aa7e", skin).replace("#594a3c", hair).replace("#e5e8eb", uniform))}`;
+  images.set(id, image);
+  return image;
+}
 function drawing(kind: string, color: string): string {
   const key = `${kind}:${color}`;
   const existing = images.get(key);
@@ -29,7 +48,7 @@ function drawing(kind: string, color: string): string {
 export function entityArt(entity: Entity): string | null {
   if (entity.kind === "pawn")
     return entity.human || entity.playerControllable
-      ? worker
+      ? personArt(entity.id)
       : drawing("resident", "#be9e6a");
   if (entity.kind === "door") return null;
   if (entity.kind === "facility") {

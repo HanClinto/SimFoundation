@@ -78,7 +78,20 @@ export function replaceContents(
       ? active.dataset.focusKey
       : undefined;
   const scrollTop = parent.scrollTop;
+  const details = new Map(
+    [
+      ...parent.querySelectorAll<HTMLDetailsElement>(
+        "details[data-detail-key]",
+      ),
+    ].map((node) => [node.dataset.detailKey, node.open]),
+  );
   parent.replaceChildren(...children);
+  for (const node of parent.querySelectorAll<HTMLDetailsElement>(
+    "details[data-detail-key]",
+  )) {
+    const open = details.get(node.dataset.detailKey);
+    if (open !== undefined) node.open = open;
+  }
   parent.scrollTop = scrollTop;
   if (key) {
     [...parent.querySelectorAll<HTMLElement>("[data-focus-key]")]

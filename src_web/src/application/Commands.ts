@@ -13,6 +13,12 @@ import { admitToCare } from "../simulation/catalog/campaign/Care";
 import { dispatchReserve } from "../simulation/catalog/campaign/Reserve";
 
 export function commandSession(session: ScenarioSession, command: Command) {
+  if (session.phase !== "running")
+    return {
+      state: session.state,
+      code: "rejected" as const,
+      reason: "Start the mission before issuing gameplay orders.",
+    };
   return executeCommand(session.state, command, materials);
 }
 
@@ -20,6 +26,11 @@ export function previewSessionCommand(
   session: ScenarioSession,
   command: Command,
 ) {
+  if (session.phase !== "running")
+    return {
+      code: "rejected" as const,
+      reason: "Start the mission before issuing gameplay orders.",
+    };
   return previewCommand(session.state, command, materials);
 }
 

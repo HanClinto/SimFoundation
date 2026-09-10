@@ -11,6 +11,8 @@ import { carriedCargo } from "../../../simulation/core/entity/Equipment";
 import { entityArt } from "../map/art";
 import workIcon from "../../browser_shared/assets/work-orders.svg";
 import { entities } from "../../../simulation/catalog";
+import type { Command } from "../../../simulation/core/ControlPolicy";
+import { workProgress } from "./progress";
 
 export interface ViewContext {
   controller: SessionController;
@@ -37,22 +39,27 @@ export function orderButton(
   label: string,
   action: ActionState,
 ): HTMLElement {
-  const row = element("div", "order-option");
   const command = {
     kind: "enqueue" as const,
     siteId: context.site.id,
     entityId: context.subjectId ?? "",
     action,
   };
+  return commandButton(context, label, command, `Queued: ${label}.`);
+}
+
+export function commandButton(
+  context: ViewContext,
+  label: string,
+  command: Command,
+  notice = label,
+): HTMLElement {
+  const row = element("div", "order-option");
   const preview = context.controller.preview(command);
   const node = button(
     label,
-    () =>
-      context.act(
-        () => context.controller.dispatch(command),
-        `Queued: ${label}.`,
-      ),
-    `${label}:${JSON.stringify(action)}`,
+    () => context.act(() => context.controller.dispatch(command), notice),
+    `${label}:${JSON.stringify(command)}`,
   );
   node.disabled = preview.code === "rejected";
   node.title =
@@ -113,6 +120,10 @@ export function queueView(context: ViewContext, entity: Entity): HTMLElement {
         `${entry.source} | ${entry.elapsed} ticks elapsed${"workTicks" in entry.action ? ` | ${entry.action.workTicks} work ticks` : ""}`,
       ),
     );
+    if (index === 0) {
+      const progress = workProgress(context.site, entry.action);
+      if (progress) row.append(progress);
+    }
     if (entry.blockedReason)
       row.append(
         element("p", "blocked-reason", `BLOCKED: ${entry.blockedReason}`),
@@ -360,11 +371,8 @@ export function basicOrders(
     result.append(orderButton(context, "Eat", { kind: "eat", targetId }));
   if (target.kind === "item" && target.equipment)
     result.append(
-      orderButton(
-        context,
-        target.equipment.worn ? "Remove equipment" : "Fit equipment",
-        { kind: target.equipment.worn ? "unequip" : "equip", targetId },
-      ),
+      orderButton(context, "Fit equipment", { kind: "equip", targetId }),
+      orderButton(context, "Remove equipment", { kind: "unequip", targetId }),
     );
   if (target.kind === "item" && target.case)
     result.append(
