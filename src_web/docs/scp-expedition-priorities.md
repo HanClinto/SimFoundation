@@ -152,9 +152,24 @@ Do not build roofs, base weather, floor penetration, additional base levels, arb
 
 ## Additional Recommendations
 
-Before adding more lore-heavy sources, implement the two original prerequisite missions described in the catalog: **damaged specimen courier** and **emergency care transfer**. They exercise the hardest return invariants without the special rules of a famous SCP.
+The original **damaged specimen courier** and **emergency care transfer** are
+now implemented and reused by later retrieval/care slices. They remain useful
+regression scenarios for ownership, wear and interrupted work.
 
-For additions to the source list, first investigate **SCP-914** for controlled transformation experiments, **SCP-500** for finite medical allocation, **SCP-085** for a distinct cooperative resident environment, and **SCP-131** for a possible observation companion. These are provisional, not reviewed against archived articles; their current sources and rights need checking. In particular, do not assume SCP-131 solves SCP-173 staffing, or SCP-500 cures every modeled condition.
+Additional-source review on 2026-09-10 considered the following, without adding
+new runtime content:
+
+| Candidate                                       | Source and credit                                | Why defer after this checkpoint                                                                                                                                                                                                                                                                                                                                               |
+| ----------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [SCP-348](https://scp-wiki.wikidot.com/scp-348) | Zyn, CC BY-SA 3.0; archived revision 35 reviewed | Its minor-ailment comfort and personal-message emphasis is not a universal cure. The current adult trauma/resource loop needs player feedback before adding a different care/relationship model or a new food source.                                                                                                                                                         |
+| [SCP-500](https://scp-wiki.wikidot.com/scp-500) | snorlison, CC BY-SA 3.0; live source reviewed    | Finite disease treatment could support allocation, but current major conditions are trauma and blood loss. Do not invent a blanket wound/organ cure from a disease-treatment premise merely to reuse the clinical action. A defined disease slice must earn its own scope first.                                                                                              |
+| [SCP-914](https://scp-wiki.wikidot.com/scp-914) | Dr Gears, CC BY-SA 3.0; live source reviewed     | Controlled nonliving transformation is a plausible future use of physical input/output ownership. It would also alter the deliberately finite parts/textile/clinical economy. Balance existing allocation, paid experimentation and recurring service before adding a conversion table; archive the selected revision and review every authored output before implementation. |
+
+No images from these sources were added. SCP-914's separate photograph license
+is not assumed to follow its article credit. No dangerous transformation,
+biological experiment or medical recipe is proposed for runtime. SCP-085 and
+SCP-131 remain unreviewed here; do not assume an observation companion solves
+the deferred SCP-173 staffing problem.
 
 ## Review And Stop Gates
 
