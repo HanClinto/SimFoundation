@@ -53,7 +53,7 @@ it("further impacts never reset a previously established fatal interval", () => 
     "site-1:alex"
   ] as Pawn;
   actor.health!.mortality = { criticalTicks: 0, fatalAfterTicks: 3 };
-  c = executeLine(c, "step 50").console;
+  c = executeLine(c, "step 100").console;
   const after = c.session.state.sites["site-1"]!.entities[actor.id] as Pawn;
   expect(after.health!.mortality!.fatalAfterTicks).toBe(3);
   expect(after.health!.death).toBeDefined();

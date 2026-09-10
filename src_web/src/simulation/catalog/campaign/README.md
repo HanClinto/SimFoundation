@@ -146,6 +146,19 @@ An item merely carried in hand is not worn. `unequip` physically places gear
 on the ground. Worn gear travels with the wearer and remains with the body
 after death; another worker can recover it without restoring charges/condition.
 
+An incapacitated ally's equipment can also be physically recovered before
+death. Active living owners and nonallied incapacitated holders are not free
+loot targets. The original specimen's per-impact bleeding is tuned to0.5 so
+an armored ally can have a costly rescue window after injury incapacity:
+Casey can move the living casualty out of the approach, recover the same tool,
+subdue the threat, switch medical equipment explicitly, spend all required
+stabilization supplies and carry the ally home for wound/blood care.
+Ignoring the casualty still produces irreversible death.
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/incapacitated-ally-rescue.txt
+```
+
 The kinetic subject's explicitly dangerous impacts also enable that fatal
 risk on a person actually injured during a later home breach, with an immediate
 warning. Staying home is not immunity. Existing mortality intervals/progress

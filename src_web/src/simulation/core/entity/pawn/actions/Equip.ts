@@ -27,7 +27,7 @@ export class Equip implements Action {
         ? null
         : "This worker is not wearing that equipment.";
     if (!availableForRecovery(site, target, pawn.id))
-      return "Another living person owns this equipment.";
+      return "Another active or nonallied living person owns this equipment.";
     if ((target.integrity ?? 100) <= 0 || target.amount <= 0)
       return "This equipment is broken or depleted.";
     const worn = wornEquipment(site, pawn.id, target.equipment.slot);

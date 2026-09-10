@@ -58,7 +58,15 @@ export function availableForRecovery(
   if (target.location.kind === "ground") return true;
   if (target.location.carrierId === actorId) return true;
   const owner = site.entities[target.location.carrierId];
-  return owner?.kind === "pawn" && !!owner.health?.death;
+  if (owner?.kind !== "pawn") return false;
+  if (owner.health?.death) return true;
+  const worker = site.entities[actorId];
+  return (
+    !owner.canAct &&
+    worker?.kind === "pawn" &&
+    !!worker.response?.faction &&
+    worker.response.faction === owner.response?.faction
+  );
 }
 
 export function equipmentUnderRepair(

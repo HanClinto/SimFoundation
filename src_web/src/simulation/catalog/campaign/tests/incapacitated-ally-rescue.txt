@@ -1,0 +1,60 @@
+# Rescue before death using the same ally-owned equipment and finite medical supplies.
+load campaign
+order alex equip suppressor
+order alex equip vest
+order casey equip medical-kit
+finish alex casey
+prepare intervention alex casey
+finish alex casey
+send intervention alex casey
+finish alex
+site intervention
+order casey move 3 3
+finish casey
+order alex move 4 3
+finish alex
+# Deliberate incapacitating injury. The ally is still alive.
+step 29
+inspect alex
+order casey unequip medical-kit
+finish casey
+order casey equip suppressor
+finish casey
+# Move the living casualty out of the one-tile approach while keeping physical ownership.
+order casey take alex
+finish casey
+order casey subdue specimen
+finish casey
+order casey unequip suppressor
+finish casey
+order casey equip medical-kit
+finish casey
+order casey treat alex
+finish casey
+order casey treat alex
+finish casey
+order casey treat alex
+finish casey
+# The physical kit is empty; explicitly switch to the medic's finite initial allowance.
+order casey unequip medical-kit
+finish casey
+order casey treat alex
+finish casey
+order casey treat alex
+finish casey
+order casey equip suppressor
+finish casey
+prepare home casey
+finish casey
+send home casey
+finish casey
+site home
+order casey deliver @held 3 1
+finish casey
+order casey nurse alex clinic wounds
+finish casey
+order casey nurse alex clinic
+finish casey
+inspect alex
+inspect casey
+status

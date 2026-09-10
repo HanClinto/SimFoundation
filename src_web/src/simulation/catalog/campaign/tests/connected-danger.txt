@@ -56,7 +56,7 @@ finish casey
 order casey nurse alex clinic
 finish casey
 # Clear the compact bedside approach rather than teleporting a recovered worker.
-order casey move 5 3
+order casey move 2 5
 finish casey
 order alex take parts 1
 finish alex
