@@ -146,6 +146,12 @@ An item merely carried in hand is not worn. `unequip` physically places gear
 on the ground. Worn gear travels with the wearer and remains with the body
 after death; another worker can recover it without restoring charges/condition.
 
+The kinetic subject's explicitly dangerous impacts also enable that fatal
+risk on a person actually injured during a later home breach, with an immediate
+warning. Staying home is not immunity. Existing mortality intervals/progress
+are not reset, and peaceful or capped attacks without this authored capability
+do not silently become lethal.
+
 The home holds three finite `suppression-units`. With the serviceable tool worn,
 bring a unit beside the worker (or carry it) and `order alex rearm suppressor`.
 Six ticks and one unit restore one charge, up to capacity two. Cancellation

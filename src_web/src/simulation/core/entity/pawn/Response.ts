@@ -9,6 +9,7 @@ export interface Response {
     windup: number;
     maximumSeverity?: number;
     bleeding?: number;
+    fatalAfterTicks?: number;
   };
   medicine?: { ticks: number; supplies: number };
 }

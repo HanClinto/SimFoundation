@@ -79,6 +79,17 @@ export class Attack implements Action {
         });
     }
     if (damage <= 0) return { status: "running" };
+    const fatalAfterTicks = pawn.response!.attack!.fatalAfterTicks;
+    if (fatalAfterTicks !== undefined && !target.health!.mortality) {
+      target.health!.mortality = { criticalTicks: 0, fatalAfterTicks };
+      events.push({
+        siteId: site.id,
+        entityId: target.id,
+        targetId: pawn.id,
+        kind: "warning",
+        reason: `${target.name} suffered a lethal-risk impact; untreated critical deterioration can be fatal after ${fatalAfterTicks} ticks.`,
+      });
+    }
     target.health!.wounds.push({
       id: `impact:${context.tick}:${pawn.id}`,
       severity: damage,
