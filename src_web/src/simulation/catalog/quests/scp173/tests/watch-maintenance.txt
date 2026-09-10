@@ -46,12 +46,12 @@ finish riley
 # Move the two observers into the work room one at a time under overlapping watch.
 order riley move 3 3
 finish riley
-cancel alex
+relieve alex casey
 order alex move 10 3
 finish alex
 order alex watch subject 200
 step 1
-cancel casey
+relieve casey alex
 order casey move 9 4
 finish casey
 order casey watch subject 200
@@ -72,17 +72,17 @@ order riley move 7 1
 finish riley
 order riley watch subject 120
 step 1
-cancel alex
+relieve alex riley
 order alex move 4 1
 finish alex
 order alex watch subject 160
 step 1
-cancel casey
+relieve casey alex
 order casey move 4 5
 finish casey
 order casey watch subject 160
 step 1
-cancel riley
+relieve riley alex
 order riley move 3 3
 finish riley
 order riley door gate closed

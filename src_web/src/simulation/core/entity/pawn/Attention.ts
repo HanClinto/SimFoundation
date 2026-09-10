@@ -66,3 +66,57 @@ export function supervisionBlocker(
     ? null
     : `Maintain ${rule.observers} active direct observers beside the station, other than the worker, before this supervised work.`;
 }
+
+export function watchHandoffBlocker(
+  site: Site,
+  outgoing: Pawn,
+  replacementId: string,
+): string | null {
+  const watch = outgoing.queue[0]?.action;
+  const replacement = site.entities[replacementId];
+  if (watch?.kind !== "watch")
+    return "The outgoing worker must have a current direct-watch commitment.";
+  if (
+    replacement?.kind !== "pawn" ||
+    replacement.id === outgoing.id ||
+    !outgoing.response?.faction ||
+    replacement.response?.faction !== outgoing.response.faction
+  )
+    return "Choose a different allied replacement at this site.";
+  const active = directWatchers(site, watch.targetId);
+  if (
+    !active.some((observer) => observer.id === outgoing.id) ||
+    !active.some((observer) => observer.id === replacement.id)
+  )
+    return "Both workers must already be actively watching the same subject; activate replacement coverage before relief.";
+  const proposed: Site = {
+    ...site,
+    entities: {
+      ...site.entities,
+      [outgoing.id]: { ...outgoing, queue: outgoing.queue.slice(1) },
+    },
+  };
+  for (const worker of Object.values(site.entities)) {
+    if (
+      worker.kind !== "pawn" ||
+      !worker.canAct ||
+      worker.location.kind !== "ground"
+    )
+      continue;
+    const work = worker.queue[0]?.action;
+    if (
+      (work?.kind !== "study" && work?.kind !== "service") ||
+      work.workTicks <= 0
+    )
+      continue;
+    const station = site.entities[work.targetId];
+    if (
+      station?.kind === "facility" &&
+      station.supervision &&
+      supervisionBlocker(site, station, worker.id) === null &&
+      supervisionBlocker(proposed, station, worker.id) !== null
+    )
+      return "Relief would leave productive supervised work without its required observers.";
+  }
+  return null;
+}

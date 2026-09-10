@@ -35,8 +35,15 @@ control, consciousness or independent ground position removes coverage.
 The subject resumes physical movement/attack when every valid observer stops.
 The closed door remains a separate physical fallback.
 
-To relieve a watcher, activate the replacement **before** cancelling the earlier
-commitment. During withdrawal, keep overlapping observers while people leave;
+To relieve a watcher, activate the replacement **before** releasing the earlier
+commitment. `relieve alex riley` releases only Alex's current Watch after
+confirming Riley is already actively watching the same subject. Pending work,
+wrong subjects, unavailable people and loss of required coverage for productive
+supervised work are refused without advancing time. Later queued work stays
+intact. This does not move or activate the replacement for you; ordinary
+`cancel` remains the deliberate exception.
+
+During withdrawal, keep overlapping observers while people leave;
 physically close the door before the last watchers stop. Clear the narrow door
 approach so others can pass. Use `finish riley` for Riley's work, not
 `finish alex casey` while their active watches are the safety coverage.

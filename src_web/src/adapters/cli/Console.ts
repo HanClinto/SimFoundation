@@ -268,6 +268,7 @@ order <worker> repair-equipment <gear> <bench>
 order <worker> craft <bench> <recipe> (recorded research and physical supplies)
 order <worker> observe <actor> <carried-recorder> (watch from current visible vantage)
 order <worker> watch <subject> <ticks> (sustained direct attention; fatigue stops watch)
+relieve <outgoing> <replacement> (replacement must already be actively watching the same subject)
 order <worker> door <door> <open|closed|automatic> (physical controls)
 order <worker> give <carried-object|@held> <teammate>
 order <worker> capture <subject> <restraint|@held> <x> <y> (local physical job)
@@ -642,6 +643,7 @@ export function executeLine(
     case "study":
     case "order":
     case "assign":
+    case "relieve":
     case "autonomy":
     case "cancel": {
       if (console.session.phase !== "running")
@@ -649,7 +651,19 @@ export function executeLine(
       const actor = resolve(console, args[0]);
       const base = { siteId: console.siteId, entityId: actor.id };
       let result;
-      if (command === "assign") {
+      if (command === "relieve") {
+        if (args.length !== 2)
+          throw new Error("Use relieve <outgoing> <replacement>.");
+        result = executeCommand(
+          console.session.state,
+          {
+            ...base,
+            kind: "relieve",
+            replacementId: resolve(console, args[1]).id,
+          },
+          materials,
+        );
+      } else if (command === "assign") {
         if (args.length !== 2)
           throw new Error("Use assign <worker> <counter|none>.");
         result = executeCommand(
@@ -769,6 +783,10 @@ export function executeLine(
         ...console,
         session: { ...console.session, state: result.state },
       };
+      if (command === "relieve" && result.code === "accepted")
+        return finish(
+          `Relieved ${actor.name}; ${args[1]} remains in active direct watch. Later queued work is preserved; no time or movement was added.`,
+        );
       if (result.actionId) {
         const updated = result.state.sites[console.siteId]!.entities[actor.id];
         if (updated?.kind === "pawn") {

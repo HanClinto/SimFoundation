@@ -3,8 +3,15 @@ import { actionHandler } from "./entity/pawn/actions/ActionQueue";
 import type { Entity } from "./entity/Entity";
 import type { Simulation } from "./Simulation";
 import type { Materials } from "./material/Material";
+import { watchHandoffBlocker } from "./entity/pawn/Attention";
 
 export type Command =
+  | {
+      readonly kind: "relieve";
+      readonly siteId: string;
+      readonly entityId: string;
+      readonly replacementId: string;
+    }
   | {
       readonly kind: "duty";
       readonly siteId: string;
@@ -82,6 +89,16 @@ export function executeCommand(
       delete cleared.serviceDuty;
       updated = cleared;
     }
+  } else if (command.kind === "relieve") {
+    const replacement = site.entities[command.replacementId];
+    if (
+      context.source === "player" &&
+      (replacement?.kind !== "pawn" || !replacement.playerControllable)
+    )
+      return fail("Choose a controllable replacement at this site.");
+    const reason = watchHandoffBlocker(site, entity, command.replacementId);
+    if (reason) return fail(reason);
+    updated = { ...entity, queue: entity.queue.slice(1) };
   } else if (command.kind === "cancel") {
     if (!entity.queue.some((entry) => entry.id === command.actionId))
       return fail("This action no longer exists.");

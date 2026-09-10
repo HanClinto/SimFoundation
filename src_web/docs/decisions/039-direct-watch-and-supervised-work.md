@@ -16,6 +16,13 @@ not immediately after activation/increment. Even a one-tick watch therefore
 holds one subject turn, regardless of which actor sorts first. Current sight,
 fatigue and capability are still checked at every coverage query.
 
+The local `relieve` command atomically removes only the outgoing current Watch
+after confirming another actual allied worker is already watching the same
+subject. It compares existing productive supervision before/after the proposed
+queue change, refusing a newly introduced coverage deficit. No hidden movement,
+replacement watch or time advancement is created; pending work is retained.
+Ordinary cancellation remains the explicit unsafe escape hatch.
+
 An opted-in pawn stays still while covered and resets attack windup rather than
 banking an instant hit. Its physiology remains ordinary. Threat assessment
 excludes a currently held source, so assigned supervised work and care can

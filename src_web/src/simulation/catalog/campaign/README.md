@@ -555,6 +555,11 @@ cleaning/study. Watch is distinct from the survey kit's impact recording and
 from passive sight. Commitments expire, fatigue requires relief, and failed
 coverage with an open door can kill actual workers.
 
+`relieve <outgoing> <replacement>` is the guarded local handoff after the
+replacement is actually watching the same subject. It preserves later queued
+work and refuses to remove coverage required by currently productive supervised
+work. It adds no time, movement or hidden watch; `cancel` remains the exception.
+
 Stage in the viewing gallery, move observers inside under overlapping coverage,
 close the door behind the three-person group for work, then withdraw and lock
 the door while coverage remains. This is a bounded source adaptation, not
