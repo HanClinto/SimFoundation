@@ -86,6 +86,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "deliver")
+    return `deliver ${action.targetId} to (${action.destination.x},${action.destination.y})`;
   if (action.kind === "move")
     return `move to (${action.destination.x},${action.destination.y})`;
   if (action.kind === "wait") return `wait ${action.ticks} ticks`;
@@ -161,6 +163,7 @@ inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
 study <actor> <station> <planId>
 order <name|@N> <verb> <target> | order <name|@N> move <x> <y> | order <name|@N> wait <ticks>
 order <name|@N> study <station> <planId> | autonomy <actor> <on|off> | cancel <actor> [actionId]
+order <name|@N> deliver <target> <x> <y> (collect, carry and drop)
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -326,6 +329,7 @@ export function executeLine(
                 }
               : parseOrder(args.slice(1));
         const kinds = [
+          "deliver",
           "move",
           "take",
           "drop",
@@ -347,16 +351,17 @@ export function executeLine(
           !kinds.includes(action.kind)
         )
           throw new Error("Unknown action kind.");
-        if (action.kind === "move") {
+        if (action.kind === "move" || action.kind === "deliver") {
           if (
             !Number.isInteger(action.destination?.x) ||
             !Number.isInteger(action.destination?.y)
           )
             throw new Error("Move needs integer x/y coordinates.");
-        } else if (action.kind === "wait") {
+        }
+        if (action.kind === "wait") {
           if (!Number.isSafeInteger(action.ticks) || action.ticks < 1)
             throw new Error("Wait needs a positive integer duration.");
-        } else {
+        } else if ("targetId" in action) {
           if (
             action.kind === "study" &&
             (typeof action.planId !== "string" || !action.planId)

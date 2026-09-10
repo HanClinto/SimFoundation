@@ -6,6 +6,7 @@ import type { TickEvent } from "../../../Simulation";
 import type { AttackState } from "./Attack";
 import type { TreatState } from "./Treat";
 import type { StudyState } from "./Study";
+import type { DeliverState } from "./Deliver";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -16,6 +17,7 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | DeliverState
   | StudyState
   | AttackState
   | TreatState
