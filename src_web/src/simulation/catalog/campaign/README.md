@@ -28,6 +28,12 @@ limit. Every site still advances; this is not free work or a solution planner.
 It does not wait forever for future autonomous tasks. The output gives elapsed
 time and remaining queues.
 
+After `send`, `finish @1` can also watch that person's actual transfer until
+arrival or blocked admission, without guessing its duration. It reports the
+final owner and stops on a new critical notice for the travelling payload.
+Multiple selected workers can combine local work and existing transport.
+This read-only wait does not change the selected site or permit transit orders.
+
 Campaign `run` stops after the first complete tick with a new containment
 warning, breach, escape or death and prints the identified alarm. Inspect and
 respond, then resume; old log entries do not repeatedly stop time. `step N`

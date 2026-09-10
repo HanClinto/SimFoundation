@@ -27,6 +27,7 @@ import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 import { carriedCargo } from "../../simulation/core/entity/Equipment";
 import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
 import type { TickEvent } from "../../simulation/core/Simulation";
+import { finishCommitments } from "./Finish";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -410,81 +411,24 @@ export function executeLine(
       if (console.session.phase !== "running")
         throw new Error("Start the mission before advancing work.");
       if (!args.length) throw new Error("Use finish <worker...>.");
-      const workers = args.map((value) => resolve(console, value));
-      if (workers.some((entity) => entity.kind !== "pawn"))
-        throw new Error("Choose workers with action queues.");
-      const watched = new Set(
-        workers.flatMap((entity) =>
-          entity.kind === "pawn" ? entity.queue.map((entry) => entry.id) : [],
-        ),
+      const workers = args.map((value) =>
+        resolve(console, value, undefined, true),
       );
-      if (!watched.size)
-        return finish("No queued commitments to finish. No time advanced.");
-      const startedTick = console.session.state.tick;
-      let session = console.session;
-      let stop = "Reached the 1000-tick limit; inspect remaining work.";
-      for (let ticks = 0; ticks < 1000; ticks++) {
-        let changed: readonly Readonly<TickEvent>[] = [];
-        session = stepSession(session, 1, (events) => {
-          changed = events;
-        });
-        for (const site of Object.values(session.state.sites)) {
-          for (const entity of Object.values(site.entities)) {
-            if (entity.kind !== "pawn") continue;
-            for (const entry of entity.queue) {
-              if (
-                entry.action.kind === "follow" &&
-                watched.has(entry.action.escortActionId)
-              )
-                watched.add(entry.id);
-            }
-          }
-        }
-        const problem = changed.find(
-          (event) =>
-            event.actionId &&
-            watched.has(event.actionId) &&
-            ["blocked", "failed", "interrupted"].includes(event.kind),
-        );
-        if (problem) {
-          stop = `${problem.entityId} ${problem.kind}: ${problem.reason ?? problem.actionKind ?? "inspect events"}`;
-          break;
-        }
-        const blocked = Object.values(session.state.sites)
-          .flatMap((site) => Object.values(site.entities))
-          .flatMap((entity) =>
-            entity.kind === "pawn"
-              ? entity.queue
-                  .filter(
-                    (entry) => watched.has(entry.id) && entry.blockedReason,
-                  )
-                  .map((entry) => `${entity.name}: ${entry.blockedReason}`)
-              : [],
-          );
-        if (blocked.length) {
-          stop = `Blocked: ${blocked.join("; ")}`;
-          break;
-        }
-        const remaining = Object.values(session.state.sites).some((site) =>
-          Object.values(site.entities).some(
-            (entity) =>
-              entity.kind === "pawn" &&
-              entity.queue.some((entry) => watched.has(entry.id)),
-          ),
-        );
-        if (!remaining) {
-          stop = "Watched commitments finished.";
-          break;
-        }
-      }
+      const { session, elapsed, reason } = finishCommitments(
+        console.session,
+        workers.map((worker) => worker.id),
+      );
       next = { ...console, session };
       return finish(
         [
-          `Advanced ${session.state.tick - startedTick} ticks. ${stop}`,
+          `Advanced ${elapsed} ticks. ${reason}`,
           ...workers.map((worker) => {
-            const current =
-              session.state.sites[console.siteId]?.entities[worker.id];
-            return `${worker.name}: ${current ? describeQueue(current) : "not at this site"}`;
+            const owner = [
+              ...Object.values(session.state.sites),
+              ...Object.values(session.state.transfers),
+            ].find((candidate) => candidate.entities[worker.id]);
+            const current = owner?.entities[worker.id];
+            return `${worker.name} at ${owner?.id ?? "MISSING"}: ${current ? describeQueue(current) : "not present"}`;
           }),
         ].join("\n"),
       );

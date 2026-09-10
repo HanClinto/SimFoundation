@@ -24,20 +24,20 @@ Start with `brief`, `status`, `map` and `help`. The
 equipment, care, research, routes and fallback choices. Transcripts are
 test-only normal commands, never imported or executed by gameplay.
 
-| Command                              | Meaning                                                                                              |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
-| `order alex take meals 2`            | Physically collect a portion from a stackable supply                                                 |
-| `order alex deliver @held 7 4`       | Collect/carry/drop the worker's actual loose cargo                                                   |
-| `prepare blackwood alex ben`         | Assign ordinary assembly movement, with autonomy off                                                 |
-| `finish alex ben`                    | Advance captured commitments and linked followers, stopping on a blocker/failure or after 1000 ticks |
-| `send blackwood alex ben`            | Depart only when the actual team is physically prepared                                              |
-| `site blackwood`                     | Change the inspected retained site, not the simulation clock                                         |
-| `inspect @1`                         | Read the actual entity, including across sites or in transit                                         |
-| `queue alex` / `cancel alex`         | Inspect or remove an intention, without refunding work                                               |
-| `assign ben holding`                 | Assign one recurring service duty using ordinary autonomy                                            |
-| `run 200`                            | Advance until a new critical alarm, quest result or the requested limit                              |
-| `step 20`                            | Deliberately advance exactly twenty complete ticks                                                   |
-| `save <new-path>` / `restore <path>` | Save or restore the same ongoing session                                                             |
+| Command                              | Meaning                                                                                                           |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| `order alex take meals 2`            | Physically collect a portion from a stackable supply                                                              |
+| `order alex deliver @held 7 4`       | Collect/carry/drop the worker's actual loose cargo                                                                |
+| `prepare blackwood alex ben`         | Assign ordinary assembly movement, with autonomy off                                                              |
+| `finish alex ben`                    | Advance captured work, linked followers and existing transport, stopping on a blocker/failure or after 1000 ticks |
+| `send blackwood alex ben`            | Depart only when the actual team is physically prepared                                                           |
+| `site blackwood`                     | Change the inspected retained site, not the simulation clock                                                      |
+| `inspect @1`                         | Read the actual entity, including across sites or in transit                                                      |
+| `queue alex` / `cancel alex`         | Inspect or remove an intention, without refunding work                                                            |
+| `assign ben holding`                 | Assign one recurring service duty using ordinary autonomy                                                         |
+| `run 200`                            | Advance until a new critical alarm, quest result or the requested limit                                           |
+| `step 20`                            | Deliberately advance exactly twenty complete ticks                                                                |
+| `save <new-path>` / `restore <path>` | Save or restore the same ongoing session                                                                          |
 
 Commands append rather than replace queued work. Accepted does not mean
 executing now or guaranteed to succeed. `queue` and `finish` expose blockers.
