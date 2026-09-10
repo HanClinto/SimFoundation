@@ -20,6 +20,7 @@ export interface Pawn extends EntityBase {
   human?: boolean;
   ageYears?: number;
   organMending?: OrganMending;
+  serviceDuty?: string;
   needs: Record<string, Need>;
   diet: readonly DietRule[];
   eatingRate: number;

@@ -4,6 +4,7 @@ import { facilityInUse } from "../../Facility";
 import type { Item } from "../../Item";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
+import { findSupply } from "../../Supply";
 
 export interface DispenseState {
   kind: "dispense";
@@ -95,18 +96,14 @@ export class Dispense implements Action {
         };
     }
     if (!this.state.paymentId) {
-      const payment = Object.values(site.entities)
-        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-        .find(
-          (entity) =>
-            entity.kind === "item" &&
-            entity.definitionId === dispenser.paymentDefinitionId &&
-            entity.amount >= 1 &&
-            (entity.integrity ?? 100) > 0 &&
-            (entity.location.kind === "ground" ||
-              entity.location.carrierId === pawn.id) &&
-            distance(positionOf(site, entity.id)!, position) <= 1,
-        );
+      const payment = findSupply(
+        site,
+        dispenser.paymentDefinitionId,
+        1,
+        position,
+        1,
+        pawn.id,
+      );
       if (!payment)
         return {
           status: "blocked",

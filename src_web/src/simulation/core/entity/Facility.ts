@@ -3,6 +3,7 @@ import type { Site } from "../site/Site";
 import type { ActivityKind } from "./pawn/actions/Action";
 import type { StudyPlan, Finding } from "./Study";
 import type { Dispenser } from "./Dispenser";
+import type { ServiceProfile } from "./Service";
 
 export interface Activity {
   duration: number;
@@ -15,6 +16,7 @@ export interface Facility extends EntityBase {
   research?: { progress: number };
   study?: { plans: readonly StudyPlan[]; findings: Finding[] };
   dispenser?: Dispenser;
+  service?: ServiceProfile;
   care?: {
     supplyDefinitionId: string;
     ticks: number;

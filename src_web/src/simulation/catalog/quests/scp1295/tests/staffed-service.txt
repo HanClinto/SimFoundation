@@ -1,0 +1,43 @@
+# Test-only recurring remote support, using actual portions and workers.
+load campaign
+brief diner
+order alex take meals 4
+order casey take parts 1
+step 20
+prepare diner alex casey
+step 12
+send diner alex casey
+step 8
+site diner
+order alex deliver site-1:meals:portion-action-1 7 4
+order casey deliver site-1:parts:portion-action-2 8 3
+step 20
+assign alex counter
+step 24
+inspect counter
+# Alex remains physically at the diner while Casey and the manager return.
+prepare home casey
+step 16
+send home casey
+step 8
+site home
+step 100
+status
+site diner
+inspect counter
+inspect alex
+# Withdraw intentionally; the next missed service is a visible, recoverable lapse.
+assign alex none
+autonomy alex off
+step 16
+prepare home alex
+step 20
+send home alex
+step 8
+site home
+step 120
+status
+# Casey is still on the home arrival pad; clear it to admit Alex.
+order casey move 4 3
+step 8
+status

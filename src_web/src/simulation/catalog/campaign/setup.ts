@@ -6,6 +6,7 @@ import { courierSite, courierInspection } from "./courier";
 import { CorroborationBench } from "../quests/scp1867/collection";
 import { returneeSite } from "../quests/scp507/setup";
 import { triageSite } from "../quests/scp2295/setup";
+import { dinerSite } from "../quests/scp1295/setup";
 
 export const home: SiteTemplate = {
   name: "Provisional Site: home",
@@ -23,6 +24,12 @@ export const home: SiteTemplate = {
   ],
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
+    {
+      id: "parts",
+      definitionId: "maintenance-parts",
+      location: { kind: "ground", position: { x: 1, y: 6 } },
+      overrides: { amount: 4 },
+    },
     {
       id: "bear",
       definitionId: "scp-2295",
@@ -341,5 +348,17 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
       { x: 2, y: 4 },
     ],
     duration: 10,
+  },
+  diner: {
+    name: "SCP-1295 remote diner service",
+    briefing:
+      "Support four retained regulars without removing them. Bring a food portion and one maintenance pack: for example take meals 4 and take parts 1 with two staff. Deliver both beside counter (8,4); assign alex counter to repair once and keep serving while you manage home. The worker uses normal food/rest routines too, so budget their meals. Completed service starts a 100-tick deadline; later lapses block the counter register until service resumes. The entrance remains open and no global anomaly effects are modeled. To withdraw, assign alex none, autonomy alex off, finish or cancel current work, then prepare/send home. Revisit does not restock anything.",
+    site: dinerSite,
+    loading: { x: 2, y: 4 },
+    pads: [
+      { x: 2, y: 4 },
+      { x: 2, y: 5 },
+    ],
+    duration: 8,
   },
 };

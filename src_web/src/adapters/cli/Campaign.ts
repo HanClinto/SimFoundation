@@ -8,6 +8,10 @@ import {
   opportunities,
 } from "../../simulation/catalog/campaign/setup";
 import { departureReadiness } from "../../simulation/catalog/campaign/Readiness";
+import {
+  serviceDeadline,
+  serviceStatus,
+} from "../../simulation/core/entity/Service";
 
 export function campaignStatus(session: ScenarioSession): string {
   const { campaign, state } = session;
@@ -25,6 +29,24 @@ export function campaignStatus(session: ScenarioSession): string {
       const pawn = owner?.entities[id];
       return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${pawn.canAct ? "active" : "incapacitated"} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"} | autonomy ${pawn.autonomy ? "on" : "off"} | ${pawn.queue[0]?.action.kind ?? "idle"}${pawn.queue[0]?.blockedReason ? ` BLOCKED: ${pawn.queue[0].blockedReason}` : ""}${departureReadiness(pawn) ? `\n  ${departureReadiness(pawn)}` : ""}` : ""}`;
     }),
+    ...owners.flatMap((owner) =>
+      Object.values(owner.entities).flatMap((entity) =>
+        entity.kind === "pawn" && entity.serviceDuty
+          ? [
+              `Duty: ${entity.name} -> ${entity.serviceDuty}${"terrain" in owner && owner.entities[entity.serviceDuty] ? "" : " (not at the assigned site)"}`,
+            ]
+          : [],
+      ),
+    ),
+    ...Object.values(state.sites).flatMap((site) =>
+      Object.values(site.entities).flatMap((entity) =>
+        entity.kind === "facility" && entity.service
+          ? [
+              `Service at ${site.id}: ${entity.name} | condition ${entity.integrity ?? 100} | ${serviceStatus(entity.service, state.tick).toUpperCase()} | deadline ${serviceDeadline(entity.service) ?? "after first completed service"} | ${entity.service.history.filter((record) => record.kind === "service").length} services | late ${entity.service.history.filter((record) => record.lateBy > 0).length}`,
+            ]
+          : [],
+      ),
+    ),
     ...owners.flatMap((owner) =>
       Object.values(owner.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.acceptsEscort

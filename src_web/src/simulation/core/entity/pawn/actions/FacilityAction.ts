@@ -10,16 +10,26 @@ import { applyNeedChanges } from "../Needs";
 import { facilityInUse, type Facility } from "../../Facility";
 import { Move } from "./Move";
 import { findTarget } from "./FindTarget";
+import { serviceStatus } from "../../Service";
 
 export abstract class FacilityAction implements Action {
   constructor(readonly state: ActivityState) {}
 
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({ site, pawn, tick }: ActionContext): string | null {
     const target = site.entities[this.state.targetId];
     if (target?.kind !== "facility" || target.location.kind !== "ground")
       return "The facility is not available on the ground.";
     if (target.integrity !== undefined && target.integrity <= 0)
       return "The facility is broken.";
+    if (target.service) {
+      const status = serviceStatus(target.service, tick);
+      if (
+        (target.integrity ?? 100) < 100 ||
+        status === "unstarted" ||
+        status === "overdue"
+      )
+        return "Restore service at this counter before using its activities.";
+    }
     const activity = target.activities[this.state.kind];
     if (
       !activity ||

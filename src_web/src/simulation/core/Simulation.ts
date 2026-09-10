@@ -6,7 +6,7 @@ import { tickDoor } from "./entity/Door";
 import { advanceTransfers } from "./site/Transfer";
 import type { ActionState } from "./entity/pawn/actions/Action";
 
-export const SIMULATION_VERSION = 17;
+export const SIMULATION_VERSION = 18;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;

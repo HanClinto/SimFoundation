@@ -132,6 +132,17 @@ return leaves the log behind; a complete retrieval brings the person, his
 personal flashlight and cased evidence as their original records. The review
 does not verify an alternate-world journey or simulate future shifts.
 
+## Persistent Remote Service
+
+The [SCP-1295 diner](../quests/scp1295/README.md) needs real food, a maintenance
+pack and an assigned worker, not a recovered object. `assign alex counter`
+reuses ordinary physical repair/service and food/rest routines while you view
+home. Service deadlines and source receipts remain visible in `status` and
+`inspect counter`. A lapse blocks counter use until a later service, but does
+not close the entrance or erase patrons. Revisit preserves depletion and
+completed repair. `assign alex none` clears future duty without cancelling
+current paid work.
+
 ## Protective Courier Handling
 
 `brief courier` introduces an original nonliving fragile-vial recovery.

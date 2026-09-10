@@ -3,6 +3,7 @@ import type { Pawn } from "../Pawn";
 import { majorOrganTrauma, type OrganKind } from "../Health";
 import { distance, positionOf } from "../../../site/TileMap";
 import { consumeMaterial } from "../../Consumption";
+import { findSupply } from "../../Supply";
 
 export interface OrganMending {
   range: number;
@@ -100,17 +101,13 @@ export class Mend implements Action {
     const patient = site.entities[this.state.targetId] as Pawn;
     if (!this.state.material) {
       const origin = positionOf(site, pawn.id)!;
-      const external = Object.values(site.entities)
-        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-        .find(
-          (entity) =>
-            entity.kind === "item" &&
-            entity.definitionId === ability.materialDefinitionId &&
-            entity.amount >= ability.amount &&
-            (entity.integrity ?? 100) > 0 &&
-            entity.location.kind === "ground" &&
-            distance(entity.location.position, origin) <= ability.range,
-        );
+      const external = findSupply(
+        site,
+        ability.materialDefinitionId,
+        ability.amount,
+        origin,
+        ability.range,
+      );
       const source =
         external ?? (pawn.amount > ability.amount ? pawn : undefined);
       if (!source)

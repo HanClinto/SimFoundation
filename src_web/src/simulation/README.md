@@ -173,6 +173,16 @@ Pawn physiology advances once on the pawn's turn, including while carried. A car
 
 Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) asks for a response to an observed concern first, then a needs-based action, then a configured patrol destination. It names no individual need or named actor and never performs a separate version of an action.
 
+Optional organ-mending capability and a single assigned service duty also use
+that same queue. For service workers, authored `criticalAt` need thresholds
+offer ordinary food/rest before due work; unassigned pawn need selection is
+unchanged. [Service.ts](core/entity/pawn/actions/Service.ts) approaches, repairs
+with a real part, and serves with a real supply batch. Completed repair and
+dated service receipts persist; coverage derives from receipt ticks, not a
+duplicate timer. The [SCP-1295 diner](catalog/quests/scp1295/README.md) proves
+remote staffing, resupply, lapse and revisit. Core version 18 adds duty/profile
+state without another execution system or a generic planner.
+
 ## Concerns And Response
 
 A **cause** is a fact the pawn observes, such as a hostile actor or a bleeding person. A **concern** is the reason to respond to that cause. **Urgency** is the concern's priority, not another need to replenish. A **response** is the action selected using the pawn's policy and capabilities. [Concern.ts](core/entity/pawn/concerns/Concern.ts) carries cause ID, category, urgency and action; it is derived from current observation rather than stored as a second world-state ledger.

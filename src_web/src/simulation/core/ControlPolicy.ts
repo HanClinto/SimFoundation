@@ -6,6 +6,12 @@ import type { Materials } from "./material/Material";
 
 export type Command =
   | {
+      readonly kind: "duty";
+      readonly siteId: string;
+      readonly entityId: string;
+      readonly targetId: string | null;
+    }
+  | {
       readonly kind: "enqueue";
       readonly siteId: string;
       readonly entityId: string;
@@ -61,6 +67,17 @@ export function executeCommand(
     if (entity.autonomy === command.enabled)
       return { state, code: "unchanged", reason: null };
     updated = { ...entity, autonomy: command.enabled };
+  } else if (command.kind === "duty") {
+    if (command.targetId !== null) {
+      const target = site.entities[command.targetId];
+      if (target?.kind !== "facility" || !target.service)
+        return fail("Choose a service counter at this worker's site.");
+      updated = { ...entity, serviceDuty: target.id, autonomy: true };
+    } else {
+      const cleared = { ...entity };
+      delete cleared.serviceDuty;
+      updated = cleared;
+    }
   } else if (command.kind === "cancel") {
     if (!entity.queue.some((entry) => entry.id === command.actionId))
       return fail("This action no longer exists.");
@@ -91,6 +108,10 @@ export function executeCommand(
     if (intention.kind === "mend") {
       delete intention.material;
       delete intention.organ;
+    }
+    if (intention.kind === "service") {
+      delete intention.supplyId;
+      delete intention.repairSupplyId;
     }
     updated = {
       ...entity,

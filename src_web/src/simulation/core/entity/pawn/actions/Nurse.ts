@@ -5,6 +5,7 @@ import type { Facility } from "../../Facility";
 import { facilityInUse } from "../../Facility";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
+import { findSupply } from "../../Supply";
 
 export interface NurseState {
   kind: "nurse";
@@ -88,19 +89,14 @@ export class Nurse implements Action {
     const approach = Move.approach(context, patient);
     if (approach) return approach;
     if (!this.state.supplyId) {
-      const supply = Object.values(site.entities)
-        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-        .find(
-          (entity) =>
-            entity.kind === "item" &&
-            entity.definitionId === care.supplyDefinitionId &&
-            entity.amount >= 1 &&
-            (entity.integrity ?? 100) > 0 &&
-            (entity.location.kind === "carried"
-              ? entity.location.carrierId === pawn.id
-              : distance(entity.location.position, positionOf(site, bed.id)!) <=
-                1),
-        );
+      const supply = findSupply(
+        site,
+        care.supplyDefinitionId,
+        1,
+        positionOf(site, bed.id)!,
+        1,
+        pawn.id,
+      );
       if (!supply)
         return {
           status: "blocked",

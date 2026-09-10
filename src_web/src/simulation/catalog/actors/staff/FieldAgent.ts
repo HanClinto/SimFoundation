@@ -27,8 +27,8 @@ export const FieldAgent = {
       threat: "flee",
     },
     needs: {
-      hunger: { value: 20, increasePerTick: 0.1 },
-      fatigue: { value: 10, increasePerTick: 0.2 },
+      hunger: { value: 20, increasePerTick: 0.1, criticalAt: 60 },
+      fatigue: { value: 10, increasePerTick: 0.2, criticalAt: 60 },
       stress: { value: 5, increasePerTick: 0 },
     },
     diet: [

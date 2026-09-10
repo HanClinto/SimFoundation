@@ -3,6 +3,7 @@ import type { ActionContext, ActionState } from "./actions/Action";
 export interface Need {
   value: number;
   increasePerTick: number;
+  criticalAt?: number;
 }
 
 export function applyNeedChanges(
@@ -27,9 +28,15 @@ export interface NeedActionOffer {
 export function chooseNeedAction(
   context: ActionContext,
   providers: readonly NeedActionProvider[],
+  criticalOnly = false,
 ): ActionState | null {
   const urgent = Object.entries(context.pawn.needs)
-    .filter(([, need]) => need.value > 0)
+    .filter(
+      ([, need]) =>
+        need.value > 0 &&
+        (!criticalOnly ||
+          (need.criticalAt !== undefined && need.value >= need.criticalAt)),
+    )
     .sort(
       ([firstId, first], [secondId, second]) =>
         second.value - first.value ||

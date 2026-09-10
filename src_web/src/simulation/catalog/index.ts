@@ -28,6 +28,11 @@ import { SCP2295 } from "./actors/anomalies/SCP2295";
 import { TextileBundle, OrganTraumaPatient } from "./quests/scp2295/setup";
 import { Fabric } from "./materials/Fabric";
 import {
+  DinerRegular,
+  MaintenanceParts,
+  DinerCounter,
+} from "./quests/scp1295/setup";
+import {
   ReturneeFlashlight,
   ReturneeLog,
   ReturneeReviewStation,
@@ -83,6 +88,9 @@ export const entities: EntityTemplates = Object.fromEntries(
     SCP2295,
     TextileBundle,
     OrganTraumaPatient,
+    DinerRegular,
+    MaintenanceParts,
+    DinerCounter,
     ReturneeFlashlight,
     ReturneeLog,
     ReturneeReviewStation,

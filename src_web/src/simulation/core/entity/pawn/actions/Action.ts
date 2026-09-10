@@ -12,6 +12,7 @@ import type { EscortState, FollowState } from "./Escort";
 import type { PackState, UnpackState } from "./Pack";
 import type { NurseState } from "./Nurse";
 import type { MendState } from "./Mend";
+import type { ServiceState } from "./Service";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -22,6 +23,7 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | ServiceState
   | MendState
   | NurseState
   | PackState

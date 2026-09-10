@@ -99,6 +99,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "service")
+    return `service ${action.targetId} | work ${action.workTicks}${action.repairSupplyId ? ` | repair supply spent: ${action.repairSupplyId}` : ""}${action.supplyId ? ` | service supply spent: ${action.supplyId}` : ""}`;
   if (action.kind === "take" && action.amount !== undefined)
     return `take ${action.amount} from ${action.targetId}`;
   if (action.kind === "mend")
@@ -200,6 +202,7 @@ order <name|@N> escort <person> <x> <y> (cooperative walking)
 order <name|@N> pack <specimen> <case> | order <name|@N> unpack <case>
 order <name|@N> nurse <patient> <clinical-bed>
 order <name|@N> take <supply-stack> [amount] (physical collection)
+assign <worker> <counter|none> | order <worker> service <counter>
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -385,6 +388,7 @@ export function executeLine(
     case "move":
     case "study":
     case "order":
+    case "assign":
     case "autonomy":
     case "cancel": {
       if (console.session.phase !== "running")
@@ -392,7 +396,19 @@ export function executeLine(
       const actor = resolve(console, args[0]);
       const base = { siteId: console.siteId, entityId: actor.id };
       let result;
-      if (command === "autonomy") {
+      if (command === "assign") {
+        if (args.length !== 2)
+          throw new Error("Use assign <worker> <counter|none>.");
+        result = executeCommand(
+          console.session.state,
+          {
+            ...base,
+            kind: "duty",
+            targetId: args[1] === "none" ? null : resolve(console, args[1]).id,
+          },
+          materials,
+        );
+      } else if (command === "autonomy") {
         if (args[1] !== "on" && args[1] !== "off")
           throw new Error("Use on or off.");
         result = executeCommand(
