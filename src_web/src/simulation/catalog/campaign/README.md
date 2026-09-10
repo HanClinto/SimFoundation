@@ -156,6 +156,13 @@ Conscious struggle consumes one restraint condition per tick, including transit.
 At zero condition the broken item remains and the subject escapes its carrier.
 Inspect the subject/status for remaining restraint condition before travel.
 
+Crossing twenty restraint condition during conscious struggle emits a warning
+before breakage. Carry the actual `spare-restraint` and use the same `restrain`
+order under subdual or secure containment to exchange bands. The old band stays
+attached throughout work, then remains a loose item with its existing wear;
+the replacement does not magically repair it. Cancelling before completion
+leaves both original ownership relationships unchanged.
+
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/restrained-return.txt
 ```

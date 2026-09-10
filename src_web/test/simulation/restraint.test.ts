@@ -179,3 +179,21 @@ it("cancelled attachment leaves the actual loose band and death halts attached-b
   c = play(c, ["step 100"]);
   expect(band(c).integrity).toBe(condition);
 });
+
+it("warns once before conscious restraint exhaustion and preserves that warning across replay", () => {
+  let c = bound();
+  subject(c).health!.subdual!.untilTick = c.session.state.tick;
+  band(c).integrity = 22;
+  c = play(c, ["step"]);
+  const restored = restoreSession(JSON.stringify(c.session))!;
+  expect(stepSession(restored, 2)).toEqual(stepSession(c.session, 2));
+  const alarm = executeLine(c, "run 10");
+  expect(alarm.alarm).toMatchObject({ kind: "warning", targetId: band(c).id });
+  expect(band(alarm.console).integrity).toBe(20);
+  c = play(alarm.console, ["step 2"]);
+  expect(
+    c.session.events.filter(
+      (event) => event.kind === "warning" && event.targetId === band(c).id,
+    ),
+  ).toHaveLength(1);
+});

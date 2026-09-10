@@ -3,6 +3,7 @@ import type { Item } from "../../Item";
 import { restraintFor } from "../Custody";
 import { Move } from "./Move";
 import { containmentFor, secureContainment } from "../../Containment";
+import { positionOf } from "../../../site/TileMap";
 
 export interface RestrainState {
   kind: "restrain";
@@ -24,8 +25,6 @@ export class Restrain implements Action {
     const cell = containmentFor(site.entities, subject.id);
     if (subject.canAct && !(cell && secureContainment(cell, tick)))
       return "Subdue the subject before applying restraints outside effective containment.";
-    if (restraintFor(site.entities, subject.id))
-      return "The subject already has an effective restraint.";
     const restraint = site.entities[this.state.restraintId];
     if (
       restraint?.kind !== "item" ||
@@ -52,6 +51,14 @@ export class Restrain implements Action {
     const restraint = context.site.entities[this.state.restraintId] as Item;
     if (++this.state.workTicks < restraint.restraint!.ticks)
       return { status: "running" };
+    const previous = restraintFor(context.site.entities, subject.id);
+    if (previous) {
+      previous.restraint!.attached = false;
+      previous.location = {
+        kind: "ground",
+        position: { ...positionOf(context.site, context.pawn.id)! },
+      };
+    }
     restraint.restraint!.attached = true;
     restraint.location = { kind: "carried", carrierId: subject.id };
     return { status: "completed" };

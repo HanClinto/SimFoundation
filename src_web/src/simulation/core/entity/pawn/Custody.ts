@@ -58,10 +58,20 @@ export function tickCustody(
   if (pawn.health?.death || !pawn.canAct) return;
   const restraint = restraintFor(entities, pawn.id);
   if (restraint) {
+    const before = restraint.integrity ?? 100;
     restraint.integrity = Math.max(
       0,
       (restraint.integrity ?? 100) - restraint.restraint!.wearPerTick,
     );
+    if (before > 20 && restraint.integrity <= 20 && restraint.integrity > 0)
+      events.push({
+        siteId,
+        entityId: pawn.id,
+        targetId: restraint.id,
+        kind: "warning",
+        reason:
+          "The transport restraint is nearly exhausted; secure or subdue the subject before a physical band exchange.",
+      });
     if (restraint.integrity > 0) return;
     const position = positionOf({ entities }, pawn.id)!;
     restraint.restraint!.attached = false;
