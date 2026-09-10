@@ -5,6 +5,7 @@ import { facilityInUse } from "../../Facility";
 import { findSupply } from "../../Supply";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
+import { equipmentUnderRepair } from "../../Equipment";
 
 export interface RepairEquipmentState {
   kind: "repair-equipment";
@@ -20,6 +21,8 @@ export class RepairEquipment implements Action {
     const target = site.entities[this.state.targetId];
     if (target?.kind !== "item" || !target.equipment || target.amount <= 0)
       return "Choose an actual equipment item, not a case, restraint or specimen.";
+    if (equipmentUnderRepair(site, target.id, pawn.id))
+      return "Resolve the existing funded repair before starting another on this equipment.";
     if ((target.integrity ?? 100) >= 100)
       return "This equipment is already at full condition.";
     if (

@@ -2,7 +2,11 @@ import type { Action, ActionContext, ActionResult } from "./Action";
 import { Move } from "./Move";
 import { facilityInUse } from "../../Facility";
 import { serviceInputInUse } from "../../Service";
-import { availableForRecovery, carriedCargo } from "../../Equipment";
+import {
+  availableForRecovery,
+  carriedCargo,
+  equipmentUnderRepair,
+} from "../../Equipment";
 import { restraintFor } from "../Custody";
 import { containmentFor, secureContainment } from "../../Containment";
 
@@ -62,6 +66,8 @@ export class Take implements Action {
     }
     if (target.kind === "facility" && facilityInUse(site, target.id))
       return "The facility is occupied.";
+    if (equipmentUnderRepair(site, target.id))
+      return "Finish or cancel the funded equipment repair before moving this gear.";
     if (serviceInputInUse(site, target.id))
       return "Finish or cancel the active presentation before moving its programme.";
     if (carriedCargo(site.entities, pawn.id).length)

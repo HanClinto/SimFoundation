@@ -11,6 +11,7 @@ import {
 } from "../../src/application/ScenarioSession";
 import type { Item } from "../../src/simulation/core/entity/Item";
 import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
+import { facilityInUse } from "../../src/simulation/core/entity/Facility";
 
 const home = (c: ConsoleState) => c.session.state.sites["site-1"]!;
 const vest = (c: ConsoleState) => home(c).entities["site-1:vest"] as Item;
@@ -119,4 +120,54 @@ it("rejects full or incompatible items, blocks missing parts and prevents a seco
   ).toContain("occupied");
   const ben = home(c).entities["site-1:ben"] as Pawn;
   expect(ben.queue).toEqual([]);
+});
+
+it("retains paid equipment and bench reservations until explicit cancellation, even after a progress reset", () => {
+  let c = openConsole();
+  const site = home(c);
+  (site.entities["site-1:ben"] as Pawn).location = {
+    kind: "ground",
+    position: { x: 8, y: 1 },
+  };
+  (site.entities["site-1:alex"] as Pawn).location = {
+    kind: "ground",
+    position: { x: 6, y: 2 },
+  };
+  site.entities["site-1:vest"]!.location = {
+    kind: "ground",
+    position: { x: 6, y: 1 },
+  };
+  site.entities["site-1:parts"]!.location = {
+    kind: "ground",
+    position: { x: 6, y: 1 },
+  };
+  vest(c).integrity = 60;
+  c = play(c, ["order ben repair-equipment vest workshop", "step"]);
+  expect(home(c).entities["site-1:parts"]!.amount).toBe(3);
+  expect(executeLine(c, "order alex equip vest").output).toContain(
+    "funded equipment repair",
+  );
+  expect(executeLine(c, "order alex take vest").output).toContain(
+    "funded equipment repair",
+  );
+  expect(
+    executeLine(c, "order alex repair-equipment vest workshop").output,
+  ).toContain("existing funded repair");
+  // Simulate loss of access without granting another owner the pending paid work.
+  vest(c).location = { kind: "ground", position: { x: 5, y: 2 } };
+  c = play(c, ["step"]);
+  expect(facilityInUse(home(c), "site-1:workshop")).toBe(true);
+  expect(
+    executeLine(c, "order alex repair-equipment vest workshop").output,
+  ).toContain("existing funded repair");
+  c = play(c, [
+    "cancel ben",
+    "order alex equip vest",
+    "finish alex",
+    "order alex repair-equipment vest workshop",
+    "finish alex",
+  ]);
+  expect(vest(c).integrity).toBe(100);
+  expect(home(c).entities["site-1:parts"]!.amount).toBe(2);
+  expect(facilityInUse(home(c), "site-1:workshop")).toBe(false);
 });

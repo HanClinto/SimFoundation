@@ -53,7 +53,9 @@ export function facilityInUse(
     return (
       action &&
       "workTicks" in action &&
-      action.workTicks > 0 &&
+      (action.workTicks > 0 ||
+        (action.kind === "repair-equipment" &&
+          action.supplyId !== undefined)) &&
       (action.targetId === targetId ||
         ("bedId" in action && action.bedId === targetId) ||
         ("benchId" in action && action.benchId === targetId) ||

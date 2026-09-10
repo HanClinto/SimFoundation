@@ -144,6 +144,10 @@ charges or replacing the item. Funded cancellation loses the part without
 granting unfinished repair. Cases, restraints and specimens are not generic
 equipment-repair targets. In the compact home clinic, move the clinician aside
 after treatment if their position blocks the recovered worker's exit.
+Funded repair reserves both its actual equipment and bench until completion or
+explicit cancellation/interruption. Moving/equipping/transferring that gear
+cannot silently hand it to a second paid repair; losing access does not release
+the original commitment merely because progress resets.
 
 `order alex subdue specimen` uses one of the fictional instrument's two charges
 for temporary eighty-tick subdual. This does not produce consent or heal the

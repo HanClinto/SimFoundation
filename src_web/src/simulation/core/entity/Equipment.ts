@@ -54,3 +54,25 @@ export function availableForRecovery(
   const owner = site.entities[target.location.carrierId];
   return owner?.kind === "pawn" && !!owner.health?.death;
 }
+
+export function equipmentUnderRepair(
+  site: Site,
+  equipmentId: string,
+  exceptWorkerId?: string,
+): boolean {
+  return Object.values(site.entities).some((entity) => {
+    if (
+      entity.kind !== "pawn" ||
+      entity.id === exceptWorkerId ||
+      !entity.canAct ||
+      entity.location.kind !== "ground"
+    )
+      return false;
+    const action = entity.queue[0]?.action;
+    return (
+      action?.kind === "repair-equipment" &&
+      action.targetId === equipmentId &&
+      action.supplyId !== undefined
+    );
+  });
+}

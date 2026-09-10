@@ -1,5 +1,9 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
-import { availableForRecovery, wornEquipment } from "../../Equipment";
+import {
+  availableForRecovery,
+  wornEquipment,
+  equipmentUnderRepair,
+} from "../../Equipment";
 import type { Item } from "../../Item";
 import { Move } from "./Move";
 import { positionOf } from "../../../site/TileMap";
@@ -14,6 +18,8 @@ export class Equip implements Action {
     const target = site.entities[this.targetId];
     if (target?.kind !== "item" || !target.equipment)
       return "Choose actual wearable equipment.";
+    if (equipmentUnderRepair(site, target.id))
+      return "Finish or cancel the funded equipment repair before moving this gear.";
     if (this.remove)
       return target.equipment.worn &&
         target.location.kind === "carried" &&

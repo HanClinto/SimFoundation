@@ -5,6 +5,7 @@ import { advancePhysiology } from "../entity/pawn/Health";
 import type { Pawn } from "../entity/pawn/Pawn";
 import { distance, floorAt, traversalAt } from "./TileMap";
 import { restraintFor, tickCustody } from "../entity/pawn/Custody";
+import { equipmentUnderRepair } from "../entity/Equipment";
 
 export interface Transfer {
   id: string;
@@ -74,6 +75,8 @@ export function depart(
   }
   for (const id of selected) {
     const entity = origin.entities[id]!;
+    if (equipmentUnderRepair(origin, id))
+      return fail("Finish or cancel funded equipment repair before transfer.");
     if (
       entity.kind === "pawn" &&
       entity.requiresRestraint &&
