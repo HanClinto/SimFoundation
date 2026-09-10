@@ -35,6 +35,12 @@ the machine or `status` for the due tick. Alex can leave for care, rest or other
 duties; incapacity or death of the operator does not undo the machine's work.
 There is no post-activation refund or operator-queue cancellation of the cycle.
 
+`finish machine` waits on the currently active device run, not its operator or
+future cycles. It can be combined with existing work/transport, for example
+`finish machine alex` after Alex departs. `finish --alarms machine` also stops
+for any new critical event. At another site, use the apparatus's full ID or stable
+label for read-only waiting; this does not permit remote activation or pickup.
+
 The apparatus cannot move while active. Its input cannot be picked out of
 machine custody. At completion, the output port must be clear. An obstruction
 leaves the input unconsumed and the run explicitly blocked, with a nonrepeating

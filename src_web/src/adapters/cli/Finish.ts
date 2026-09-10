@@ -7,7 +7,7 @@ import { alarmPriority, firstAlarm } from "./Alarms";
 
 export function finishCommitments(
   initial: ScenarioSession,
-  workerIds: readonly string[],
+  targetIds: readonly string[],
   stopOnAlarms = false,
 ) {
   const notices: Readonly<TickEvent>[] = [];
@@ -17,12 +17,37 @@ export function finishCommitments(
     ...Object.values(initial.state.sites),
     ...Object.values(initial.state.transfers),
   ];
-  const workers = workerIds.map((id) => {
-    const entity = owners.map((owner) => owner.entities[id]).find(Boolean);
-    if (entity?.kind !== "pawn")
-      throw new Error("Choose workers with action queues or actual transport.");
+  const targets = targetIds.map((id) => {
+    const owner = owners.find((owner) => owner.entities[id]);
+    const entity = owner?.entities[id];
+    if (
+      entity?.kind !== "pawn" &&
+      !(
+        entity?.kind === "facility" &&
+        entity.processor &&
+        owner &&
+        "terrain" in owner
+      )
+    )
+      throw new Error(
+        "Choose workers with queues/transport or installed processing apparatus.",
+      );
     return entity;
   });
+  const workers = targets.filter((entity) => entity.kind === "pawn");
+  const processes = targets.flatMap((entity) =>
+    entity.kind === "facility" && entity.processor?.current
+      ? [
+          {
+            machineId: entity.id,
+            runId: entity.processor.current.id,
+            siteId: Object.values(initial.state.sites).find(
+              (site) => site.entities[entity.id],
+            )!.id,
+          },
+        ]
+      : [],
+  );
   const watched = new Set(
     workers.flatMap((worker) => worker.queue.map((entry) => entry.id)),
   );
@@ -33,12 +58,12 @@ export function finishCommitments(
   const travellingIds = new Set(
     transfers.flatMap((transfer) => Object.keys(transfer.entities)),
   );
-  if (!watched.size && !transferIds.size)
+  if (!watched.size && !transferIds.size && !processes.length)
     return {
       session: initial,
       elapsed: 0,
       reason:
-        "No queued or travelling commitments to finish. No time advanced.",
+        "No queued, travelling or processing commitments to finish. No time advanced.",
       notices,
       noticeCount,
       alarm,
@@ -88,6 +113,29 @@ export function finishCommitments(
       reason = `${incident.entityId} ${incident.kind}: ${incident.reason ?? incident.actionKind ?? "inspect events"}`;
       break;
     }
+    const deviceStates = processes.map((process) => {
+      const machine =
+        session.state.sites[process.siteId]?.entities[process.machineId];
+      if (machine?.kind !== "facility" || !machine.processor)
+        return {
+          remaining: false,
+          reason: `Processing apparatus ${process.machineId} is no longer present.`,
+        };
+      const current = machine.processor.current;
+      return current?.id === process.runId
+        ? {
+            remaining: true,
+            reason: current.blockedReason
+              ? `Blocked processing ${machine.id}: ${current.blockedReason}`
+              : null,
+          }
+        : { remaining: false, reason: null };
+    });
+    const deviceBlocker = deviceStates.find((device) => device.reason);
+    if (deviceBlocker) {
+      reason = deviceBlocker.reason!;
+      break;
+    }
     const blockedTransfer = Object.values(session.state.transfers).find(
       (transfer) => transferIds.has(transfer.id) && transfer.blockedReason,
     );
@@ -110,7 +158,11 @@ export function finishCommitments(
     const travelRemaining = Object.keys(session.state.transfers).some((id) =>
       transferIds.has(id),
     );
-    if (!workRemaining && !travelRemaining) {
+    if (
+      !workRemaining &&
+      !travelRemaining &&
+      !deviceStates.some((device) => device.remaining)
+    ) {
       reason = "Watched commitments finished.";
       break;
     }

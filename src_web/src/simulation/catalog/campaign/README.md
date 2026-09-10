@@ -50,6 +50,11 @@ final owner and stops on a new critical notice for the travelling payload.
 Multiple selected workers can combine local work and existing transport.
 This read-only wait does not change the selected site or permit transit orders.
 
+An active processing apparatus can also be a target: `finish machine` waits for
+its captured current run, without keeping the operator busy or waiting for
+future cycles. Mixed worker/device targets and `--alarms` use the same wait.
+Idle devices advance no time; missing apparatus and blocked output are explicit.
+
 Campaign `run` stops after the first complete tick with a new containment
 warning, breach, escape or death and prints the identified alarm. Inspect and
 respond, then resume; old log entries do not repeatedly stop time. `step N`

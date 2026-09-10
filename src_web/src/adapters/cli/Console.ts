@@ -280,7 +280,7 @@ order <worker> restrain <hostile> <carried-restraint>
 order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
 order <worker> lockdown <cell> (physical, finite emergency fallback)
 deploy <staff-type> <name> | start
-step [ticks] | run [maximum ticks] | finish [--alarms] <worker...> (up to 1000 ticks; --alarms stops for any new critical event)
+step [ticks] | run [maximum ticks] | finish [--alarms] <worker-or-machine...> (up to 1000 ticks; --alarms stops for any new critical event)
 load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
 inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
 study <actor> <station> <planId>
@@ -511,7 +511,7 @@ export function executeLine(
       const stopOnAlarms = args[0] === "--alarms";
       const names = stopOnAlarms ? args.slice(1) : args;
       if (!names.length || names.some((name) => name.startsWith("--")))
-        throw new Error("Use finish [--alarms] <worker...>.");
+        throw new Error("Use finish [--alarms] <worker-or-machine...>.");
       const workers = names.map((value) =>
         resolve(console, value, undefined, true),
       );
@@ -532,7 +532,15 @@ export function executeLine(
                 ...Object.values(session.state.transfers),
               ].find((candidate) => candidate.entities[worker.id]);
               const current = owner?.entities[worker.id];
-              return `${worker.name} at ${owner?.id ?? "MISSING"}: ${current ? describeQueue(current) : "not present"}`;
+              return `${worker.name} at ${owner?.id ?? "MISSING"}: ${
+                current?.kind === "facility" && current.processor
+                  ? current.processor.current
+                    ? `${current.processor.current.recipeId}, output due ${current.processor.current.completesAt}${current.processor.current.blockedReason ? ` | blocked: ${current.processor.current.blockedReason}` : ""}`
+                    : "No active processing cycle."
+                  : current
+                    ? describeQueue(current)
+                    : "not present"
+              }`;
             }),
             ...(alarm
               ? [
