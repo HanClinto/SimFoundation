@@ -110,6 +110,7 @@ export function executeCommand(
     if (intention.kind === "dispense") delete intention.paymentId;
     if (intention.kind === "nurse") delete intention.supplyId;
     if (intention.kind === "lockdown") delete intention.supplyId;
+    if (intention.kind === "rearm") delete intention.supplyId;
     if (intention.kind === "escort") delete intention.trail;
     if (intention.kind === "mend") {
       delete intention.material;

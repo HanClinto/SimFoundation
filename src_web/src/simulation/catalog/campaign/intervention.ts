@@ -18,7 +18,16 @@ export const InterventionTool: EntityTemplate = {
     equipment: {
       slot: "tool",
       worn: false,
-      subdual: { charges: 2, ticks: 2, duration: 80 },
+      subdual: {
+        charges: 2,
+        ticks: 2,
+        duration: 80,
+        rearm: {
+          supplyDefinitionId: "suppression-unit",
+          capacity: 2,
+          ticks: 6,
+        },
+      },
     },
   },
 };
@@ -108,4 +117,21 @@ export const interventionSite: SiteTemplate = {
       location: { kind: "ground", position: { x: 8, y: 3 } },
     },
   ],
+};
+
+export const SuppressionUnit: EntityTemplate = {
+  id: "suppression-unit",
+  name: "Sealed fictional suppression units",
+  description:
+    "Finite abstract resupply for the intervention instrument. Six work ticks and one actual unit restore one charge up to capacity two. These game-only units are not ammunition construction or real-world operating instructions. Cancelled funded work does not refund them.",
+  defaults: {
+    kind: "item",
+    materialId: "plastic",
+    amount: 1,
+    integrity: 100,
+    stackable: true,
+    carryable: true,
+    blocksMovement: false,
+    blocksSight: false,
+  },
 };

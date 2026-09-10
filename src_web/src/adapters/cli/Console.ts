@@ -120,6 +120,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "rearm")
+    return `rearm ${action.targetId} | work ${action.workTicks}${action.supplyId ? ` | unit spent: ${action.supplyId}` : ""}`;
   if (action.kind === "contain")
     return `contain ${action.targetId} in ${action.cellId} | work ${action.workTicks}`;
   if (action.kind === "restrain")
@@ -210,7 +212,13 @@ export function renderMap(console: ConsoleState): string {
       const location =
         entity.location.kind === "ground"
           ? `${entity.location.position.x},${entity.location.position.y}`
-          : `carried by ${entity.location.carrierId}`;
+          : `${
+              entity.kind === "item" && entity.equipment?.worn
+                ? "worn by"
+                : entity.kind === "item" && entity.restraint?.attached
+                  ? "restraining"
+                  : "carried by"
+            } ${entity.location.carrierId}`;
       const current = entity.kind === "pawn" ? entity.queue[0] : null;
       return `${token(console, entity)} ${entity.name} [${entity.id}] @ ${location}${entity.kind === "pawn" ? ` | ${healthStatus(entity)} | ${current ? `${current.id}: ${describeAction(current.action)}` : "idle"}${current?.blockedReason ? ` | blocked: ${current.blockedReason}` : ""}${entity.queue.length > 1 ? ` | ${entity.queue.length - 1} pending` : ""}` : ""}`;
     }),
@@ -222,6 +230,7 @@ brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
+order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> restrain <hostile> <carried-restraint>
 order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
 order <worker> lockdown <cell> (physical, finite emergency fallback)

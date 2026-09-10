@@ -24,9 +24,12 @@ import { Equip } from "./Equip";
 import { Subdue } from "./Subdue";
 import { Restrain } from "./Restrain";
 import { Contain, Lockdown, Unrestrain } from "./Contain";
+import { Rearm } from "./Rearm";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "rearm":
+      return new Rearm(action);
     case "contain":
       return new Contain(action);
     case "lockdown":

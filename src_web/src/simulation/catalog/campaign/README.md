@@ -111,6 +111,12 @@ An item merely carried in hand is not worn. `unequip` physically places gear
 on the ground. Worn gear travels with the wearer and remains with the body
 after death; another worker can recover it without restoring charges/condition.
 
+The home holds three finite `suppression-units`. With the serviceable tool worn,
+bring a unit beside the worker (or carry it) and `order alex rearm suppressor`.
+Six ticks and one unit restore one charge, up to capacity two. Cancellation
+keeps a consumed unit but does not grant an unfinished charge; body-recovered
+tools use exactly the same operation. There is no automatic or infinite refill.
+
 `order alex subdue specimen` uses one of the fictional instrument's two charges
 for temporary eighty-tick subdual. This does not produce consent or heal the
 subject. Armor reduces impacts but wears out and does not erase bleeding.

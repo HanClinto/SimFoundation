@@ -5,7 +5,12 @@ import type { Site } from "../site/Site";
 export interface Equipment {
   slot: "tool" | "armor";
   worn: boolean;
-  subdual?: { charges: number; ticks: number; duration: number };
+  subdual?: {
+    charges: number;
+    ticks: number;
+    duration: number;
+    rearm?: { supplyDefinitionId: string; capacity: number; ticks: number };
+  };
   armor?: { reduction: number; wear: number };
 }
 

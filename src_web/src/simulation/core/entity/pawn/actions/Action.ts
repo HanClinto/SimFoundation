@@ -16,6 +16,7 @@ import type { ServiceState } from "./Service";
 import type { SubdueState } from "./Subdue";
 import type { RestrainState } from "./Restrain";
 import type { ContainState, LockdownState } from "./Contain";
+import type { RearmState } from "./Rearm";
 
 export type ActivityKind = "sleep" | "relax" | "research" | "read" | "exercise";
 
@@ -26,6 +27,7 @@ export interface ActivityState {
 }
 
 export type ActionState =
+  | RearmState
   | ContainState
   | LockdownState
   | { kind: "unrestrain"; targetId: string }
