@@ -60,11 +60,23 @@ export class Attack implements Action {
     if (damage <= 0) return { status: "completed" };
     const armor = wornEquipment(site, target.id, "armor");
     if (armor?.equipment?.armor && (armor.integrity ?? 100) > 0) {
+      const before = armor.integrity ?? 100;
       damage = Math.max(0, damage - armor.equipment.armor.reduction);
       armor.integrity = Math.max(
         0,
         (armor.integrity ?? 100) - armor.equipment.armor.wear,
       );
+      if (armor.integrity === 0 || (before > 20 && armor.integrity <= 20))
+        events.push({
+          siteId: site.id,
+          entityId: armor.id,
+          targetId: target.id,
+          kind: "warning",
+          reason:
+            armor.integrity === 0
+              ? `${target.name}'s worn protection has broken; it no longer reduces impacts.`
+              : `${target.name}'s worn protection is nearly exhausted (${armor.integrity} condition).`,
+        });
     }
     if (damage <= 0) return { status: "running" };
     target.health!.wounds.push({

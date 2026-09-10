@@ -48,6 +48,15 @@ export class Subdue implements Action {
     const capability = tool.equipment!.subdual!;
     if (++this.state.workTicks < capability.ticks) return { status: "running" };
     capability.charges--;
+    if (capability.charges === 0)
+      context.events.push({
+        siteId: context.site.id,
+        entityId: tool.id,
+        targetId: context.pawn.id,
+        kind: "warning",
+        reason:
+          "The worn intervention tool has no charges left; use actual resupply before another intervention.",
+      });
     target.health!.subdual = {
       untilTick: context.tick + capability.duration,
       actorId: context.pawn.id,

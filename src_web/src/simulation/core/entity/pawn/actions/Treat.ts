@@ -4,7 +4,7 @@ import { canSee, visibleThreats } from "../../../site/Visibility";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { isCarePatient } from "../CareAccess";
-import { stabilizationCapability } from "../../Equipment";
+import { stabilizationCapability, wornEquipment } from "../../Equipment";
 
 export interface TreatState {
   kind: "treat";
@@ -79,6 +79,16 @@ export class Treat implements Action {
       wound.bleeding = 0;
       wound.treatedBy = pawn.id;
       medicine.supplies--;
+      const kit = wornEquipment(site, pawn.id, "tool");
+      if (medicine.supplies === 0 && kit?.equipment?.medicine === medicine)
+        context.events.push({
+          siteId: site.id,
+          entityId: kit.id,
+          targetId: pawn.id,
+          kind: "warning",
+          reason:
+            "The worn medical kit is empty; restock the actual kit or explicitly change equipment.",
+        });
       context.events.push({
         siteId: site.id,
         entityId: pawn.id,
