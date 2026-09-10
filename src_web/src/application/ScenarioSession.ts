@@ -15,21 +15,20 @@ import {
   type QuestState,
 } from "../simulation/core/quest/Quest";
 import { entities, materials } from "../simulation/catalog";
-import responseSite from "../simulation/catalog/sites/tests/ThreatAndCasualty.json";
-import dailySite from "../simulation/catalog/sites/tests/DailyLife.json";
 import sightSite from "../simulation/catalog/sites/tests/SightAndPassage.json";
-import { ResponseTrial } from "../simulation/catalog/quests/ResponseTrial";
-import { DailyLifeTrial } from "../simulation/catalog/quests/DailyLifeTrial";
-import { ColonyTrial } from "../simulation/catalog/quests/ColonyTrial";
-import { Colony } from "../simulation/catalog/sites/tests/Colony";
+import { responseScenario } from "../simulation/catalog/quests/response/setup";
+import { dailyScenario } from "../simulation/catalog/quests/daily/setup";
+import { colonyScenario } from "../simulation/catalog/quests/colony/setup";
+import { consumptionScenario } from "../simulation/catalog/quests/consumption/setup";
 
 export const scenarios: Readonly<
   Record<string, { site: SiteTemplate; quest?: Quest }>
 > = {
-  response: { site: responseSite as SiteTemplate, quest: ResponseTrial },
-  daily: { site: dailySite as SiteTemplate, quest: DailyLifeTrial },
+  response: responseScenario,
+  daily: dailyScenario,
   sight: { site: sightSite as SiteTemplate },
-  colony: { site: Colony, quest: ColonyTrial },
+  colony: colonyScenario,
+  consumption: consumptionScenario,
 };
 
 export interface ScenarioSession {

@@ -13,6 +13,7 @@ export const AutomaticSteelDoor = {
     blocksSight: true,
     materialId: Steel.id,
     amount: 1,
+    integrity: 100,
     open: false,
     policy: "automatic",
   },

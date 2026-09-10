@@ -22,6 +22,8 @@ export interface EntityBase {
   blocksSight: boolean;
   materialId: string;
   amount: number;
+  nutrition?: number;
+  integrity?: number;
 }
 
 export type Entity = Pawn | Item | Door | Facility;

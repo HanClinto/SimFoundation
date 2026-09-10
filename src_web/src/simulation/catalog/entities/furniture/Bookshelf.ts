@@ -13,6 +13,7 @@ export const Bookshelf = {
     blocksSight: true,
     materialId: Wood.id,
     amount: 1,
+    integrity: 100,
     activities: {
       read: {
         duration: 6,

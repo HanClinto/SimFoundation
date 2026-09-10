@@ -42,7 +42,8 @@ function pawn(
     name: id,
     materialId: "animal-tissue",
     amount: 1,
-    diet: [{ accepts: "edible-plant", nourishment: 10 }],
+    diet: [{ accepts: "edible-plant", efficiency: 1 / 3 }],
+    eatingRate: 1,
     location: { kind: "ground", position: { x, y } },
     carryable: true,
     mobile: true,
@@ -276,6 +277,7 @@ it("restores exact queued state through plain JSON and rejects incompatible root
     '{"version":6}',
     '{"version":7}',
     '{"version":8}',
+    '{"version":9}',
     '{"version":999}',
   ])
     expect(deserialize(text)).toBeNull();
@@ -401,7 +403,7 @@ it.each(["metal", "plastic"])(
       pawn("consumer", 0, 1, {
         autonomy: false,
         needs: { hunger: { value: 80, increasePerTick: 0 } },
-        diet: [{ accepts: tag, nourishment: 20 }],
+        diet: [{ accepts: tag, efficiency: 20 }],
       }),
       {
         id: "stock",

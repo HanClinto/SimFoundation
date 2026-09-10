@@ -13,5 +13,6 @@ export const PackagedMeal = {
     blocksSight: false,
     materialId: PlantFood.id,
     amount: 1,
+    nutrition: 30,
   },
 } satisfies EntityTemplate;

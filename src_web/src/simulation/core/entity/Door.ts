@@ -18,7 +18,12 @@ export function openDoor(site: Site, door: Door, events: TickEvent[]): boolean {
 }
 
 export function tickDoor(site: Site, door: Door, events: TickEvent[]): void {
-  if (!door.open || door.policy !== "automatic") return;
+  if (
+    !door.open ||
+    door.policy !== "automatic" ||
+    (door.integrity !== undefined && door.integrity <= 0)
+  )
+    return;
   const position = positionOf(site, door.id);
   if (!position) return;
   const obstructed = Object.values(site.entities).some(

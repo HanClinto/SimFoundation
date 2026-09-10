@@ -68,6 +68,7 @@ export function traversalAt(
     : Object.values(site.entities)) {
     if (
       entity.id === actorId ||
+      (entity.integrity !== undefined && entity.integrity <= 0) ||
       entity.location.kind !== "ground" ||
       !samePosition(entity.location.position, position)
     )

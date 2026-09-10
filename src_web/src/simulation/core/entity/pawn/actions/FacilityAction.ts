@@ -18,6 +18,8 @@ export abstract class FacilityAction implements Action {
     const target = site.entities[this.state.targetId];
     if (target?.kind !== "facility" || target.location.kind !== "ground")
       return "The facility is not available on the ground.";
+    if (target.integrity !== undefined && target.integrity <= 0)
+      return "The facility is broken.";
     const activity = target.activities[this.state.kind];
     if (
       !activity ||

@@ -13,6 +13,7 @@ export const Bed = {
     blocksSight: false,
     materialId: Wood.id,
     amount: 1,
+    integrity: 100,
     activities: {
       sleep: { duration: 8, needChanges: { fatigue: -8, stress: -2 } },
     },

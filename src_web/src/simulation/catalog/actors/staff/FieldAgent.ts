@@ -30,9 +30,10 @@ export const FieldAgent = {
       stress: { value: 5, increasePerTick: 0 },
     },
     diet: [
-      { accepts: "edible-plant", nourishment: 30 },
-      { accepts: "animal-tissue", nourishment: 30 },
+      { accepts: "edible-plant", efficiency: 1 },
+      { accepts: "animal-tissue", efficiency: 1 },
     ],
+    eatingRate: 0.1,
     queue: [],
     patrol: [],
   },

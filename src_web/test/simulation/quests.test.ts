@@ -4,7 +4,7 @@ import {
   stepSession,
   restoreSession,
 } from "../../src/application/ScenarioSession";
-import { ResponseTrial } from "../../src/simulation/catalog/quests/ResponseTrial";
+import { ResponseTrial } from "../../src/simulation/catalog/quests/response/quest";
 import { evaluateQuest } from "../../src/simulation/core/quest/Quest";
 import type { Pawn } from "../../src/simulation/core/entity/pawn/Pawn";
 import { instantiateEntity } from "../../src/simulation/core/site/EntityPlacement";

@@ -102,7 +102,7 @@ export function renderMap(console: ConsoleState): string {
 }
 
 export const help = `map | status | events | sites | site <id>
-step [ticks] | run [maximum ticks] | load <response|daily|sight|colony>
+step [ticks] | run [maximum ticks] | load <response|daily|sight|colony|consumption>
 inspect <token|id> | move <actor> <x> <y>
 order <actor> <action JSON> | autonomy <actor> <on|off> | cancel <actor> [actionId]
 save <path> | restore <path> | help | quit`;

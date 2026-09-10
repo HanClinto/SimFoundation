@@ -1,4 +1,4 @@
-import type { Quest } from "../../core/quest/Quest";
+import type { Quest } from "../../../core/quest/Quest";
 
 export const ColonyTrial: Quest = {
   id: "colony",

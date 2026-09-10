@@ -13,6 +13,7 @@ export const ExerciseBike = {
     blocksSight: false,
     materialId: Steel.id,
     amount: 1,
+    integrity: 100,
     activities: {
       exercise: {
         duration: 5,

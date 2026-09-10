@@ -30,6 +30,7 @@ simulation/
 		entity/
 			Entity.ts
 			EntityTemplate.ts
+			Consumption.ts
 			Item.ts
 			Door.ts
 			Facility.ts
@@ -65,6 +66,8 @@ simulation/
 					FindTarget.ts
 		material/
 			Material.ts
+		quest/
+			Quest.ts
 		site/
 			Site.ts
 			EntityPlacement.ts
@@ -93,6 +96,11 @@ simulation/
 			Stone.ts
 			PlantFood.ts
 			AnimalTissue.ts
+		quests/
+			response/{quest.ts,setup.ts}
+			daily/{quest.ts,setup.ts}
+			colony/{quest.ts,setup.ts}
+			consumption/{quest.ts,setup.ts}
 		sites/tests/SharedActions.json
 		sites/tests/RestAndResearch.json
 		sites/tests/DailyLife.json
@@ -103,7 +111,7 @@ simulation/
 
 There are no redundant `entity/entities` or `action/actions` levels. Actions belong beneath Pawn because pawns execute them. Materials have their own branch because a material is a definition, not an entity. Spatial mechanics and ownership transfers live with sites.
 
-When implemented, named anomalies belong under `catalog/actors/anomalies`, ordinary authored maps under `catalog/sites`, and quests under `catalog/quests/<quest>/quest.ts`. Stage folders are useful when a stage actually has multiple files/assets. Do not create empty quest, actor, or site stubs just to fill out the proposed tree. Quest content must not own a site's lifetime. Reusable quest mechanics belong in core when needed.
+When implemented, named anomalies belong under `catalog/actors/anomalies` and ordinary authored maps under `catalog/sites`. Quests live under `catalog/quests/<quest>/quest.ts` with shared gameplay initialization in `setup.ts`. Passing/failing test configurations belong under `test/simulation/quests/<quest>/`, never in the gameplay catalog or scenario registry. Stage folders are useful when a stage actually has multiple files/assets. Do not create empty quest, actor, or site stubs just to fill out the proposed tree. Quest content must not own a site's lifetime.
 
 ## Entity, Template, Material
 
@@ -267,15 +275,21 @@ Crossing-only occupancy (`canTraverse` but not `canStop`) is deliberately deferr
 
 ## Diets Without Food Subclasses
 
-[Material.ts](core/material/Material.ts) defines descriptive tags and diet rules. Tags are catalog strings, not a core enum. Each diet rule matches one tag and specifies nourishment per unit for that consumer. If several rules match, the highest nourishment applies once; values do not stack.
+[Material.ts](core/material/Material.ts) separates nutritional density from consumer compatibility. A material's optional `nutrition` is nourishment available per material unit (default 1 in these abstract units). An entity's `nutrition` overrides that density, so meals using the same material can differ. [PackagedMeal.ts](catalog/entities/supplies/PackagedMeal.ts) explicitly provides nutrition 30. Each diet rule matches a catalog tag and supplies a conversion `efficiency`; 1 means full conversion and 0.5 means half. The highest matching efficiency applies once, never summed. An incompatible material provides no nourishment even if its object-level nutrition is high. Zero nutrition explicitly makes an otherwise compatible object non-nourishing.
 
 Examples: a metalivore accepts `metal`, a plastic consumer accepts `plastic`, and an ordinary plant-food diet accepts `edible-plant`. Wood is tagged `organic`, `plant`, and `wood`, not `edible-plant`. Classification does not imply digestibility. No special branch in Eat knows steel, plastic, meat, or meals.
 
-[Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous food selection considers acceptable, reachable items by distance then ID. Dynamic pawn obstruction can still make an action wait. Explicit orders keep their specified target and never silently substitute another. An eat action approaches, rechecks, and consumes the minimum of one unit, available stock, and the amount needed to satisfy current hunger. Fractional remainders stay in the same entity, including carried food. Exhausted items are removed (with a tiny floating-point tolerance). A fully satisfied pawn consumes nothing; pawns with no hunger need do not search for or consume food. This retains positive-urgency selection without wasting a whole meal on a tiny deficit.
+[Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous selection considers compatible, eligible, reachable objects by distance then ID. Explicit orders retain their target. Every productive tick consumes the minimum of the pawn's `eatingRate`, remaining material, and the amount needed to satisfy current hunger. Hunger reduction is consumed amount times nutritional density times dietary efficiency. Staff eat 0.1 material units per tick, so one full meal portion takes ten productive ticks when sufficient hunger remains. Offers use that same per-tick rate, rather than advertising a whole meal's benefit immediately.
+
+Eating remains queued until the pawn is satisfied or the object is exhausted. Travel and blocked time do not consume anything. Cancelling abandons only the intention: the same food ID, location and remaining amount persist. The pawn can leave and return, reload a save, carry/drop leftovers, or another pawn can finish them. Reissuing Eat resumes from the object's actual remaining amount; no duplicate action-owned food progress is stored. Fully satisfied pawns consume nothing. Tiny floating-point remainders are treated as zero. Pawns lacking hunger or a positive eating rate cannot consume food. Plain quantities represent divisible portions, not physical plates or packaging.
 
 Facility activities now advertise signed need effects, while Eat derives its offer from the particular consumer's diet. A material becomes food relative to the consumer, not through a universal food advertisement. Shared target search checks physical reachability and action eligibility; execution always rechecks current state. Future social/comfort activities can extend this only when their real mechanics require it.
 
-For now, **only loose items are consumable**. Material matching alone does not authorize eating installed doors or living pawns; structural damage and predation need their own consequences. There is one material per entity, no mixtures, digestion chemistry, calories, or weight model. Extend only when actual content needs more.
+Material-compatible consumers can also eat doors and unoccupied facilities. [Consumption.ts](core/entity/Consumption.ts) removes actual material and proportionally reduces optional `integrity`: removing a quarter of remaining material also removes a quarter of remaining integrity. Structural catalog objects start at 100 integrity. Independent `damageIntegrity` reduces condition without removing material; bent or broken objects are not assumed to have lost mass. No repair mechanic or implicit regeneration exists, so repairing cannot presently create food.
+
+An object's integrity reaching zero makes it nonfunctional and nonobstructing but leaves its remaining material as consumable remnants. Amount reaching zero removes the actual entity, so doors stop blocking and queued references fail through the existing missing-target path. This is a simple structural model, not fracture physics, salvage spawning or geometry-based partial holes. Materialless damage does not replenish or erase edible quantity.
+
+Occupied facilities, objects carrying other entities, and objects carried by someone else cannot be eaten. Pawn entities are excluded regardless of diet: predation is not implemented. Tile materials are not entities and cannot be eaten through this action. There is one material per entity, no mixtures, digestion chemistry or weight model. A metalivore or wood-eater is a pawn with matching diet data, not another Eat implementation.
 
 ## Sites, Transfers, And Saves
 
@@ -297,7 +311,7 @@ const next = advanceSimulation(created.state, materials);
 
 Transfers accept prepared ground entities at a loading tile, require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Transfer helpers are headless domain operations, not player-authorized UI endpoints yet. No arrival creates a second identity or ticks its needs twice.
 
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 9 includes action lifecycle recovery and discards earlier experimental shapes; there are no migrations or deep save validators. CLI session saves also retain quest counters/status and the most recent 100 events, with a session root version and matching simulation version. These are trusted development saves, not a hardened external input format.
+[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Version 10 introduces eating rate, diet efficiency and nutrition/integrity state, discarding earlier experimental shapes; there are no migrations or deep save validators. CLI session saves also retain quest counters/status and the most recent 100 events, with a session root version and matching simulation version. These are trusted development saves, not a hardened external input format.
 
 ## Command-Line Console
 
@@ -307,12 +321,15 @@ From `src_web` with Node 22 selected:
 npm run sim
 npm run sim -- --scenario daily
 npm run sim -- --scenario colony
+npm run sim -- --scenario consumption
 npm run sim -- --scenario response --batch --ticks 40
 npm run sim -- --scenario colony --batch --ticks 1100
 npm run benchmark:simulation -- 40
 ```
 
-`response`, `daily`, and `colony` have quest conditions; `sight` is an inspection sandbox. The CLI adapter uses the same [ScenarioSession](../application/ScenarioSession.ts) as the tests, not the archived browser controller. Vite is only a local TypeScript module loader in middleware mode; no game HTTP server is started.
+`response`, `daily`, `colony` and `consumption` have quest conditions; `sight` is an inspection sandbox. The Consumption setup leaves a diner with autonomy off and a two-portion meal; the player must issue an eating order before the deadline. The CLI adapter uses the same [ScenarioSession](../application/ScenarioSession.ts) as the tests, not the archived browser controller. Vite is only a local TypeScript module loader in middleware mode; no game HTTP server is started.
+
+To try partial consumption: `load consumption`, `order diner {"kind":"eat","targetId":"meal"}`, `step 3`, `cancel diner`, then `inspect meal`. The meal retains 1.7 units. You can move away, save/restore, and order eating again; the quest succeeds when the diner is fed and at least a quarter portion remains. `run` alone does not solve this scenario because gameplay setup does not include the test answer.
 
 Each map cell contains its terrain character followed by a two-character entity token. `++` means stacked ground occupants; the legend lists every entity with its ID and location, including carried entities. Tokens are current-view shortcuts and can change when entities disappear; full IDs or local authored IDs are preferable for scripts. Coordinates are zero-based. Sight and passage symbols retain their authored characters; `inspect` exposes actual properties. The display does not constrain scenario stacking.
 
@@ -344,7 +361,11 @@ Save requires a new filename and never overwrites an existing file. Restore repl
 
 [Quest.ts](core/quest/Quest.ts) observes state and events; it never orders actors, owns sites, or fabricates success. Catalog quests define named objectives, failure conditions and a deadline. The initial condition set covers matched events, need bounds, entity amount, aggregate material stock, ability to act, separation distance, and elapsed ticks. Entity references are local IDs in the attached site, resolved to its instantiated IDs. Multi-site references, branches, rewards and a scripting language are not implemented yet.
 
-[ResponseTrial.ts](catalog/quests/ResponseTrial.ts) succeeds when the soldier attacks, researcher withdraws and gains separation, and medic treats the casualty. It fails for soldier/civilian incapacitation or an incomplete deadline. [DailyLifeTrial.ts](catalog/quests/DailyLifeTrial.ts) requires sustained work/care and retained food. [ColonyTrial.ts](catalog/quests/ColonyTrial.ts) checks a 12-worker, 42x26 site with shared facilities, a medic, a bleeding worker and finite food for at least 1000 ticks. Its resource condition is total food, not even usage of individual piles.
+[Response](catalog/quests/response/quest.ts) succeeds when the soldier attacks, researcher withdraws and gains separation, and medic treats the casualty. It fails for soldier/civilian incapacitation or an incomplete deadline. [Daily life](catalog/quests/daily/quest.ts) requires sustained work/care and retained food. [Colony](catalog/quests/colony/quest.ts) checks a 12-worker, 42x26 site with shared facilities, a medic, a bleeding worker and finite food for at least 1000 ticks. Its resource condition is total food, not even usage of individual piles. [Consumption](catalog/quests/consumption/quest.ts) checks completion of eating, satiety and retained leftovers; it can fail by incapacity or deadline.
+
+Each quest package has `quest.ts` (the challenge) and `setup.ts` (the shared playable site setup). Gameplay and tests both load that setup. Success/failure "answer keys" are tests, not catalog variants: see [consumption/quest.test.ts](../../test/simulation/quests/consumption/quest.test.ts). Minimal setup stays inline unless extracting a helper improves readability. Tests may configure initial conditions and issue ordinary commands, but never alter objective counters, waive prerequisites or force completion. Genuine in-game variants would be separate authored content, not these answer keys.
+
+The consumption tests demonstrate two successful solutions (uninterrupted and cancel/leave/reload/resume) and two named failure outcomes (incompatible food until the deadline, and an incapacitated diner). They check intermediate material conservation and that success cannot occur before eating. This is the acceptance-test backbone, not the entire test suite: focused nutrition, rate, occupancy, structural damage and reference-safety tests remain alongside it.
 
 The evaluator runs after each simulation tick. Failure takes precedence over simultaneous success; success can occur on the deadline tick before timeout. Event counts persist; state conditions describe the current world. Re-evaluating the same tick is idempotent, and final success/failure is durable even if the world continues changing. The application passes only that tick's new events, not the recent-events inspection buffer. Saving and restoring preserves these counters and the final result.
 

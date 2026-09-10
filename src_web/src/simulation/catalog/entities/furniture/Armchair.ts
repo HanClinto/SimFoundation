@@ -13,6 +13,7 @@ export const Armchair = {
     blocksSight: false,
     materialId: Wood.id,
     amount: 1,
+    integrity: 100,
     activities: {
       relax: { duration: 6, needChanges: { stress: -6, fatigue: -1 } },
     },

@@ -19,6 +19,7 @@ function transparent(
         entity.id !== observerId &&
         entity.id !== targetId &&
         entity.blocksSight &&
+        (entity.integrity === undefined || entity.integrity > 0) &&
         (entity.kind !== "door" || !entity.open) &&
         entity.location.kind === "ground" &&
         samePosition(entity.location.position, position),

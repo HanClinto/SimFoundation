@@ -13,6 +13,7 @@ export const ResearchDesk = {
     blocksSight: false,
     materialId: Steel.id,
     amount: 1,
+    integrity: 100,
     activities: {
       research: {
         duration: 6,
