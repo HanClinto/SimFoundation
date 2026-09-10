@@ -19,7 +19,7 @@ try {
     const index = args.indexOf(name);
     return index < 0 ? fallback : args[index + 1];
   };
-  let consoleState = openConsole(option("--scenario", "response"));
+  let consoleState = openConsole(option("--scenario", "campaign"));
   if (args.includes("--restore")) {
     const restored = restoreSession(
       await readFile(option("--restore"), "utf8"),

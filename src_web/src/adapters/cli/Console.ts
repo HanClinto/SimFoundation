@@ -15,13 +15,18 @@ import { chooseNeedAction } from "../../simulation/core/entity/pawn/Needs";
 import { needActions } from "../../simulation/core/entity/pawn/actions/NeedActions";
 import type { ActionState } from "../../simulation/core/entity/pawn/actions/Action";
 import { parseOrder } from "./Order";
+import { campaignBrief, campaignStatus } from "./Campaign";
+import {
+  prepareTeam,
+  departTeam,
+} from "../../simulation/catalog/campaign/Campaign";
 
 export interface ConsoleState {
   session: ScenarioSession;
   siteId: string;
 }
 
-export function openConsole(name = "response"): ConsoleState {
+export function openConsole(name = "campaign"): ConsoleState {
   const session = loadScenario(name);
   return { session, siteId: Object.keys(session.state.sites)[0]! };
 }
@@ -40,18 +45,25 @@ function token(console: ConsoleState, entity: Entity): string {
 
 function resolve(console: ConsoleState, value: string | undefined): Entity {
   const members = roster(console);
-  const found = members.find(
-    (entity) =>
-      entity.id === value ||
-      entity.id === `${console.siteId}:${value}` ||
-      token(console, entity) === value,
+  const exact = members.find(
+    (entity) => entity.id === value || token(console, entity) === value,
   );
+  if (exact) return exact;
+  const matches = members.filter(
+    (entity) => entity.name === value || entity.id.split(":").at(-1) === value,
+  );
+  if (matches.length > 1)
+    throw new Error(
+      `Ambiguous entity: ${value}. Use a stable label or full ID.`,
+    );
+  const found = matches[0];
   if (!found) throw new Error(`Unknown entity: ${value ?? "(missing)"}`);
   return found;
 }
 
 export function questStatus(console: ConsoleState): string {
   const { session } = console;
+  if (session.campaign) return campaignStatus(session);
   const definition = scenarios[session.scenario]?.quest;
   const quest = session.quest;
   if (session.phase === "setup") {
@@ -157,8 +169,9 @@ export function renderMap(console: ConsoleState): string {
 }
 
 export const help = `map | brief | status | events | sites | site <id>
+brief <route> | prepare <route> <staff...> | send <route> <staff...> (campaign)
 deploy <staff-type> <name> | start
-step [ticks] | run [maximum ticks] | load <response|daily|sight|colony|consumption|scp1867|scp1370>
+step [ticks] | run [maximum ticks] | load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
 inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
 study <actor> <station> <planId>
 order <name|@N> <verb> <target> | order <name|@N> move <x> <y> | order <name|@N> wait <ticks>
@@ -199,22 +212,55 @@ export function executeLine(
     case "start":
       next = { ...console, session: startSession(console.session) };
       return finish(questStatus(next));
+    case "prepare":
+    case "send": {
+      const campaign = console.session.campaign;
+      if (!campaign)
+        throw new Error("This order requires a home-site campaign.");
+      const ids = args.slice(1).map((value) => resolve(console, value).id);
+      const state =
+        command === "prepare"
+          ? prepareTeam(
+              console.session.state,
+              campaign,
+              console.siteId,
+              args[0]!,
+              ids,
+              materials,
+            )
+          : departTeam(
+              console.session.state,
+              campaign,
+              console.siteId,
+              args[0]!,
+              ids,
+            );
+      next = { ...console, session: { ...console.session, state } };
+      return finish(
+        command === "prepare"
+          ? "Preparation ordered. Staff walk to loading pads with autonomy off; inspect their queues, then send when ready."
+          : "Departed with actual staff and carried cargo. Use status for transit and blocked admission; step advances every site.",
+      );
+    }
     case "sites":
       return finish(
         Object.values(console.session.state.sites)
           .map((site) => `${site.id} ${site.name}`)
           .join("\n"),
       );
-    case "site":
-      if (!console.session.state.sites[args[0]!])
+    case "site": {
+      const siteId = console.session.campaign?.siteIds[args[0]!] ?? args[0]!;
+      if (!console.session.state.sites[siteId])
         throw new Error("Unknown site.");
-      next = { ...console, siteId: args[0]! };
+      next = { ...console, siteId };
       return finish(renderMap(next));
+    }
     case "map":
       return finish(renderMap(next));
     case "status":
       return finish(questStatus(next));
     case "brief": {
+      if (console.session.campaign) return finish(campaignBrief(args[0]));
       const quest = scenarios[console.session.scenario]?.quest;
       return finish(
         quest

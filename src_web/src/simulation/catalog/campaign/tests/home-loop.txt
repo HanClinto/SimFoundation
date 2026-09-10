@@ -1,0 +1,47 @@
+# Test-only walkthrough; the campaign never imports this solution.
+load campaign
+brief blackwood
+prepare blackwood alex ben
+step 12
+send blackwood alex ben
+step 8
+site blackwood
+order alex take journal
+order ben take specimen
+step 24
+prepare home alex ben
+step 24
+send home alex ben
+step 8
+site home
+order alex deliver journal 3 3
+order ben deliver specimen 3 5
+step 16
+order ben study bench marsh-lead
+step 10
+status
+brief kestrel
+order alex take kit
+step 12
+prepare kestrel alex ben
+step 12
+send kestrel alex ben
+step 10
+site kestrel
+order alex study station depot-survey
+order ben take dockets
+step 30
+# Leave the reusable kit at the depot to free a carrier for finite meals.
+order alex drop kit
+step 1
+order alex take rations
+step 12
+prepare home alex ben
+step 20
+send home alex ben
+step 10
+site home
+order ben deliver dockets 1 7
+order alex deliver rations 5 6
+step 12
+status

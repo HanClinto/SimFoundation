@@ -10,9 +10,9 @@ Source anchors: Blackwood is a cooperative telepathic naturalist in an aquatic b
 
 The bounded map combines a collection vault with temporary Foundation intake. Recover the journal and preserved specimen, compare them with an independently supplied survey and laboratory dossier, and leave the unidentified device isolated. Study requires all four intact physical sources within one tile of the comparison bench for eight work ticks. The dated finding records the actor and exact source identities without consuming or duplicating evidence.
 
-Kestrel Marsh, the specimen details, survey and laboratory findings are **original mission fiction**, not facts from the SCP article. The two independent records corroborate one bounded claim; the finding does not establish that all of Blackwood's stories are true. The resulting follow-up lead is readable evidence, not a functioning campaign unlock or a new destination yet.
+Kestrel Marsh, the specimen details, survey and laboratory findings are **original mission fiction**, not facts from the SCP article. The two independent records corroborate one bounded claim; the finding does not establish that all of Blackwood's stories are true. In the [persistent campaign](../../campaign/README.md), the evidence must return home and its finding unlocks the retained Kestrel depot. This isolated trial records the same finding without a campaign.
 
-Blackwood remains at the outpost off-map. Aquarium care, live transfer, the full collection, hazardous device activation, transport back to a second site, and free-form interviews are not implemented. Relocating the isolated device prevents success but does not invent an explosion or canonical hazard effect.
+Blackwood remains at the outpost off-map. Aquarium care, live transfer, the full collection, hazardous device activation and free-form interviews are not implemented. The campaign adds physical evidence transport back to home; this isolated trial retains local intake. Relocating the isolated device prevents trial success but does not invent an explosion or canonical hazard effect.
 
 ## Organization
 

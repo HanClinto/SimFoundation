@@ -3,7 +3,7 @@ import type { Simulation } from "../Simulation";
 import { facilityInUse } from "../entity/Facility";
 import { advancePhysiology } from "../entity/pawn/Health";
 import type { Pawn } from "../entity/pawn/Pawn";
-import { floorAt, samePosition, traversalAt } from "./TileMap";
+import { distance, floorAt, traversalAt } from "./TileMap";
 
 export interface Transfer {
   id: string;
@@ -20,6 +20,7 @@ export interface TransferRequest {
   readonly destinationId: string;
   readonly entityIds: readonly string[];
   readonly loading: Position;
+  readonly loadingRadius?: number;
   readonly arrival: Position;
   readonly duration: number;
 }
@@ -41,6 +42,9 @@ export function depart(
   )
     return fail("Choose valid endpoints and a positive travel duration.");
   const selected = new Set(request.entityIds);
+  const loadingRadius = request.loadingRadius ?? 0;
+  if (!Number.isSafeInteger(loadingRadius) || loadingRadius < 0)
+    return fail("Loading radius must be a nonnegative integer.");
   if (!selected.size || selected.size !== request.entityIds.length)
     return fail("Choose distinct entities.");
   for (const id of selected) {
@@ -49,9 +53,9 @@ export function depart(
       !entity ||
       entity.kind === "door" ||
       entity.location.kind !== "ground" ||
-      !samePosition(entity.location.position, request.loading)
+      distance(entity.location.position, request.loading) > loadingRadius
     )
-      return fail("Selected entities must be prepared at the loading tile.");
+      return fail("Selected entities must be prepared in the loading area.");
   }
   let expanded = true;
   while (expanded) {

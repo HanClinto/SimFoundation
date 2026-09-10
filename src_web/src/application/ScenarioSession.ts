@@ -26,6 +26,10 @@ import {
   deployPawn,
   type Deployment,
 } from "../simulation/core/site/Deployment";
+import {
+  createCampaign,
+  type Campaign,
+} from "../simulation/catalog/campaign/Campaign";
 
 export const scenarios: Readonly<
   Record<
@@ -48,7 +52,8 @@ export const scenarios: Readonly<
 };
 
 export interface ScenarioSession {
-  version: 3;
+  version: 4;
+  campaign: Campaign | null;
   phase: "setup" | "running";
   teamIds: string[];
   bindings: Record<string, string>;
@@ -63,6 +68,24 @@ export interface ScenarioSession {
 }
 
 export function loadScenario(name: string): ScenarioSession {
+  if (name === "campaign") {
+    const { state, campaign } = createCampaign(entities);
+    return labelEntities({
+      version: 4,
+      campaign,
+      phase: "running",
+      teamIds: [],
+      bindings: {},
+      labels: {},
+      nextPawnLabel: 1,
+      nextObjectLabel: 1,
+      simulationVersion: SIMULATION_VERSION,
+      scenario: name,
+      state,
+      quest: null,
+      events: [],
+    });
+  }
   const scenario = scenarios[name];
   if (!scenario) throw new Error(`Unknown scenario: ${name}`);
   const created = instantiateSite(createSimulation(), scenario.site, entities);
@@ -73,7 +96,8 @@ export function loadScenario(name: string): ScenarioSession {
     ]),
   );
   return labelEntities({
-    version: 3,
+    version: 4,
+    campaign: null,
     phase: scenario.deployment ? "setup" : "running",
     teamIds: [],
     bindings,
@@ -220,7 +244,7 @@ export function restoreSession(text: string): ScenarioSession | null {
     return value &&
       typeof value === "object" &&
       !Array.isArray(value) &&
-      value.version === 3 &&
+      value.version === 4 &&
       value.simulationVersion === SIMULATION_VERSION
       ? (value as ScenarioSession)
       : null;

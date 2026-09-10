@@ -85,7 +85,7 @@ export const CorroborationBench: EntityTemplate = {
             LaboratoryDossier.id,
           ],
           finding:
-            "The specimen matches the independent laboratory measurements and the external survey's habitat. Two independent records support a bounded Kestrel Marsh follow-up. This does not validate Blackwood's other claims. The destination is a game-authored lead, not an implemented expedition.",
+            "The specimen matches the independent laboratory measurements and the external survey's habitat. Two independent records support a bounded Kestrel Marsh follow-up. This does not validate Blackwood's other claims. In a home-site campaign, this finding authorizes the Kestrel depot route; the isolated trial records the same evidence without a campaign.",
         },
       ],
       findings: [],

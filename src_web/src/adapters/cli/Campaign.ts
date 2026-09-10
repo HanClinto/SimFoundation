@@ -1,0 +1,81 @@
+import type { ScenarioSession } from "../../application/ScenarioSession";
+import {
+  opportunityBlocker,
+  readyDocket,
+} from "../../simulation/catalog/campaign/Campaign";
+import {
+  homeLoading,
+  opportunities,
+} from "../../simulation/catalog/campaign/setup";
+
+export function campaignStatus(session: ScenarioSession): string {
+  const { campaign, state } = session;
+  if (!campaign) throw new Error("No active campaign.");
+  const owners = [
+    ...Object.values(state.sites),
+    ...Object.values(state.transfers),
+  ];
+  const home = state.sites[campaign.homeId]!;
+  return [
+    `Tick ${state.tick} | Provisional Site campaign | home ${campaign.homeId}`,
+    "No mission reset or victory freeze: sites, staff, cargo and findings persist.",
+    ...campaign.staffIds.map((id) => {
+      const owner = owners.find((owner) => owner.entities[id]);
+      const pawn = owner?.entities[id];
+      return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${pawn.canAct ? "active" : "incapacitated"} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"}` : ""}`;
+    }),
+    `Home stocks: ${Object.values(home.entities)
+      .filter((entity) =>
+        ["packaged-meal", "transport-docket"].includes(entity.definitionId),
+      )
+      .map(
+        (entity) => `${entity.name} ${entity.amount.toFixed(1)} [${entity.id}]`,
+      )
+      .join("; ")}`,
+    ...Object.entries(opportunities).map(([key, opportunity]) => {
+      const reason = opportunityBlocker(state, campaign, key);
+      return `${key} (${campaign.siteIds[key]}): ${reason ? `LOCKED: ${reason}` : readyDocket(state, campaign) ? "AVAILABLE" : "BLOCKED: no transport docket ready at home pad"} | ${opportunity.duration} travel ticks | 1 outbound docket/group; return prepaid`;
+    }),
+    ...Object.values(state.transfers).map(
+      (transfer) =>
+        `${transfer.id}: ${transfer.originId} -> ${transfer.destinationId} | arrival tick ${transfer.arrivesAt}${transfer.blockedReason ? ` | BLOCKED: ${transfer.blockedReason}` : ""} | ${Object.values(
+          transfer.entities,
+        )
+          .map((entity) => `${entity.name} [${entity.id}]`)
+          .join(", ")}`,
+    ),
+    ...Object.values(state.sites).flatMap((site) =>
+      Object.values(site.entities).flatMap((entity) =>
+        entity.kind === "facility"
+          ? (entity.study?.findings ?? []).map(
+              (finding) =>
+                `Finding at ${site.id}: ${finding.title} | tick ${finding.tick} | by ${finding.actorId} | sources ${finding.sourceIds.join(", ")}`,
+            )
+          : [],
+      ),
+    ),
+    `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
+    "brief <blackwood|gallery|kestrel> | site <home|blackwood|gallery|kestrel> | inspect <id>",
+  ].join("\n");
+}
+
+export function campaignBrief(key?: string): string {
+  if (key) {
+    const opportunity = opportunities[key];
+    if (!opportunity) throw new Error("Unknown opportunity.");
+    return [
+      opportunity.name,
+      opportunity.briefing,
+      `Field loading area: (${opportunity.loading.x},${opportunity.loading.y}) and adjacent tiles.`,
+    ].join("\n");
+  }
+  return [
+    "Manage a finite home site. Recover evidence, study it physically, and spend transport allocations deliberately.",
+    "Start with brief blackwood. Prepare actual staff; take supplies before assembling. One carrier holds one object.",
+    "Example: prepare blackwood alex ben; step 10; send blackwood alex ben; step 8; site blackwood.",
+    "At home, deliver journal to (3,3) and specimen to (3,5), then order ben study bench marsh-lead.",
+    "Partial withdrawal is allowed. Return transport is prepaid, retained sites do not restock, and no command creates replacement staff.",
+    "Use autonomy <staff> on for home routines; preparation disables it so staff wait at the loading area. Keep the arrival pad clear.",
+    "SCP-1867 by Djoric and SCP-1370 by Sorts, SCP Wiki, CC BY-SA 3.0. Kestrel and this campaign are original adaptations; inspect evidence for source links.",
+  ].join("\n");
+}
