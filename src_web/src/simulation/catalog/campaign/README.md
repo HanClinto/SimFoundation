@@ -5,6 +5,11 @@ Run `npm run sim` from `src_web`. `brief` introduces the finite home site;
 `brief blackwood`, `brief gallery` and `brief kestrel` explain the next work.
 Use `site home` or the route name to inspect a retained site.
 
+Authoring starts with [Home.ts](Home.ts) for the home layout and finite initial
+inventory, and [setup.ts](setup.ts) for route opportunities. Campaign rules,
+reserve dispatch, care admission and named apparatus stay in their own files;
+the setup does not execute test solutions.
+
 The home begins with Alex, Ben and Casey, eight meals, four round-trip transport
 allocations, a reusable field kit, a comparison bench, independent records,
 ordinary rest furniture and a glass display bay. No campaign command deploys
@@ -219,6 +224,8 @@ Two reserved allocations and two actual people are the entire reserve, not
 infinite replacements. These commands still work when the original crew is
 lost, but perform no automatic rescue or healing. Keep arrival pads clear,
 then use the responders to recover people/bodies and equipment physically.
+Reserve dispatch respects the same research prerequisite as ordinary travel;
+it cannot be used to open Kestrel before home corroboration.
 
 ```sh
 npm run sim < src/simulation/catalog/campaign/tests/permanent-loss.txt

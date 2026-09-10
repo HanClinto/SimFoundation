@@ -194,3 +194,12 @@ it("a pre-fatal alarm leaves enough actual time to dispatch and stabilize with t
   c = play(c, ["step 100"]);
   expect(person(c, "site-12:rowan").health!.death).toBeUndefined();
 });
+
+it("reserve dispatch cannot bypass an unmet research gate or spend an allocation on refusal", () => {
+  const c = openConsole();
+  const before = JSON.stringify(c);
+  expect(() => executeLine(c, "reserve kestrel devon")).toThrow(
+    "Home study required",
+  );
+  expect(JSON.stringify(c)).toBe(before);
+});

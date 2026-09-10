@@ -1,7 +1,8 @@
 import type { Simulation } from "../../core/Simulation";
 import { depart } from "../../core/site/Transfer";
-import type { Campaign } from "./Campaign";
-import { homeLoading, opportunities } from "./setup";
+import { opportunityBlocker, type Campaign } from "./Campaign";
+import { opportunities } from "./setup";
+import { homeLoading } from "./Home";
 import { authorizeRisk } from "./Readiness";
 
 export function dispatchReserve(
@@ -25,6 +26,10 @@ export function dispatchReserve(
   const opportunity = opportunities[destination];
   if (!destinationId || (destination !== "home" && !opportunity))
     throw new Error("Choose home or a known field route for reserve dispatch.");
+  if (destination !== "home") {
+    const reason = opportunityBlocker(state, campaign, destination);
+    if (reason) throw new Error(reason);
+  }
   const docket = reserve.entities[`${reserve.id}:dispatches`]!;
   if (docket.amount < 1)
     throw new Error("The finite emergency dispatch allocations are exhausted.");

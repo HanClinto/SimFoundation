@@ -3,10 +3,8 @@ import {
   opportunityBlocker,
   readyDocket,
 } from "../../simulation/catalog/campaign/Campaign";
-import {
-  homeLoading,
-  opportunities,
-} from "../../simulation/catalog/campaign/setup";
+import { opportunities } from "../../simulation/catalog/campaign/setup";
+import { homeLoading } from "../../simulation/catalog/campaign/Home";
 import { departureReadiness } from "../../simulation/catalog/campaign/Readiness";
 import {
   serviceDeadline,
