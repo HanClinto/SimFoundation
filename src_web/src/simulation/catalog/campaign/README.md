@@ -192,8 +192,20 @@ One of four physical `clinical-packs` is spent at the start of a course. Sixteen
 productive ticks restore up to 25 blood-loss points. Cancellation keeps the
 spent pack and earned partial benefit. An empty supply stack, occupied bed or
 patient elsewhere produces a visible blocker. After a completed supported
-course, health-caused blood-loss incapacity can clear; wounds remain, severe
-wound incapacity does not clear, and arbitrary `canAct = false` is not healed.
+course, health-caused blood-loss incapacity can clear; wounds remain under this
+default course, and arbitrary `canAct = false` is not healed.
+
+`order casey nurse alex clinic wounds` explicitly chooses the separate wound
+course. It spends one of three initial wound-care packs over twenty productive
+ticks for up to forty severity recovery. Original wound IDs and the actor,
+supply and reduction records remain. Wound-caused incapacity can clear after a
+completed supported course, but brain/organ trauma and death cannot. Interruption
+keeps both partial improvement and the consumed pack. This is a fictional game
+care model, not a clinical procedure or medicine recipe.
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/injured-return.txt
+```
 
 Then escort/admit the recovered person for ordinary rest. This is an abstract
 game care model, not a medical procedure or drug recipe. The

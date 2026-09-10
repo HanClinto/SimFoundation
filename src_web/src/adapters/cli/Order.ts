@@ -20,8 +20,17 @@ export function parseOrder(args: readonly string[]): ActionState {
       count(2, "service <counter>");
       return { kind, targetId: target!, workTicks: 0 };
     case "nurse":
-      count(3, "nurse <patient> <clinical-bed>");
-      return { kind, targetId: target!, bedId: extra!, workTicks: 0 };
+      if (args.length !== 3 && !(args.length === 4 && args[3] === "wounds"))
+        throw new Error(
+          "Use order <worker> nurse <patient> <clinical-bed> [wounds].",
+        );
+      return {
+        kind,
+        targetId: target!,
+        bedId: extra!,
+        workTicks: 0,
+        ...(args[3] === "wounds" ? { course: "wounds" as const } : {}),
+      };
     case "pack":
       count(3, "pack <specimen> <case>");
       return { kind, targetId: target!, caseId: extra!, workTicks: 0 };

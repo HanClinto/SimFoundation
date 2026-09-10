@@ -29,6 +29,12 @@ export const home: SiteTemplate = {
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
     {
+      id: "wound-packs",
+      definitionId: "wound-care-pack",
+      location: { kind: "ground", position: { x: 4, y: 1 } },
+      overrides: { amount: 3 },
+    },
+    {
       id: "holding",
       definitionId: "kinetic-holding-cell",
       location: { kind: "ground", position: { x: 14, y: 7 } },

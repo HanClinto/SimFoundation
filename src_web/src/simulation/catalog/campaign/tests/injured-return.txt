@@ -1,0 +1,34 @@
+# A surviving equipped responder incurs actual injury, then receives separate care.
+load campaign
+order alex equip suppressor
+order alex equip vest
+finish alex
+prepare intervention alex casey
+finish alex casey
+send intervention alex casey
+step 8
+site intervention
+order alex move 4 3
+finish alex
+step 12
+order alex subdue specimen
+finish alex
+order casey treat alex
+finish casey
+order casey treat alex
+finish casey
+inspect alex
+prepare home alex casey
+finish alex casey
+send home alex casey
+step 8
+site home
+order alex move 3 1
+finish alex
+order casey nurse alex clinic wounds
+finish casey
+order casey nurse alex clinic
+finish casey
+inspect alex
+inspect wound-packs
+status

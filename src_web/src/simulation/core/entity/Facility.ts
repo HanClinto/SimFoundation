@@ -23,6 +23,11 @@ export interface Facility extends EntityBase {
     supplyDefinitionId: string;
     ticks: number;
     bloodRecovery: number;
+    woundCourse?: {
+      supplyDefinitionId: string;
+      ticks: number;
+      recovery: number;
+    };
   };
 }
 

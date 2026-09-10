@@ -1,6 +1,6 @@
 import type { Action, ActionContext, ActionResult } from "./Action";
 import type { Pawn } from "../Pawn";
-import { incapacitated } from "../Health";
+import { incapacitated, recoverWounds } from "../Health";
 import type { Facility } from "../../Facility";
 import { facilityInUse } from "../../Facility";
 import { distance, positionOf } from "../../../site/TileMap";
@@ -14,12 +14,17 @@ export interface NurseState {
   bedId: string;
   workTicks: number;
   supplyId?: string;
+  course?: "wounds";
 }
 
-function finishRecovery(patient: Pawn): void {
+function finishRecovery(patient: Pawn, wounds: boolean): void {
   if (
-    (patient.health?.incapacity === "blood-loss" ||
-      patient.health?.incapacity === "postoperative") &&
+    (wounds
+      ? patient.health?.incapacity === "wounds"
+      : patient.health?.incapacity === "blood-loss" ||
+        patient.health?.incapacity === "postoperative") &&
+    patient.health &&
+    !patient.health.death &&
     !incapacitated(patient.health)
   ) {
     patient.canAct = true;
@@ -53,6 +58,8 @@ export class Nurse implements Action {
       (bed.integrity ?? 100) <= 0
     )
       return "A usable clinical bed is required.";
+    if (this.state.course === "wounds" && !bed.care.woundCourse)
+      return "This bed does not support a wound-care course.";
     if (
       bed.service &&
       ((bed.integrity ?? 100) < 100 ||
@@ -88,11 +95,15 @@ export class Nurse implements Action {
     const patient = site.entities[this.state.targetId] as Pawn;
     const bed = site.entities[this.state.bedId] as Facility;
     const care = bed.care!;
+    const wounds = this.state.course === "wounds";
+    const course = wounds ? care.woundCourse! : care;
     if (
-      patient.health!.bloodLoss <= 0 &&
-      patient.health!.incapacity !== "postoperative"
+      wounds
+        ? patient.health!.wounds.every((wound) => wound.severity <= 0)
+        : patient.health!.bloodLoss <= 0 &&
+          patient.health!.incapacity !== "postoperative"
     ) {
-      finishRecovery(patient);
+      finishRecovery(patient, wounds);
       return { status: "completed" };
     }
     const approach = Move.approach(context, patient);
@@ -100,7 +111,7 @@ export class Nurse implements Action {
     if (!this.state.supplyId) {
       const supply = findSupply(
         site,
-        care.supplyDefinitionId,
+        course.supplyDefinitionId,
         1,
         positionOf(site, bed.id)!,
         1,
@@ -109,17 +120,29 @@ export class Nurse implements Action {
       if (!supply)
         return {
           status: "blocked",
-          reason: `Bring ${care.supplyDefinitionId} beside the clinical bed (or carry it while working).`,
+          reason: `Bring ${course.supplyDefinitionId} beside the clinical bed (or carry it while working).`,
         };
       supply.amount--;
       this.state.supplyId = supply.id;
     }
-    patient.health!.bloodLoss = Math.max(
-      0,
-      patient.health!.bloodLoss - care.bloodRecovery / care.ticks,
-    );
-    if (++this.state.workTicks < care.ticks) return { status: "running" };
-    finishRecovery(patient);
+    if (wounds)
+      recoverWounds(
+        patient.health!,
+        care.woundCourse!.recovery / course.ticks,
+        {
+          actionId: pawn.queue[0]!.id,
+          actorId: pawn.id,
+          supplyId: this.state.supplyId!,
+          tick: context.tick,
+        },
+      );
+    else
+      patient.health!.bloodLoss = Math.max(
+        0,
+        patient.health!.bloodLoss - care.bloodRecovery / course.ticks,
+      );
+    if (++this.state.workTicks < course.ticks) return { status: "running" };
+    finishRecovery(patient, wounds);
     return { status: "completed" };
   }
 }

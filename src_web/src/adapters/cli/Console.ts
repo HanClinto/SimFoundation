@@ -131,7 +131,7 @@ function describeAction(action: ActionState): string {
   if (action.kind === "mend")
     return `mend ${action.targetId}${action.organ ? ` ${action.organ}` : ""} | work ${action.workTicks}${action.material ? ` | fabric spent from ${action.material.sourceId}` : ""}`;
   if (action.kind === "nurse")
-    return `nurse ${action.targetId} at ${action.bedId} | work ${action.workTicks}${action.supplyId ? " | clinical pack spent" : ""}`;
+    return `nurse ${action.targetId} at ${action.bedId} | ${action.course ?? "blood/postoperative"} | work ${action.workTicks}${action.supplyId ? ` | pack spent: ${action.supplyId}` : ""}`;
   if (action.kind === "pack")
     return `pack ${action.targetId} in ${action.caseId} | work ${action.workTicks}`;
   if (action.kind === "unpack")
@@ -236,7 +236,7 @@ order <name|@N> deliver <target> <x> <y> (collect, carry and drop)
 order <name|@N> dispense <machine> <request> [source]
 order <name|@N> escort <person> <x> <y> (cooperative walking)
 order <name|@N> pack <specimen> <case> | order <name|@N> unpack <case>
-order <name|@N> nurse <patient> <clinical-bed>
+order <name|@N> nurse <patient> <clinical-bed> [wounds]
 order <name|@N> take <supply-stack> [amount] (physical collection)
 Use @held as an order target for that worker's actual carried object.
 assign <worker> <counter|none> | order <worker> service <counter>

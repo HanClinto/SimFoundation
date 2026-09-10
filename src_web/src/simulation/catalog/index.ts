@@ -27,7 +27,7 @@ import { Soldier } from "./actors/staff/Soldier";
 import { Medic } from "./actors/staff/Medic";
 import { CareRecipient } from "./actors/staff/CareRecipient";
 import { CourierSpecimen, SpecimenCase } from "./campaign/courier";
-import { ClinicalBed, ClinicalPack } from "./campaign/clinic";
+import { ClinicalBed, ClinicalPack, WoundCarePack } from "./campaign/clinic";
 import { HostileGuard } from "./actors/threats/HostileGuard";
 import { SCP1370 } from "./actors/anomalies/SCP1370";
 import { SCP294 } from "./actors/anomalies/SCP294";
@@ -102,6 +102,7 @@ export const entities: EntityTemplates = Object.fromEntries(
     SpecimenCase,
     ClinicalBed,
     ClinicalPack,
+    WoundCarePack,
     HostileGuard,
     SCP1370,
     SCP294,

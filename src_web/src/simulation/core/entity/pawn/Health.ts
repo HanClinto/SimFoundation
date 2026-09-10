@@ -6,6 +6,13 @@ export interface Wound {
   severity: number;
   bleeding: number;
   treatedBy?: string;
+  recovery?: {
+    actionId: string;
+    actorId: string;
+    supplyId: string;
+    tick: number;
+    reduction: number;
+  }[];
 }
 
 export type OrganKind = "lung" | "brain";
@@ -63,6 +70,32 @@ export function incapacitated(health: Health): boolean {
     health.bloodLoss >= 100 ||
     health.wounds.reduce((total, wound) => total + wound.severity, 0) >= 100
   );
+}
+
+export function recoverWounds(
+  health: Health,
+  amount: number,
+  record: { actionId: string; actorId: string; supplyId: string; tick: number },
+): void {
+  let remaining = amount;
+  for (const wound of [...health.wounds].sort(
+    (a, b) =>
+      b.severity - a.severity || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
+  )) {
+    const reduction = Math.min(wound.severity, remaining);
+    if (reduction <= 0) continue;
+    wound.severity -= reduction;
+    remaining -= reduction;
+    wound.recovery ??= [];
+    const receipt = wound.recovery.find(
+      (entry) => entry.actionId === record.actionId,
+    );
+    if (receipt) {
+      receipt.reduction += reduction;
+      receipt.tick = record.tick;
+    } else wound.recovery.push({ ...record, reduction });
+    if (remaining <= 0) break;
+  }
 }
 
 export function advancePhysiology(pawn: Pawn, tick: number): boolean {
