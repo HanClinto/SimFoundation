@@ -364,6 +364,13 @@ Transfers accept prepared ground entities within an explicit loading radius (zer
 
 [Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Current core version 27 includes physical work, mortality/care, gear, custody/containment, service and operating-cycle state; earlier development shapes are discarded with no migrations or deep save validators. CLI session saves also retain campaign/admission facts, quest counters/status and the most recent 100 events, with session version 6 and a matching simulation version. These are trusted development saves, not a hardened external input format.
 
+The saved event history is not the current-tick delivery channel.
+`stepSession` can publish each complete event batch to a process-local
+callback, which the CLI uses for alarms and watched work failures. A busy
+tick may exceed100 events without losing an early death/breach notice or
+mistaking an early failed action for success. The persisted history remains
+bounded; no event bus or duplicate authoritative ledger is added.
+
 ## Command-Line Console
 
 From `src_web` with Node 22 selected:

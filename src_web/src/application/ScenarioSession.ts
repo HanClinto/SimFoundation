@@ -223,6 +223,7 @@ export function startSession(session: ScenarioSession): ScenarioSession {
 export function stepSession(
   session: ScenarioSession,
   ticks: number,
+  onTick?: (events: readonly Readonly<TickEvent>[]) => void,
 ): ScenarioSession {
   if (!Number.isSafeInteger(ticks) || ticks < 0 || ticks > 10000)
     throw new Error("Ticks must be an integer from 0 to 10000.");
@@ -241,6 +242,7 @@ export function stepSession(
           : null,
       events: [...result.events, ...next.events].slice(-100),
     });
+    onTick?.(next.events);
   }
   return result;
 }

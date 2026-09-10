@@ -424,8 +424,10 @@ export function executeLine(
       let session = console.session;
       let stop = "Reached the 1000-tick limit; inspect remaining work.";
       for (let ticks = 0; ticks < 1000; ticks++) {
-        const priorEvents = session.events;
-        session = stepSession(session, 1);
+        let changed: readonly Readonly<TickEvent>[] = [];
+        session = stepSession(session, 1, (events) => {
+          changed = events;
+        });
         for (const site of Object.values(session.state.sites)) {
           for (const entity of Object.values(site.entities)) {
             if (entity.kind !== "pawn") continue;
@@ -438,9 +440,6 @@ export function executeLine(
             }
           }
         }
-        const changed = session.events.filter(
-          (event) => !priorEvents.includes(event),
-        );
         const problem = changed.find(
           (event) =>
             event.actionId &&
@@ -504,12 +503,11 @@ export function executeLine(
           session.quest
         )
           break;
-        const previous = session.events;
-        session = stepSession(session, 1);
+        let current: readonly Readonly<TickEvent>[] = [];
+        session = stepSession(session, 1, (events) => {
+          current = events;
+        });
         if (command === "run" && session.campaign) {
-          const current = session.events.filter(
-            (event) => !previous.includes(event),
-          );
           alarm = ["died", "breached", "escaped", "warning"]
             .map((kind) => current.find((event) => event.kind === kind))
             .find((event) => event !== undefined);
