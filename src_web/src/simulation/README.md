@@ -1,530 +1,345 @@
-# Simulation
+# Replacement Simulation
 
-This is the replacement headless simulation. The previous engine remains in [../simulation_legacy](../simulation_legacy) for reference. Existing browser/application bindings still explicitly run that archive; this directory has no legacy imports or compatibility facade.
+This is the headless replacement engine and its playable text campaign.
+The browser still runs [simulation_legacy](../simulation_legacy); implementing
+a replacement mechanic does not mean it has been ported to the browser.
 
-The replacement is playable through the [command-line console](#command-line-console). Its quests and integration tests share the same scenario session and pass/fail evaluator.
+**Open the file for a thing to understand that thing.** Core owns generic
+mechanics. Catalog owns named definitions, physical setups, source attribution
+and adaptation choices. Actions execute through one ordinary pawn queue.
 
-The organizing principle is **open the file for a thing to understand that thing**. Core defines reusable mechanics. Catalog defines named things in the game using those mechanics. Prefer a readable local implementation over distributed switches, inheritance ladders, or speculative frameworks.
+## Start Playing
 
-## Core Versus Catalog
-
-```text
-application / headless tests
-	-> catalog (named definitions and authored sites)
-	-> core (generic mechanics, accepting supplied definitions)
-
-catalog -> core
-core -X-> catalog, legacy, application, browser
-```
-
-Core knows what a pawn, door, material, and diet are. It does not know FieldAgent, Steel, SCP-999, or Site 828. The caller supplies entity definitions to site instantiation and material definitions to ticking/commands. There is no hidden default catalog or global registration. The catalog index only lists entries; it does not implement their behavior.
-
-## Layout
-
-```text
-simulation/
-	core/
-		Simulation.ts
-		ControlPolicy.ts
-		Snapshot.ts
-		entity/
-			Entity.ts
-			EntityTemplate.ts
-			Consumption.ts
-			Study.ts
-			Item.ts
-			Door.ts
-			Facility.ts
-			pawn/
-				Pawn.ts
-				Needs.ts
-				Health.ts
-				Response.ts
-				Autonomy.ts
-				concerns/
-					Concern.ts
-					Concerns.ts
-					Threat.ts
-					Care.ts
-				actions/
-					Action.ts
-					ActionQueue.ts
-					NeedActions.ts
-					Move.ts
-					Take.ts
-					Drop.ts
-					Eat.ts
-					Wait.ts
-					Sleep.ts
-					Relax.ts
-					Research.ts
-					Study.ts
-					Read.ts
-					Exercise.ts
-					Attack.ts
-					Flee.ts
-					Treat.ts
-					FacilityAction.ts
-					FindTarget.ts
-		material/
-			Material.ts
-		quest/
-			Quest.ts
-		site/
-			Site.ts
-			EntityPlacement.ts
-			TileMap.ts
-			Tile.ts
-			Pathfinding.ts
-			Visibility.ts
-			Transfer.ts
-			Deployment.ts
-	catalog/
-		actors/staff/FieldAgent.ts
-		actors/staff/Researcher.ts
-		actors/staff/Soldier.ts
-		actors/staff/Medic.ts
-		actors/threats/HostileGuard.ts
-		actors/anomalies/SCP1370.ts
-		entities/doors/AutomaticSteelDoor.ts
-		entities/supplies/PackagedMeal.ts
-		entities/furniture/Bed.ts
-		entities/furniture/Armchair.ts
-		entities/equipment/ResearchDesk.ts
-		entities/furniture/Bookshelf.ts
-		entities/equipment/ExerciseBike.ts
-		materials/
-			Steel.ts
-			Wood.ts
-			Plastic.ts
-			Stone.ts
-			PlantFood.ts
-			AnimalTissue.ts
-		quests/
-			response/{quest.ts,setup.ts}
-			daily/{quest.ts,setup.ts}
-			colony/{quest.ts,setup.ts}
-			consumption/{quest.ts,setup.ts}
-			scp1867/{quest.ts,setup.ts,collection.ts,README.md}
-			scp1370/{quest.ts,setup.ts,display.ts,README.md}
-		sites/tests/SharedActions.json
-		sites/tests/RestAndResearch.json
-		sites/tests/DailyLife.json
-		sites/tests/ThreatAndCasualty.json
-		sites/tests/SightAndPassage.json
-		index.ts
-```
-
-There are no redundant `entity/entities` or `action/actions` levels. Actions belong beneath Pawn because pawns execute them. Materials have their own branch because a material is a definition, not an entity. Spatial mechanics and ownership transfers live with sites.
-
-When implemented, named anomalies belong under `catalog/actors/anomalies` and ordinary authored maps under `catalog/sites`. Quests live under `catalog/quests/<quest>/quest.ts` with shared gameplay initialization in `setup.ts`. Human-readable pass/fail transcripts live alongside each quest in its explicitly test-only `tests/` folder. They are not imported by gameplay or registered as variants. The automated replayer and additional state-level tests remain under the web project's `test/` tree. Stage folders are useful when a stage actually has multiple files/assets. Do not create empty quest, actor, or site stubs just to fill out the proposed tree. Quest content must not own a site's lifetime.
-
-## Entity, Template, Material
-
-- **Entity** is a persistent physical instance with identity, location, material, and amount. A site or transfer owns its actual record.
-- **Pawn** is an entity with agency and an action queue. Agency, independent movement, player permission, autonomy, and carryability are distinct. Staff and anomalies are definitions, not separate entity stores.
-- **Item** is a loose physical object. It has no mandatory food subtype. A **Door** has door mechanics; it is not an item just because it is made of steel.
-- **Facility** is a reusable activity location in the same entity collection, not a separate store. Its activities specify duration and signed need changes. A bed, armchair, and research desk are catalog templates of facilities, not hard-coded targets in autonomy. Facilities can be carried when unused but cannot be used in inventory.
-- **EntityTemplate** describes a named model: stable definition ID, display name, description, and initial defaults. Multiple instances share a definition ID, never an instance ID or mutable defaults. The generic contract lives in [EntityTemplate.ts](core/entity/EntityTemplate.ts); concrete models live in the catalog. There is no universal Definition abstraction.
-- **Material** describes what an entity is made of. A steel ingot and a steel door can share a material without sharing their entity kind. Instance `amount` is remaining abstract material units, not a weight simulation.
-
-Catalog entries are intentionally small, wiki-like records. For example, [FieldAgent.ts](catalog/actors/staff/FieldAgent.ts) gives its description, capabilities, needs, and diet; [AutomaticSteelDoor.ts](catalog/entities/doors/AutomaticSteelDoor.ts) selects steel and automatic operation. [Door.ts](core/entity/Door.ts) contains the mechanics. SCP-derived entries include attribution and explicit adaptation notes, also exposed by CLI inspection. The first source-backed quests are SCP-1867 collection corroboration and SCP-1370 gallery recovery.
-
-Named content may eventually need unique behavior beside its catalog entry. Add a narrow core behavior interface when such a feature is implemented; do not put named-definition tests in the coordinator or prebuild an ECS/plugin framework. Display documentation can later be generated from catalog metadata; a wiki generator is not implemented here.
-
-## Actions Stay Together
-
-[Move.ts](core/entity/pawn/actions/Move.ts) owns movement execution: eligibility, requesting a route, checking the next step, performing required door opening, and arrival. Shared spatial queries own terrain/entity obstruction and interaction routing. Take, Drop, Eat, and Wait each own their corresponding checks and effects. Approach movement is reused, not copied into a second execution system.
-
-Each action class implements `canStart` and `tick`. [ActionQueue.ts](core/entity/pawn/actions/ActionQueue.ts) has a small constructor dispatch and generic queue advancement, not a switch containing each action's rules. Adding a new action means its class, serializable action shape, and constructor entry. Only one queued action gets a turn; the next begins on the next tick.
-
-[Deliver.ts](core/entity/pawn/actions/Deliver.ts) is the first delegated manager order: `order alex deliver journal 2 4` collects the named object, carries it to the destination, and drops it. It reuses Take, Move and Drop, deriving the next step from actual ownership instead of saving a second execution queue or reservation. Each physical step takes its ordinary turn. Blocked deliveries wait visibly; cancellation or incapacity leaves cargo with its actual carrier. Reordering work does not teleport or refund anything. One carrier still holds only one entity, and competing orders use the same sequential pickup rules.
-
-[Pack.ts](core/entity/pawn/actions/Pack.ts) adds bounded protective handling for the [original courier](catalog/campaign/README.md#protective-courier-handling). A flagged fragile item cannot be picked up bare. A worker carries a compatible empty case, physically seals the specimen, and spends case condition only at closure. The specimen becomes carried by the case, not copied into container metadata. Existing transfer expands that ordinary ownership tree. Unpack exposes the same specimen for physical study and never refunds wear. Cases hold one nonliving item, not pawns or other cases. Core version 14 adds this plain item/action state; old development saves are discarded.
-
-[Equipment.ts](core/entity/Equipment.ts) derives actual worn tool/armor and loose
-cargo from entity ownership. Equip/Subdue/Rearm/RepairEquipment preserve those
-items and finite charges/condition through work, transport and death. Physical
-restraints remain distinct attached items and do not grant consent.
-[Custody.ts](core/entity/pawn/Custody.ts) handles conscious struggle, secure-cell
-ownership and release; ordinary Contain, Service and Lockdown provide prepared
-intake, upkeep and a bounded fallback. The [connected danger walkthrough](catalog/campaign/tests/connected-danger.txt)
-proves these mechanics with actual injury, medical recovery and maintained
-holding rather than another peaceful collection fixture.
-
-Action handlers are short-lived code objects, not saved class instances. Progress, source, target, and blocker are ordinary JSON queue data. Cancellation removes that intention only: it does not undo consumed material, earned research progress, need changes, drop a carried entity, teleport anything, or change autonomy. Facility occupancy is derived from the active action's work progress, so removing the queue entry releases it without a second reservation ledger or cancellation hook.
-
-[ControlPolicy.ts](core/ControlPolicy.ts) checks player/script/debug authority and edits queues. Immediate starts use the action's own checks. Appended intentions may depend on earlier actions (for example Take then Drop), so their physical eligibility is deferred until execution. Previews return eligibility without mutation or event publication. Debug authority bypasses player permission, not the executor's physical rules.
-
-### Action Outcomes
-
-- `completed`: the intention finishes and the next queued action may start next tick.
-- `blocked`: current conditions prevent progress. Explicit orders wait for correction or cancellation; self-chosen actions retry for at most eight consecutive blocked ticks.
-- `failed`: the target no longer exists. The queue removes this intention and emits an identified failure; it does not silently substitute another target. Later autonomous selection or pending orders can proceed next tick.
-- `interrupted`: incapacity, being carried, an urgent concern, or the autonomous blocked-tick limit ends a commitment. Past resource use and effects are retained. Facility use releases without dropping or teleporting anything.
-
-Player permission revocation pauses an explicit order rather than deleting it. Repeated autonomous blocking may still lead to rediscovery of the same option when it appears eligible; there is no general blacklist or traffic deadlock solver. Permanent missing targets are distinguished structurally, not by parsing error strings. Other action-specific invalid states currently remain blocked and use the retry policy. Explicit cancellation removes the named intention through the command result; it is not a simulated completion event.
-
-## Sequential Ticks
-
-The proposal/resolver system has been deleted. [Simulation.ts](core/Simulation.ts) clones the caller's state once, then executes directly against that working state:
-
-1. Increment the global tick and capture each site's starting entity IDs.
-2. Tick sites and entities in ascending, case-sensitive ID order.
-3. Each entity sees changes made by earlier turns. Removed entities are skipped; newly added IDs wait until the next tick.
-4. Advance transit physiology and commit unblocked arrivals after all site turns.
-5. Return the finished state and events. The input remains untouched.
-
-This boundary copy is for caller isolation, not simultaneous simulation: actions do not read an old snapshot or emit proposals for a later resolver. Stable ordering makes replay reproducible but deliberately gives earlier IDs priority. First successful movement/consumption wins. Later movers can enter a tile vacated earlier in the same tick. Swaps, fairness rotation, and traffic optimization are not implemented. Pathfinding routes around current blocking entities, including pawns. If no route exists, an active action waits and retries against the next tick's state.
-
-Opening a closed automatic door spends the opener's turn without movement. A later entity sees that door as open immediately. Door closure checks current nearby ground occupants when the door gets its own turn. There is no special end-of-tick door resolver.
-
-Pawn physiology advances once on the pawn's turn, including while carried. A carried pawn cannot act independently. Transit-owned pawns advance needs and bleeding once outside sites, and arrivals receive no extra local turn. Optional health conditions are separate from needs. Incapacitating wound severity or blood loss disables `canAct` and records the cause. Supply-backed clinical care can clear supported blood-loss incapacity without erasing wounds. Opt-in mortality records permanent death after an authored critical interval; dead bodies and their carried possessions persist, physiology stops and treatment cannot resurrect them. See [permanent casualties and reserve response](catalog/campaign/README.md#permanent-casualties-and-reserve-response).
-
-Autonomy off prevents new self-selected work, not queued commitments or physiology. Player permission is rechecked at execution. [Autonomy.ts](core/entity/pawn/Autonomy.ts) asks for a response to an observed concern first, then a needs-based action, then a configured patrol destination. It names no individual need or named actor and never performs a separate version of an action.
-
-Optional organ-mending capability and a single assigned service duty also use
-that same queue. For service workers, authored `criticalAt` need thresholds
-offer ordinary food/rest before due work; unassigned pawn need selection is
-unchanged. [Service.ts](core/entity/pawn/actions/Service.ts) approaches, repairs
-with a real part, and serves with a real supply batch. Completed repair and
-dated service receipts persist; coverage derives from receipt ticks, not a
-duplicate timer. The [SCP-1295 diner](catalog/quests/scp1295/README.md) proves
-remote staffing, resupply, lapse and revisit. Core version 18 adds duty/profile
-state without another execution system or a generic planner.
-
-[SCP-2006 curated hosting](catalog/quests/scp2006/README.md) adds only the
-contracts that the reused work needs: per-actor physical rehearsal, a nearby
-participant, and distinct reusable input identities. A presented print remains
-physical and is claimed by current service work; it cannot be moved during
-presentation or counted twice at the rig. Core version 19 adds these fields.
-This is the one containment showcase, not a simultaneous SCP-173 or general
-psychology framework.
-
-[SCP-3008 bounded evacuation](catalog/quests/scp3008/README.md) integrates those
-mechanics with one optional site operating cycle. Phase derives from a retained
-start tick; nighttime hostility and the next return opening are legible.
-Employees use existing attacks with an explicit nonlethal ceiling. A restored
-field shelter permits ordinary clinical care, or the same casualty can be
-carried home. Route-specific passenger/loading limits preserve actual group
-ownership. Core version 20 adds the cycle and fixes escort trail coordination
-when follower IDs sort before leaders.
-
-## Concerns And Response
-
-A **cause** is a fact the pawn observes, such as a hostile actor or a bleeding person. A **concern** is the reason to respond to that cause. **Urgency** is the concern's priority, not another need to replenish. A **response** is the action selected using the pawn's policy and capabilities. [Concern.ts](core/entity/pawn/concerns/Concern.ts) carries cause ID, category, urgency and action; it is derived from current observation rather than stored as a second world-state ledger.
-
-[Threat.ts](core/entity/pawn/concerns/Threat.ts) and [Care.ts](core/entity/pawn/concerns/Care.ts) own the local reasoning. [Concerns.ts](core/entity/pawn/concerns/Concerns.ts) selects a concern and owns conservative interruption policy. Concerns take precedence over routine needs as a separate priority group; their numeric urgency is not compared with hunger or curiosity. Initial priorities are immediate danger/confrontation 100, allied bleeding care 80, and withdrawal from a more distant threat 60. Equal concern scores follow provider order; threat distance and patient bleeding use stable ID ties.
-
-Optional [Response.ts](core/entity/pawn/Response.ts) data specifies faction, hostile factions, sight range, flee/confront policy and attack/medical capabilities. Catalog staff are not special-cased in the core: Soldier confronts because its data allows attacking, Researcher flees, and Medic treats when immediate danger does not take precedence. Faction hostility is explicit observer policy, not an assumption about every other faction. Medical supply charges and attack capability values are prototypes, not equipment or qualifications systems.
-
-`Response` is a plain data interface, not a class that executes behaviors or a framework for adding needs. Its current bundling of perception, faction policy and capabilities is provisional. New ordinary needs extend need data/action offers, not this interface. If equipment, skills or perception gain their own mechanics, move those responsibilities to their actual owners rather than turning Response into a growing list of unrelated settings.
-
-[Visibility.ts](core/site/Visibility.ts) uses the existing pathfinding library's line expansion within Manhattan sight range. Tile and ground-entity `blocksSight` properties determine transparency independently of movement; diagonal corner checks use the same sight rules. Catalog walls, closed steel doors and bookshelves obscure sight; pawns, low furniture and meals do not. There is no hearing, shared radio knowledge, observation memory or pursuit of last-known positions. A lost target is not tracked through walls by Attack or Treat. No Fear or Sanity bar is added: perceived danger creates a concern directly. Social remains deferred.
-
-### Physical Responses
-
-- **Attack:** approach through shared movement, then spend consecutive adjacent windup ticks before adding an actual wound. Moving or blocked approach resets windup. Loss of sight or target incapacitation ends the attack. The initial attacks are close-range; no projectiles, ammo, armor, death or ranged tactics are implemented. Soldiers deal 30 severity per two productive ticks; the stationary hostile guard deals 8 per three ticks and can actually injure nearby opponents.
-- **Flee:** re-evaluate visible hostiles and step toward a cardinal neighbor that increases distance from the nearest of them. It uses normal obstruction/door handling. No currently visible threat ends the action. This is local withdrawal, not guaranteed escape: a corner or route requiring a temporary approach can leave it blocked. Loss of sight means no current observed danger, not proof the area is safe.
-- **Treat:** approach a visible allied patient, work four consecutive adjacent ticks, then spend one medical charge to stop the most actively bleeding wound. Moving, blocked approach or nearby danger resets treatment progress. Treatment changes bleeding and records the medic ID, but preserves wound severity and accumulated blood loss. Another medic completing first cannot cause duplicate spending on that wound. A medic can finish further wounds in later actions while supplies remain.
-
-[Health.ts](core/entity/pawn/Health.ts) holds wounds (ID, severity, bleeding rate, optional treating actor) and accumulated blood loss. Bleeding advances regardless of autonomy, queue or transit ownership. A total wound severity or blood loss of 100 incapacitates immediately; stabilization does not automatically restore the ability to act. Values are prototype units, not clinical physiology. Wounds are not a generic low-health bar to fill, and injury is not copied into a synthetic treatment need. No self-treatment, long-term healing or medical appointment system is included.
-
-[Nurse.ts](core/entity/pawn/actions/Nurse.ts) adds a narrow clinical recovery course: a medically trained worker approaches an allied, stabilized patient physically positioned beside a clinical bed. A real pack is consumed when care starts; gradual blood recovery and spent supplies survive interruption. Bed and patient occupancy derive from active queues. A completed supported course can clear recorded blood-loss incapacity, not severe wounds or unrelated inability to act. The [carried-rescue walkthrough](catalog/campaign/tests/carried-recovery.txt) demonstrates delayed care without an admission cure. Core version 15 adds these fields and discards older snapshots.
-
-[SCP-2295](catalog/quests/scp2295/README.md) supplies a bounded organ-mending capability to ordinary autonomy. [Mend.ts](core/entity/pawn/actions/Mend.ts) selects the youngest nearby human with major organ trauma, spends real textile or finite self-material, and records the specific replacement. Brain trauma is unsupported. Replacements leave postoperative incapacity and other injuries; a paid Nurse course is still required. Core version 16 adds lung/brain facts and replacement provenance without a general anatomy model.
-
-### Commitments And Interruption
-
-New concerns interrupt only self-chosen facility activities, movement or waiting. Abandoning such an intention preserves earned output and releases facility use through the existing queue-derived ownership. Pending explicit orders are retained. Player/script/debug orders are not automatically overridden; turning autonomy off suppresses new response selection, not health progression or already queued responses. There is no new draft/enlistment state.
-
-Attack and Flee remain active commitments. Self-chosen Treat can be abandoned for immediate danger; explicit Treat instead blocks until safe or cancelled. Care avoids patients within two tiles of a visible threat, and treatment also checks the medic's immediate surroundings. These are bounded safety heuristics, not coordinated squad tactics or complete interruption arbitration. Carrying is never silently undone and physiology/capability guards still apply before execution.
-
-[ThreatAndCasualty.json](catalog/sites/tests/ThreatAndCasualty.json) is the acceptance scenario: soldier, civilian researcher, medic, wounded staff member and a stationary hostile guard. No timed script or controller order forces responses. The test advances up to 40 ticks and checks attacks, increased civilian separation and treated bleeding with finite supply consumption. It also checks unchanged input, insertion-order independence and save/reload continuation. Exact routes and response ticks are intentionally not the contract.
-
-### Need-Driven Selection
-
-[Needs.ts](core/entity/pawn/Needs.ts) owns need progression and generic urgency selection. Need values represent relative deficits on the same 0..100 scale: zero is satisfied; positive values up to 100 compete by urgency, highest first, with case-sensitive need ID breaking ties. Fractional values from need progression are retained. There is no minimum urgency cutoff beyond zero. Absent or satisfied needs do not invoke providers. An unsupported or currently unsatisfiable need does not prevent trying the next one: hunger 95 with no available food can fall through to fatigue 10 when a rest provider is available. A free pawn may choose food even at low positive hunger if no more urgent satisfiable need takes precedence.
-
-A `NeedActionProvider` exposes non-mutating `offer(context, needId)`, returning an ordinary action description and positive `relief`, or null. It does not declare one exclusive need. For the highest-urgency need with an available offer, choose the action offering the greatest relief; equal relief uses registration order. Each provider first chooses its nearest eligible reachable target by Manhattan distance then entity ID. Relief is the reduction on the next productive tick, capped at the current deficit, not the entire session's benefit. Costs to other needs do not count as relief. No cross-need weighted utility, travel-cost optimization, or queue preemption is attempted.
-
-Each action owns its offer logic. Eat matches hunger to material/diet-aware consumption. Facility actions discover the reductions advertised by the facility's activity data, so one action can offer relief for several needs. [NeedActions.ts](core/entity/pawn/actions/NeedActions.ts) only lists those providers. Adding another action does not require a named-need switch in Autonomy or Needs. [FindTarget.ts](core/entity/pawn/actions/FindTarget.ts) shares eligible/reachable target search between eating and facility activities; it replaces the former food-only search TODO without adding Provider/Consumer inheritance.
-
-The generic selector tests cover arbitrary needs and offer strengths. Real activity tests cover hungry-with-no-food choosing Sleep, stress choosing Relax, occupied-bed alternatives, optional curiosity choosing Research, and replay/cancellation. The interface remains intentionally small and provisional; the concrete behaviors are the reason for its shape.
-
-## Sleep, Relax, And Research
-
-[FacilityAction.ts](core/entity/pawn/actions/FacilityAction.ts) shares the mechanics that proved identical across sustained activities: checking a ground facility, approaching its interaction position, acquiring exclusive use on the first work tick, applying effects, and finishing a bounded session. The small concrete classes select the corresponding advertised activity. Research additionally checks for a research record and increments its progress. The generic helper does not contain a switch of action-specific effects or outputs.
-
-Initial catalog tuning, per productive tick (negative reduces a deficit):
-
-| Facility / Action        | Work Ticks | Fatigue | Stress | Curiosity | Output                     |
-| ------------------------ | ---------: | ------: | -----: | --------: | -------------------------- |
-| Bed / Sleep              |          8 |      -8 |     -2 |      none | none                       |
-| Armchair / Relax         |          6 |      -1 |     -6 |      none | none                       |
-| Research desk / Research |          6 |      +1 |     +3 |        -4 | +1 local research progress |
-
-These are prototype values, not a time or health model. Every pawn's normal need progression still runs once before action effects. Signed changes are clamped to 0..100 and apply only to needs that pawn has; sleeping does not manufacture stress, and researching does not manufacture curiosity. Staff templates have hunger, fatigue and stress. Curiosity is optional, used by a research-oriented pawn or test; staff without it can still be explicitly ordered to research for its output.
-
-Sessions have a configured maximum number of actual work ticks. Self-chosen restorative activities finish early when all their applicable benefits are satisfied; explicit sessions and productive Research retain their configured duration. Travel, door opening, and blocked ticks earn no effects or progress. `workTicks` lives in queued action state, while `elapsed` includes the whole intention. New commands reset workTicks to zero; save restore preserves it. Autonomy off does not itself interrupt active sessions. Rising stress does not preempt research mid-session; it can change the next chosen action. Cancellation retains past benefits/costs/output and abandons the remaining session.
-
-One facility serves one pawn at a time. Travel does not reserve it: first productive turn wins in stable actor order. Active use is derived from a capable ground pawn's current action with workTicks > 0. Occupied facilities are omitted from new autonomous searches, and already queued competitors wait/retry. Completion, failure, interruption or cancellation releases use. An incapacitated or carried pawn no longer reserves furniture indefinitely. Its physical body remains where it is and may still block that tile. Occupied facilities cannot be picked up or dispatched in a transfer.
-
-Facilities currently occupy one blocking tile; the pawn works at an adjacent reachable tile. Bed/chair names do not imply lying/sitting animation or occupying the furniture footprint. The browser still runs the archive, so these activities are headless only.
-
-[RestAndResearch.json](catalog/sites/tests/RestAndResearch.json) is the authored trial used by activity tests. It starts with a hungry, tired, stressed operator, no food, and a bed/chair/desk. Research progress is a durable counter on that desk, not a global currency, quest completion, specimen study, technology unlock, or implemented research project system. No social interaction model is added here.
-
-### Reading And Daily Care
-
-The next concrete activities reuse the same session, occupancy and offer mechanics without changing the selector:
-
-| Facility / Action        | Work Ticks | Reduces Per Work Tick                 | Increases Per Work Tick |
-| ------------------------ | ---------: | ------------------------------------- | ----------------------- |
-| Bookshelf / Read         |          6 | Curiosity 3, Restlessness 4, Stress 1 | none                    |
-| Exercise bike / Exercise |          5 | Restlessness 6, Stress 2              | Fatigue 3, Hunger 1     |
-
-**Curiosity** is the desire to learn or investigate. **Restlessness** is the desire for a change of activity, relieved by physical exercise or reading. There is no separate Boredom need: the proposed Boredom/Restlessness overlap was consolidated at the user's request. Curiosity remains distinct rather than becoming a synonym for entertainment.
-
-[Researcher.ts](catalog/actors/staff/Researcher.ts) is an optional staff template with growing Curiosity and Restlessness. Ordinary FieldAgent defaults remain hunger/fatigue/stress only. Hygiene, washing, and washbasins have been removed at the user's request, not retained as optional content. No fitness progression or powered exercise equipment is implied by facility names.
-
-[DailyLife.json](catalog/sites/tests/DailyLife.json) places a researcher among ordinary study/care facilities and six meals. Tests cover a 300-tick autonomous run, research versus reading, exercise leading to sleep, per-action reload continuation, and absent needs. Reading is not research and creates no desk progress.
-
-### Original Spec Priorities
-
-The [product specification](../../README.md#needs-and-psychological-state) initially names satiety and rest, with recreation, comfort and social contact affecting stress rather than separate decaying bars. The more detailed [Personnel Model](../../docs/personnel-model.md#3-transient-needs-and-pressures) lists Food, Energy, Social, Stress and Fear. These documents disagree about a separate Social reserve; implementing social interaction is useful either way, but the representation should be settled before adding that value.
-
-Food/Energy correspond to the replacement's hunger/fatigue deficits (opposite polarity); Stress is implemented in simplified form. Social interaction and fear responses are the next spec-backed gaps. Cards/conversation can provide social contact and stress relief; comfort, poor conditions and isolation can contribute to stress. Fear should follow perceived danger and safety, not rise like hunger. Mood, sanity and composure are derived outcomes in the spec, not additional replenishable needs. Curiosity is a user-endorsed extension. Restlessness is also a later experiment, not a need specified in those original documents; it remains unchanged in the hygiene-removal pass.
-
-The current policy favors specialists when all facilities are available: research gives more immediate Curiosity relief than reading, and exercise gives more Restlessness relief. Reading is a useful fallback when either specialized option is unavailable. Multi-need side benefits do not override the highest-need-first policy. This is a visible tuning limitation, not a reason to add personality randomness or a predictive utility framework yet.
-
-## Traversal And Interaction
-
-Entities declare `blocksMovement`: true prevents sharing their ground tile, false permits it. Catalog staff block by default, loose meals do not, and any other placed item can block without being a pawn. Carried entities never independently obstruct their carrier's tile. The moving actor is excluded from its own obstruction query. All ground entities on a tile are considered; one blocking entity is enough to prevent entry.
-
-Tiles and entities separately declare `blocksSight`. Neither obstruction implies the other:
-
-| Example                      | Blocks Movement | Blocks Sight |
-| ---------------------------- | --------------- | ------------ |
-| Solid wall or tall bookshelf | yes             | yes          |
-| Glass wall or low crate      | yes             | no           |
-| Dense mist                   | no              | yes          |
-| Open floor or loose meal     | no              | no           |
-
-[Tile.ts](core/site/Tile.ts) defines the two tile properties and the basic `.` (open) and `#` (solid) symbols. An authored site's optional `tiles` dictionary supplies additional symbols or overrides defaults. [SightAndPassage.json](catalog/sites/tests/SightAndPassage.json) uses `g` for transparent impassable glass and `m` for opaque passable mist. Core knows those properties, not those example names. `tileAt` is the shared lookup; `floorAt` means terrain permits movement, not that the terrain is optically clear. Unknown/out-of-bounds tiles permit neither movement nor sight. Site instantiation checks defined symbols and clones the dictionary; save restore preserves it.
-
-Sight checks all ground entities along the line. Carried items do not independently occlude sight. The observer and target entities do not occlude their own sight test, so an opaque object itself can be seen while still hiding entities behind it. Other opaque entities sharing the target or observer tile still block, as does an opaque terrain tile. Mist is binary opacity here, not distance attenuation, diffusion, height or volumetric fog. These are simulation properties, not new rendering assets.
-
-[TileMap.ts](core/site/TileMap.ts) exposes `traversalAt(site, position, actorId)`, returning clear, blocked with a reason, or an automatic door that must be opened. Door state determines its passage: open allows entry, closed automatic requires opening, and other closed doors block. An automatic door never masks another obstruction sharing its tile. The door requirement is not a third occupancy class.
-
-Doors remain an explicit domain exception: an open door does not obstruct movement or sight; a closed door uses its `blocksSight` property and the existing opening policy. Thus a closed glass door can transmit sight while blocking entry, and a closed opaque automatic door can be part of a planned route without being immediately traversable. Opening a door does not override opaque terrain or another blocker on its tile. The catalog must place doors on movement-permitting terrain.
-
-[Pathfinding.ts](core/site/Pathfinding.ts) and Move use that same query. A\* can plan through a door that can be opened, while actual stepping must open it first. Move rechecks before entry; no separate pawn-only occupancy rule exists. Movement orders can target currently occupied floor, since it may clear before execution; accepting an intention does not guarantee a route. Transfer arrivals require clear traversal and cannot remotely open doors. Routing allows departure from an already shared origin (for example after putting down cargo), but does not authorize entry into another obstructed tile.
-
-`interactionRoute` finds a shortest route to the target tile or a cardinally adjacent usable tile, with a fixed candidate order for ties. Take and Eat use it through `Move.approach`; food discovery uses it to test reachability. A blocking crate can therefore be approached and picked up without standing inside it. Routes and interaction positions are recomputed from current state rather than reserved in advance. The initial model has one-tile entities and cardinal interaction reach, not footprints or arbitrary interaction sockets.
-
-Crossing-only occupancy (`canTraverse` but not `canStop`) is deliberately deferred: discrete movement would otherwise need rules for temporary overlaps, interrupted crossings, and cancellation. Start with blocking/nonblocking rather than inventing those rules implicitly.
-
-## Diets Without Food Subclasses
-
-[Material.ts](core/material/Material.ts) separates nutritional density from consumer compatibility. A material's optional `nutrition` is nourishment available per material unit (default 1 in these abstract units). An entity's `nutrition` overrides that density, so meals using the same material can differ. [PackagedMeal.ts](catalog/entities/supplies/PackagedMeal.ts) explicitly provides nutrition 30. Each diet rule matches a catalog tag and supplies a conversion `efficiency`; 1 means full conversion and 0.5 means half. The highest matching efficiency applies once, never summed. An incompatible material provides no nourishment even if its object-level nutrition is high. Zero nutrition explicitly makes an otherwise compatible object non-nourishing.
-
-Examples: a metalivore accepts `metal`, a plastic consumer accepts `plastic`, and an ordinary plant-food diet accepts `edible-plant`. Wood is tagged `organic`, `plant`, and `wood`, not `edible-plant`. Classification does not imply digestibility. No special branch in Eat knows steel, plastic, meat, or meals.
-
-[Eat.ts](core/entity/pawn/actions/Eat.ts) owns both candidate filtering and consumption. Autonomous selection considers compatible, eligible, reachable objects by distance then ID. Explicit orders retain their target. Every productive tick consumes the minimum of the pawn's `eatingRate`, remaining material, and the amount needed to satisfy current hunger. Hunger reduction is consumed amount times nutritional density times dietary efficiency. Staff eat 0.1 material units per tick, so one full meal portion takes ten productive ticks when sufficient hunger remains. Offers use that same per-tick rate, rather than advertising a whole meal's benefit immediately.
-
-Eating remains queued until the pawn is satisfied or the object is exhausted. Travel and blocked time do not consume anything. Cancelling abandons only the intention: the same food ID, location and remaining amount persist. The pawn can leave and return, reload a save, carry/drop leftovers, or another pawn can finish them. Reissuing Eat resumes from the object's actual remaining amount; no duplicate action-owned food progress is stored. Fully satisfied pawns consume nothing. Tiny floating-point remainders are treated as zero. Pawns lacking hunger or a positive eating rate cannot consume food. Plain quantities represent divisible portions, not physical plates or packaging.
-
-Facility activities now advertise signed need effects, while Eat derives its offer from the particular consumer's diet. A material becomes food relative to the consumer, not through a universal food advertisement. Shared target search checks physical reachability and action eligibility; execution always rechecks current state. Future social/comfort activities can extend this only when their real mechanics require it.
-
-Material-compatible consumers can also eat doors and unoccupied facilities. [Consumption.ts](core/entity/Consumption.ts) removes actual material and proportionally reduces optional `integrity`: removing a quarter of remaining material also removes a quarter of remaining integrity. Structural catalog objects start at 100 integrity. Independent `damageIntegrity` reduces condition without removing material; bent or broken objects are not assumed to have lost mass. No repair mechanic or implicit regeneration exists, so repairing cannot presently create food.
-
-An object's integrity reaching zero makes it nonfunctional and nonobstructing but leaves its remaining material as consumable remnants. Amount reaching zero removes the actual entity, so doors stop blocking and queued references fail through the existing missing-target path. This is a simple structural model, not fracture physics, salvage spawning or geometry-based partial holes. Materialless damage does not replenish or erase edible quantity.
-
-Occupied facilities, objects carrying other entities, and objects carried by someone else cannot be eaten. Pawn entities are excluded regardless of diet: predation is not implemented. Tile materials are not entities and cannot be eaten through this action. There is one material per entity, no mixtures, digestion chemistry or weight model. A metalivore or wood-eater is a pawn with matching diet data, not another Eat implementation.
-
-## Sites, Transfers, And Saves
-
-[SharedActions.json](catalog/sites/tests/SharedActions.json) is an authored site: rectangular terrain rows, an optional tile-property dictionary, and placements naming catalog templates, local IDs, locations, and optional instance overrides. [EntityPlacement.ts](core/site/EntityPlacement.ts) owns placement data and instance construction beside site loading, separate from the reusable entity-template contract. Overrides replace supplied top-level fields; they are not a recursive patch language and cannot change entity kind. `instantiateSite` clones defaults, allocates fresh site/entity IDs, and remaps carried references, queued targets, and initial action IDs. Site instantiation checks geometry/references; this is trusted developer content, not a hardened mod loader.
-
-```ts
-import { entities, materials } from "./catalog";
-import template from "./catalog/sites/tests/SharedActions.json";
-import { createSimulation, advanceSimulation } from "./core/Simulation";
-import { instantiateSite, type SiteTemplate } from "./core/site/Site";
-
-const created = instantiateSite(
-  createSimulation(),
-  template as SiteTemplate,
-  entities,
-);
-const next = advanceSimulation(created.state, materials);
-```
-
-Transfers accept prepared ground entities within an explicit loading radius (zero by default), require empty travelling pawn queues, include carried dependencies, and move actual records into transit ownership. Blocked arrivals retain their payload and reason. Active transfer endpoints cannot be disposed; otherwise an empty site can be deleted. Core helpers are headless domain operations; campaign prepare/send adds actual roster, route, passenger, supply and readiness rules above them. No arrival creates a second identity or ticks its needs twice.
-
-[Snapshot.ts](core/Snapshot.ts) is JSON stringify/parse, root/version checks, and try/catch only. Restoring preserves IDs and state exactly; it is distinct from instantiation. Templates/handlers are supplied by code, not serialized or revived. Current core version 27 includes physical work, mortality/care, gear, custody/containment, service and operating-cycle state; earlier development shapes are discarded with no migrations or deep save validators. CLI session saves also retain campaign/admission facts, quest counters/status and the most recent 100 events, with session version 6 and a matching simulation version. These are trusted development saves, not a hardened external input format.
-
-The saved event history is not the current-tick delivery channel.
-`stepSession` can publish each complete event batch to a process-local
-callback, which the CLI uses for alarms and watched work failures. A busy
-tick may exceed100 events without losing an early death/breach notice or
-mistaking an early failed action for success. The persisted history remains
-bounded; no event bus or duplicate authoritative ledger is added.
-Every published event is stamped with the authoritative simulation tick at the
-sequential boundary, including transit notices. `events` therefore retains
-actual historical timing rather than requiring guesses from current status;
-local action helpers do not introduce separate clocks.
-
-## Command-Line Console
-
-From `src_web` with Node 22 selected:
+From `src_web`, with the project's supported Node version:
 
 ```sh
 npm run sim
-npm run sim -- --scenario daily
-npm run sim -- --scenario colony
-npm run sim -- --scenario consumption
-npm run sim -- --scenario scp1867
-npm run sim -- --scenario scp1370
-npm run sim -- --scenario response --batch --ticks 40
-npm run sim -- --scenario colony --batch --ticks 1100
+npm run sim < src/simulation/catalog/campaign/tests/connected-management.txt
+npm run sim < src/simulation/catalog/campaign/tests/connected-danger.txt
+npm run sim < src/simulation/catalog/campaign/tests/crew-loss-recovery.txt
+```
+
+Start with `brief`, `status`, `map` and `help`. The
+[campaign guide](catalog/campaign/README.md) explains the finite home roster,
+equipment, care, research, routes and fallback choices. Transcripts are
+test-only normal commands, never imported or executed by gameplay.
+
+| Command                              | Meaning                                                                                              |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| `order alex take meals 2`            | Physically collect a portion from a stackable supply                                                 |
+| `order alex deliver @held 7 4`       | Collect/carry/drop the worker's actual loose cargo                                                   |
+| `prepare blackwood alex ben`         | Assign ordinary assembly movement, with autonomy off                                                 |
+| `finish alex ben`                    | Advance captured commitments and linked followers, stopping on a blocker/failure or after 1000 ticks |
+| `send blackwood alex ben`            | Depart only when the actual team is physically prepared                                              |
+| `site blackwood`                     | Change the inspected retained site, not the simulation clock                                         |
+| `inspect @1`                         | Read the actual entity, including across sites or in transit                                         |
+| `queue alex` / `cancel alex`         | Inspect or remove an intention, without refunding work                                               |
+| `assign ben holding`                 | Assign one recurring service duty using ordinary autonomy                                            |
+| `run 200`                            | Advance until a new critical alarm, quest result or the requested limit                              |
+| `step 20`                            | Deliberately advance exactly twenty complete ticks                                                   |
+| `save <new-path>` / `restore <path>` | Save or restore the same ongoing session                                                             |
+
+Commands append rather than replace queued work. Accepted does not mean
+executing now or guaranteed to succeed. `queue` and `finish` expose blockers.
+`@held` is scoped to the ordering worker's one loose carried object, excluding
+worn equipment and attached restraints. Exact IDs and stable labels are
+unambiguous; ambiguous aliases are rejected.
+
+Pawns have stable `@N` labels and other objects `oN`. Home staff receive the
+first labels. Labels are never reused after removal, and map cells widen for
+multi-digit labels. Coordinates are zero-based. `++` marks stacked ground
+occupants; every entity remains listed below the map.
+
+Global inspection does **not** grant remote gameplay control. Transit
+inspection reports the real owner, arrival/blocker, health, gear and custody
+with no invented map position or local-autonomy preview. Orders remain
+selected-site scoped.
+
+## Dependency And File Ownership
+
+```text
+adapters -> application -> simulation/catalog -> simulation/core
+core -X-> catalog, application, adapters, browser, legacy
+```
+
+Core accepts supplied definitions/materials. It has no hidden default catalog,
+registration singleton, DOM, storage, network, wall-clock timer or random
+global. State is plain serializable data, not saved handler instances.
+
+| Area                         | Main entry points                                                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sequential state/ticks       | [Simulation.ts](core/Simulation.ts), [Snapshot.ts](core/Snapshot.ts)                                                                               |
+| Entity definitions/instances | [Entity.ts](core/entity/Entity.ts), [EntityTemplate.ts](core/entity/EntityTemplate.ts), [EntityPlacement.ts](core/site/EntityPlacement.ts)         |
+| Spatial rules/ownership      | [Site.ts](core/site/Site.ts), [TileMap.ts](core/site/TileMap.ts), [Pathfinding.ts](core/site/Pathfinding.ts), [Transfer.ts](core/site/Transfer.ts) |
+| Pawn work/control            | [Pawn.ts](core/entity/pawn/Pawn.ts), [ActionQueue.ts](core/entity/pawn/actions/ActionQueue.ts), [ControlPolicy.ts](core/ControlPolicy.ts)          |
+| Health/custody/gear          | [Health.ts](core/entity/pawn/Health.ts), [Custody.ts](core/entity/pawn/Custody.ts), [Equipment.ts](core/entity/Equipment.ts)                       |
+| Named home/routes            | [Home.ts](catalog/campaign/Home.ts), [setup.ts](catalog/campaign/setup.ts), [Campaign.ts](catalog/campaign/Campaign.ts)                            |
+| Application/text surface     | [ScenarioSession.ts](../application/ScenarioSession.ts), [Console.ts](../adapters/cli/Console.ts), [Order.ts](../adapters/cli/Order.ts)            |
+
+The catalog index lists definitions, not behavior. Named source-specific
+content lives beside its own setup and README. Prefer small explicit contracts
+earned by a playable scenario over a general quest/plugin/crafting framework.
+Detailed architectural decisions live in [docs/decisions](../../docs/decisions).
+
+## Sequential Ticks And Events
+
+`advanceSimulation` clones the caller's state once, increments the global tick,
+then visits sites and their starting entity IDs in case-sensitive sorted order.
+Each entity sees earlier turns' changes. Removed IDs are skipped; newly added
+IDs wait until the next tick. Transit physiology and admission occur after
+local turns, without giving an arrival a second local turn.
+
+This is not a simultaneous proposal/resolver system. First successful movement,
+pickup or consumption wins. Later actors can enter a tile vacated earlier in
+the same tick. Swaps, fairness rotation and general traffic optimization are
+not implemented.
+
+Every published event receives the authoritative simulation tick at this
+boundary. The application can deliver the full current-tick batch to runtime
+callers while saving only the most recent100 events. `run` and `finish` use the
+full batch, so busy ticks cannot hide an early death or failed commitment.
+
+Campaign `run` stops **after the complete tick** on new warning, breach, escape
+or death. Death/breach/escape outrank routine warnings for presentation; all
+events remain delivered. Old history does not repeatedly stop resumed time.
+Explicit `step` and scoped `finish` remain deliberate operations, not implicit
+rollback or automatic response. Batch mode returns exit2 if an alarm stops it.
+
+## Physical Entities And Ownership
+
+An entity has a persistent ID, definition ID, material, amount and location.
+An instance belongs to exactly one site or transfer. A location is ground or
+carried by another entity in that owner's collection:
+
+- A pawn carrying a case owns its ordinary cargo relationship.
+- The case owns the same nested specimen, not a copied inventory entry.
+- Worn equipment remains a carried item with its own condition and charges.
+- A restraint is an attached item carried by its subject, not a consent flag.
+- A holding facility owns the same contained pawn through that relationship.
+- A dead pawn remains a body with its actual carried possessions.
+
+`positionOf` resolves the ownership chain. Site instantiation gives local IDs
+globally distinct identities and remaps supported local references. Loading a
+save preserves exact IDs instead of instantiating copies.
+
+Transfers require actual prepared ground roots, a valid loading area and empty
+travelling pawn queues. They include the full carried dependency tree and move
+the actual records into transit. Active work/gear leases and live-hostile
+restraint requirements are rechecked. Blocked admission retains the transfer,
+reason and payload while physiology/custody continue. Site disposal rejects
+nonempty sites or active transfer endpoints.
+
+Campaign rules add roster, route, readiness, passenger and physical-docket
+checks above generic transfer. Outbound readiness requires hunger/fatigue below
+85; exhausted return remains prepaid. Reserve dispatch moves one of two
+pre-existing responders using finite reserved allocations, not a new template.
+It respects research gates and performs no automatic rescue.
+
+## One Action Queue
+
+Each action owns `canStart` and `tick`; `ActionQueue` only dispatches and
+advances the current commitment. Approach movement reuses `Move`, including
+ordinary door opening. Multi-step delivery, care, packing and intake do not
+create competing executors or hidden pawn queues.
+
+| Outcome       | Queue meaning                                                              |
+| ------------- | -------------------------------------------------------------------------- |
+| `completed`   | Remove the intention; the next can begin next tick                         |
+| `blocked`     | Wait for correction/cancellation with a reason                             |
+| `failed`      | Remove the intention because its required target is gone                   |
+| `interrupted` | End a commitment for incapacity, carrying, urgent response or retry policy |
+
+Explicit queued work can depend on earlier work, so later intentions defer
+physical eligibility until execution. A player authority check is repeated at
+execution. Revoked permission pauses an order; it does not erase it. New
+commands reset progress and strip paid-state markers; saved current work
+retains them.
+
+Cancelling never refunds consumed inputs, restores condition, moves cargo or
+rolls back earned effects. Ordinary facility occupancy derives from productive
+current work. Funded equipment repair additionally retains its bench and gear
+claim until explicit resolution even after progress resets. No separate
+reservation ledger is needed. Self-chosen work abandons eight consecutive
+blocked ticks; this is a bounded retry policy, not a deadlock solver.
+
+## Needs, Concerns And Routine Work
+
+[Needs.ts](core/entity/pawn/Needs.ts) uses 0..100 deficits: zero is satisfied.
+Highest satisfiable need wins, with need ID as the stable tie break. Providers
+offer ordinary actions and next-productive-tick relief, not whole-session
+rewards. Equal relief uses provider order. An unsatisfiable high need does not
+prevent trying a lower one. There is no predictive utility or travel-cost
+optimizer.
+
+Observed [Threat](core/entity/pawn/concerns/Threat.ts) and
+[Care](core/entity/pawn/concerns/Care.ts) concerns precede routines. Immediate
+danger/confrontation, allied bleeding and distant withdrawal have distinct
+priorities. Factions/hostility are explicit policy. There is no hearing,
+shared radio knowledge or last-seen pursuit. Attack stops after losing sight;
+an explicit Treat can approach its named patient but requires visibility at
+the treatment position.
+
+Autonomy off prevents new choices, not physiology or queued commitments.
+Urgent concerns can interrupt suitable self-chosen work; explicit work is not
+silently replaced. For an assigned service worker, authored critical need
+thresholds allow ordinary food/rest before due work. A single service duty and
+the organ-mending capability also produce normal queued actions.
+
+[FacilityAction](core/entity/pawn/actions/FacilityAction.ts) shares approach,
+exclusive use, signed need effects and bounded sessions. Sleep, Relax, Read,
+Exercise and the earlier Research demonstration use it. Travel/blocked turns
+earn no work. Self-chosen restorative work can finish when benefits are
+satisfied; explicit sessions retain their duration. Research's local progress
+counter is not the physical Study/finding system or a global technology currency.
+
+Curiosity and Restlessness remain separate optional needs. Hygiene/washing
+were removed by user direction. Social interaction, mood and richer psychology
+remain future work; they are not additional invented bars here.
+
+## Traversal, Sight And Material
+
+`blocksMovement` and `blocksSight` are independent on tiles and entities.
+Glass can block passage but transmit sight; opaque mist can do the reverse.
+Unknown/out-of-bounds tiles permit neither. Carried objects do not independently
+block their carrier's tile. Broken zero-integrity objects no longer obstruct,
+but positive remaining material is not silently removed.
+
+`traversalAt` returns clear, a blocker, or an automatic door requiring opening.
+A closed automatic door can appear in a route but consumes an opening turn;
+it never hides another blocker sharing that tile. Door closure observes actual
+nearby ground occupants. Visibility uses deterministic line expansion and
+corner checks, not roofs, height, light attenuation or volumetric fog.
+
+Materials define tags and optional nutritional density; a consumer's diet
+defines compatibility/efficiency. Highest matching efficiency applies once.
+An entity can override nutrition, including zero. Wood being plant/organic
+does not make it ordinary edible plant food.
+
+Eat consumes the minimum of rate, remaining amount and hunger requirement on
+each productive tick. Partial food retains identity and location; depleted
+objects are removed and later references fail explicitly. Material consumption
+proportionally reduces optional integrity; impact damage changes condition
+without inventing lost mass. Living pawns, occupied facilities, nested cargo
+holders and objects carried by someone else are not food targets.
+
+Quantity-aware Take only splits explicitly stackable ordinary supplies.
+Whole-stack pickup preserves identity; a portion receives one new ID with
+conserved quantity and per-unit condition. People, cases and identified
+samples cannot be divided. There is no automatic stack merge or inventory editor.
+
+## Danger, Custody And Recovery
+
+The [original intervention loop](catalog/campaign/README.md#equipment-backed-intervention)
+exercises equipment-backed danger without changing the peaceful source quests:
+
+- Equip/Unequip physically fit actual items. Armor reduces impacts and wears;
+  charged Subdue is temporary, not injury repair or cooperation.
+- Rearm and RepairEquipment use real finite supplies and work. They retain
+  gear identity and do not restore unrelated charges/condition.
+- A trained medic's worn kit supplies stabilization; empty/broken worn kits
+  do not silently fall back to a separate initial allowance.
+- Restrain fits a compatible actual band under subdual or effective holding.
+  Conscious struggle wears it locally and in transit. Low condition warns;
+  breakage leaves the real item and releases carried custody.
+- A band can be exchanged physically under safe conditions. The original
+  remains attached during work and keeps its worn condition after replacement.
+- Cooperative or effectively restrained walking uses linked Escort/Follow
+  actions. Each pawn moves on its own turn; the follower uses the leader's
+  vacated trail, and the destination is yielded to the passenger.
+- Contain requires compatible, prepared holding and actual transport custody.
+  Service provides finite coverage; Lockdown buys bounded emergency time with
+  a physical part. Lapse releases the original subject at the hatch.
+- Safe re-restraint and extraction permit later medical transfer without
+  manufacturing a breach. Hostility and consent do not change through care.
+
+Health separates wounds/bleeding, accumulated blood loss, organ trauma,
+temporary subdual, pending postoperative recovery and permanent death.
+Default Nurse addresses blood/postoperative care; explicit `wounds` chooses a
+different finite course. Original wounds keep treatment provenance. Independent
+postoperative and subdual obligations cannot be erased by another course.
+Death, unresolved major organ trauma and arbitrary inability are not healed.
+
+Mortality is explicit opt-in health data. Pre-fatal and critical warnings leave
+a real intervention opportunity; ignoring them can cause permanent death.
+Bodies stop physiology/work and retain gear/cargo. The
+[catastrophic-loss transcript](catalog/campaign/tests/crew-loss-recovery.txt)
+loses the original crew through actual combat, then uses an existing reserve
+to recover original gear and one body. Other bodies remain for follow-up:
+there is no infinite rescue, free replacement or resurrection.
+
+## Study, Service And Named Content
+
+Study physically requires identified intact sources, productive work and a
+station. Findings retain actor, tick and actual source IDs. Repeated ordinary
+plans do not duplicate findings; per-actor rehearsal plans qualify each host
+separately. A contained-source plan requires actual ownership by effective
+holding throughout work, not a nearby carried subject. Dead bodies cannot
+satisfy a living-source study.
+
+Service physically repairs/provisions a station using exact finite inputs.
+Coverage derives from dated receipts; due/lapse warnings have no extra timer.
+Reusable programmes retain their identity and are claimed during presentation;
+distinct-input rules prevent counting the same print twice. Clearing a duty
+does not cancel current funded work.
+
+| Content                                      | Playable purpose and source notes                                                                                     |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| [SCP-1867](catalog/quests/scp1867/README.md) | Home corroboration opens retained Kestrel logistics; Blackwood remains off-map                                        |
+| [SCP-1370](catalog/quests/scp1370/README.md) | Recover the same pawn into a physical home display                                                                    |
+| [SCP-294](catalog/quests/scp294/README.md)   | Four paid requests, exact source depletion and identified repeat samples                                              |
+| [SCP-507](catalog/quests/scp507/README.md)   | Ordinary-world passenger/flashlight/cased-record return; no subsequent shifts                                         |
+| [SCP-2295](catalog/quests/scp2295/README.md) | Youngest-patient lung replacement, finite textile/self-material and postoperative care; no brain cure                 |
+| [SCP-1295](catalog/quests/scp1295/README.md) | Real remote staffing, repair and resupply; no global harmful effects                                                  |
+| [SCP-2006](catalog/quests/scp2006/README.md) | Per-host rehearsal and distinct curated programmes; the one selected showcase, not arbitrary psychology/shapeshifting |
+| [SCP-3008](catalog/quests/scp3008/README.md) | Field-care versus carried-evacuation choice, retained cycle and fixed reopening; explicitly capped nonlethal impacts  |
+
+Source credit and adaptation limits live beside each named entry. Original
+care/courier/intervention scenarios establish reusable mechanics without
+distorting an SCP to fit them. The [portfolio checkpoint](../../docs/scp-expedition-priorities.md)
+distinguishes implemented bounds from future candidates. No new images or
+browser bindings are implied.
+
+## Isolated Trials, Saves And Verification
+
+`--scenario response|daily|colony|consumption|scp1867|scp1370` selects an
+isolated quest; `sight` is a sandbox. The two isolated recovery quests require
+`deploy <staff-type> <name>` then `start`. Deployment creates trial actors at
+authored entry tiles and binds actual identities to quest roles. Campaign
+travel instead moves its finite existing roster. Trial setup does not tick.
+
+[Quest.ts](core/quest/Quest.ts) observes state/events without ordering actors
+or owning sites. Failure precedes simultaneous success; success can occur on
+the deadline tick before timeout. Final results and event counters persist,
+while state conditions describe the actual current world. Re-evaluating the
+same tick is idempotent. Role bindings separate objectives from concrete names
+and test setups; the evaluator is not a general branching quest language.
+
+Current saves use core version30 and session version6. [Snapshot.ts](core/Snapshot.ts)
+and `restoreSession` perform JSON/root/version checks, not deep gameplay
+validation or repair. Development saves are disposable: incompatible versions
+are discarded without migrations or retained old implementations. Save requires
+a new filename; restore preserves exact identities, work, receipts and labels.
+
+Batch exits are 0 for finished/sandbox work, 1 for quest failure, and 2 for
+setup, unfinished quests or alarm-stopped runs. A build's deployment-artifact
+verification is a local check, not authorization to deploy.
+
+```sh
+npm run test:simulation
+npm run typecheck
+npm run check
 npm run benchmark:simulation -- 40
 ```
 
-`response`, `daily`, `colony`, `consumption`, `scp1867` and `scp1370` have quest conditions; `sight` is an inspection sandbox. The Consumption setup leaves a diner with autonomy off and a two-portion meal; the player must issue an eating order before the deadline. The SCP quests likewise require player-directed recovery and study, not automatic quest-solving scripts. The CLI adapter uses the same [ScenarioSession](../application/ScenarioSession.ts) as the tests, not the archived browser controller. Vite is only a local TypeScript module loader in middleware mode; no game HTTP server is started.
+Use targeted existing tests during a slice and the full existing pipeline at
+integration checkpoints. Tests cover ownership/resource conservation, blocked
+work, partial failure, current-version replay and actual normal-command play.
+The benchmark is a local measurement, not a guaranteed performance target.
+Do not preserve obsolete mechanics merely to satisfy an old fixture.
 
-To try partial consumption: `load consumption`, `order daniel eat meal`, `step 3`, `cancel daniel`, then `inspect meal`. The meal retains 1.7 units. You can move away, save/restore, and order eating again; the quest succeeds when Daniel is fed and at least a quarter portion remains. `run` alone does not solve this scenario because gameplay setup does not include the test answer.
-
-Each map cell contains its terrain character followed by a stable label. Pawns use roguelike `@1`, `@2`, etc.; non-pawn objects use `o1`, `o2`, etc. The legend shows that label beside the readable name and full identity, including carried entities. Labels are session-wide, saved, and never reassigned when an entity disappears. Multi-digit labels widen all map cells uniformly. `++` means stacked ground occupants; the legend lists all of them. Full IDs, local aliases and displayed labels work in commands, including `move @2 3 5` and `inspect @2`. Bare old numeric tokens such as `02` are no longer used. Coordinates are zero-based. This changes the CLI inspection surface, not the still-legacy browser GUI; a future GUI can reuse the same session labels.
-
-### Deploy Before Starting
-
-The SCP-1370 and SCP-1867 quests load into a `setup` phase: their locations, anomalies and evidence exist, but the player team does not. `status` lists available staff templates, authored entry positions, capacity and required quest roles. No simulation or deadline ticks run during setup, and gameplay orders are rejected until `start`.
-
-```text
-load scp1370
-deploy field-agent alex
-start
-inspect @2
-move @2 3 5
-step 3
-```
-
-SCP-1370 is the already-authored pawn `@1`; Alex becomes `@2`. For Blackwood's mission, use `deploy researcher ben`, then `start`. Deployed agents start with autonomy off, matching deliberate player-controlled mission preparation.
-
-Syntax is `deploy <staff-type> <name>`: `researcher` is a template, `ben` is one person's name. All player deployments use the next clear position at the map's authored `entry`; no entry argument is needed. The first agent automatically fills the mission's single required role (handler or investigator). The quest follows that person's actual entity ID, including event and failure checks, rather than requiring a pawn literally named after the role. Further agents are support staff up to the authored team limit (two in each initial SCP quest), without replacing the first agent's role. Unsupported templates, occupied entries, duplicate names and excess team size are rejected without mutation. Names use lowercase letters, digits and hyphens; `oN` labels are reserved. Multi-role mission team assignment is not exposed in the CLI yet.
-
-`start` requires every declared role to be assigned to an available pawn. It creates the quest progress and starts its deadline at the current tick. Deployment and a second start are rejected once running; no free reinforcements are implied. Pre-staffed trials (`response`, `daily`, `colony`, `consumption`) and the sight sandbox still start immediately; they do not offer deployment. These trials retain their authored actors because their purpose is testing those particular states.
-
-Session saves are now version 6 and preserve campaign identity, care admissions, setup/running phase, deployed trial teams, role bindings, label mappings and counters. Earlier sessions are discarded without migration; simulation snapshots retain their current core version. A saved setup can be restored and started normally. Batch mode reports a setup-phase session as incomplete (exit 2); prepare/start/save it through normal commands before using batch restore. Deployment from templates belongs only to isolated trials. The default campaign transfers actual roster identities.
-
-### Persistent Home Campaign
-
-`npm run sim` now starts the [Provisional Site campaign](catalog/campaign/README.md). Inspect finite staff and supplies, `prepare blackwood alex ben`, wait for physical assembly, then `send blackwood alex ben`. One physical docket funds an outbound group and its return. `site blackwood` selects the retained outpost; prepare/send home uses the same ownership transfer with carried cargo and injuries. `status` shows transit and blocked admission. Every site keeps ticking.
-
-Deliver the journal/specimen to the home comparison bench and perform physical study to unlock the Kestrel depot. Carry the real field kit for its survey and choose which finite supplies to bring back. The gallery route transfers SCP-1370 into the home display. Findings, removed supplies, staff and sites persist after success or partial withdrawal. No outcome resets a mission map. See [decision 021](../../docs/decisions/021-persistent-text-campaign.md) and the [ordinary-command walkthrough](catalog/campaign/tests/home-loop.txt).
-
-The [connected management walkthrough](catalog/campaign/tests/connected-management.txt)
-continues through early care, Blackwood/Kestrel and store evacuation without a
-reset. `finish <workers...>` advances their captured commitments, including
-linked escort followers, until completion or a blocker/failure/interruption,
-with a 1000-tick bound. `@held` in an order resolves that worker's actual cargo.
-Neither command changes simulation rules or invents a solution.
-
-```text
-help
-load scp1867
-deploy researcher ben
-start
-brief
-map
-status
-inspect ben
-order ben take journal
-step 20
-order ben move 3 3
-step 20
-order ben drop journal
-step 1
-queue ben
-events
-autonomy ben off
-cancel ben
-sites
-site site-1
-save /tmp/my-simulation.json
-restore /tmp/my-simulation.json
-inspect bench
-order ben study bench marsh-lead
-quit
-```
-
-`brief` shows mission context and source credits. `inspect` returns authoritative entity data, catalog description/attribution and currently discoverable concerns and a need-action candidate without changing state. Orders use `order <name|@N> <verb> <target>`, `order <name|@N> move <x> <y>`, `order <name|@N> wait <ticks>`, or `order <name|@N> study <station> <planId>`. The shorter `move` and `study` commands remain available. Inspect a station for its study plans and recorded findings. JSON parameters are not required or accepted by `order`; the CLI constructs typed actions internally and resolves names, full IDs and labels. `step` advances exactly the requested ticks even after a quest ends. `run` stops at quest success/failure or its supplied limit. Commands use ordinary player permission and physical execution; there is no hidden force-complete command. New activity progress starts at zero and pending orders retain their usual deferred eligibility checks.
-
-## Source-Backed SCP Quests
-
-The first two candidates come from the [prioritized portfolio](../../docs/scp-expedition-priorities.md). Each is playable through the CLI and uses the same authored setup as its test-only answer keys. Sources and scenario-specific departures from canon are documented beside the quest.
-
-- [SCP-1867: Corroborate the collection](catalog/quests/scp1867/README.md): recover a journal and preserved specimen from a vault to temporary intake, then compare them against an independent survey and laboratory dossier. All four sources must be nearby and intact. Blackwood's own journal is not counted as an independent source. The resulting named, dated finding preserves provenance and identifies an original game-authored follow-up lead. Blackwood himself remains at the outpost off-map.
-- [SCP-1370: A place in the gallery](catalog/quests/scp1370/README.md): carefully carry the toppled sapient exhibit into a glass display bay, perform controlled observation, return to reception and leave the door closed. Its identity remains a pawn during carrying. There is no combat or external power requirement; damaging it fails the mission. The bay abstracts an adequately sized enclosure, not a full container simulation.
-
-[Study.ts](core/entity/pawn/actions/Study.ts) is the shared physical executor. A facility's `study.plans` declares a plan ID, title, required source definition IDs, productive duration, and authored finding. The worker approaches through ordinary routing. Distinct matching source instances must remain within one tile of the station, on the ground or carried by that worker, with positive amount/integrity. Missing sources or interrupted approach reset progress. The station is exclusive while productive study is active, using the same queue-derived ownership as other facility work.
-
-Completion writes one finding per plan at that station, with the actor ID, global tick and actual source IDs. Repeating a completed plan does not duplicate the finding or consume evidence. Save/reload preserves partial work and findings. This is named evidence, not spending the earlier Research action's generic progress counter. The initial plans are explicit orders, not new autonomous needs. Source-specific result text belongs in the catalog; core contains no SCP-ID switches.
-
-The isolated quests use one local map with intake. The default campaign instead reuses their evidence and exhibit across retained remote sites and home intake; its Blackwood finding unlocks the Kestrel depot. Portable cases, resident aquarium care, independently walking SCP-1370, dialogue and extensive containment systems are deliberately deferred. No new images or browser bindings are added.
-
-### Cooperative Care Transfer
-
-The original [care-transfer scenario](catalog/campaign/README.md#cooperative-care-transfer) adds explicit cooperative escort and living admission before SCP-507. `order casey escort mira 2 3` guides the person through ordinary movement, one turn per pawn. `send home casey mira` preserves both identities; `admit mira bed` requires physical home arrival and stabilized bleeding before ordinary rest. Core version 13 adds linked escort/follow actions; no hostile capture or universal healing is implied.
-
-[SCP-507 ordinary-world retrieval](catalog/quests/scp507/README.md) now reuses those mechanics plus the courier case. His personal flashlight, the actual passenger, and the responder's cased signal log all retain identity through transit. Home review requires the person and exposed record; partial return leaves evidence at the retained site. Source attribution and the deliberately unmodeled shift/contact-window mechanics are explicit.
-
-### Bounded SCP-294
-
-The home campaign includes [SCP-294](catalog/quests/scp294/README.md): `brief scp294`, then `order ben dispense machine tracer tracer`. Four authored requests use finite coins and explicit physical sources. The worker approaches and spends time at the machine. Cancellation after payment keeps the spent coin; completion atomically moves one portion from the source into an identified sample. Queue inspection shows paid work and blockers. Machine inspection and campaign status show dated results, including paid OUT OF RANGE trials with no output.
-
-`Deliver` clears samples for another request, and ordinary Study compares two distinct tracer cups. The [normal-command transcript](catalog/quests/scp294/tests/repeated-tracer.txt) demonstrates repeatability and source depletion. Core version 12 adds sample provenance and machine records; old development saves are discarded without migration. The catalog owns request names and attribution; [Dispense.ts](core/entity/pawn/actions/Dispense.ts) implements the shared physical action. No arbitrary requests, dangerous effects, restocking or machine freight are implied.
-
-Save requires a new filename and never overwrites an existing file. Restore replaces the session with its saved simulation and quest state. Batch mode accepts `--restore <path>` as an alternative starting session, and returns exit code 0 for success/sandbox, 1 for quest failure, 2 for an active quest whose requested tick limit expired. Input can also be piped to the ordinary console. This is a developer/playtest surface, not a shipped UI or network API.
-
-Movement and other orders **append**, not replace the current intention. Acceptance reports the new action's queue position and any earlier blocked action. The map legend shows the current action ID, its destination/target and pending count. `queue <actor>` lists every intention without advancing time. If an earlier move targets an occupied tile, a later move waits behind it; `cancel <actor> <earlier-action-id>` removes only that blocker, then `step` advances the remaining order. Accepting a move does not imply it is currently executing or that a route is available.
-
-## Quests As Integration Tests
-
-[Quest.ts](core/quest/Quest.ts) observes state and events; it never orders actors, owns sites, or fabricates success. Catalog quests define named objectives, failure conditions and a deadline. Conditions cover matched events, need bounds, entity amount, aggregate material stock, ability to act, separation, elapsed ticks, recorded findings, ground delivery locations, closed doors, and lost/damaged evidence. References resolve through the quest instance's role bindings first, then fall back to local IDs for fixed authored entities. Multi-site references, branches, rewards and a scripting language are not implemented yet.
-
-Objectives and concrete setup data are separate. The Consumption quest refers to the roles `diner` and `meal`, not a person named Daniel. Its playable setup supplies the pawn, food, locations and starting hunger, plus `bindings: { diner: "daniel", meal: "meal" }`. Scenario loading resolves these local IDs to actual entity IDs before starting the quest. Another caller can use the same quest with a different pawn and food by supplying different bindings to `startQuest`; tests verify both success and incapacitation failure with independently authored entities. Personal names belong in setup and command transcripts, not reusable objective criteria. Deployment missions fill their bindings during team selection instead. Neither mechanism requires importing test data into objective definitions.
-
-[Response](catalog/quests/response/quest.ts) succeeds when the soldier attacks, researcher withdraws and gains separation, and medic treats the casualty. It fails for soldier/civilian incapacitation or an incomplete deadline. [Daily life](catalog/quests/daily/quest.ts) requires sustained work/care and retained food. [Colony](catalog/quests/colony/quest.ts) checks a 12-worker, 42x26 site with shared facilities, a medic, a bleeding worker and finite food for at least 1000 ticks. Its resource condition is total food, not even usage of individual piles. [Consumption](catalog/quests/consumption/quest.ts) checks completion of eating, satiety and retained leftovers; it can fail by incapacity or deadline.
-
-Each quest package has `quest.ts` (the challenge) and `setup.ts` (the shared playable site setup). Gameplay and tests both load that setup. Success/failure "answer keys" are tests, not catalog variants. At the user's request they are now easy to find beside the scenario: `catalog/quests/<quest>/tests/*.txt`. SCP-1370, SCP-1867 and Consumption have transcripts containing exactly the commands accepted by the interactive CLI, starting with `load`. Lines beginning with `#` are comments accepted by the CLI too. No hidden state edits, test-only commands or automatic quest completion are needed to play these solutions.
-
-For example, open [SCP-1370's passing transcript](catalog/quests/scp1370/tests/pass.txt), enter its commands one at a time, and inspect the simulation between them. Or run it unchanged from `src_web`:
-
-```sh
-npm run sim < src/simulation/catalog/quests/scp1370/tests/pass.txt
-npm run sim < src/simulation/catalog/quests/scp1370/tests/fail-unsecured.txt
-```
-
-Also available: [SCP-1867 pass](catalog/quests/scp1867/tests/pass.txt), [missing corroboration failure](catalog/quests/scp1867/tests/fail-missing-corroboration.txt), [Consumption pass](catalog/quests/consumption/tests/pass.txt), [interrupted meal solution](catalog/quests/consumption/tests/pass-resume.txt), and [missed deadline](catalog/quests/consumption/tests/fail-deadline.txt). The step counts leave readable time for travel and work; they demonstrate a solution, not the only permissible route or exact completion timing. Interactive/piped mode prints the quest outcome; unlike `--batch`, it does not set a failure exit code for a failed quest.
-
-[quest-transcripts.test.ts](../../test/quest-transcripts.test.ts) executes these same files through the real CLI parser and checks the expected status, failure reason and important physical outcomes. The test-only replayer reports the transcript line on command failure, rejects rejected commands, checks nonmutation, and verifies continuation from a saved session after each command. Existing SCP success tests use these files rather than duplicate opaque order sequences. Focused injected-damage, incompatible-source, and persistence tests remain TypeScript tests under `test/simulation/quests/`; they complement the playable solutions rather than pretending to be commands a player can enter.
-
-Colocation is for discoverability only: no production module imports `tests/` or reads these files. Genuine in-game variants would be separate authored content. Test-only configuration should remain minimal, and must never alter objective counters, waive prerequisites or force completion.
-
-The consumption tests demonstrate two successful solutions (uninterrupted and cancel/leave/reload/resume) and two named failure outcomes (incompatible food until the deadline, and an incapacitated diner). They check intermediate material conservation and that success cannot occur before eating. This is the acceptance-test backbone, not the entire test suite: focused nutrition, rate, occupancy, structural damage and reference-safety tests remain alongside it.
-
-The evaluator runs after each simulation tick. Failure takes precedence over simultaneous success; success can occur on the deadline tick before timeout. Event counts persist; state conditions describe the current world. Re-evaluating the same tick is idempotent, and final success/failure is durable even if the world continues changing. The application passes only that tick's new events, not the recent-events inspection buffer. Saving and restoring preserves these counters and the final result.
-
-Tests run the same quests as the CLI and assert their results. The endurance test also removes an active research target and blocks one passage after startup, then checks care/recovery/replay without forcing a substitute action or route. Focused tests remain for inexpensive invariants and failure boundaries; not every local rule needs to be expressed as a quest.
-
-## Performance Checkpoint
-
-`npm run benchmark:simulation -- 40` measures the same populated colony after five warm-up ticks. In the initial local sample, average tick time fell from about 25.5 ms to 6.0 ms (p95 41.9 ms to 9.7 ms) by indexing ground occupants once per route query. The expanded medical scenario measured about 6.5 ms average and 9.5 ms p95. These are measurements on one machine, not CI performance guarantees. The index is transient and uses current state; no saved cache or invalidation framework was added. Whole-state boundary cloning and repeated route construction remain candidates for future measured work.
-
-## Verification And Scope
-
-Run `npm run test:simulation` from the web project. Tests cover sequential contention and following, detached inputs, door behavior, material-driven eating and quantities, autonomous versus explicit targets, control/autonomy/cancellation, carried-pawn identity, authored instances, save replay, multi-site/transit ownership, and forbidden dependency directions.
-
-`npm run check` also validates the archived application's tests/build. That does not mean the replacement is connected to the browser. Not ported: full Site 828, SCP behaviors, story quests, personnel dossiers, qualifications, jobs, construction, power, full clinical care or combat systems, richer transport, or browser binding. The new CLI and observational quest harness are the playable replacement surface. Movement can still deadlock in tight traffic and local fleeing is not a complete escape planner; recovery limits are not a substitute for those future mechanics. Selectively reuse useful legacy calculations; do not preserve old implementations merely to satisfy old tests.
+The replacement still lacks the browser port, broad construction/power economy,
+full anatomy, arbitrary SCP behavior, infinite procurement and a general traffic
+planner. Tight spaces and greedy local fleeing can still require explicit
+orders. Automated play proves objective behavior, not subjective fun or full
+canonical containment. Historical decisions explain why contracts changed;
+this guide describes what callers can use now.
