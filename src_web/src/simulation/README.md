@@ -319,7 +319,9 @@ while state conditions describe the actual current world. Re-evaluating the
 same tick is idempotent. Role bindings separate objectives from concrete names
 and test setups; the evaluator is not a general branching quest language.
 
-Current saves use core version30 and session version6. [Snapshot.ts](core/Snapshot.ts)
+Current save versions are defined by `SIMULATION_VERSION` in
+[Simulation.ts](core/Simulation.ts) and the session contract in
+[ScenarioSession.ts](../application/ScenarioSession.ts). [Snapshot.ts](core/Snapshot.ts)
 and `restoreSession` perform JSON/root/version checks, not deep gameplay
 validation or repair. Development saves are disposable: incompatible versions
 are discarded without migrations or retained old implementations. Save requires
