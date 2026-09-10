@@ -7,6 +7,7 @@ import {
   homeLoading,
   opportunities,
 } from "../../simulation/catalog/campaign/setup";
+import { departureReadiness } from "../../simulation/catalog/campaign/Readiness";
 
 export function campaignStatus(session: ScenarioSession): string {
   const { campaign, state } = session;
@@ -22,7 +23,7 @@ export function campaignStatus(session: ScenarioSession): string {
     ...campaign.staffIds.map((id) => {
       const owner = owners.find((owner) => owner.entities[id]);
       const pawn = owner?.entities[id];
-      return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${pawn.canAct ? "active" : "incapacitated"} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"}` : ""}`;
+      return `${session.labels[id]} ${pawn?.name ?? id}: ${owner?.id ?? "MISSING"}${pawn?.kind === "pawn" ? ` | ${pawn.canAct ? "active" : "incapacitated"} | hunger ${pawn.needs.hunger?.value.toFixed(1) ?? "-"} | fatigue ${pawn.needs.fatigue?.value.toFixed(1) ?? "-"} | autonomy ${pawn.autonomy ? "on" : "off"} | ${pawn.queue[0]?.action.kind ?? "idle"}${pawn.queue[0]?.blockedReason ? ` BLOCKED: ${pawn.queue[0].blockedReason}` : ""}${departureReadiness(pawn) ? `\n  ${departureReadiness(pawn)}` : ""}` : ""}`;
     }),
     ...owners.flatMap((owner) =>
       Object.values(owner.entities).flatMap((entity) =>

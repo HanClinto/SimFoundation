@@ -7,6 +7,7 @@ import { distance } from "../../core/site/TileMap";
 import { executeCommand } from "../../core/ControlPolicy";
 import type { Materials } from "../../core/material/Material";
 import { home, homeLoading, homePads, opportunities } from "./setup";
+import { requireDepartureReadiness } from "./Readiness";
 
 export interface Campaign {
   homeId: string;
@@ -137,6 +138,7 @@ export function prepareTeam(
     if (reason) throw new Error(reason);
   }
   const pawns = team(state, campaign, originId, ids);
+  if (trip.outbound) requireDepartureReadiness(pawns);
   let result = state;
   for (const [index, pawn] of pawns.entries()) {
     const base = { siteId: originId, entityId: pawn.id };
@@ -169,7 +171,8 @@ export function departTeam(
 ): Simulation {
   const trip = route(campaign, originId, destination);
   const staffIds = ids.filter((id) => campaign.staffIds.includes(id));
-  team(state, campaign, originId, staffIds);
+  const crew = team(state, campaign, originId, staffIds);
+  if (trip.outbound) requireDepartureReadiness(crew);
   const passengerIds = ids.filter((id) => !campaign.staffIds.includes(id));
   if (passengerIds.length > 1 || new Set(ids).size !== ids.length)
     throw new Error(

@@ -28,6 +28,15 @@ accepted outbound departure. Return trips are prepaid even if dockets run out.
 Keep the home arrival pad clear; blocked arrivals remain in transit and continue
 physiology until admitted.
 
+Outbound staff must have hunger and fatigue below 85, both when preparing and
+when sending. `status` shows each person's work, autonomy and actual readiness
+blocker. Enable `autonomy alex on` to use ordinary home food/rest routines, or
+order specific meal/bed work. Routines take real travel, time and finite food.
+Turn autonomy off and finish/cancel remaining work before preparing a trip.
+Return travel is never refused solely for hunger or fatigue, so a tired team
+can still get home. This campaign departure policy does not change isolated
+trial actions or introduce a global injury/healing shortcut.
+
 Recover Blackwood's journal and specimen, then `prepare home alex ben`, wait
 for walking, and `send home alex ben`. At home, delegate
 `order alex deliver journal 3 3` and `order ben deliver specimen 3 5`.
