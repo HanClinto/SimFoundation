@@ -2,6 +2,7 @@ import type { EntityTemplates } from "../core/entity/EntityTemplate";
 import type { Materials } from "../core/material/Material";
 import { FieldAgent } from "./actors/staff/FieldAgent";
 import { AccidentCasualty } from "./campaign/emergency";
+import { KineticHoldingCell, ContainmentCharge } from "./campaign/holding";
 import {
   InterventionTool,
   ProtectiveVest,
@@ -111,6 +112,8 @@ export const entities: EntityTemplates = Object.fromEntries(
     StoreSurvivor,
     StoreShelter,
     AccidentCasualty,
+    KineticHoldingCell,
+    ContainmentCharge,
     InterventionTool,
     ProtectiveVest,
     KineticSpecimen,

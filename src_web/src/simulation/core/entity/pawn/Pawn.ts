@@ -35,6 +35,13 @@ export interface Pawn extends EntityBase {
 export function tickPawn(context: ActionContext): void {
   const { pawn } = context;
   const died = advancePhysiology(pawn, context.tick);
+  tickCustody(
+    context.site.entities,
+    pawn,
+    context.site.id,
+    context.events,
+    context.tick,
+  );
   if (pawn.health?.death) {
     if (died)
       context.events.push({
@@ -55,7 +62,6 @@ export function tickPawn(context: ActionContext): void {
     pawn.queue = [];
     return;
   }
-  tickCustody(context.site.entities, pawn, context.site.id, context.events);
   if (
     restraintFor(context.site.entities, pawn.id) &&
     pawn.queue[0]?.action.kind !== "follow"

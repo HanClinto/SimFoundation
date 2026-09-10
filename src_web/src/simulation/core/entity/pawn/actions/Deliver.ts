@@ -35,9 +35,15 @@ export class Deliver implements Action {
     const reason = this.canStart(context);
     if (reason) return { status: "blocked", reason };
     const target = context.site.entities[this.state.targetId]!;
-    if (target.location.kind === "ground") {
-      if (samePosition(target.location.position, this.state.destination))
-        return { status: "completed" };
+    if (
+      target.location.kind === "ground" &&
+      samePosition(target.location.position, this.state.destination)
+    )
+      return { status: "completed" };
+    if (
+      target.location.kind !== "carried" ||
+      target.location.carrierId !== context.pawn.id
+    ) {
       const result = new Take(target.id).tick(context);
       return result.status === "completed" ? { status: "running" } : result;
     }

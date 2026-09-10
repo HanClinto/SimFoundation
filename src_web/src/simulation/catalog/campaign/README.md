@@ -134,8 +134,26 @@ Inspect the subject/status for remaining restraint condition before travel.
 npm run sim < src/simulation/catalog/campaign/tests/restrained-return.txt
 ```
 
-This is temporary physical custody, not safe indefinite containment. These
-fictional game mechanics are not real equipment instructions.
+This is temporary physical custody, not safe indefinite containment. The home
+`holding` cell must be repaired with a maintenance pack and serviced with an
+actual power unit first. Deliver parts beside (14,7), then `service holding`.
+After return, `order alex contain @held holding` physically admits the restrained
+subject. `unrestrain specimen` can recover the original band while containment
+is effective. The cell can perform the physical `kinetic-intake` study.
+
+Coverage lasts 120 ticks with a warning forty ticks early. Assign a worker to
+the cell's ordinary service duty or schedule manual service; there are only
+three initial power units. `order ben lockdown holding` spends a nearby
+maintenance pack and three work ticks to buy eighty fallback ticks. It is not
+an infinite reset. If both coverages lapse the same hostile is released at the
+hatch; re-subdual, restraint and restored service are required for safe intake.
+Status and events expose warning, breach, custody and fallback expiry.
+
+```sh
+npm run sim < src/simulation/catalog/campaign/tests/containment-cycle.txt
+```
+
+These fictional game mechanics are not real equipment instructions.
 
 ## Permanent Casualties And Reserve Response
 

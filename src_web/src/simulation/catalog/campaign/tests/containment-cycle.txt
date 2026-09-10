@@ -1,0 +1,56 @@
+# One connected equipment/subdual/restraint/transport/containment/fallback loop.
+load campaign
+order ben take parts 2
+finish ben
+order ben deliver @held 13 7
+finish ben
+order ben service holding
+finish ben
+order alex equip suppressor
+order alex equip vest
+order alex take restraint
+finish alex
+prepare intervention alex
+finish alex
+send intervention alex
+step 8
+site intervention
+order alex subdue specimen
+finish alex
+order alex restrain specimen @held
+finish alex
+order alex take specimen
+finish alex
+prepare home alex
+finish alex
+send home alex
+step 8
+site home
+order alex contain @held holding
+finish alex
+order alex unrestrain specimen
+finish alex
+order ben study holding kinetic-intake
+finish ben
+inspect holding
+status
+# A real emergency mechanism buys bounded time, not permanent containment.
+order ben lockdown holding
+finish ben
+status
+order ben move 9 8
+finish ben
+order alex take restraint
+finish alex
+# Let the fallback lapse: the subject can become loose, then intervene.
+step 90
+status
+order alex subdue specimen
+finish alex
+order alex restrain specimen @held
+finish alex
+order ben service holding
+finish ben
+order alex contain specimen holding
+finish alex
+status

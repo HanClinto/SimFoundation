@@ -155,7 +155,7 @@ export function advanceTransfers(
     const transfer = { ...original, entities };
     for (const entity of Object.values(entities)) {
       if (entity.kind === "pawn")
-        tickCustody(entities, entity, original.originId, events);
+        tickCustody(entities, entity, original.originId, events, state.tick);
     }
     const destination = result.sites[transfer.destinationId];
     const traversal = destination

@@ -29,6 +29,17 @@ export const home: SiteTemplate = {
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
     {
+      id: "holding",
+      definitionId: "kinetic-holding-cell",
+      location: { kind: "ground", position: { x: 14, y: 7 } },
+    },
+    {
+      id: "power-units",
+      definitionId: "containment-charge",
+      location: { kind: "ground", position: { x: 14, y: 8 } },
+      overrides: { amount: 3 },
+    },
+    {
       id: "restraint",
       definitionId: "transport-restraint",
       location: { kind: "ground", position: { x: 1, y: 3 } },
@@ -431,7 +442,7 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
   intervention: {
     name: "Equipment-backed intervention yard",
     briefing:
-      "LETHAL-RISK OPT-IN: responders entering this route acquire a persistent twelve-critical-tick mortality rule. The hostile kinetic specimen causes bleeding injury. Equip the actual suppressor and vest before travel; bare possession is not equipment. Subdue costs a finite charge and only lasts eighty ticks; it is not cooperation or containment. If intervention fails, reserve responders can recover bodies and actual gear, not resurrect staff. Withdraw rather than wait beside a recovered hostile. Restraint and safe containment are the next operational prerequisites.",
+      "LETHAL-RISK OPT-IN: responders entering this route acquire a persistent twelve-critical-tick mortality rule. The hostile kinetic specimen causes bleeding injury. Equip suppressor/vest and carry a physical restraint; subdue, then restrain before live transport. Prepare the home holding cell with parts and power units before intake. After contain, transport restraints can be recovered and the subject studied. Cell service expires; a physical lockdown spends a finite part to buy eighty ticks. Lapse releases the original hostile. Reserve responders recover actual bodies/gear after failure, not resurrect staff.",
     site: interventionSite,
     loading: { x: 2, y: 3 },
     pads: [

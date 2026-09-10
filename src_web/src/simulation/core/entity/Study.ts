@@ -5,6 +5,7 @@ export interface StudyPlan {
   requires: readonly string[];
   finding: string;
   perActor?: boolean;
+  containedSources?: boolean;
 }
 
 export interface Finding {

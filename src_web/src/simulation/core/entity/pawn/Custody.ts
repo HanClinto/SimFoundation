@@ -3,6 +3,8 @@ import type { Item } from "../Item";
 import type { Pawn } from "./Pawn";
 import type { TickEvent } from "../../Simulation";
 import { positionOf } from "../../site/TileMap";
+import { containmentFor, secureContainment } from "../Containment";
+import { serviceDeadline } from "../Service";
 
 export function restraintFor(
   entities: Record<string, Entity>,
@@ -23,7 +25,41 @@ export function tickCustody(
   pawn: Pawn,
   siteId: string,
   events: TickEvent[],
+  tick: number,
 ): void {
+  const cell = containmentFor(entities, pawn.id);
+  if (cell) {
+    if (secureContainment(cell, tick)) {
+      const deadline = cell.service ? serviceDeadline(cell.service) : null;
+      if (
+        (deadline !== null && tick === deadline - cell.service!.leadTime) ||
+        tick === (cell.containment!.lockdown.untilTick ?? -100) - 10
+      )
+        events.push({
+          siteId,
+          entityId: cell.id,
+          targetId: pawn.id,
+          kind: "warning",
+          reason:
+            "Containment coverage is expiring; service or physical lockdown is required.",
+        });
+      return;
+    }
+    const position = positionOf({ entities }, cell.id)!;
+    const offset = cell.containment!.exitOffset;
+    pawn.location = {
+      kind: "ground",
+      position: { x: position.x + offset.x, y: position.y + offset.y },
+    };
+    events.push({
+      siteId,
+      entityId: cell.id,
+      targetId: pawn.id,
+      kind: "breached",
+      reason:
+        "Containment coverage failed; the original subject is loose at the hatch.",
+    });
+  }
   if (pawn.health?.death || !pawn.canAct) return;
   const restraint = restraintFor(entities, pawn.id);
   if (restraint) {

@@ -65,6 +65,11 @@ it("late rescue recovers a permanent body and its existing recorder without resu
   console = play(console, ["step 50"]);
   expect(person(console, victim.id)).toEqual(before);
   expect(executeLine(console, "inspect rowan").output).toContain('"death"');
+  console = play(console, ["order devon deliver recorder 4 3", "finish devon"]);
+  expect(
+    console.session.state.sites["site-1"]!.entities["site-12:recorder"]!
+      .location,
+  ).toEqual({ kind: "ground", position: { x: 4, y: 3 } });
 });
 
 it("prompt stabilization prevents death but retains injury and the original person", () => {

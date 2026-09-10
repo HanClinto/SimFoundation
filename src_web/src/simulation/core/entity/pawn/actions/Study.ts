@@ -3,6 +3,7 @@ import type { Facility } from "../../Facility";
 import { facilityInUse } from "../../Facility";
 import { positionOf, distance } from "../../../site/TileMap";
 import { Move } from "./Move";
+import { secureContainment } from "../../Containment";
 
 export interface StudyState {
   kind: "study";
@@ -14,7 +15,7 @@ export interface StudyState {
 export class Study implements Action {
   constructor(readonly state: StudyState) {}
 
-  canStart({ site, pawn }: ActionContext): string | null {
+  canStart({ site, pawn, tick }: ActionContext): string | null {
     const target = site.entities[this.state.targetId];
     if (
       target?.kind !== "facility" ||
@@ -29,12 +30,17 @@ export class Study implements Action {
       return "Unknown study plan.";
     if (facilityInUse(site, target.id, pawn.id))
       return "The study station is occupied.";
+    if (plan.containedSources && !secureContainment(target, tick))
+      return "This study requires effective containment throughout the work.";
     return null;
   }
 
   tick(context: ActionContext): ActionResult {
     const reason = this.canStart(context);
-    if (reason) return { status: "blocked", reason };
+    if (reason) {
+      this.state.workTicks = 0;
+      return { status: "blocked", reason };
+    }
     const { site, pawn } = context;
     const station = site.entities[this.state.targetId] as Facility;
     const plan = station.study!.plans.find(
@@ -62,18 +68,25 @@ export class Study implements Action {
       const source = sources.find(
         (entity) =>
           entity.definitionId === definitionId &&
+          !(entity.kind === "pawn" && entity.health?.death) &&
           !sourceIds.includes(entity.id) &&
           entity.amount > 0 &&
           (entity.integrity ?? 100) > 0 &&
-          (entity.location.kind === "ground" ||
-            entity.location.carrierId === pawn.id) &&
+          (plan.containedSources
+            ? entity.location.kind === "carried" &&
+              entity.location.carrierId === station.id
+            : entity.location.kind === "ground" ||
+              entity.location.carrierId === pawn.id ||
+              entity.location.carrierId === station.id) &&
           distance(positionOf(site, entity.id)!, position) <= 1,
       );
       if (!source) {
         this.state.workTicks = 0;
         return {
           status: "blocked",
-          reason: `Bring ${definitionId} within one tile of the station.`,
+          reason: plan.containedSources
+            ? `Admit the actual living ${definitionId} into this secure cell before study.`
+            : `Bring ${definitionId} within one tile of the station.`,
         };
       }
       sourceIds.push(source.id);

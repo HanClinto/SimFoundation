@@ -7,7 +7,7 @@ import { advanceTransfers } from "./site/Transfer";
 import type { ActionState } from "./entity/pawn/actions/Action";
 import { beginOperatingCycle } from "./site/OperatingCycle";
 
-export const SIMULATION_VERSION = 23;
+export const SIMULATION_VERSION = 24;
 
 export interface Simulation {
   version: typeof SIMULATION_VERSION;
@@ -25,6 +25,8 @@ export interface TickEvent {
   kind:
     | "died"
     | "escaped"
+    | "warning"
+    | "breached"
     | "completed"
     | "blocked"
     | "failed"

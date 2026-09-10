@@ -23,9 +23,16 @@ import { Service } from "./Service";
 import { Equip } from "./Equip";
 import { Subdue } from "./Subdue";
 import { Restrain } from "./Restrain";
+import { Contain, Lockdown, Unrestrain } from "./Contain";
 
 export function actionHandler(action: ActionState): Action {
   switch (action.kind) {
+    case "contain":
+      return new Contain(action);
+    case "lockdown":
+      return new Lockdown(action);
+    case "unrestrain":
+      return new Unrestrain(action.targetId);
     case "restrain":
       return new Restrain(action);
     case "equip":

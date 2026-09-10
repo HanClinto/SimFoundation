@@ -120,6 +120,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "contain")
+    return `contain ${action.targetId} in ${action.cellId} | work ${action.workTicks}`;
   if (action.kind === "restrain")
     return `restrain ${action.targetId} with ${action.restraintId} | work ${action.workTicks}`;
   if (action.kind === "service")
@@ -221,6 +223,8 @@ send home <staff...> [cooperative-passenger] | admit <person> <home-bed>
 reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
 order <worker> restrain <hostile> <carried-restraint>
+order <worker> contain <hostile> <cell> | order <worker> unrestrain <contained-hostile>
+order <worker> lockdown <cell> (physical, finite emergency fallback)
 deploy <staff-type> <name> | start
 step [ticks] | run [maximum ticks] | finish <worker...> (up to 1000 ticks, stops on blockers)
 load <campaign|response|daily|sight|colony|consumption|scp1867|scp1370>
@@ -620,6 +624,11 @@ export function executeLine(
             action = {
               ...action,
               restraintId: resolve(console, action.restraintId, actor.id).id,
+            };
+          if (action.kind === "contain")
+            action = {
+              ...action,
+              cellId: resolve(console, action.cellId, actor.id).id,
             };
         }
         result = executeCommand(

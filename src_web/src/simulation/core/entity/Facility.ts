@@ -4,6 +4,7 @@ import type { ActivityKind } from "./pawn/actions/Action";
 import type { StudyPlan, Finding } from "./Study";
 import type { Dispenser } from "./Dispenser";
 import type { ServiceProfile } from "./Service";
+import type { Containment } from "./Containment";
 
 export interface Activity {
   duration: number;
@@ -17,6 +18,7 @@ export interface Facility extends EntityBase {
   study?: { plans: readonly StudyPlan[]; findings: Finding[] };
   dispenser?: Dispenser;
   service?: ServiceProfile;
+  containment?: Containment;
   care?: {
     supplyDefinitionId: string;
     ticks: number;
@@ -43,7 +45,8 @@ export function facilityInUse(
       "workTicks" in action &&
       action.workTicks > 0 &&
       (action.targetId === targetId ||
-        ("bedId" in action && action.bedId === targetId))
+        ("bedId" in action && action.bedId === targetId) ||
+        ("cellId" in action && action.cellId === targetId))
     );
   });
 }

@@ -15,6 +15,10 @@ import {
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
+import {
+  containmentFor,
+  secureContainment,
+} from "../../simulation/core/entity/Containment";
 
 export function campaignStatus(session: ScenarioSession): string {
   const { campaign, state } = session;
@@ -36,7 +40,7 @@ export function campaignStatus(session: ScenarioSession): string {
       Object.values(owner.entities).flatMap((entity) =>
         entity.kind === "pawn" && entity.requiresRestraint
           ? [
-              `Custody ${entity.name} at ${owner.id}: ${healthStatus(entity)} | ${restraintFor(owner.entities, entity.id) ? `restraint condition ${restraintFor(owner.entities, entity.id)!.integrity}` : "UNRESTRAINED"}`,
+              `Custody ${entity.name} at ${owner.id}: ${healthStatus(entity)} | ${restraintFor(owner.entities, entity.id) ? `restraint condition ${restraintFor(owner.entities, entity.id)!.integrity}` : "UNRESTRAINED"}${containmentFor(owner.entities, entity.id) ? ` | in ${containmentFor(owner.entities, entity.id)!.name}` : " | NOT CONTAINED"}`,
             ]
           : [],
       ),
@@ -55,6 +59,15 @@ export function campaignStatus(session: ScenarioSession): string {
         entity.kind === "facility" && entity.service
           ? [
               `Service at ${site.id}: ${entity.name} | condition ${entity.integrity ?? 100} | ${serviceStatus(entity.service, state.tick).toUpperCase()} | deadline ${serviceDeadline(entity.service) ?? "after first completed service"} | ${entity.service.history.filter((record) => record.kind === "service").length} services | late ${entity.service.history.filter((record) => record.lateBy > 0).length}`,
+            ]
+          : [],
+      ),
+    ),
+    ...Object.values(state.sites).flatMap((site) =>
+      Object.values(site.entities).flatMap((entity) =>
+        entity.kind === "facility" && entity.containment
+          ? [
+              `Containment ${entity.id}: ${secureContainment(entity, state.tick) ? "SECURE" : "UNSAFE"} | lockdown until ${entity.containment.lockdown.untilTick ?? "unused"} | ${entity.service ? serviceStatus(entity.service, state.tick).toUpperCase() : "no service"}`,
             ]
           : [],
       ),

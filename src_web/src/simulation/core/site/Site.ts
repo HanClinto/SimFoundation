@@ -85,6 +85,8 @@ export function instantiateSite(
           action = { ...action, bedId: reference(action.bedId) };
         if (action.kind === "restrain")
           action = { ...action, restraintId: reference(action.restraintId) };
+        if (action.kind === "contain")
+          action = { ...action, cellId: reference(action.cellId) };
         return {
           ...entry,
           id: `${reference(entity.id)}:initial-action-${index}`,
@@ -118,6 +120,16 @@ export function instantiateSite(
     throw new Error("Use a rectangular terrain map with defined tile symbols.");
   for (const entity of entities) {
     const position = positionOf(site, entity.id);
+    if (
+      entity.kind === "facility" &&
+      entity.containment &&
+      position &&
+      !floorAt(site, {
+        x: position.x + entity.containment.exitOffset.x,
+        y: position.y + entity.containment.exitOffset.y,
+      })
+    )
+      throw new Error("A holding cell needs a floor exit beside its location.");
     if (!position || !floorAt(site, position))
       throw new Error(
         "Entity locations must resolve to a floor tile without carrier cycles.",

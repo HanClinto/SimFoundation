@@ -7,6 +7,12 @@ export function parseOrder(args: readonly string[]): ActionState {
       throw new Error(`Use order <actor> ${usage}.`);
   };
   switch (kind) {
+    case "contain":
+      count(3, "contain <subject> <cell>");
+      return { kind, targetId: target!, cellId: extra!, workTicks: 0 };
+    case "lockdown":
+      count(2, "lockdown <cell>");
+      return { kind, targetId: target!, workTicks: 0 };
     case "restrain":
       count(3, "restrain <subject> <restraint>");
       return { kind, targetId: target!, restraintId: extra!, workTicks: 0 };
@@ -67,6 +73,7 @@ export function parseOrder(args: readonly string[]): ActionState {
     case "drop":
     case "equip":
     case "unequip":
+    case "unrestrain":
     case "eat":
     case "flee":
       count(2, `${kind} <target>`);
