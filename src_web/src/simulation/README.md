@@ -285,6 +285,14 @@ there is no infinite rescue, free replacement or resurrection.
 
 ## Study, Crafting, Service And Named Content
 
+[Watch](core/entity/pawn/actions/Watch.ts) is a separate finite direct-attention
+commitment. [Attention](core/entity/pawn/Attention.ts) derives valid conscious
+human coverage from current work, sight and availability; it saves no duplicate
+observer registry. An opted-in source cannot move/attack while held. Supervised
+stations require the actual subject and other observers beside the work area.
+The [SCP-173 annex](catalog/quests/scp173/README.md) exercises coverage, relief,
+third-worker work and locked withdrawal after prior campaign research.
+
 [Observe](core/entity/pawn/actions/Observe.ts) operates an actual carried
 recorder from a visible vantage. [ImpactRecording](core/entity/ImpactRecording.ts)
 captures only a real impact seen by an active, capable operator; it does not
@@ -317,16 +325,17 @@ Reusable programmes retain their identity and are claimed during presentation;
 distinct-input rules prevent counting the same print twice. Clearing a duty
 does not cancel current funded work.
 
-| Content                                      | Playable purpose and source notes                                                                                     |
-| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| [SCP-1867](catalog/quests/scp1867/README.md) | Home corroboration opens retained Kestrel logistics; Blackwood remains off-map                                        |
-| [SCP-1370](catalog/quests/scp1370/README.md) | Recover the same pawn into a physical home display                                                                    |
-| [SCP-294](catalog/quests/scp294/README.md)   | Four paid requests, exact source depletion and identified repeat samples                                              |
-| [SCP-507](catalog/quests/scp507/README.md)   | Ordinary-world passenger/flashlight/cased-record return; no subsequent shifts                                         |
-| [SCP-2295](catalog/quests/scp2295/README.md) | Youngest-patient lung replacement, finite textile/self-material and postoperative care; no brain cure                 |
-| [SCP-1295](catalog/quests/scp1295/README.md) | Real remote staffing, repair and resupply; no global harmful effects                                                  |
-| [SCP-2006](catalog/quests/scp2006/README.md) | Per-host rehearsal and distinct curated programmes; the one selected showcase, not arbitrary psychology/shapeshifting |
-| [SCP-3008](catalog/quests/scp3008/README.md) | Field-care versus carried-evacuation choice, retained cycle and fixed reopening; explicitly capped nonlethal impacts  |
+| Content                                      | Playable purpose and source notes                                                                                    |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| [SCP-1867](catalog/quests/scp1867/README.md) | Home corroboration opens retained Kestrel logistics; Blackwood remains off-map                                       |
+| [SCP-1370](catalog/quests/scp1370/README.md) | Recover the same pawn into a physical home display                                                                   |
+| [SCP-294](catalog/quests/scp294/README.md)   | Four paid requests, exact source depletion and identified repeat samples                                             |
+| [SCP-507](catalog/quests/scp507/README.md)   | Ordinary-world passenger/flashlight/cased-record return; no subsequent shifts                                        |
+| [SCP-2295](catalog/quests/scp2295/README.md) | Youngest-patient lung replacement, finite textile/self-material and postoperative care; no brain cure                |
+| [SCP-1295](catalog/quests/scp1295/README.md) | Real remote staffing, repair and resupply; no global harmful effects                                                 |
+| [SCP-2006](catalog/quests/scp2006/README.md) | Per-host rehearsal and distinct curated programmes, not arbitrary psychology/shapeshifting                           |
+| [SCP-173](catalog/quests/scp173/README.md)   | Conscious direct watch, overlapping relief and three-person maintenance; no image, automatic blinking or relocation  |
+| [SCP-3008](catalog/quests/scp3008/README.md) | Field-care versus carried-evacuation choice, retained cycle and fixed reopening; explicitly capped nonlethal impacts |
 
 Source credit and adaptation limits live beside each named entry. Original
 care/courier/intervention scenarios establish reusable mechanics without

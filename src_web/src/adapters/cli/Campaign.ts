@@ -10,6 +10,7 @@ import {
 import { operatingPhase } from "../../simulation/core/site/OperatingCycle";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
+import { directWatchers } from "../../simulation/core/entity/pawn/Attention";
 import {
   containmentFor,
   secureContainment,
@@ -63,6 +64,19 @@ export function campaignStatus(session: ScenarioSession): string {
         entity.kind === "facility" && entity.containment
           ? [
               `Containment ${entity.id}: ${secureContainment(entity, state.tick) ? "SECURE" : "UNSAFE"} | lockdown until ${entity.containment.lockdown.untilTick ?? "unused"} | ${entity.service ? serviceStatus(entity.service, state.tick).toUpperCase() : "no service"}`,
+            ]
+          : [],
+      ),
+    ),
+    ...Object.values(state.sites).flatMap((site) =>
+      Object.values(site.entities).flatMap((entity) =>
+        entity.kind === "pawn" && entity.stillWhenWatched
+          ? [
+              `Direct watch ${entity.name} at ${site.id}: ${
+                directWatchers(site, entity.id)
+                  .map((watcher) => `${watcher.name} (${watcher.id})`)
+                  .join(", ") || "NONE; subject may move"
+              } | passive visibility/recording is not coverage`,
             ]
           : [],
       ),

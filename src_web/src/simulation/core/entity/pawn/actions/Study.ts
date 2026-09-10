@@ -5,6 +5,7 @@ import { positionOf, distance } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { secureContainment } from "../../Containment";
 import { recordedImpactFrom } from "../../ImpactRecording";
+import { supervisionBlocker } from "../Attention";
 
 export interface StudyState {
   kind: "study";
@@ -33,6 +34,8 @@ export class Study implements Action {
       return "A recorded-impact study needs a physical recorder source.";
     if (facilityInUse(site, target.id, pawn.id))
       return "The study station is occupied.";
+    const supervision = supervisionBlocker(site, target, pawn.id);
+    if (supervision) return supervision;
     if (plan.containedSources && !secureContainment(target, tick))
       return "This study requires effective containment throughout the work.";
     return null;

@@ -9,7 +9,12 @@ bounded crafting are desired, not rejected by earlier portfolio limits.
 Transport is now reusable without lifetime tickets; finite supplies and actual
 travel remain. Choose additional sources for this gameplay payoff, not merely
 more maintenance chores or another collectible name. Inventory redesign and
-fog-of-war remain deferred.
+fog-of-war remain deferred. The controlled kinetic study now enables physical
+restraint engineering; actual recovered impact records enable a protective
+tradeoff after loss. The subsequently added SCP-173 annex uses direct watch and
+three-person supervised work after prior research. This second containment
+investment is distinct from the already proven SCP-2006 curation loop, not a
+generic psychology framework or an assumption that passive visibility is watch.
 
 ## Replacement Checkpoint: 2026-09-10
 

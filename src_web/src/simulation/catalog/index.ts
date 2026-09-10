@@ -1,6 +1,7 @@
 import type { EntityTemplates } from "../core/entity/EntityTemplate";
 import type { Materials } from "../core/material/Material";
 import { FieldAgent } from "./actors/staff/FieldAgent";
+import { SCP173, SCP173Maintenance, CleaningPack } from "./quests/scp173/setup";
 import { AccidentCasualty } from "./campaign/emergency";
 import { KineticHoldingCell, ContainmentCharge } from "./campaign/holding";
 import {
@@ -126,6 +127,9 @@ export const entities: EntityTemplates = Object.fromEntries(
     StoreShelter,
     AccidentCasualty,
     KineticHoldingCell,
+    SCP173,
+    SCP173Maintenance,
+    CleaningPack,
     ContainmentCharge,
     InterventionTool,
     ProtectiveVest,

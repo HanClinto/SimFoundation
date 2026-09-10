@@ -10,6 +10,7 @@ import {
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
 import { recordedFinding } from "../../Study";
+import { supervisionBlocker } from "../Attention";
 
 export interface ServiceState {
   kind: "service";
@@ -42,6 +43,8 @@ export class Service implements Action {
       return "Choose an installed service counter.";
     if (facilityInUse(site, target.id, pawn.id))
       return "The service counter is occupied.";
+    const supervision = supervisionBlocker(site, target, pawn.id);
+    if (supervision) return supervision;
     if (
       target.service.trainingPlanId &&
       !recordedFinding(site, target.service.trainingPlanId, pawn.id)

@@ -26,6 +26,7 @@ import { dispatchReserve } from "../../simulation/catalog/campaign/Reserve";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 import { carriedCargo } from "../../simulation/core/entity/Equipment";
 import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
+import { directWatchers } from "../../simulation/core/entity/pawn/Attention";
 import type { TickEvent } from "../../simulation/core/Simulation";
 import { finishCommitments } from "./Finish";
 import { medicalOverview } from "./Medical";
@@ -135,6 +136,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "watch")
+    return `watch ${action.targetId} | ${action.workTicks}/${action.ticks} ticks; keep relief overlapping`;
   if (action.kind === "observe")
     return `observe ${action.targetId} with ${action.recorderId} | ${action.workTicks > 0 ? "watching for an actual impact" : "not yet watching"}`;
   if (action.kind === "craft")
@@ -264,6 +267,7 @@ order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
 order <worker> craft <bench> <recipe> (recorded research and physical supplies)
 order <worker> observe <actor> <carried-recorder> (watch from current visible vantage)
+order <worker> watch <subject> <ticks> (sustained direct attention; fatigue stops watch)
 order <worker> door <door> <open|closed|automatic> (physical controls)
 order <worker> give <carried-object|@held> <teammate>
 order <worker> capture <subject> <restraint|@held> <x> <y> (local physical job)
@@ -563,12 +567,17 @@ export function executeLine(
         ...Object.values(console.session.state.sites),
         ...Object.values(console.session.state.transfers),
       ].find((candidate) => candidate.entities[entity.id])!;
+      const watchers =
+        entity.kind === "pawn" && entity.stillWhenWatched && "terrain" in owner
+          ? directWatchers(owner, entity.id)
+          : null;
       const context =
         entity.kind === "pawn" &&
         entity.canAct &&
         !entity.health?.death &&
         entity.location.kind === "ground" &&
         !restraintFor(owner.entities, entity.id) &&
+        !watchers?.length &&
         "terrain" in owner
           ? {
               pawn: entity,
@@ -598,6 +607,9 @@ export function executeLine(
                     mapPosition: null,
                   },
             restraint: restraintFor(owner.entities, entity.id),
+            ...(watchers
+              ? { directWatchers: watchers.map((watcher) => watcher.id) }
+              : {}),
             contents: Object.values(owner.entities)
               .filter(
                 (entry) =>

@@ -26,6 +26,11 @@ export interface Facility extends EntityBase {
     condition: number;
   };
   crafting?: Crafting;
+  supervision?: {
+    targetDefinitionId: string;
+    range: number;
+    observers: number;
+  };
   care?: {
     supplyDefinitionId: string;
     ticks: number;

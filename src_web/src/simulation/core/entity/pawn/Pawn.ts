@@ -10,6 +10,7 @@ import { tickActionQueue } from "./actions/ActionQueue";
 import { chooseAction } from "./Autonomy";
 import type { OrganMending } from "./actions/Mend";
 import { restraintFor, tickCustody } from "./Custody";
+import { directWatchers } from "./Attention";
 
 export interface Pawn extends EntityBase {
   kind: "pawn";
@@ -19,6 +20,7 @@ export interface Pawn extends EntityBase {
   playerControllable: boolean;
   acceptsEscort?: boolean;
   requiresRestraint?: boolean;
+  stillWhenWatched?: boolean;
   human?: boolean;
   ageYears?: number;
   organMending?: OrganMending;
@@ -59,6 +61,17 @@ export function tickPawn(context: ActionContext): void {
         reason: "The worker died.",
       });
     pawn.queue = [];
+    return;
+  }
+  if (
+    pawn.stillWhenWatched &&
+    directWatchers(context.site, pawn.id).length > 0
+  ) {
+    const current = pawn.queue[0];
+    if (current) {
+      if ("workTicks" in current.action) current.action.workTicks = 0;
+      current.blockedReason = "Held still by active direct observation.";
+    }
     return;
   }
   if (

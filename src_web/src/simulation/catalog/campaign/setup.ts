@@ -11,6 +11,7 @@ import { storeSite } from "../quests/scp3008/setup";
 import { accidentSite } from "./emergency";
 import { interventionSite } from "./intervention";
 import { supportDepot } from "./SupportDepot";
+import { scp173Site } from "../quests/scp173/setup";
 
 export interface Opportunity {
   name: string;
@@ -253,5 +254,19 @@ export const opportunities: Readonly<Record<string, Opportunity>> = {
       { x: 2, y: 4 },
     ],
     duration: 8,
+  },
+  statue: {
+    name: "SCP-173 direct-watch maintenance",
+    briefing:
+      "The controlled kinetic-intake finding authorizes this more dangerous annex. Bring three existing workers using two trips or an actual reserve; no staff are created. Stage two observers at (4,1)/(4,5), order each watch subject 200, then step1 to activate. Open gate with the third worker and clear the doorway. Move observers one at a time to (10,3)/(9,4), reactivating each watch before moving the other. Admit the third person and close gate from inside, then service station or study station direct-watch-protocol. The work needs two other active observers beside the station. Never finish the safety watches to wait for a worker; finish that worker. Watches warn before duration/fatigue cutoff. Withdraw with overlapping coverage and physically close gate before releasing the last observers. One active observer freezes motion; losing all coverage through an open gate permits lethal attacks. The source is not portable or subdued by the kinetic instrument. Viewing gallery, turn movement, fatigue and short cleaning cadence are explicit abstractions; no image or automatic blink/camera model.",
+    requiresFinding: "kinetic-intake",
+    site: scp173Site,
+    loading: { x: 2, y: 3 },
+    pads: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+    duration: 8,
+    fatalAfterTicks: 1,
   },
 };

@@ -546,6 +546,20 @@ retained, not consumed or cloned, and each counts once at the rig. `brief
 screening` explains the finite curation/staffing loop and its explicitly
 unmodeled psychological/shapeshifting behavior.
 
+## Direct-Watch Annex
+
+An actual `kinetic-intake` finding unlocks the
+[SCP-173 annex](../quests/scp173/README.md). `brief statue` explains why this
+needs three real people: two active direct observers protect a third worker's
+cleaning/study. Watch is distinct from the survey kit's impact recording and
+from passive sight. Commitments expire, fatigue requires relief, and failed
+coverage with an open door can kill actual workers.
+
+Stage in the viewing gallery, move observers inside under overlapping coverage,
+close the door behind the three-person group for work, then withdraw and lock
+the door while coverage remains. This is a bounded source adaptation, not
+automatic blink physiology, source relocation or camera-based containment.
+
 ## Bounded Store Evacuation
 
 [SCP-3008](../quests/scp3008/README.md) combines field service, clinical care,
