@@ -23,6 +23,13 @@ limit. Every site still advances; this is not free work or a solution planner.
 It does not wait forever for future autonomous tasks. The output gives elapsed
 time and remaining queues.
 
+Campaign `run` stops after the first complete tick with a new containment
+warning, breach, escape or death and prints the identified alarm. Inspect and
+respond, then resume; old log entries do not repeatedly stop time. `step N`
+remains deliberate fixed-duration advancement, and `finish` remains scoped to
+the chosen commitments. Neither rolls back a fatal or breached tick. Batch
+mode returns incomplete status (exit2) if an alarm stopped its run.
+
 Within an order, `@held` means that worker's actual directly carried object:
 `order alex deliver @held 7 4` delivers a collected portion without copying its
 generated ID. `order alex pack vial @held` uses the carried case. It never

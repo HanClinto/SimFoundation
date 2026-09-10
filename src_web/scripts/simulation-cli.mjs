@@ -39,7 +39,7 @@ try {
     );
     console.log(result.output);
     process.exitCode =
-      result.console.session.phase === "setup"
+      result.console.session.phase === "setup" || result.alarm
         ? 2
         : result.console.session.quest?.status === "failed"
           ? 1

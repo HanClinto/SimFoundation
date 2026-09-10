@@ -26,6 +26,7 @@ import { dispatchReserve } from "../../simulation/catalog/campaign/Reserve";
 import { healthStatus } from "../../simulation/core/entity/pawn/Health";
 import { carriedCargo } from "../../simulation/core/entity/Equipment";
 import { restraintFor } from "../../simulation/core/entity/pawn/Custody";
+import type { TickEvent } from "../../simulation/core/Simulation";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -254,7 +255,12 @@ save <path> | restore <path> | help | quit`;
 export function executeLine(
   console: ConsoleState,
   line: string,
-): { console: ConsoleState; output: string; quit?: boolean } {
+): {
+  console: ConsoleState;
+  output: string;
+  quit?: boolean;
+  alarm?: TickEvent;
+} {
   const [command, ...args] = line.trim().split(/\s+/);
   let next = console;
   const finish = (output: string) => ({ console: next, output });
@@ -475,6 +481,7 @@ export function executeLine(
       if (!Number.isSafeInteger(ticks) || ticks < 0 || ticks > 10000)
         throw new Error("Ticks must be from 0 to 10000.");
       let session = console.session;
+      let alarm: TickEvent | undefined;
       for (let index = 0; index < ticks; index++) {
         if (
           command === "run" &&
@@ -482,10 +489,24 @@ export function executeLine(
           session.quest
         )
           break;
+        const previous = session.events;
         session = stepSession(session, 1);
+        if (command === "run" && session.campaign) {
+          alarm = session.events.find(
+            (event) =>
+              !previous.includes(event) &&
+              ["warning", "breached", "escaped", "died"].includes(event.kind),
+          );
+          if (alarm) break;
+        }
       }
       next = { ...console, session };
-      return finish(renderMap(next) + "\n" + questStatus(next));
+      return {
+        ...finish(
+          `${alarm ? `ALARM at tick ${session.state.tick}: ${alarm.siteId} ${alarm.entityId} ${alarm.kind}: ${alarm.reason ?? "inspect events"}\nRun stopped after the complete tick. Inspect and respond, or deliberately step through the hazard.\n` : ""}${renderMap(next)}\n${questStatus(next)}`,
+        ),
+        ...(alarm ? { alarm } : {}),
+      };
     }
     case "inspect": {
       const entity = resolve(console, args[0]);
