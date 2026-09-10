@@ -7,10 +7,13 @@ import {
   InterventionTool,
   ProtectiveVest,
   KineticSpecimen,
-  TransportRestraint,
   SuppressionUnit,
   EquipmentBench,
 } from "./campaign/intervention";
+import {
+  TransportRestraint,
+  DampedTransportRestraint,
+} from "./campaign/TransportRestraint";
 import { AutomaticSteelDoor } from "./entities/doors/AutomaticSteelDoor";
 import { PackagedMeal } from "./entities/supplies/PackagedMeal";
 import { Steel } from "./materials/Steel";
@@ -125,6 +128,7 @@ export const entities: EntityTemplates = Object.fromEntries(
     ProtectiveVest,
     KineticSpecimen,
     TransportRestraint,
+    DampedTransportRestraint,
     SuppressionUnit,
     EquipmentBench,
     ActingGuide,

@@ -168,7 +168,8 @@ retains them.
 Cancelling never refunds consumed inputs, restores condition, moves cargo or
 rolls back earned effects. Ordinary facility occupancy derives from productive
 current work. Funded equipment repair additionally retains its bench and gear
-claim until explicit resolution even after progress resets. No separate
+claim until explicit resolution even after progress resets. Funded crafting
+likewise holds its bench until actual queue resolution. No separate
 reservation ledger is needed. Self-chosen work abandons eight consecutive
 blocked ticks; this is a bounded retry policy, not a deadlock solver.
 
@@ -282,7 +283,7 @@ loses the original crew through actual combat, then uses an existing reserve
 to recover original gear and one body. Other bodies remain for follow-up:
 there is no infinite rescue, free replacement or resurrection.
 
-## Study, Service And Named Content
+## Study, Crafting, Service And Named Content
 
 Study physically requires identified intact sources, productive work and a
 station. Findings retain actor, tick and actual source IDs. Repeated ordinary
@@ -290,6 +291,16 @@ plans do not duplicate findings; per-actor rehearsal plans qualify each host
 separately. A contained-source plan requires actual ownership by effective
 holding throughout work, not a nearby carried subject. Dead bodies cannot
 satisfy a living-source study.
+
+[Craft](core/entity/pawn/actions/Craft.ts) turns a recorded finding into an
+authored item through actual bench work and physical supplies. Its small
+[profile](core/entity/Crafting.ts) names one input quantity, a finding
+prerequisite and an explicit item blueprint, not a recipe expression language.
+Payment happens at work start; completion creates one loose output with dated
+material and research provenance. Cancellation never refunds parts.
+The [kinetic engineering loop](catalog/campaign/KineticEngineering.ts) produces
+a slower-wearing restraint after controlled study of the actual resident.
+`brief engineering` explains the player situation.
 
 Service physically repairs/provisions a station using exact finite inputs.
 Coverage derives from dated receipts; due/lapse warnings have no extra timer.

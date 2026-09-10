@@ -1,0 +1,58 @@
+# Actual capture -> recorded observation -> supply-backed engineering -> awake care.
+load campaign
+order ben take parts 1
+finish ben
+order ben deliver @held 13 7
+finish ben
+order ben service holding
+finish ben
+assign ben holding
+order alex equip suppressor
+order alex equip vest
+order alex take restraint
+finish alex
+prepare intervention alex
+finish alex
+send intervention alex
+finish alex
+site intervention
+order alex capture specimen @held 2 3
+finish alex
+send home alex
+finish alex
+site home
+order alex contain @held holding
+finish alex
+order alex unrestrain specimen
+finish alex
+order alex study holding kinetic-damping
+finish alex
+inspect workshop
+# These parts could instead fund repairs or emergency lockdown.
+order casey take parts 2
+finish casey
+order casey deliver @held 8 1
+finish casey
+order casey craft workshop damped-restraint
+finish casey
+inspect crafted-1
+order casey move 5 3
+finish casey
+# The research does not create consent or grant another suppression charge.
+order alex take crafted-1
+finish alex
+order alex restrain specimen @held
+finish alex
+order alex deliver specimen 3 1
+finish alex
+order casey nurse specimen clinic wounds
+finish casey
+order casey nurse specimen clinic
+finish casey
+inspect crafted-1
+order alex contain specimen holding
+finish alex
+order alex unrestrain specimen
+finish alex
+inspect specimen
+status

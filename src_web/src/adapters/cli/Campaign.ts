@@ -134,11 +134,20 @@ export function campaignStatus(session: ScenarioSession): string {
         ", ",
       )}. reserve <home|route> <devon|riley>; physical arrival in 12 ticks.`,
     `Home loading area: (${homeLoading.x},${homeLoading.y}) and adjacent tiles. prepare <route> <staff...>, step until ready, send <route> <staff...>. Preparation turns their autonomy off.`,
-    `brief <${Object.keys(opportunities).join("|")}|scp294|clinic> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
+    `brief <${Object.keys(opportunities).join("|")}|scp294|clinic|engineering> | site <home|${Object.keys(opportunities).join("|")}> | inspect <id>`,
   ].join("\n");
 }
 
 export function campaignBrief(key?: string): string {
+  if (key === "engineering")
+    return [
+      "Research -> physical engineering -> longer awake custody",
+      "Capture the actual kinetic subject and keep holding effective, then order alex study holding kinetic-damping. Twelve productive study ticks record the living source, observer and date.",
+      "At the workshop, order casey craft workshop damped-restraint. Two actual maintenance packs must be beside the bench or carried by the worker; sixteen work ticks create one loose item at the bench.",
+      "The parts are spent when productive work starts, not refunded on cancellation. They could instead fund repairs or lockdown. Inspect workshop for the design and inspect crafted-1 for the first output's actual material and research provenance.",
+      "Clear the output before repeating. Collect the band, restrain the subject while subdued or safely contained, then use ordinary transport/care. Conscious wear is 0.5 per tick instead of 1: a fresh band lasts 400 awake ticks instead of 200.",
+      "The design is kinetic-specific. It grants no consent, extra suppression charge, free resupply or permanent safety. Existing research needs activities do not substitute for the recorded physical study.",
+    ].join("\n");
   if (key === "clinic")
     return [
       "Clinical recovery: real bedside work, not an admission cure",
@@ -174,6 +183,7 @@ export function campaignBrief(key?: string): string {
     "Travel is reusable without a lifetime trip limit. Partial withdrawal is allowed; retained sites do not restock, and no command creates replacement staff. Time, preparation and physical carrying capacity still matter.",
     "Use autonomy <staff> on for home routines; preparation disables it so staff wait at the loading area. Keep the arrival pad clear.",
     "SCP-294 is installed at home for a bounded experiment. brief scp294 explains finite paid requests and sample comparison.",
+    "brief engineering explains how a controlled kinetic study unlocks a real, supply-backed restraint design.",
     "SCP-1867 by Djoric and SCP-1370 by Sorts, SCP Wiki, CC BY-SA 3.0. Kestrel and this campaign are original adaptations; inspect evidence for source links.",
   ].join("\n");
 }

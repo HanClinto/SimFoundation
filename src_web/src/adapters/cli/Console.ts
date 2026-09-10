@@ -135,6 +135,8 @@ export function questStatus(console: ConsoleState): string {
 }
 
 function describeAction(action: ActionState): string {
+  if (action.kind === "craft")
+    return `craft ${action.recipeId} at ${action.targetId} | work ${action.workTicks}${action.funding ? ` | spent ${action.funding.inputs.map((input) => `${input.amount} from ${input.sourceId}`).join(", ")}` : ""}`;
   if (action.kind === "capture")
     return `capture ${action.targetId} with ${action.restraintId} to (${action.destination.x},${action.destination.y}) | ${action.phase ?? "pending"} work ${action.workTicks}`;
   if (action.kind === "give")
@@ -258,6 +260,7 @@ reserve <home|route> <devon|riley> (finite physical emergency dispatch)
 order <worker> equip <gear> | order <worker> unequip <gear> | order <worker> subdue <hostile>
 order <worker> rearm <worn-tool> (finite physical supply)
 order <worker> repair-equipment <gear> <bench>
+order <worker> craft <bench> <recipe> (recorded research and physical supplies)
 order <worker> door <door> <open|closed|automatic> (physical controls)
 order <worker> give <carried-object|@held> <teammate>
 order <worker> capture <subject> <restraint|@held> <x> <y> (local physical job)

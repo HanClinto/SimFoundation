@@ -160,6 +160,37 @@ The [care-transfer walkthrough](tests/care-transfer.txt) uses normal commands:
 npm run sim < src/simulation/catalog/campaign/tests/care-transfer.txt
 ```
 
+## Research And Engineering
+
+`brief engineering` describes a complete progression loop using the original
+kinetic resident. After actual capture/intake, `order alex study holding
+kinetic-damping` records a twelve-tick controlled observation of that same
+living subject. Effective holding is required throughout; the dated finding
+names its observer and source. Ordinary research-needs work, damage or death
+does not award this design.
+
+Bring two maintenance packs beside the workshop or carry them while working,
+then `order casey craft workshop damped-restraint`. Sixteen productive ticks
+produce one loose band at the bench. The two packs are spent at work start and
+are not refunded on cancellation. A funded job retains the bench until its
+queue resolves; work cannot be duplicated by another worker or a reissued
+paid command. Accessible split stacks count together, but another worker must
+actually hand over any portion they carry. An insufficient total spends nothing.
+Clear the previous output before repeating.
+
+`inspect crafted-1` shows the first band's maker, material source, dates and
+the finding that enabled it. Collect it with ordinary `take`, fit it while the
+subject is subdued or effectively contained, then use existing care/transport.
+It wears by0.5 rather than1 each conscious tick: a fresh band gives400 rather
+than200 awake ticks. Subdual and effective holding still pause wear.
+
+For example, use that extra window to take the awake resident out of holding
+for wound and blood-loss care without spending another suppression charge.
+The packs could instead fund repairs or emergency lockdown. Neither research
+nor engineering grants consent, restores supplies, or prevents eventual escape.
+The [normal-command walkthrough](tests/research-engineering.txt) plays this
+complete chain, including the original source, actual build and secured care.
+
 ## Equipment-Backed Intervention
 
 `brief intervention` describes an original hostile anomaly in a bounded yard.

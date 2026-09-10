@@ -11,6 +11,7 @@ import { requireDepartureReadiness, authorizeRisk } from "./Readiness";
 import { operatingPhase } from "../../core/site/OperatingCycle";
 import { reserveSite } from "./emergency";
 import { restraintFor } from "../../core/entity/pawn/Custody";
+import { recordedFinding } from "../../core/entity/Study";
 
 export interface Campaign {
   homeId: string;
@@ -56,13 +57,7 @@ export function opportunityBlocker(
   if (!opportunity) return "Unknown opportunity.";
   if (
     opportunity.requiresFinding &&
-    !Object.values(state.sites[campaign.homeId]!.entities).some(
-      (entity) =>
-        entity.kind === "facility" &&
-        entity.study?.findings.some(
-          (finding) => finding.planId === opportunity.requiresFinding,
-        ),
-    )
+    !recordedFinding(state.sites[campaign.homeId]!, opportunity.requiresFinding)
   )
     return `Home study required: ${opportunity.requiresFinding}.`;
   return null;

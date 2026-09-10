@@ -1,6 +1,7 @@
 import type { EntityTemplate } from "../../core/entity/EntityTemplate";
 import type { SiteTemplate } from "../../core/site/Site";
 import { FieldAgent } from "../actors/staff/FieldAgent";
+import { DampedRestraintRecipe } from "./KineticEngineering";
 
 export const InterventionTool: EntityTemplate = {
   id: "intervention-tool",
@@ -87,28 +88,6 @@ export const KineticSpecimen: EntityTemplate = {
   },
 };
 
-export const TransportRestraint: EntityTemplate = {
-  id: "transport-restraint",
-  name: "Fictional transport restraint",
-  description:
-    "A physical bounded-game restraint fitted to the subdued kinetic specimen over four ticks. Two hundred condition points wear by one each conscious tick, including transit. Breakage leaves the broken item and permits escape. This is not consent, a case, or an indefinite cure.",
-  defaults: {
-    kind: "item",
-    materialId: "steel",
-    amount: 1,
-    integrity: 200,
-    carryable: true,
-    blocksMovement: false,
-    blocksSight: false,
-    restraint: {
-      attached: false,
-      ticks: 4,
-      wearPerTick: 1,
-      accepts: ["kinetic-specimen"],
-    },
-  },
-};
-
 export const interventionSite: SiteTemplate = {
   name: "Intervention yard: lethal-risk authorization",
   terrain: [
@@ -160,7 +139,7 @@ export const EquipmentBench: EntityTemplate = {
   id: "equipment-bench",
   name: "Equipment maintenance bench",
   description:
-    "Ten productive work ticks and one physical maintenance pack restore up to forty condition on actual equipment. Gear must be beside the bench or worn/held by the worker; charges are not replenished, and cancelled funded work does not refund parts.",
+    "Ten productive work ticks and one physical maintenance pack restore up to forty condition on actual equipment. Gear must be beside the bench or worn/held by the worker; charges are not replenished. A recorded kinetic-damping study also unlocks the damped-restraint design: two maintenance packs, sixteen work ticks. Clear the crafted output before repeating. Cancelled funded work never refunds parts.",
   defaults: {
     kind: "facility",
     materialId: "steel",
@@ -175,5 +154,6 @@ export const EquipmentBench: EntityTemplate = {
       ticks: 10,
       condition: 40,
     },
+    crafting: { recipes: [DampedRestraintRecipe], nextItemId: 1 },
   },
 };

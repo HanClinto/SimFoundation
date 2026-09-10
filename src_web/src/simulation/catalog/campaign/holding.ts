@@ -1,4 +1,5 @@
 import type { EntityTemplate } from "../../core/entity/EntityTemplate";
+import { KineticLoadingStudy } from "./KineticEngineering";
 
 export const ContainmentCharge: EntityTemplate = {
   id: "containment-charge",
@@ -53,6 +54,7 @@ export const KineticHoldingCell: EntityTemplate = {
     },
     study: {
       plans: [
+        KineticLoadingStudy,
         {
           id: "kinetic-intake",
           containedSources: true,

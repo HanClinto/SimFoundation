@@ -9,6 +9,7 @@ import {
 } from "../../Service";
 import { distance, positionOf } from "../../../site/TileMap";
 import { Move } from "./Move";
+import { recordedFinding } from "../../Study";
 
 export interface ServiceState {
   kind: "service";
@@ -43,15 +44,7 @@ export class Service implements Action {
       return "The service counter is occupied.";
     if (
       target.service.trainingPlanId &&
-      !Object.values(site.entities).some(
-        (entity) =>
-          entity.kind === "facility" &&
-          entity.study?.findings.some(
-            (finding) =>
-              finding.planId === target.service!.trainingPlanId &&
-              finding.actorId === pawn.id,
-          ),
-      )
+      !recordedFinding(site, target.service.trainingPlanId, pawn.id)
     )
       return `This worker must complete ${target.service.trainingPlanId} before hosting service.`;
     const participant = target.service.participant;

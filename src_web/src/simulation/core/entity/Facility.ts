@@ -5,6 +5,7 @@ import type { StudyPlan, Finding } from "./Study";
 import type { Dispenser } from "./Dispenser";
 import type { ServiceProfile } from "./Service";
 import type { Containment } from "./Containment";
+import type { Crafting } from "./Crafting";
 
 export interface Activity {
   duration: number;
@@ -24,6 +25,7 @@ export interface Facility extends EntityBase {
     ticks: number;
     condition: number;
   };
+  crafting?: Crafting;
   care?: {
     supplyDefinitionId: string;
     ticks: number;
@@ -44,6 +46,8 @@ export function facilityInUse(
   return Object.values(site.entities).some((entity) => {
     if (entity.kind !== "pawn" || entity.id === exceptPawnId) return false;
     const action = entity.queue[0]?.action;
+    if (action?.kind === "craft" && action.funding !== undefined)
+      return action.targetId === targetId;
     if (action?.kind === "repair-equipment" && action.supplyId !== undefined)
       return action.targetId === targetId || action.benchId === targetId;
     if (!entity.canAct || entity.location.kind !== "ground") return false;
