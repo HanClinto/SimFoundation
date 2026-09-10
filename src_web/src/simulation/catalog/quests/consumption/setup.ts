@@ -6,11 +6,11 @@ const site: SiteTemplate = {
   terrain: ["#######", "#.....#", "#.....#", "#.....#", "#######"],
   entities: [
     {
-      id: "diner",
+      id: "daniel",
       definitionId: "field-agent",
       location: { kind: "ground", position: { x: 1, y: 1 } },
       overrides: {
-        name: "Diner",
+        name: "Daniel",
         autonomy: false,
         needs: { hunger: { value: 45, increasePerTick: 0 } },
       },

@@ -18,7 +18,7 @@ function command(session: ScenarioSession, order: Command): ScenarioSession {
   return { ...session, state: result.state };
 }
 
-const actor = "site-1:diner";
+const actor = "site-1:daniel";
 const meal = "site-1:meal";
 const eat: Command = {
   kind: "enqueue",

@@ -1,4 +1,5 @@
 import type { SiteTemplate } from "../../../core/site/Site";
+import type { Deployment } from "../../../core/site/Deployment";
 import { quest } from "./quest";
 
 const site: SiteTemplate = {
@@ -16,12 +17,6 @@ const site: SiteTemplate = {
   ],
   tiles: { g: { blocksMovement: true, blocksSight: false } },
   entities: [
-    {
-      id: "handler",
-      definitionId: "field-agent",
-      location: { kind: "ground", position: { x: 2, y: 3 } },
-      overrides: { autonomy: false },
-    },
     {
       id: "exhibit",
       definitionId: "scp-1370",
@@ -41,4 +36,16 @@ const site: SiteTemplate = {
   ],
 };
 
-export const scp1370Scenario = { site, quest };
+const deployment: Deployment = {
+  entries: {
+    entry: [
+      { x: 2, y: 3 },
+      { x: 2, y: 4 },
+    ],
+  },
+  templates: ["field-agent", "researcher", "medic", "soldier"],
+  roles: ["handler"],
+  maximumTeam: 2,
+};
+
+export const scp1370Scenario = { site, quest, deployment };

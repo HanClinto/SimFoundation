@@ -1,4 +1,5 @@
 import type { SiteTemplate } from "../../../core/site/Site";
+import type { Deployment } from "../../../core/site/Deployment";
 import { quest } from "./quest";
 
 const site: SiteTemplate = {
@@ -15,12 +16,6 @@ const site: SiteTemplate = {
     "###############",
   ],
   entities: [
-    {
-      id: "investigator",
-      definitionId: "researcher",
-      location: { kind: "ground", position: { x: 2, y: 4 } },
-      overrides: { autonomy: false },
-    },
     {
       id: "bench",
       definitionId: "corroboration-bench",
@@ -60,4 +55,16 @@ const site: SiteTemplate = {
   ],
 };
 
-export const scp1867Scenario = { site, quest };
+const deployment: Deployment = {
+  entries: {
+    entry: [
+      { x: 2, y: 4 },
+      { x: 2, y: 5 },
+    ],
+  },
+  templates: ["field-agent", "researcher", "medic", "soldier"],
+  roles: ["investigator"],
+  maximumTeam: 2,
+};
+
+export const scp1867Scenario = { site, quest, deployment };

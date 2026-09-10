@@ -41,17 +41,18 @@ it("issues real player commands and rejects invalid tick counts", () => {
   expect(executeLine(console, "inspect researcher").output).toContain('"x": 6');
   expect(() => executeLine(console, "step -1")).toThrow();
   expect(() => executeLine(console, "load unknown")).toThrow();
-  expect(() =>
-    executeLine(console, 'order researcher {"kind":"move"}'),
-  ).toThrow("coordinates");
-  expect(
-    executeLine(console, 'order researcher {"kind":"read","targetId":"shelf"}')
-      .output,
-  ).toContain("accepted");
+  expect(() => executeLine(console, "order researcher move nope 4")).toThrow(
+    "coordinates",
+  );
+  expect(executeLine(console, "order researcher read shelf").output).toContain(
+    "accepted",
+  );
 });
 
 it("shows SCP briefings and source context and submits ordinary study commands", () => {
-  const console = openConsole("scp1867");
+  let console = openConsole("scp1867");
+  console = executeLine(console, "deploy researcher ben").console;
+  console = executeLine(console, "start").console;
   const before = JSON.stringify(console);
   expect(executeLine(console, "brief").output).toContain("Djoric");
   expect(executeLine(console, "brief").output).toContain(
@@ -61,12 +62,10 @@ it("shows SCP briefings and source context and submits ordinary study commands",
     "not an independent corroboration",
   );
   expect(JSON.stringify(console)).toBe(before);
-  expect(() => executeLine(console, "study investigator bench")).toThrow(
-    "plan ID",
+  expect(() => executeLine(console, "study ben bench")).toThrow("plan ID");
+  expect(executeLine(console, "study ben bench marsh-lead").output).toContain(
+    "accepted",
   );
-  expect(
-    executeLine(console, "study investigator bench marsh-lead").output,
-  ).toContain("accepted");
   expect(executeLine(openConsole("scp1370"), "brief").output).toContain(
     "Sorts",
   );
@@ -74,29 +73,31 @@ it("shows SCP briefings and source context and submits ordinary study commands",
 
 it("explains a new move queued behind an occupied destination and allows cancellation of only the blocker", () => {
   let console = openConsole("scp1370");
-  console = executeLine(console, "move 02 4 5").console;
+  console = executeLine(console, "deploy field-agent alex").console;
+  console = executeLine(console, "start").console;
+  console = executeLine(console, "move @2 4 5").console;
   console = executeLine(console, "step 5").console;
-  const queued = executeLine(console, "move 02 3 5");
+  const queued = executeLine(console, "move @2 3 5");
   expect(queued.output).toContain("action-2");
   expect(queued.output).toContain(
     "queued at position 2 behind action-1: move to (4,5)",
   );
-  expect(queued.output).toContain("cancel 02 action-1");
+  expect(queued.output).toContain("cancel @2 action-1");
   console = executeLine(queued.console, "step 1").console;
   const before = JSON.stringify(console);
-  const queue = executeLine(console, "queue 02").output;
+  const queue = executeLine(console, "queue @2").output;
   expect(queue).toContain("current action-1: move to (4,5)");
   expect(queue).toContain("pending action-2: move to (3,5)");
   expect(JSON.stringify(console)).toBe(before);
   expect(renderMap(console)).toContain(
     "action-1: move to (4,5) | blocked: The destination is occupied. | 1 pending",
   );
-  console = executeLine(console, "cancel 02 action-1").console;
+  console = executeLine(console, "cancel @2 action-1").console;
   console = executeLine(console, "step 3").console;
   expect(
     console.session.state.sites[console.siteId]!.entities[
-      `${console.siteId}:handler`
+      `${console.siteId}:alex`
     ]!.location,
   ).toEqual({ kind: "ground", position: { x: 3, y: 5 } });
-  expect(executeLine(console, "queue 02").output).toBe("No queued actions.");
+  expect(executeLine(console, "queue @2").output).toBe("No queued actions.");
 });

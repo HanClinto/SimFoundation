@@ -2,6 +2,8 @@ import {
   loadScenario,
   scenarios,
   stepSession,
+  deployAgent,
+  startSession,
   type ScenarioSession,
 } from "../../application/ScenarioSession";
 import { conditionMet } from "../../simulation/core/quest/Quest";
@@ -12,6 +14,7 @@ import { chooseConcern } from "../../simulation/core/entity/pawn/concerns/Concer
 import { chooseNeedAction } from "../../simulation/core/entity/pawn/Needs";
 import { needActions } from "../../simulation/core/entity/pawn/actions/NeedActions";
 import type { ActionState } from "../../simulation/core/entity/pawn/actions/Action";
+import { parseOrder } from "./Order";
 
 export interface ConsoleState {
   session: ScenarioSession;
@@ -31,17 +34,17 @@ function roster(console: ConsoleState): Entity[] {
   );
 }
 
-function token(index: number): string {
-  return index.toString(36).padStart(2, "0");
+function token(console: ConsoleState, entity: Entity): string {
+  return console.session.labels[entity.id] ?? "??";
 }
 
 function resolve(console: ConsoleState, value: string | undefined): Entity {
   const members = roster(console);
   const found = members.find(
-    (entity, index) =>
+    (entity) =>
       entity.id === value ||
       entity.id === `${console.siteId}:${value}` ||
-      token(index) === value,
+      token(console, entity) === value,
   );
   if (!found) throw new Error(`Unknown entity: ${value ?? "(missing)"}`);
   return found;
@@ -51,6 +54,25 @@ export function questStatus(console: ConsoleState): string {
   const { session } = console;
   const definition = scenarios[session.scenario]?.quest;
   const quest = session.quest;
+  if (session.phase === "setup") {
+    const deployment = scenarios[session.scenario]!.deployment!;
+    return [
+      `Tick ${session.state.tick} | ${definition?.name ?? session.scenario} | SETUP (mission clock stopped)`,
+      `Available staff: ${deployment.templates.join(", ")}`,
+      `Entry points: ${Object.entries(deployment.entries)
+        .map(
+          ([name, positions]) =>
+            `${name} [${positions.map((point) => `${point.x},${point.y}`).join("; ")}]`,
+        )
+        .join(" | ")}`,
+      `Team: ${session.teamIds.length}/${deployment.maximumTeam}`,
+      ...deployment.roles.map(
+        (role) =>
+          `${role}: ${session.bindings[role] ? `${session.labels[session.bindings[role]!]} ${session.bindings[role]}` : "not assigned"}`,
+      ),
+      "deploy <staff-type> <name>, then start (agents use the map entry)",
+    ].join("\n");
+  }
   if (!quest || !definition)
     return `Tick ${session.state.tick} | Sandbox (no quest)`;
   return [
@@ -88,17 +110,22 @@ export function renderMap(console: ConsoleState): string {
   const site = console.session.state.sites[console.siteId];
   if (!site) return "No selected site.";
   const members = roster(console);
+  const tokenWidth = Math.max(
+    2,
+    ...Object.values(console.session.labels).map((label) => label.length),
+  );
+  const cellWidth = tokenWidth + 1;
   const occupants = new Map<string, string[]>();
-  members.forEach((entity, index) => {
+  members.forEach((entity) => {
     if (entity.location.kind !== "ground") return;
     const key = `${entity.location.position.x},${entity.location.position.y}`;
-    occupants.set(key, [...(occupants.get(key) ?? []), token(index)]);
+    occupants.set(key, [...(occupants.get(key) ?? []), token(console, entity)]);
   });
   return [
     `${site.name} (${site.id}) | tick ${console.session.state.tick}`,
     "    " +
       [...(site.terrain[0] ?? "")]
-        .map((_symbol, index) => String(index).padEnd(3))
+        .map((_symbol, index) => String(index).padEnd(cellWidth))
         .join(""),
     ...site.terrain.map(
       (row, rowIndex) =>
@@ -106,27 +133,34 @@ export function renderMap(console: ConsoleState): string {
         [...row]
           .map((symbol, columnIndex) => {
             const present = occupants.get(`${columnIndex},${rowIndex}`) ?? [];
-            return symbol + (present.length > 1 ? "++" : (present[0] ?? "  "));
+            return (
+              symbol +
+              (present.length > 1 ? "++" : (present[0] ?? "")).padEnd(
+                tokenWidth,
+              )
+            );
           })
           .join(""),
     ),
-    "Legend: terrain + two-character entity token; ++ = stacked (all listed below)",
-    ...members.map((entity, index) => {
+    "Legend: terrain + stable label; @N = pawn, oN = object, ++ = stacked (all listed below)",
+    ...members.map((entity) => {
       const location =
         entity.location.kind === "ground"
           ? `${entity.location.position.x},${entity.location.position.y}`
           : `carried by ${entity.location.carrierId}`;
       const current = entity.kind === "pawn" ? entity.queue[0] : null;
-      return `${token(index)} ${entity.name} [${entity.id}] @ ${location}${entity.kind === "pawn" ? ` | ${entity.canAct ? "active" : "incapable"} | ${current ? `${current.id}: ${describeAction(current.action)}` : "idle"}${current?.blockedReason ? ` | blocked: ${current.blockedReason}` : ""}${entity.queue.length > 1 ? ` | ${entity.queue.length - 1} pending` : ""}` : ""}`;
+      return `${token(console, entity)} ${entity.name} [${entity.id}] @ ${location}${entity.kind === "pawn" ? ` | ${entity.canAct ? "active" : "incapable"} | ${current ? `${current.id}: ${describeAction(current.action)}` : "idle"}${current?.blockedReason ? ` | blocked: ${current.blockedReason}` : ""}${entity.queue.length > 1 ? ` | ${entity.queue.length - 1} pending` : ""}` : ""}`;
     }),
   ].join("\n");
 }
 
 export const help = `map | brief | status | events | sites | site <id>
+deploy <staff-type> <name> | start
 step [ticks] | run [maximum ticks] | load <response|daily|sight|colony|consumption|scp1867|scp1370>
 inspect <token|id> | queue <actor> | move <actor> <x> <y> (appends to queue)
 study <actor> <station> <planId>
-order <actor> <action JSON> | autonomy <actor> <on|off> | cancel <actor> [actionId]
+order <name|@N> <verb> <target> | order <name|@N> move <x> <y> | order <name|@N> wait <ticks>
+order <name|@N> study <station> <planId> | autonomy <actor> <on|off> | cancel <actor> [actionId]
 save <path> | restore <path> | help | quit`;
 
 export function executeLine(
@@ -146,6 +180,22 @@ export function executeLine(
     case "load":
       next = openConsole(args[0]);
       return finish(renderMap(next) + "\n" + questStatus(next));
+    case "deploy": {
+      if (args.length !== 2)
+        throw new Error(
+          "Use deploy <staff-type> <name>; the map entry is automatic.",
+        );
+      next = {
+        ...console,
+        session: deployAgent(console.session, args[0]!, args[1]!),
+      };
+      return finish(
+        `Deployed ${next.session.labels[`${console.siteId}:${args[1]}`]} ${args[1]}.\n${questStatus(next)}`,
+      );
+    }
+    case "start":
+      next = { ...console, session: startSession(console.session) };
+      return finish(questStatus(next));
     case "sites":
       return finish(
         Object.values(console.session.state.sites)
@@ -216,6 +266,7 @@ export function executeLine(
         JSON.stringify(
           {
             entity,
+            label: token(console, entity),
             description: catalog[entity.definitionId]?.description,
             attribution: catalog[entity.definitionId]?.attribution,
             ...(context
@@ -237,6 +288,8 @@ export function executeLine(
     case "order":
     case "autonomy":
     case "cancel": {
+      if (console.session.phase !== "running")
+        throw new Error("Start the mission before issuing gameplay orders.");
       const actor = resolve(console, args[0]);
       const base = { siteId: console.siteId, entityId: actor.id };
       let result;
@@ -271,7 +324,7 @@ export function executeLine(
                   planId: args[2]!,
                   workTicks: 0,
                 }
-              : JSON.parse(args.slice(1).join(" "));
+              : parseOrder(args.slice(1));
         const kinds = [
           "move",
           "take",

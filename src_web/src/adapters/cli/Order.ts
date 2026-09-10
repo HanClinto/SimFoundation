@@ -1,0 +1,37 @@
+import type { ActionState } from "../../simulation/core/entity/pawn/actions/Action";
+
+export function parseOrder(args: readonly string[]): ActionState {
+  const [kind, target, extra] = args;
+  const count = (expected: number, usage: string) => {
+    if (args.length !== expected)
+      throw new Error(`Use order <actor> ${usage}.`);
+  };
+  switch (kind) {
+    case "move":
+      count(3, "move <x> <y>");
+      return { kind, destination: { x: Number(target), y: Number(extra) } };
+    case "wait":
+      count(2, "wait <ticks>");
+      return { kind, ticks: Number(target) };
+    case "study":
+      count(3, "study <station> <planId>");
+      return { kind, targetId: target!, planId: extra!, workTicks: 0 };
+    case "take":
+    case "drop":
+    case "eat":
+    case "flee":
+      count(2, `${kind} <target>`);
+      return { kind, targetId: target! };
+    case "sleep":
+    case "relax":
+    case "research":
+    case "read":
+    case "exercise":
+    case "attack":
+    case "treat":
+      count(2, `${kind} <target>`);
+      return { kind, targetId: target!, workTicks: 0 };
+    default:
+      throw new Error(`Unknown action kind: ${kind ?? "(missing)"}.`);
+  }
+}

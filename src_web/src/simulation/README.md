@@ -78,6 +78,7 @@ simulation/
 			Pathfinding.ts
 			Visibility.ts
 			Transfer.ts
+			Deployment.ts
 	catalog/
 		actors/staff/FieldAgent.ts
 		actors/staff/Researcher.ts
@@ -336,37 +337,60 @@ npm run benchmark:simulation -- 40
 
 `response`, `daily`, `colony`, `consumption`, `scp1867` and `scp1370` have quest conditions; `sight` is an inspection sandbox. The Consumption setup leaves a diner with autonomy off and a two-portion meal; the player must issue an eating order before the deadline. The SCP quests likewise require player-directed recovery and study, not automatic quest-solving scripts. The CLI adapter uses the same [ScenarioSession](../application/ScenarioSession.ts) as the tests, not the archived browser controller. Vite is only a local TypeScript module loader in middleware mode; no game HTTP server is started.
 
-To try partial consumption: `load consumption`, `order diner {"kind":"eat","targetId":"meal"}`, `step 3`, `cancel diner`, then `inspect meal`. The meal retains 1.7 units. You can move away, save/restore, and order eating again; the quest succeeds when the diner is fed and at least a quarter portion remains. `run` alone does not solve this scenario because gameplay setup does not include the test answer.
+To try partial consumption: `load consumption`, `order daniel eat meal`, `step 3`, `cancel daniel`, then `inspect meal`. The meal retains 1.7 units. You can move away, save/restore, and order eating again; the quest succeeds when Daniel is fed and at least a quarter portion remains. `run` alone does not solve this scenario because gameplay setup does not include the test answer.
 
-Each map cell contains its terrain character followed by a two-character entity token. `++` means stacked ground occupants; the legend lists every entity with its ID and location, including carried entities. Tokens are current-view shortcuts and can change when entities disappear; full IDs or local authored IDs are preferable for scripts. Coordinates are zero-based. Sight and passage symbols retain their authored characters; `inspect` exposes actual properties. The display does not constrain scenario stacking.
+Each map cell contains its terrain character followed by a stable label. Pawns use roguelike `@1`, `@2`, etc.; non-pawn objects use `o1`, `o2`, etc. The legend shows that label beside the readable name and full identity, including carried entities. Labels are session-wide, saved, and never reassigned when an entity disappears. Multi-digit labels widen all map cells uniformly. `++` means stacked ground occupants; the legend lists all of them. Full IDs, local aliases and displayed labels work in commands, including `move @2 3 5` and `inspect @2`. Bare old numeric tokens such as `02` are no longer used. Coordinates are zero-based. This changes the CLI inspection surface, not the still-legacy browser GUI; a future GUI can reuse the same session labels.
+
+### Deploy Before Starting
+
+The SCP-1370 and SCP-1867 quests load into a `setup` phase: their locations, anomalies and evidence exist, but the player team does not. `status` lists available staff templates, authored entry positions, capacity and required quest roles. No simulation or deadline ticks run during setup, and gameplay orders are rejected until `start`.
+
+```text
+load scp1370
+deploy field-agent alex
+start
+inspect @2
+move @2 3 5
+step 3
+```
+
+SCP-1370 is the already-authored pawn `@1`; Alex becomes `@2`. For Blackwood's mission, use `deploy researcher ben`, then `start`. Deployed agents start with autonomy off, matching deliberate player-controlled mission preparation.
+
+Syntax is `deploy <staff-type> <name>`: `researcher` is a template, `ben` is one person's name. All player deployments use the next clear position at the map's authored `entry`; no entry argument is needed. The first agent automatically fills the mission's single required role (handler or investigator). The quest follows that person's actual entity ID, including event and failure checks, rather than requiring a pawn literally named after the role. Further agents are support staff up to the authored team limit (two in each initial SCP quest), without replacing the first agent's role. Unsupported templates, occupied entries, duplicate names and excess team size are rejected without mutation. Names use lowercase letters, digits and hyphens; `oN` labels are reserved. Multi-role mission team assignment is not exposed in the CLI yet.
+
+`start` requires every declared role to be assigned to an available pawn. It creates the quest progress and starts its deadline at the current tick. Deployment and a second start are rejected once running; no free reinforcements are implied. Pre-staffed trials (`response`, `daily`, `colony`, `consumption`) and the sight sandbox still start immediately; they do not offer deployment. These trials retain their authored actors because their purpose is testing those particular states.
+
+Session saves are now version 2 and preserve setup/running phase, deployed team, role bindings, label mappings and counters. Version-1 sessions are discarded without migration; simulation snapshots remain at their current core version. A saved setup can be restored and started normally. Batch mode reports a setup-phase session as incomplete (exit 2); prepare/start/save it through normal commands before using batch restore. This is a standalone deployment-from-template model, not a campaign personnel pool or inter-site transport; future roster deployment must transfer existing identities rather than clone them.
 
 ```text
 help
+load scp1867
+deploy researcher ben
+start
 brief
 map
 status
-step 10
-run 40
-inspect researcher
-queue researcher
+inspect ben
+order ben take journal
+step 20
+order ben move 3 3
+step 20
+order ben drop journal
+step 1
+queue ben
 events
-autonomy researcher off
-move researcher 6 4
-order researcher {"kind":"read","targetId":"shelf"}
-cancel researcher
+autonomy ben off
+cancel ben
 sites
 site site-1
 save /tmp/my-simulation.json
 restore /tmp/my-simulation.json
-load response
-load scp1867
-brief
 inspect bench
-study investigator bench marsh-lead
+order ben study bench marsh-lead
 quit
 ```
 
-`brief` shows mission context and source credits. `inspect` returns authoritative entity data, catalog description/attribution and currently discoverable concerns and a need-action candidate without changing state. `study <actor> <station> <planId>` submits a normal study action; inspect the station for its plans and recorded findings. `step` advances exactly the requested ticks even after a quest ends. `run` stops at quest success/failure or its supplied limit. Commands use ordinary player permission and physical execution; there is no hidden force-complete command. JSON orders accept local target IDs/tokens and normalize new activity progress. Pending orders retain their usual deferred eligibility checks.
+`brief` shows mission context and source credits. `inspect` returns authoritative entity data, catalog description/attribution and currently discoverable concerns and a need-action candidate without changing state. Orders use `order <name|@N> <verb> <target>`, `order <name|@N> move <x> <y>`, `order <name|@N> wait <ticks>`, or `order <name|@N> study <station> <planId>`. The shorter `move` and `study` commands remain available. Inspect a station for its study plans and recorded findings. JSON parameters are not required or accepted by `order`; the CLI constructs typed actions internally and resolves names, full IDs and labels. `step` advances exactly the requested ticks even after a quest ends. `run` stops at quest success/failure or its supplied limit. Commands use ordinary player permission and physical execution; there is no hidden force-complete command. New activity progress starts at zero and pending orders retain their usual deferred eligibility checks.
 
 ## Source-Backed SCP Quests
 

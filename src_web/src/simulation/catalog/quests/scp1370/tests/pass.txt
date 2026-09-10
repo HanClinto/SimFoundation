@@ -1,16 +1,18 @@
 # Expected: succeeded, All objectives satisfied.
 # Test-only solution. Paste into the CLI or pipe this file to npm run sim.
 load scp1370
+deploy field-agent alex
+start
 brief
-order handler {"kind":"take","targetId":"exhibit"}
+order alex take exhibit
 step 10
-move handler 9 3
+move alex 9 3
 step 20
-order handler {"kind":"drop","targetId":"exhibit"}
+order alex drop exhibit
 step 1
-study handler station safe-exhibit
+study alex station safe-exhibit
 step 10
-move handler 2 3
+move alex 2 3
 step 20
 status
 inspect station

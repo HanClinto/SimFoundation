@@ -31,14 +31,21 @@ try {
     };
   }
   if (args.includes("--batch")) {
-    const result = executeLine(consoleState, `run ${option("--ticks", "400")}`);
+    const result = executeLine(
+      consoleState,
+      consoleState.session.phase === "setup"
+        ? "status"
+        : `run ${option("--ticks", "400")}`,
+    );
     console.log(result.output);
     process.exitCode =
-      result.console.session.quest?.status === "failed"
-        ? 1
-        : result.console.session.quest?.status === "active"
-          ? 2
-          : 0;
+      result.console.session.phase === "setup"
+        ? 2
+        : result.console.session.quest?.status === "failed"
+          ? 1
+          : result.console.session.quest?.status === "active"
+            ? 2
+            : 0;
   } else {
     console.log(
       renderMap(consoleState) +

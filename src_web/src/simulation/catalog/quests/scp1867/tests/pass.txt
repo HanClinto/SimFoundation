@@ -1,20 +1,22 @@
 # Expected: succeeded, All objectives satisfied.
 # Test-only solution. Every non-comment line is an ordinary CLI command.
 load scp1867
+deploy researcher ben
+start
 brief
-order investigator {"kind":"take","targetId":"journal"}
+order ben take journal
 step 20
-move investigator 3 3
+move ben 3 3
 step 20
-order investigator {"kind":"drop","targetId":"journal"}
+order ben drop journal
 step 1
-order investigator {"kind":"take","targetId":"specimen"}
+order ben take specimen
 step 20
-move investigator 3 5
+move ben 3 5
 step 20
-order investigator {"kind":"drop","targetId":"specimen"}
+order ben drop specimen
 step 1
-study investigator bench marsh-lead
+study ben bench marsh-lead
 step 10
 status
 inspect bench

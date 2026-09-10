@@ -1,26 +1,28 @@
 # Expected: failed, Deadline reached with incomplete objectives.
 # Move the laboratory record away from intake before attempting study.
 load scp1867
-order investigator {"kind":"take","targetId":"lab"}
+deploy researcher ben
+start
+order ben take lab
 step 5
-move investigator 5 7
+move ben 5 7
 step 10
-order investigator {"kind":"drop","targetId":"lab"}
+order ben drop lab
 step 1
-order investigator {"kind":"take","targetId":"journal"}
+order ben take journal
 step 20
-move investigator 3 3
+move ben 3 3
 step 20
-order investigator {"kind":"drop","targetId":"journal"}
+order ben drop journal
 step 1
-order investigator {"kind":"take","targetId":"specimen"}
+order ben take specimen
 step 20
-move investigator 3 5
+move ben 3 5
 step 20
-order investigator {"kind":"drop","targetId":"specimen"}
+order ben drop specimen
 step 1
-study investigator bench marsh-lead
+study ben bench marsh-lead
 run 180
 status
-queue investigator
+queue ben
 inspect bench

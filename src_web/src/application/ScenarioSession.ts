@@ -22,9 +22,13 @@ import { colonyScenario } from "../simulation/catalog/quests/colony/setup";
 import { consumptionScenario } from "../simulation/catalog/quests/consumption/setup";
 import { scp1867Scenario } from "../simulation/catalog/quests/scp1867/setup";
 import { scp1370Scenario } from "../simulation/catalog/quests/scp1370/setup";
+import {
+  deployPawn,
+  type Deployment,
+} from "../simulation/core/site/Deployment";
 
 export const scenarios: Readonly<
-  Record<string, { site: SiteTemplate; quest?: Quest }>
+  Record<string, { site: SiteTemplate; quest?: Quest; deployment?: Deployment }>
 > = {
   response: responseScenario,
   daily: dailyScenario,
@@ -36,7 +40,13 @@ export const scenarios: Readonly<
 };
 
 export interface ScenarioSession {
-  version: 1;
+  version: 2;
+  phase: "setup" | "running";
+  teamIds: string[];
+  bindings: Record<string, string>;
+  labels: Record<string, string>;
+  nextPawnLabel: number;
+  nextObjectLabel: number;
   simulationVersion: typeof SIMULATION_VERSION;
   scenario: string;
   state: Simulation;
@@ -48,15 +58,120 @@ export function loadScenario(name: string): ScenarioSession {
   const scenario = scenarios[name];
   if (!scenario) throw new Error(`Unknown scenario: ${name}`);
   const created = instantiateSite(createSimulation(), scenario.site, entities);
-  return {
-    version: 1,
+  return labelEntities({
+    version: 2,
+    phase: scenario.deployment ? "setup" : "running",
+    teamIds: [],
+    bindings: {},
+    labels: {},
+    nextPawnLabel: 1,
+    nextObjectLabel: 1,
     simulationVersion: SIMULATION_VERSION,
     scenario: name,
     state: created.state,
-    quest: scenario.quest
-      ? startQuest(scenario.quest, created.siteId, 0)
-      : null,
+    quest:
+      scenario.quest && !scenario.deployment
+        ? startQuest(scenario.quest, created.siteId, 0)
+        : null,
     events: [],
+  });
+}
+
+function labelEntities(session: ScenarioSession): ScenarioSession {
+  const labels = { ...session.labels };
+  let nextPawnLabel = session.nextPawnLabel;
+  let nextObjectLabel = session.nextObjectLabel;
+  const all = [
+    ...Object.values(session.state.sites),
+    ...Object.values(session.state.transfers),
+  ]
+    .flatMap((owner) => Object.values(owner.entities))
+    .sort((first, second) =>
+      first.id < second.id ? -1 : first.id > second.id ? 1 : 0,
+    );
+  for (const entity of all) {
+    if (!labels[entity.id])
+      labels[entity.id] =
+        entity.kind === "pawn"
+          ? `@${nextPawnLabel++}`
+          : `o${nextObjectLabel++}`;
+  }
+  return { ...session, labels, nextPawnLabel, nextObjectLabel };
+}
+
+export function deployAgent(
+  session: ScenarioSession,
+  templateId: string,
+  alias: string,
+  requestedRole?: string,
+): ScenarioSession {
+  const deployment = scenarios[session.scenario]?.deployment;
+  if (session.phase !== "setup" || !deployment)
+    throw new Error("Deployment is only available before mission start.");
+  if (session.teamIds.length >= deployment.maximumTeam)
+    throw new Error("The deployment team is full.");
+  const unassigned = deployment.roles.filter((role) => !session.bindings[role]);
+  const role =
+    requestedRole ??
+    (deployment.roles.includes(alias)
+      ? alias
+      : unassigned.length === 1
+        ? unassigned[0]
+        : undefined);
+  if (!role && unassigned.length > 1)
+    throw new Error(
+      "Choose an explicit quest role when multiple roles are unassigned.",
+    );
+  if (role && !deployment.roles.includes(role))
+    throw new Error("Unknown quest role.");
+  if (role && session.bindings[role])
+    throw new Error("That quest role is already assigned.");
+  const siteId = Object.keys(session.state.sites)[0]!;
+  const state = deployPawn(
+    session.state,
+    siteId,
+    deployment,
+    entities,
+    templateId,
+    alias,
+    "entry",
+  );
+  const id = `${siteId}:${alias}`;
+  return labelEntities({
+    ...session,
+    state,
+    teamIds: [...session.teamIds, id],
+    bindings: role ? { ...session.bindings, [role]: id } : session.bindings,
+  });
+}
+
+export function startSession(session: ScenarioSession): ScenarioSession {
+  if (session.phase === "running")
+    throw new Error("The mission has already started.");
+  const scenario = scenarios[session.scenario]!;
+  const missing = scenario.deployment!.roles.filter(
+    (role) => !session.bindings[role],
+  );
+  if (missing.length)
+    throw new Error(`Deploy agents for required roles: ${missing.join(", ")}.`);
+  for (const id of session.teamIds) {
+    const actor = Object.values(session.state.sites)
+      .map((site) => site.entities[id])
+      .find(Boolean);
+    if (
+      actor?.kind !== "pawn" ||
+      !actor.canAct ||
+      actor.location.kind !== "ground"
+    )
+      throw new Error("A deployed agent is unavailable.");
+  }
+  const siteId = Object.keys(session.state.sites)[0]!;
+  return {
+    ...session,
+    phase: "running",
+    quest: scenario.quest
+      ? startQuest(scenario.quest, siteId, session.state.tick, session.bindings)
+      : null,
   };
 }
 
@@ -66,11 +181,13 @@ export function stepSession(
 ): ScenarioSession {
   if (!Number.isSafeInteger(ticks) || ticks < 0 || ticks > 10000)
     throw new Error("Ticks must be an integer from 0 to 10000.");
+  if (session.phase !== "running")
+    throw new Error("Mission is in setup. Deploy the team, then start.");
   let result = session;
   for (let index = 0; index < ticks; index++) {
     const next = advanceSimulation(result.state, materials);
     const definition = scenarios[result.scenario]?.quest;
-    result = {
+    result = labelEntities({
       ...result,
       state: next.state,
       quest:
@@ -78,7 +195,7 @@ export function stepSession(
           ? evaluateQuest(definition, result.quest, next.state, next.events)
           : null,
       events: [...result.events, ...next.events].slice(-100),
-    };
+    });
   }
   return result;
 }
@@ -89,7 +206,7 @@ export function restoreSession(text: string): ScenarioSession | null {
     return value &&
       typeof value === "object" &&
       !Array.isArray(value) &&
-      value.version === 1 &&
+      value.version === 2 &&
       value.simulationVersion === SIMULATION_VERSION
       ? (value as ScenarioSession)
       : null;

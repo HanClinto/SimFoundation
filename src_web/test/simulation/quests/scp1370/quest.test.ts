@@ -2,6 +2,8 @@ import { expect, it } from "vitest";
 import {
   loadScenario,
   stepSession,
+  deployAgent,
+  startSession,
 } from "../../../../src/application/ScenarioSession";
 import { replayTranscript } from "../../../quest-transcript";
 import { damageIntegrity } from "../../../../src/simulation/core/entity/Consumption";
@@ -19,7 +21,7 @@ it("recovers SCP-1370 without combat, observes it and leaves the display secured
     canAct: true,
     location: { kind: "ground", position: { x: 9, y: 3 } },
   });
-  expect((site.entities["site-1:handler"] as Pawn).health!.wounds).toEqual([]);
+  expect((site.entities["site-1:alex"] as Pawn).health!.wounds).toEqual([]);
   expect(site.entities["site-1:door"]).toMatchObject({ open: false });
   expect(
     (site.entities["site-1:station"] as Facility).study!.findings[0]!.sourceIds,
@@ -40,7 +42,9 @@ it("does not pass when the recovered display is left unsecured", () => {
 });
 
 it("damage is failure, not a shortcut for subduing a harmless exhibit", () => {
-  const session = loadScenario("scp1370");
+  const session = startSession(
+    deployAgent(loadScenario("scp1370"), "field-agent", "alex"),
+  );
   damageIntegrity(
     session.state.sites["site-1"]!.entities["site-1:exhibit"]!,
     1,

@@ -51,12 +51,14 @@ export interface QuestState {
   counts: Record<string, number>;
   status: "active" | "succeeded" | "failed";
   reason: string | null;
+  bindings: Record<string, string>;
 }
 
 export function startQuest(
   quest: Quest,
   siteId: string,
   tick: number,
+  bindings: Record<string, string> = {},
 ): QuestState {
   return {
     questId: quest.id,
@@ -66,6 +68,7 @@ export function startQuest(
     counts: {},
     status: "active",
     reason: null,
+    bindings: { ...bindings },
   };
 }
 
@@ -76,7 +79,8 @@ export function conditionMet(
   objectiveId: string,
 ): boolean {
   const site = state.sites[progress.siteId];
-  const resolve = (local: string) => `${progress.siteId}:${local}`;
+  const resolve = (local: string) =>
+    progress.bindings[local] ?? `${progress.siteId}:${local}`;
   switch (condition.kind) {
     case "finding": {
       const station = site?.entities[resolve(condition.station)];
@@ -167,9 +171,13 @@ export function evaluateQuest(
         event.siteId === progress.siteId &&
         event.kind === condition.event &&
         (!condition.actor ||
-          event.entityId === `${progress.siteId}:${condition.actor}`) &&
+          event.entityId ===
+            (progress.bindings[condition.actor] ??
+              `${progress.siteId}:${condition.actor}`)) &&
         (!condition.target ||
-          event.targetId === `${progress.siteId}:${condition.target}`) &&
+          event.targetId ===
+            (progress.bindings[condition.target] ??
+              `${progress.siteId}:${condition.target}`)) &&
         (!condition.action || event.actionKind === condition.action),
     );
     next.counts[objective.id] =

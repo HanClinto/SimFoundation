@@ -1,6 +1,6 @@
 # Expected: succeeded, All objectives satisfied.
 load consumption
-order diner {"kind":"eat","targetId":"meal"}
+order daniel eat meal
 run 40
 status
 inspect meal

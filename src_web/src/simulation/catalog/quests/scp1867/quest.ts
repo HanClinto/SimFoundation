@@ -5,6 +5,7 @@ export const quest: Quest = {
   name: "SCP-1867: Corroborate the collection",
   deadline: 180,
   briefing:
+    "Deploy a named staff member (for example: deploy researcher ben), then start the mission. The first agent becomes the investigator and arrives at the map entry. " +
     "Lord Blackwood has offered his collection. Recover the field journal and sealed specimen from the vault, then compare them at the intake bench with the independent survey and laboratory dossier already supplied there. His account alone is not corroboration: both independent records are required. Leave the unverified instrument isolated. Use Take, Move and Drop for recovery; inspect the bench for the marsh-lead study plan. Blackwood remains at the existing outpost; resident care and inter-site freight are not part of this bounded mission.",
   sources: [
     {

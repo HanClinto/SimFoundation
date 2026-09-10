@@ -5,6 +5,7 @@ export const quest: Quest = {
   name: "SCP-1370: A place in the gallery",
   deadline: 140,
   briefing:
+    "Deploy a named staff member (for example: deploy field-agent alex), then start the mission. The first agent becomes the handler and arrives at the map entry. " +
     "The threatening exhibit has toppled over in the gallery. It is sapient and belligerent, but physically incapable of injuring personnel. Recover it carefully without damage, place it at (9,3) inside the glass display bay, and use the observation station's safe-exhibit study plan. Return to reception and leave the automatic display door closed. The oversized bay is a one-level abstraction of adequate display containment; the mission does not simulate dialogue, container dimensions, power requirements or a combat encounter.",
   sources: [
     {
