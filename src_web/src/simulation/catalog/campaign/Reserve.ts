@@ -40,8 +40,8 @@ export function dispatchReserve(
     loading: { x: 2, y: 2 },
     loadingRadius: 1,
     arrival: destination === "home" ? homeLoading : opportunity!.loading,
-    arrivalRadius: destination === "home" ? 3 : 1,
-    arrivalMode: destination === "home" ? "area" : "pad",
+    arrivalRadius: 3,
+    arrivalMode: "area",
     duration: 12,
   });
   if (sent.reason) throw new Error(sent.reason);

@@ -23,7 +23,14 @@ replay tests accompany complete peaceful/danger/care/evacuation walkthroughs.
 Follow-up: normal-command play can leave an incapable resident on the home
 primary pad while every controllable worker is away. Strict arrival for both
 ordinary teams and reserves would deadlock all response. The finite home reserve
-now requests bounded area admission within radius3; a closed entry door or
+requests bounded area admission within radius3; a closed entry door or
 impassable primary terrain still blocks it. This uses the existing landing
 calculation rather than a map-wide rescue spawn, and the responder must clear
 the pad physically. Other campaign travel retains strict pad admission.
+
+The same finite reserve policy applies to known field routes: a hostile can
+otherwise remain on the extraction pad after its last local target dies.
+Normal-command play proves that a nearby reserve landing still requires real
+gear recovery and intervention before ordinary waiting reinforcements can be
+admitted and the body recovered. No invulnerability or forced relocation of
+the hostile is introduced.
